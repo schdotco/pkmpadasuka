@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Hasil Jadwal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 0; }
+    header { background: #28a745; color: #fff; text-align: center; padding: 15px; font-size: 1.3rem; }
+    main { max-width: 800px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    button { background: #25D366; color: #fff; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin-top: 15px; }
+    button:hover { background: #1ebe5d; }
+  </style>
+</head>
+<body>
+  <header>✅ Jadwal Berhasil Disimpan</header>
+
+  <main>
+    <h2>📅 Hasil Input Jadwal</h2>
+    <table id="tabelHasil">
+      <tbody></tbody>
+    </table>
+
+    <button id="btnShareWA">📤 Share ke WhatsApp</button>
+  </main>
+
+  <script>
+    const dataJadwal = JSON.parse(localStorage.getItem('dataJadwal'));
+
+    if (!dataJadwal) {
+      alert('Tidak ada data jadwal ditemukan');
+      window.location.href = 'jadwal.html';
+    }
+
+    const tbody = document.querySelector('#tabelHasil tbody');
+
+    function addRow(label, value) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<th>${label}</th><td>${value}</td>`;
+      tbody.appendChild(tr);
+    }
+
+    addRow('Tanggal', dataJadwal.tanggal);
+    addRow('Dress Code', dataJadwal.dressCode);
+    addRow('Pembina', dataJadwal.pembina);
+    addRow('Screening CKG', dataJadwal.screeningPegawai.join(', '));
+
+    // tombol share WA
+    document.getElementById('btnShareWA').onclick = () => {
+      let pesan = `📅 *Jadwal Pegawai*\n`;
+      pesan += `Tanggal: ${dataJadwal.tanggal}\n`;
+      pesan += `Dress Code: ${dataJadwal.dressCode}\n`;
+      pesan += `Pembina: ${dataJadwal.pembina}\n`;
+      if (dataJadwal.screeningPegawai.length) {
+        pesan += `Screening CKG: ${dataJadwal.screeningPegawai.join(', ')}\n`;
+      }
+
+      const encodedMessage = encodeURIComponent(pesan);
+      const waURL = `https://wa.me/?text=${encodedMessage}`;
+      window.open(waURL, '_blank');
+    };
+  </script>
+</body>
+</html>
