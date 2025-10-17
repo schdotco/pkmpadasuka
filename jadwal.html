@@ -170,22 +170,22 @@
       <h2>I. Kegiatan Dalam Gedung</h2>
 
       <div class="dropdown-group">
-        <label>Screening CKG (5 Pegawai)</label>
+        <label>Screening CKG</label>
         <div class="dropdown-row" id="screeningCKG"></div>
       </div>
 
       <div class="dropdown-group">
-        <label>Pendaftaran & Skrining BPJS (5 Pegawai)</label>
+        <label>Pendaftaran & Skrining BPJS</label>
         <div class="dropdown-row" id="bpjs"></div>
       </div>
 
       <div class="dropdown-group">
-        <label>Rekam Medis (5 Pegawai)</label>
+        <label>Rekam Medis</label>
         <div class="dropdown-row" id="rekamMedis"></div>
       </div>
 
       <div class="dropdown-group">
-        <label>Pusat Informasi & Rujukan (1 Pegawai)</label>
+        <label>Pusat Informasi & Rujukan</label>
         <div class="dropdown-row" id="pusatInformasi"></div>
       </div>
     </div>
@@ -195,12 +195,12 @@
       <h2>II. Kegiatan Luar Gedung</h2>
 
       <div class="dropdown-group">
-        <label>Posyandu (10 Pegawai)</label>
+        <label>Posyandu</label>
         <div class="dropdown-row" id="posyandu"></div>
       </div>
 
       <div class="dropdown-group">
-        <label>Rapat & Pelatihan (30 Pegawai)</label>
+        <label>Rapat & Pelatihan</label>
         <div class="dropdown-row" id="rapat"></div>
       </div>
     </div>
@@ -209,60 +209,117 @@
     <button onclick="window.location.href='hasil-jadwal.html'" class="btn-secondary">📄 Lihat Jadwal</button>
   </main>
 
-  <script type="module">
-    import { db } from './app.js';
-    import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+<style>
+  /* Tambahan styling untuk input & dropdown */
+  label {
+    display: block;
+    font-weight: bold;
+    margin-top: 15px;
+    margin-bottom: 5px;
+  }
 
-    const pembinaSelect = document.getElementById('pembina');
-    let pegawaiList = [];
+  input[type="text"], input[type="date"], select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+  }
 
-    // Ambil data pegawai dari Firebase (pegawai.html)
-    const pegawaiRef = ref(db, 'pegawai');
-    onValue(pegawaiRef, (snapshot) => {
-      pegawaiList = [];
-      pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
-      snapshot.forEach(child => {
-        const data = child.val();
-        const namaLengkap = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
-        pegawaiList.push(namaLengkap);
-        const opt = document.createElement('option');
-        opt.value = namaLengkap;
-        opt.textContent = namaLengkap;
-        pembinaSelect.appendChild(opt);
-      });
+  .dropdown-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
 
-      // Setelah list pegawai didapat → generate semua dropdown
-      generateDropdowns();
+  .section h3 {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #1976d2;
+  }
+
+  button#btnSimpanJadwal {
+    background: #1976d2;
+    color: #fff;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 15px;
+  }
+  button#btnSimpanJadwal:hover {
+    background: #125ca1;
+  }
+</style>
+
+<script type="module">
+  import { db } from './app.js';
+  import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+  let pegawaiList = [];
+
+  // Ambil data pegawai dari Firebase
+  const pegawaiRef = ref(db, 'pegawai');
+  onValue(pegawaiRef, (snapshot) => {
+    pegawaiList = [];
+    snapshot.forEach((child) => {
+      const data = child.val();
+      // Format: Nama (Gelar)
+      const label = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
+      pegawaiList.push(label);
     });
 
-    function generateDropdowns() {
-      createDropdown(5, "screeningCKG");
-      createDropdown(5, "bpjs");
-      createDropdown(5, "rekamMedis");
-      createDropdown(1, "pusatInformasi");
-      createDropdown(10, "posyandu");
-      createDropdown(30, "rapat");
-    }
+    // Isi ulang semua dropdown setelah data pegawai didapat
+    isiSemuaDropdown();
+  });
 
-    function createDropdown(jumlah, containerId) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = "";
-      for (let i = 0; i < jumlah; i++) {
-        const select = document.createElement("select");
-        const optDefault = document.createElement("option");
-        optDefault.value = "";
-        optDefault.textContent = `-- Pegawai ${i+1} --`;
-        select.appendChild(optDefault);
+  function createDropdown(jumlah, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = ""; // bersihkan isi lama
+    for (let i = 0; i < jumlah; i++) {
+      const select = document.createElement("select");
+      const optDefault = document.createElement("option");
+      optDefault.value = "";
+      optDefault.textContent = `-- Pegawai ${i+1} --`;
+      select.appendChild(optDefault);
 
-        pegawaiList.forEach(nama => {
-          const opt = document.createElement("option");
-          opt.value = nama;
-          opt.textContent = nama;
-          select.appendChild(opt);
-        });
-        container.appendChild(select);
-      }
+      pegawaiList.forEach(nama => {
+        const opt = document.createElement("option");
+        opt.value = nama;
+        opt.textContent = nama;
+        select.appendChild(opt);
+      });
+
+      container.appendChild(select);
     }
+  }
+
+  // Buat dropdown pembina & semua klaster
+  function isiSemuaDropdown() {
+    createDropdown(5, "screeningCKG");
+    createDropdown(5, "bpjs");
+    createDropdown(5, "rekamMedis");
+    createDropdown(1, "pusatInformasi");
+    createDropdown(3, "kia");
+    createDropdown(3, "poned");
+    createDropdown(10, "posyandu");
+    createDropdown(30, "rapat");
+    createDropdown(30, "sakit");
+    createDropdown(30, "cuti");
+
+    // Pembina briefing
+    const pembinaSelect = document.getElementById('pembina');
+    pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
+    pegawaiList.forEach(nama => {
+      const opt = document.createElement('option');
+      opt.value = nama;
+      opt.textContent = nama;
+      pembinaSelect.appendChild(opt);
+    });
+  }
+</script>
 
     // Simpan Jadwal ke Firebase
     document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
