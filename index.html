@@ -3,78 +3,210 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Data dan Informasi Padasuka</title>
+  <title>Aplikasi Jadwal & Cuti - Padasuka</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f7fa; color: #333; }
-    header { background: #1976d2; color: #fff; padding: 15px; text-align: center; }
-    main { padding: 20px; max-width: 600px; margin: auto; }
-    input, button, select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; }
-    button { background: #1976d2; color: white; border: none; cursor: pointer; }
-    button:hover { background: #125aa0; }
-    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    * { box-sizing: border-box; }
+    body { 
+      margin: 0; 
+      font-family: "Segoe UI", Arial, sans-serif; 
+      background: #f4f7fa; 
+      color: #333; 
+    }
+
+    header { 
+      background: #1976d2; 
+      color: white; 
+      padding: 15px; 
+      text-align: center; 
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    main {
+      display: flex;
+      flex-wrap: wrap;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* Bagian kiri */
+    .left-panel {
+      flex: 1;
+      background: #1976d2;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      min-width: 280px;
+    }
+    .left-panel h1 {
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .left-panel p {
+      font-size: 0.95rem;
+      max-width: 400px;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .left-panel img {
+      margin-top: 30px;
+      width: 180px;
+      max-width: 90%;
+    }
+
+    /* Bagian kanan (form login/register/dashboard) */
+    .right-panel {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      min-width: 300px;
+    }
+
+    .card {
+      background: white;
+      padding: 30px 25px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #1976d2;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 0.95rem;
+    }
+
+    button {
+      background: #1976d2;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #125aa0;
+    }
+
+    .link {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+    .link a {
+      color: #1976d2;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
     .hidden { display: none; }
-    a { color: #1976d2; cursor: pointer; text-decoration: underline; }
+
+    /* Dashboard */
+    #dashboard .card {
+      max-width: 700px;
+      margin: 15px auto;
+    }
+
+    @media (max-width: 768px) {
+      main { flex-direction: column; }
+      .left-panel { padding: 20px; }
+      .left-panel h1 { font-size: 1.4rem; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h2>Aplikasi Jadwal & Pengajuan Cuti</h2>
-  </header>
+  <header>Aplikasi Jadwal & Pengajuan Cuti</header>
+
   <main>
-    <!-- LOGIN -->
-    <div id="loginCard" class="card">
-      <h3>Login</h3>
-      <input type="email" id="loginEmail" placeholder="Email"/>
-      <input type="password" id="loginPassword" placeholder="Password"/>
-      <button onclick="loginUser()">Login</button>
-      <p>Belum punya akun? <a onclick="showRegister()">Daftar</a></p>
+    <!-- Panel kiri -->
+    <div class="left-panel">
+      <h1>Satu Akses Untuk Semua</h1>
+      <p>
+        Portal internal untuk pengelolaan <b>jadwal & cuti pegawai</b>.  
+        Akses cepat dan mudah langsung dari browser Anda.
+      </p>
+      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Login">
     </div>
 
-    <!-- REGISTER -->
-    <div id="registerCard" class="card hidden">
-      <h3>Register</h3>
-      <input type="text" id="regName" placeholder="Nama" />
-      <input type="email" id="regEmail" placeholder="Email" />
-      <input type="password" id="regPassword" placeholder="Password" />
-      <label><input type="checkbox" id="regIsAdmin"> Daftar sebagai admin</label>
-      <button onclick="registerUser()">Daftar</button>
-      <p>Sudah punya akun? <a onclick="showLogin()">Login</a></p>
-    </div>
-
-    <!-- DASHBOARD -->
-    <div id="dashboard" class="hidden">
-      <div class="card">
-        <h3 id="welcomeText">Selamat datang</h3>
-        <button onclick="logoutUser()">Logout</button>
+    <!-- Panel kanan -->
+    <div class="right-panel">
+      <!-- LOGIN -->
+      <div id="loginCard" class="card">
+        <h3>Login</h3>
+        <input type="email" id="loginEmail" placeholder="Email"/>
+        <input type="password" id="loginPassword" placeholder="Password"/>
+        <button onclick="loginUser()">Masuk</button>
+        <div class="link">Belum punya akun? <a onclick="showRegister()">Daftar</a></div>
       </div>
 
-      <div class="card" id="jadwalCard">
-        <h3>Jadwal Hari Ini</h3>
-        <div id="jadwalData">Memuat...</div>
+      <!-- REGISTER -->
+      <div id="registerCard" class="card hidden">
+        <h3>Registrasi</h3>
+        <input type="text" id="regName" placeholder="Nama Lengkap" />
+        <input type="email" id="regEmail" placeholder="Email" />
+        <input type="password" id="regPassword" placeholder="Password" />
+        <label><input type="checkbox" id="regIsAdmin"> Daftar sebagai admin</label>
+        <button onclick="registerUser()">Daftar</button>
+        <div class="link">Sudah punya akun? <a onclick="showLogin()">Login</a></div>
       </div>
 
-      <div class="card">
-        <h3>Pengajuan Cuti</h3>
-        <input type="date" id="cutiMulai" />
-        <input type="date" id="cutiSelesai" />
-        <input type="text" id="cutiAlasan" placeholder="Alasan cuti" />
-        <button onclick="ajukanCuti()">Ajukan</button>
-        <div id="statusCuti"></div>
-      </div>
+      <!-- DASHBOARD -->
+      <div id="dashboard" class="hidden" style="width:100%">
+        <div class="card">
+          <h3 id="welcomeText">Selamat datang</h3>
+          <button onclick="logoutUser()">Logout</button>
+        </div>
 
-      <div class="card hidden" id="adminPanel">
-        <h3>Panel Admin</h3>
-        <button onclick="muatPengajuan()">Muat Pengajuan Cuti</button>
-        <div id="listPengajuan"></div>
+        <div class="card" id="jadwalCard">
+          <h3>Jadwal Hari Ini</h3>
+          <div id="jadwalData">Memuat...</div>
+        </div>
 
-        <h4>Tambah Jadwal Karyawan</h4>
-        <input type="text" id="jadwalUid" placeholder="UID Karyawan" />
-        <input type="text" id="jadwalKegiatan" placeholder="Kegiatan Hari Ini" />
-        <button onclick="tambahJadwal()">Simpan Jadwal</button>
+        <div class="card">
+          <h3>Pengajuan Cuti</h3>
+          <input type="date" id="cutiMulai" />
+          <input type="date" id="cutiSelesai" />
+          <input type="text" id="cutiAlasan" placeholder="Alasan cuti" />
+          <button onclick="ajukanCuti()">Ajukan</button>
+          <div id="statusCuti"></div>
+        </div>
+
+        <div class="card hidden" id="adminPanel">
+          <h3>Panel Admin</h3>
+          <button onclick="muatPengajuan()">Muat Pengajuan Cuti</button>
+          <div id="listPengajuan"></div>
+          <hr>
+          <h4>Tambah Jadwal Karyawan</h4>
+          <input type="text" id="jadwalUid" placeholder="UID Karyawan" />
+          <input type="text" id="jadwalKegiatan" placeholder="Kegiatan Hari Ini" />
+          <button onclick="tambahJadwal()">Simpan Jadwal</button>
+        </div>
       </div>
     </div>
   </main>
 
+  <!-- 🧠 Firebase Script tetap sama -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
     import { 
@@ -84,7 +216,6 @@
       getDatabase, ref, set, get, child, update, onValue 
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
-    // 🧭 Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
       authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
@@ -95,7 +226,6 @@
       appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
     };
 
-    // 🔥 Inisialisasi Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
@@ -106,21 +236,18 @@
     const adminPanel = document.getElementById('adminPanel');
     const welcomeText = document.getElementById('welcomeText');
 
-    // ⏩ Tampilkan form Register
     function showRegister() {
       loginCard.classList.add('hidden');
       registerCard.classList.remove('hidden');
     }
     window.showRegister = showRegister;
 
-    // ⏪ Tampilkan form Login
     function showLogin() {
       registerCard.classList.add('hidden');
       loginCard.classList.remove('hidden');
     }
     window.showLogin = showLogin;
 
-    // 📝 Registrasi user
     async function registerUser() {
       const name = document.getElementById('regName').value;
       const email = document.getElementById('regEmail').value;
@@ -143,7 +270,6 @@
     }
     window.registerUser = registerUser;
 
-    // 🔐 Login user
     async function loginUser() {
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
@@ -157,7 +283,6 @@
     }
     window.loginUser = loginUser;
 
-    // 🖥️ Dashboard
     async function loadDashboard(user) {
       loginCard.classList.add('hidden');
       registerCard.classList.add('hidden');
@@ -179,7 +304,6 @@
     }
     window.logoutUser = logoutUser;
 
-    // 📨 Pengajuan cuti
     async function ajukanCuti() {
       const mulai = document.getElementById('cutiMulai').value;
       const selesai = document.getElementById('cutiSelesai').value;
@@ -199,7 +323,6 @@
     }
     window.ajukanCuti = ajukanCuti;
 
-    // 📋 Admin - Pengajuan
     async function muatPengajuan() {
       const container = document.getElementById('listPengajuan');
       container.innerHTML = '';
@@ -209,6 +332,7 @@
         for (let id in data) {
           const item = data[id];
           const div = document.createElement('div');
+          div.style.margin = '8px 0';
           div.innerHTML = `<b>${item.alasan}</b> (${item.mulai} - ${item.selesai}) - ${item.status}
             <button onclick="ubahStatus('${id}','Disetujui')">Setujui</button>
             <button onclick="ubahStatus('${id}','Ditolak')">Tolak</button>`;
@@ -224,7 +348,6 @@
       muatPengajuan();
     }
 
-    // 📅 Jadwal
     async function tambahJadwal() {
       const uid = document.getElementById('jadwalUid').value;
       const kegiatan = document.getElementById('jadwalKegiatan').value;
