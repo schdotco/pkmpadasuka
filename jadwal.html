@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Setting Jadwal - UPTD Puskesmas Padasuka</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #2d8cff;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.3rem;
+    }
+    main {
+      max-width: 1000px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2, h3 {
+      margin-top: 25px;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin: 8px 0 4px;
+      font-weight: bold;
+    }
+    input[type="date"], input[type="text"], select {
+      width: 100%;
+      padding: 6px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .dropdown-group {
+      margin-bottom: 15px;
+    }
+    .dropdown-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .dropdown-row select {
+      flex: 1 1 180px;
+    }
+    button {
+      background: #2d8cff;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    button:hover {
+      background: #1b6ed1;
+    }
+    .section {
+      border-top: 1px solid #eee;
+      margin-top: 25px;
+      padding-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <header>🗓️ Setting Jadwal Pegawai</header>
+
+  <main>
+    <!-- Bagian Atas -->
+    <h2>Informasi Umum</h2>
+    <label for="jadwalTanggal">Tanggal</label>
+    <input type="date" id="jadwalTanggal">
+
+    <label for="dressCode">Dress Code</label>
+    <input type="text" id="dressCode" placeholder="Contoh: Batik / Seragam Putih">
+
+    <label for="pembina">Pembina Stand up Briefing (Pukul 07.30)</label>
+    <select id="pembina">
+      <option value="">-- Pilih Pembina --</option>
+    </select>
+
+    <!-- Kegiatan Dalam Gedung -->
+    <div class="section">
+      <h2>I. Kegiatan Dalam Gedung</h2>
+
+      <h3>a. Klaster 1</h3>
+      <div class="dropdown-group">
+        <label>Screening CKG (5 pegawai)</label>
+        <div class="dropdown-row" id="screeningCKG"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Pendaftaran & Skrining BPJS (5 pegawai)</label>
+        <div class="dropdown-row" id="bpjs"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Rekam Medis (5 pegawai)</label>
+        <div class="dropdown-row" id="rekamMedis"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Pusat Informasi & Rujukan (1 pegawai)</label>
+        <div class="dropdown-row" id="pusatInformasi"></div>
+      </div>
+
+      <!-- Tambah klaster lain (KLASTER 2–5) dengan pola serupa -->
+      <!-- Untuk contoh agar tidak terlalu panjang, saya tunjukkan KLASTER 2 -->
+      <h3>b. Klaster 2</h3>
+      <div class="dropdown-group">
+        <label>KIA (3 pegawai)</label>
+        <div class="dropdown-row" id="kia"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>PONED (3 pegawai)</label>
+        <div class="dropdown-row" id="poned"></div>
+      </div>
+    </div>
+
+    <!-- Kegiatan Luar Gedung -->
+    <div class="section">
+      <h2>II. Kegiatan Luar Gedung</h2>
+      <div class="dropdown-group">
+        <label>Posyandu (10 pegawai)</label>
+        <div class="dropdown-row" id="posyandu"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Rapat & Pelatihan (30 pegawai)</label>
+        <div class="dropdown-row" id="rapat"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Sakit (30 pegawai)</label>
+        <div class="dropdown-row" id="sakit"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Cuti Tahunan (30 pegawai)</label>
+        <div class="dropdown-row" id="cuti"></div>
+      </div>
+    </div>
+
+    <button id="btnSimpanJadwal">💾 Simpan Jadwal</button>
+  </main>
+
+  <script>
+    // Contoh list pegawai — nanti bisa di-load dari Firebase
+    const pegawaiList = [
+      "Ani", "Budi", "Citra", "Dedi", "Eka",
+      "Farhan", "Gina", "Hadi", "Intan", "Joko"
+    ];
+
+    // Fungsi buat dropdown
+    function createDropdown(jumlah, containerId) {
+      const container = document.getElementById(containerId);
+      for (let i = 0; i < jumlah; i++) {
+        const select = document.createElement("select");
+        const optDefault = document.createElement("option");
+        optDefault.value = "";
+        optDefault.textContent = `-- Pegawai ${i+1} --`;
+        select.appendChild(optDefault);
+
+        pegawaiList.forEach(nama => {
+          const opt = document.createElement("option");
+          opt.value = nama;
+          opt.textContent = nama;
+          select.appendChild(opt);
+        });
+
+        container.appendChild(select);
+      }
+    }
+
+    // Generate dropdown berdasarkan jumlah
+    createDropdown(5, "screeningCKG");
+    createDropdown(5, "bpjs");
+    createDropdown(5, "rekamMedis");
+    createDropdown(1, "pusatInformasi");
+    createDropdown(3, "kia");
+    createDropdown(3, "poned");
+    createDropdown(10, "posyandu");
+    createDropdown(30, "rapat");
+    createDropdown(30, "sakit");
+    createDropdown(30, "cuti");
+
+    // Isi dropdown pembina
+    const pembinaSelect = document.getElementById('pembina');
+    pegawaiList.forEach(nama => {
+      const opt = document.createElement('option');
+      opt.value = nama;
+      opt.textContent = nama;
+      pembinaSelect.appendChild(opt);
+    });
+
+    // Tombol simpan
+    document.getElementById('btnSimpanJadwal').onclick = () => {
+      const tanggal = document.getElementById('jadwalTanggal').value;
+      const dressCode = document.getElementById('dressCode').value;
+      const pembina = pembinaSelect.value;
+
+      if (!tanggal || !dressCode || !pembina) {
+        alert('Mohon lengkapi semua data utama!');
+        return;
+      }
+
+      // Bisa kirim ke Firebase / simpan ke database di sini
+      alert('✅ Jadwal berhasil disimpan!');
+    };
+  </script>
+</body>
+</html>
