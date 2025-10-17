@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data dan Informasi Padasuka</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f7fa; color: #333; }
+    header { background: #1976d2; color: #fff; padding: 15px; text-align: center; }
+    main { padding: 20px; max-width: 600px; margin: auto; }
+    input, button, select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; }
+    button { background: #1976d2; color: white; border: none; cursor: pointer; }
+    button:hover { background: #125aa0; }
+    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>Aplikasi Jadwal & Pengajuan Cuti</h2>
+  </header>
+  <main>
+    <div id="loginCard" class="card">
+      <h3>Login</h3>
+      <label for="loginEmail"></label><input type="email" id="loginEmail" placeholder="Email"/>
+      <label for="loginPassword"></label><input type="password" id="loginPassword" placeholder="Password"/>
+      <button onclick="loginUser()">Login</button>
+      <p>Belum punya akun? <a href="#" onclick="showRegister()">Daftar</a></p>
+    </div>
+
+    <div id="registerCard" class="card hidden">
+      <h3>Register</h3>
+      <label for="regName"></label><input type="text" id="regName" placeholder="Nama" />
+      <label for="regEmail"></label><input type="email" id="regEmail" placeholder="Email" />
+      <label for="regPassword"></label><input type="password" id="regPassword" placeholder="Password" />
+      <label><input type="checkbox" id="regIsAdmin"> Daftar sebagai admin</label>
+      <button onclick="registerUser()">Daftar</button>
+      <p>Sudah punya akun? <a href="#" onclick="showLogin()">Login</a></p>
+    </div>
+
+    <div id="dashboard" class="hidden">
+      <div class="card">
+        <h3 id="welcomeText">Selamat datang</h3>
+        <button onclick="logoutUser()">Logout</button>
+      </div>
+
+      <div class="card" id="jadwalCard">
+        <h3>Jadwal Hari Ini</h3>
+        <div id="jadwalData">Memuat...</div>
+      </div>
+
+      <div class="card">
+        <h3>Pengajuan Cuti</h3>
+        <label for="cutiMulai"></label><input type="date" id="cutiMulai" />
+        <label for="cutiSelesai"></label><input type="date" id="cutiSelesai" />
+        <label for="cutiAlasan"></label><input type="text" id="cutiAlasan" placeholder="Alasan cuti" />
+        <button onclick="ajukanCuti()">Ajukan</button>
+        <div id="statusCuti"></div>
+      </div>
+
+      <div class="card hidden" id="adminPanel">
+        <h3>Panel Admin</h3>
+        <button onclick="muatPengajuan()">Muat Pengajuan Cuti</button>
+        <div id="listPengajuan"></div>
+
+        <h4>Tambah Jadwal Karyawan</h4>
+        <label for="jadwalUid"></label><input type="text" id="jadwalUid" placeholder="UID Karyawan" />
+        <label for="jadwalKegiatan"></label><input type="text" id="jadwalKegiatan" placeholder="Kegiatan Hari Ini" />
+        <button onclick="tambahJadwal()">Simpan Jadwal</button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { getDatabase, ref, set, get, child, update, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
+      authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
+      databaseURL: "https://aplikasi-jadwal-1d54d-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "aplikasi-jadwal-1d54d",
+      storageBucket: "aplikasi-jadwal-1d54d.firebasestorage.app",
+      messagingSenderId: "860941812271",
+      appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const loginCard = document.getElementById('loginCard');
+    const registerCard = document.getElementById('registerCard');
+    const dashboard = document.getElementById('dashboard');
+    const adminPanel = document.getElementById('adminPanel');
+    const welcomeText = document.getElementById('welcomeText');
+
+    function showRegister() {
+      loginCard.classList.add('hidden');
+      registerCard.classList.remove('hidden');
+    }
+
+    function showLogin() {
+      registerCard.classList.add('hidden');
+      loginCard.classList.remove('hidden');
+    }
+
+    window.showRegister = showRegister;
+    window.showLogin = showLogin;
+
+    async function registerUser() {
+      const name = document.getElementById('regName').value;
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      const isAdmin = document.getElementById('regIsAdmin').checked;
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        await set(ref(db, 'users/' + user.uid), {
+          name: name,
+          email: email,
+          isAdmin: isAdmin
+        });
+        alert('Registrasi berhasil! Silakan login.');
+        showLogin();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function loginUser() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        loadDashboard(user);
+      } catch (error) {
+        alert('Login gagal: ' + error.message);
+      }
+    }
+
+    async function loadDashboard(user) {
+      loginCard.classList.add('hidden');
+      registerCard.classList.add('hidden');
+      dashboard.classList.remove('hidden');
+      const snapshot = await get(child(ref(db), 'users/' + user.uid));
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        welcomeText.textContent = `Selamat datang, ${data.name}`;
+        if (data.isAdmin) adminPanel.classList.remove('hidden');
+        muatJadwal(user.uid);
+        cekCuti(user.uid);
+      }
+    }
+
+    async function logoutUser() {
+      await signOut(auth);
+      dashboard.classList.add('hidden');
+      loginCard.classList.remove('hidden');
+    }
+
+    async function ajukanCuti() {
+      const mulai = document.getElementById('cutiMulai').value;
+      const selesai = document.getElementById('cutiSelesai').value;
+      const alasan = document.getElementById('cutiAlasan').value;
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const newId = Date.now();
+      await set(ref(db, 'leaves/' + newId), {
+        uid: user.uid,
+        mulai: mulai,
+        selesai: selesai,
+        alasan: alasan,
+        status: 'Menunggu'
+      });
+      alert('Pengajuan cuti dikirim!');
+    }
+
+    async function muatPengajuan() {
+      const container = document.getElementById('listPengajuan');
+      container.innerHTML = '';
+      const snapshot = await get(child(ref(db), 'leaves'));
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        for (let id in data) {
+          const item = data[id];
+          const div = document.createElement('div');
+          div.innerHTML = `<b>${item.alasan}</b> (${item.mulai} - ${item.selesai}) - ${item.status}
+          <button onclick="ubahStatus('${id}','Disetujui')">Setujui</button>
+          <button onclick="ubahStatus('${id}','Ditolak')">Tolak</button>`;
+          container.appendChild(div);
+        }
+      }
+    }
+
+    window.ubahStatus = async function(id, status) {
+      await update(ref(db, 'leaves/' + id), { status: status });
+      alert('Status diperbarui menjadi ' + status);
+      muatPengajuan();
+    }
+
+    async function tambahJadwal() {
+      const uid = document.getElementById('jadwalUid').value;
+      const kegiatan = document.getElementById('jadwalKegiatan').value;
+      await set(ref(db, 'schedules/' + uid + '/today'), {
+        kegiatan: kegiatan,
+        tanggal: new Date().toISOString().slice(0,10)
+      });
+      alert('Jadwal ditambahkan!');
+    }
+
+    async function muatJadwal(uid) {
+      const dataDiv = document.getElementById('jadwalData');
+      const snapshot = await get(child(ref(db), 'schedules/' + uid + '/today'));
+      if (snapshot.exists()) {
+        const jadwal = snapshot.val();
+        dataDiv.textContent = `${jadwal.tanggal}: ${jadwal.kegiatan}`;
+      } else {
+        dataDiv.textContent = 'Tidak ada jadwal untuk hari ini';
+      }
+    }
+
+    async function cekCuti(uid) {
+      const statusDiv = document.getElementById('statusCuti');
+      onValue(ref(db, 'leaves'), (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          let aktif = [];
+          for (let id in data) {
+            const item = data[id];
+            if (item.uid === uid && item.status === 'Disetujui') {
+              const today = new Date().toISOString().slice(0,10);
+              if (today >= item.mulai && today <= item.selesai) aktif.push(item);
+            }
+          }
+          if (aktif.length > 0) statusDiv.textContent = 'Sedang cuti';
+          else statusDiv.textContent = 'Tidak sedang cuti';
+        }
+      });
+    }
+  </script>
+</body>
+</html>
