@@ -15,43 +15,98 @@
       <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Register">
     </div>
 
-<div class="right-panel">
-  <div class="card">
-    <h3>Registrasi</h3>
-    <input type="text" id="regName" placeholder="Nama Lengkap" />
-    <input type="email" id="regEmail" placeholder="Email" />
-    <input type="password" id="regPassword" placeholder="Password" />
-    
-    <!-- 🕵️ Kolom kode rahasia admin -->
-    <input type="text" id="adminCode" placeholder="jayajayjayakayaraya" style="display:none;" />
+    <div class="right-panel">
+      <div class="card">
+        <h3>Registrasi</h3>
+        <input type="text" id="regName" placeholder="Nama Lengkap" />
+        <input type="email" id="regEmail" placeholder="Email" />
+        <input type="password" id="regPassword" placeholder="Password" />
 
-    <!-- Tombol untuk menampilkan kolom kode -->
-    <div class="link">
-      <a href="#" onclick="toggleAdminCode(event)">Punya kode admin?</a>
+        <!-- 🕵️ Kolom kode rahasia admin -->
+        <input type="text" id="adminCode" placeholder="Masukkan kode admin (optional)" style="display:none;" />
+
+        <!-- Tombol untuk menampilkan kolom kode -->
+        <div class="link">
+          <a href="#" onclick="toggleAdminCode(event)">Punya kode admin?</a>
+        </div>
+
+        <button id="btnRegister">Daftar</button>
+        <div class="link">Sudah punya akun? <a href="login.html">Login</a></div>
+      </div>
     </div>
-
-    <button id="btnRegister">Daftar</button>
-    <div class="link">Sudah punya akun? <a href="login.html">Login</a></div>
-  </div>
-</div>
   </main>
 
+  <!-- 🚀 JavaScript Register + Validasi Kode -->
   <script type="module">
-    import { registerUser } from "./app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    document.getElementById('btnRegister').onclick = async () => {
-      const name = regName.value;
-      const email = regEmail.value;
-      const password = regPassword.value;
-      const isAdmin = regIsAdmin.checked;
+    // Konfigurasi Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
+      authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
+      databaseURL: "https://aplikasi-jadwal-1d54d-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "aplikasi-jadwal-1d54d",
+      storageBucket: "aplikasi-jadwal-1d54d.firebasestorage.app",
+      messagingSenderId: "860941812271",
+      appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    // ✅ Toggle kolom kode admin
+    window.toggleAdminCode = (e) => {
+      e.preventDefault();
+      const codeField = document.getElementById('adminCode');
+      codeField.style.display = codeField.style.display === 'none' ? 'block' : 'none';
+    };
+
+    // 📝 Logika Registrasi
+    document.getElementById('btnRegister').addEventListener('click', async () => {
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const adminCode = document.getElementById('adminCode').value.trim();
+
+      if (!name || !email || !password) {
+        alert("Harap isi semua kolom.");
+        return;
+      }
+
+      // Kode rahasia admin (ubah sesuai keinginanmu)
+      const SECRET_ADMIN_CODE = "jayajayjayakayaraya";
+
+      let role = "user";
+      if (adminCode && adminCode === SECRET_ADMIN_CODE) {
+        role = "admin";
+      } else if (adminCode && adminCode !== SECRET_ADMIN_CODE) {
+        alert("Kode admin salah!");
+        return;
+      }
+
       try {
-        await registerUser(name, email, password, isAdmin);
-        alert('Registrasi berhasil! Silakan login.');
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Update nama ke Firebase Auth
+        await updateProfile(user, { displayName: name });
+
+        // Simpan data user ke Realtime Database
+        await set(ref(db, 'users/' + user.uid), {
+          name: name,
+          email: email,
+          role: role
+        });
+
+        alert(`Registrasi berhasil sebagai ${role === 'admin' ? '👑 Admin' : '👤 User'}`);
         window.location.href = "login.html";
       } catch (err) {
-        alert(err.message);
+        alert("Registrasi gagal: " + err.message);
       }
-    };
+    });
   </script>
 </body>
 </html>
