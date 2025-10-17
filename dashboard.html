@@ -1,65 +1,177 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard - Aplikasi Jadwal</title>
-  <link rel="stylesheet" href="style.css"/>
+  <title>Dashboard - Aplikasi Jadwal & Cuti</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      background: #1976d2;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+    }
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .navbar .menu {
+      display: flex;
+      gap: 15px;
+    }
+    .navbar .menu a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
+    .navbar button {
+      background: #fff;
+      color: #1976d2;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    /* DASHBOARD */
+    .dashboard {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 15px;
+    }
+    .dashboard h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    /* CARD GRID */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+    }
+    .card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+    .card-content {
+      padding: 15px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: #1976d2;
+      margin: 0 0 8px 0;
+    }
+    .card p {
+      font-size: 13px;
+      color: #555;
+      margin: 0;
+    }
+    .card button {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: auto;
+    }
+    .card button:hover {
+      background: #125ca1;
+    }
+  </style>
 </head>
 <body>
-  <header>Dashboard Jadwal & Cuti</header>
 
-  <div id="dashboard">
-    <div class="card">
-      <h3 id="welcomeText">Selamat datang</h3>
-      <button id="btnLogout">Logout</button>
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1>🏛️ Aplikasi Jadwal & Cuti</h1>
+    <div class="menu">
+      <a href="#">Dashboard</a>
+      <a href="#">Informasi</a>
+      <a href="#">Pengumuman</a>
+      <a href="#">Kehadiran</a>
     </div>
+    <button onclick="logout()">Logout</button>
+  </div>
 
-    <div class="card" id="jadwalCard">
-      <h3>Jadwal Hari Ini</h3>
-      <div id="jadwalData">Memuat...</div>
-    </div>
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <h2>Seluruh Aplikasi</h2>
+    <div class="card-grid">
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=SIKOM" alt="SIKOM">
+        <div class="card-content">
+          <h3>SIKOM</h3>
+          <p>Sistem Uji Kompetensi Online Pemkot Bandung.</p>
+        </div>
+        <button onclick="location.href='https://example.com/sikom'">Masuk Aplikasi</button>
+      </div>
 
-    <div class="card">
-      <h3>Pengajuan Cuti</h3>
-      <input type="date" id="cutiMulai" />
-      <input type="date" id="cutiSelesai" />
-      <input type="text" id="cutiAlasan" placeholder="Alasan cuti" />
-      <button id="btnCuti">Ajukan</button>
-      <div id="statusCuti"></div>
-    </div>
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=MANGBAGJA" alt="MANGBAGJA">
+        <div class="card-content">
+          <h3>MANGBAGJA</h3>
+          <p>Manajemen Kinerja Pemerintah Kota Bandung.</p>
+        </div>
+        <button onclick="location.href='https://example.com/mangbagja'">Masuk Aplikasi</button>
+      </div>
 
-    <div class="card hidden" id="adminPanel">
-      <h3>Panel Admin</h3>
-      <button id="btnMuatPengajuan">Muat Pengajuan Cuti</button>
-      <div id="listPengajuan"></div>
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=SIMPEG-ADM" alt="SIMPEG">
+        <div class="card-content">
+          <h3>SIMPEG-ADM</h3>
+          <p>Sistem Informasi Manajemen Kepegawaian.</p>
+        </div>
+        <button onclick="location.href='https://example.com/simpeg'">Masuk Aplikasi</button>
+      </div>
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=BLC" alt="BLC">
+        <div class="card-content">
+          <h3>BLC</h3>
+          <p>Bandung Learning Center — platform pembelajaran.</p>
+        </div>
+        <button onclick="location.href='https://example.com/blc'">Masuk Aplikasi</button>
+      </div>
     </div>
   </div>
 
-  <script type="module">
-    import { auth, db, logoutUser } from "./app.js";
-    import { get, child, ref, update, set, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
-
-    const welcomeText = document.getElementById('welcomeText');
-    const adminPanel = document.getElementById('adminPanel');
-
-    auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
-        const snapshot = await get(child(ref(db), 'users/' + user.uid));
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          welcomeText.textContent = `Selamat datang, ${data.name}`;
-          if (data.isAdmin) adminPanel.classList.remove('hidden');
-        }
-      }
-    });
-
-    document.getElementById('btnLogout').onclick = async () => {
-      await logoutUser();
-      window.location.href = "login.html";
-    };
+  <script>
+    function logout() {
+      // Arahkan ke halaman login
+      window.location.href = "index.html";
+    }
   </script>
 </body>
 </html>
