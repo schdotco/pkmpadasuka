@@ -1,194 +1,296 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Data Pegawai</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🗓️ Setting Jadwal Pegawai - Puskesmas Padasuka</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f6fa; }
-    h2 { margin-bottom: 20px; }
-    button { padding: 8px 12px; background: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
-    button:hover { background: #45a049; }
-
-    table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
-    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-    th { background: #f0f0f0; }
-
-    .action-btn {
-      border: none; cursor: pointer; padding: 6px 8px; border-radius: 4px; margin-right: 5px;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
     }
-    .edit-btn { background: #2196F3; color: white; }
-    .delete-btn { background: #f44336; color: white; }
 
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 10;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      justify-content: center; align-items: center;
+    /* NAVBAR */
+    .navbar {
+      background: #1976d2;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
     }
-    .modal-content {
-      background: white;
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .navbar .menu {
+      display: flex;
+      gap: 15px;
+    }
+    .navbar .menu a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
+    .navbar button {
+      background: #fff;
+      color: #1976d2;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    /* MAIN CONTAINER */
+    main {
+      max-width: 1100px;
+      margin: 30px auto;
       padding: 20px;
+      background: #fff;
       border-radius: 8px;
-      width: 300px;
-      position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    .modal-content h3 { margin-top: 0; }
-    .modal-content input {
-      width: 100%; padding: 8px; margin: 8px 0;
-      border: 1px solid #ccc; border-radius: 4px;
+
+    h2 {
+      font-size: 20px;
+      color: #1976d2;
+      margin-top: 0;
+      border-bottom: 2px solid #1976d2;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
     }
-    .close {
-      position: absolute;
-      right: 15px; top: 10px;
-      cursor: pointer; font-size: 18px; font-weight: bold;
+
+    label {
+      font-size: 14px;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    input[type="date"],
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      background: #fafafa;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .section {
+      margin-top: 30px;
+    }
+
+    .dropdown-group {
+      margin-bottom: 20px;
+    }
+
+    .dropdown-row select {
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    button.save-btn {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      font-size: 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button.save-btn:hover {
+      background: #125ca1;
+    }
+
+    .btn-secondary {
+      background: #555;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background: #333;
     }
   </style>
 </head>
 <body>
-
-  <h2>📋 Daftar Pegawai</h2>
-  <button id="btnTambahPegawai">+ Tambah Pegawai</button>
-
-  <table>
-    <thead>
-      <tr>
-        <th>No</th>
-        <th>Nama Lengkap</th>
-        <th>Gelar</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="pegawaiTableBody">
-      <!-- Data dari Firebase akan muncul di sini -->
-    </tbody>
-  </table>
-
-  <!-- Modal Form -->
-  <div id="modalPegawai" class="modal">
-    <div class="modal-content">
-      <span class="close" id="closeModal">&times;</span>
-      <h3 id="modalTitle">Tambah Pegawai</h3>
-      <input type="text" id="namaPegawai" placeholder="Nama Lengkap">
-      <input type="text" id="gelarPegawai" placeholder="Gelar (contoh: dr., S.Kep)">
-      <button id="btnSimpanPegawai">Simpan</button>
+  <div class="navbar">
+    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div class="menu">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profil.html">Profil</a>
+      <a href="#">Pengumuman</a>
+      <a href="#">Kehadiran</a>
     </div>
+    <button onclick="logout()">Logout</button>
   </div>
+
+  <main>
+    <h2>🗓️ Setting Jadwal Pegawai</h2>
+
+    <!-- Informasi Umum -->
+    <div class="form-grid">
+      <div>
+        <label for="jadwalTanggal">Tanggal</label>
+        <input type="date" id="jadwalTanggal">
+      </div>
+      <div>
+        <label for="dressCode">Dress Code</label>
+        <input type="text" id="dressCode" placeholder="Contoh: Batik / Seragam Putih">
+      </div>
+      <div>
+        <label for="pembina">Pembina Stand up Briefing (Pukul 07.30)</label>
+        <select id="pembina">
+          <option value="">-- Pilih Pembina --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Kegiatan Dalam Gedung -->
+    <div class="section">
+      <h2>I. Kegiatan Dalam Gedung</h2>
+
+      <div class="dropdown-group">
+        <label>Screening CKG (5 Pegawai)</label>
+        <div class="dropdown-row" id="screeningCKG"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Pendaftaran & Skrining BPJS (5 Pegawai)</label>
+        <div class="dropdown-row" id="bpjs"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Rekam Medis (5 Pegawai)</label>
+        <div class="dropdown-row" id="rekamMedis"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Pusat Informasi & Rujukan (1 Pegawai)</label>
+        <div class="dropdown-row" id="pusatInformasi"></div>
+      </div>
+    </div>
+
+    <!-- Kegiatan Luar Gedung -->
+    <div class="section">
+      <h2>II. Kegiatan Luar Gedung</h2>
+
+      <div class="dropdown-group">
+        <label>Posyandu (10 Pegawai)</label>
+        <div class="dropdown-row" id="posyandu"></div>
+      </div>
+
+      <div class="dropdown-group">
+        <label>Rapat & Pelatihan (30 Pegawai)</label>
+        <div class="dropdown-row" id="rapat"></div>
+      </div>
+    </div>
+
+    <button id="btnSimpanJadwal" class="save-btn">💾 Simpan Jadwal</button>
+    <button onclick="window.location.href='hasil-jadwal.html'" class="btn-secondary">📄 Lihat Jadwal</button>
+  </main>
 
   <script type="module">
     import { db } from './app.js';
-    import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    const modal = document.getElementById('modalPegawai');
-    const btnTambah = document.getElementById('btnTambahPegawai');
-    const btnSimpan = document.getElementById('btnSimpanPegawai');
-    const btnClose = document.getElementById('closeModal');
-    const namaInput = document.getElementById('namaPegawai');
-    const gelarInput = document.getElementById('gelarPegawai');
-    const tableBody = document.getElementById('pegawaiTableBody');
-    const modalTitle = document.getElementById('modalTitle');
+    const pembinaSelect = document.getElementById('pembina');
+    let pegawaiList = [];
 
-    let editId = null; // untuk cek mode edit
+    // Ambil data pegawai dari Firebase (pegawai.html)
+    const pegawaiRef = ref(db, 'pegawai');
+    onValue(pegawaiRef, (snapshot) => {
+      pegawaiList = [];
+      pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
+      snapshot.forEach(child => {
+        const data = child.val();
+        const namaLengkap = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
+        pegawaiList.push(namaLengkap);
+        const opt = document.createElement('option');
+        opt.value = namaLengkap;
+        opt.textContent = namaLengkap;
+        pembinaSelect.appendChild(opt);
+      });
 
-    // 🟢 Buka modal Tambah
-    btnTambah.addEventListener('click', () => {
-      modal.style.display = 'flex';
-      modalTitle.textContent = 'Tambah Pegawai';
-      btnSimpan.textContent = 'Simpan';
-      editId = null;
-      namaInput.value = '';
-      gelarInput.value = '';
+      // Setelah list pegawai didapat → generate semua dropdown
+      generateDropdowns();
     });
 
-    // 🔴 Tutup modal
-    btnClose.addEventListener('click', () => {
-      modal.style.display = 'none';
-    });
+    function generateDropdowns() {
+      createDropdown(5, "screeningCKG");
+      createDropdown(5, "bpjs");
+      createDropdown(5, "rekamMedis");
+      createDropdown(1, "pusatInformasi");
+      createDropdown(10, "posyandu");
+      createDropdown(30, "rapat");
+    }
 
-    // 📝 Simpan atau Update ke Firebase
-    btnSimpan.addEventListener('click', () => {
-      const nama = namaInput.value.trim();
-      const gelar = gelarInput.value.trim();
+    function createDropdown(jumlah, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      for (let i = 0; i < jumlah; i++) {
+        const select = document.createElement("select");
+        const optDefault = document.createElement("option");
+        optDefault.value = "";
+        optDefault.textContent = `-- Pegawai ${i+1} --`;
+        select.appendChild(optDefault);
 
-      if (!nama) {
-        alert('Nama tidak boleh kosong!');
+        pegawaiList.forEach(nama => {
+          const opt = document.createElement("option");
+          opt.value = nama;
+          opt.textContent = nama;
+          select.appendChild(opt);
+        });
+        container.appendChild(select);
+      }
+    }
+
+    // Simpan Jadwal ke Firebase
+    document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
+      const tanggal = document.getElementById('jadwalTanggal').value;
+      const dressCode = document.getElementById('dressCode').value;
+      const pembina = pembinaSelect.value;
+
+      if (!tanggal || !dressCode || !pembina) {
+        alert('Mohon lengkapi semua data utama!');
         return;
       }
 
-      if (editId) {
-        // Mode Edit
-        const updateRef = ref(db, 'pegawai/' + editId);
-        update(updateRef, { nama, gelar })
-          .then(() => {
-            alert('✏️ Data berhasil diperbarui!');
-            modal.style.display = 'none';
-          })
-          .catch(err => alert('Gagal update: ' + err.message));
-      } else {
-        // Mode Tambah
-        const pegawaiRef = ref(db, 'pegawai');
-        const newPegawaiRef = push(pegawaiRef);
-        set(newPegawaiRef, { nama, gelar })
-          .then(() => {
-            alert('✅ Pegawai berhasil ditambahkan!');
-            modal.style.display = 'none';
-          })
-          .catch(err => alert('Gagal simpan: ' + err.message));
-      }
-    });
+      const dataJadwal = {
+        tanggal,
+        dressCode,
+        pembina,
+        dibuatPada: new Date().toISOString()
+      };
 
-    // 📡 Ambil data realtime dari Firebase
-    const dataRef = ref(db, 'pegawai');
-    onValue(dataRef, (snapshot) => {
-      tableBody.innerHTML = '';
-      let no = 1;
-      snapshot.forEach((child) => {
-        const data = child.val();
-        const id = child.key;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${no++}</td>
-          <td>${data.nama}</td>
-          <td>${data.gelar || '-'}</td>
-          <td>
-            <button class="action-btn edit-btn" data-id="${id}">✏️</button>
-            <button class="action-btn delete-btn" data-id="${id}">🗑️</button>
-          </td>
-        `;
-        tableBody.appendChild(tr);
-      });
+      const jadwalRef = ref(db, 'jadwal');
+      const newRef = push(jadwalRef);
 
-      // ✏️ Event edit
-      document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-id');
-          const data = snapshot.child(id).val();
-          editId = id;
-          namaInput.value = data.nama;
-          gelarInput.value = data.gelar || '';
-          modalTitle.textContent = 'Edit Pegawai';
-          btnSimpan.textContent = 'Update';
-          modal.style.display = 'flex';
-        });
-      });
-
-      // 🗑️ Event delete
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-id');
-          const yakin = confirm('Apakah yakin ingin menghapus data ini?');
-          if (yakin) {
-            const delRef = ref(db, 'pegawai/' + id);
-            remove(delRef)
-              .then(() => alert('🗑️ Data berhasil dihapus!'))
-              .catch(err => alert('Gagal hapus: ' + err.message));
-          }
-        });
-      });
+      set(newRef, dataJadwal)
+        .then(() => {
+          alert('✅ Jadwal berhasil disimpan!');
+          window.location.href = 'hasil-jadwal.html';
+        })
+        .catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
     });
   </script>
 </body>
