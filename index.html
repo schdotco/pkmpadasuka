@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Data dan Informasi Padasuka</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f7fa; color: #333; }
@@ -14,6 +13,7 @@
     button:hover { background: #125aa0; }
     .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
     .hidden { display: none; }
+    a { color: #1976d2; cursor: pointer; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -21,24 +21,27 @@
     <h2>Aplikasi Jadwal & Pengajuan Cuti</h2>
   </header>
   <main>
+    <!-- LOGIN -->
     <div id="loginCard" class="card">
       <h3>Login</h3>
-      <label for="loginEmail"></label><input type="email" id="loginEmail" placeholder="Email"/>
-      <label for="loginPassword"></label><input type="password" id="loginPassword" placeholder="Password"/>
+      <input type="email" id="loginEmail" placeholder="Email"/>
+      <input type="password" id="loginPassword" placeholder="Password"/>
       <button onclick="loginUser()">Login</button>
-      <p>Belum punya akun? <a href="#" onclick="showRegister()">Daftar</a></p>
+      <p>Belum punya akun? <a onclick="showRegister()">Daftar</a></p>
     </div>
 
+    <!-- REGISTER -->
     <div id="registerCard" class="card hidden">
       <h3>Register</h3>
-      <label for="regName"></label><input type="text" id="regName" placeholder="Nama" />
-      <label for="regEmail"></label><input type="email" id="regEmail" placeholder="Email" />
-      <label for="regPassword"></label><input type="password" id="regPassword" placeholder="Password" />
+      <input type="text" id="regName" placeholder="Nama" />
+      <input type="email" id="regEmail" placeholder="Email" />
+      <input type="password" id="regPassword" placeholder="Password" />
       <label><input type="checkbox" id="regIsAdmin"> Daftar sebagai admin</label>
       <button onclick="registerUser()">Daftar</button>
-      <p>Sudah punya akun? <a href="#" onclick="showLogin()">Login</a></p>
+      <p>Sudah punya akun? <a onclick="showLogin()">Login</a></p>
     </div>
 
+    <!-- DASHBOARD -->
     <div id="dashboard" class="hidden">
       <div class="card">
         <h3 id="welcomeText">Selamat datang</h3>
@@ -52,9 +55,9 @@
 
       <div class="card">
         <h3>Pengajuan Cuti</h3>
-        <label for="cutiMulai"></label><input type="date" id="cutiMulai" />
-        <label for="cutiSelesai"></label><input type="date" id="cutiSelesai" />
-        <label for="cutiAlasan"></label><input type="text" id="cutiAlasan" placeholder="Alasan cuti" />
+        <input type="date" id="cutiMulai" />
+        <input type="date" id="cutiSelesai" />
+        <input type="text" id="cutiAlasan" placeholder="Alasan cuti" />
         <button onclick="ajukanCuti()">Ajukan</button>
         <div id="statusCuti"></div>
       </div>
@@ -65,8 +68,8 @@
         <div id="listPengajuan"></div>
 
         <h4>Tambah Jadwal Karyawan</h4>
-        <label for="jadwalUid"></label><input type="text" id="jadwalUid" placeholder="UID Karyawan" />
-        <label for="jadwalKegiatan"></label><input type="text" id="jadwalKegiatan" placeholder="Kegiatan Hari Ini" />
+        <input type="text" id="jadwalUid" placeholder="UID Karyawan" />
+        <input type="text" id="jadwalKegiatan" placeholder="Kegiatan Hari Ini" />
         <button onclick="tambahJadwal()">Simpan Jadwal</button>
       </div>
     </div>
@@ -74,9 +77,14 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-    import { getDatabase, ref, set, get, child, update, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+    import { 
+      getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut 
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { 
+      getDatabase, ref, set, get, child, update, onValue 
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
+    // 🧭 Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
       authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
@@ -87,6 +95,7 @@
       appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
     };
 
+    // 🔥 Inisialisasi Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
@@ -97,19 +106,21 @@
     const adminPanel = document.getElementById('adminPanel');
     const welcomeText = document.getElementById('welcomeText');
 
+    // ⏩ Tampilkan form Register
     function showRegister() {
       loginCard.classList.add('hidden');
       registerCard.classList.remove('hidden');
     }
+    window.showRegister = showRegister;
 
+    // ⏪ Tampilkan form Login
     function showLogin() {
       registerCard.classList.add('hidden');
       loginCard.classList.remove('hidden');
     }
-
-    window.showRegister = showRegister;
     window.showLogin = showLogin;
 
+    // 📝 Registrasi user
     async function registerUser() {
       const name = document.getElementById('regName').value;
       const email = document.getElementById('regEmail').value;
@@ -130,7 +141,9 @@
         alert(error.message);
       }
     }
+    window.registerUser = registerUser;
 
+    // 🔐 Login user
     async function loginUser() {
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
@@ -142,7 +155,9 @@
         alert('Login gagal: ' + error.message);
       }
     }
+    window.loginUser = loginUser;
 
+    // 🖥️ Dashboard
     async function loadDashboard(user) {
       loginCard.classList.add('hidden');
       registerCard.classList.add('hidden');
@@ -162,7 +177,9 @@
       dashboard.classList.add('hidden');
       loginCard.classList.remove('hidden');
     }
+    window.logoutUser = logoutUser;
 
+    // 📨 Pengajuan cuti
     async function ajukanCuti() {
       const mulai = document.getElementById('cutiMulai').value;
       const selesai = document.getElementById('cutiSelesai').value;
@@ -180,7 +197,9 @@
       });
       alert('Pengajuan cuti dikirim!');
     }
+    window.ajukanCuti = ajukanCuti;
 
+    // 📋 Admin - Pengajuan
     async function muatPengajuan() {
       const container = document.getElementById('listPengajuan');
       container.innerHTML = '';
@@ -191,12 +210,13 @@
           const item = data[id];
           const div = document.createElement('div');
           div.innerHTML = `<b>${item.alasan}</b> (${item.mulai} - ${item.selesai}) - ${item.status}
-          <button onclick="ubahStatus('${id}','Disetujui')">Setujui</button>
-          <button onclick="ubahStatus('${id}','Ditolak')">Tolak</button>`;
+            <button onclick="ubahStatus('${id}','Disetujui')">Setujui</button>
+            <button onclick="ubahStatus('${id}','Ditolak')">Tolak</button>`;
           container.appendChild(div);
         }
       }
     }
+    window.muatPengajuan = muatPengajuan;
 
     window.ubahStatus = async function(id, status) {
       await update(ref(db, 'leaves/' + id), { status: status });
@@ -204,6 +224,7 @@
       muatPengajuan();
     }
 
+    // 📅 Jadwal
     async function tambahJadwal() {
       const uid = document.getElementById('jadwalUid').value;
       const kegiatan = document.getElementById('jadwalKegiatan').value;
@@ -213,6 +234,7 @@
       });
       alert('Jadwal ditambahkan!');
     }
+    window.tambahJadwal = tambahJadwal;
 
     async function muatJadwal(uid) {
       const dataDiv = document.getElementById('jadwalData');
@@ -225,7 +247,7 @@
       }
     }
 
-    async function cekCuti(uid) {
+    function cekCuti(uid) {
       const statusDiv = document.getElementById('statusCuti');
       onValue(ref(db, 'leaves'), (snapshot) => {
         if (snapshot.exists()) {
