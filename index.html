@@ -1,97 +1,151 @@
 <!DOCTYPE html>
-<html lang="id
-  <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - Aplikasi Jadwal</title>
-  <link rel="stylesheet" href="style.css"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Aplikasi Jadwal & Cuti</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .auth-box {
+      background: #fff;
+      padding: 20px;
+      width: 100%;
+      max-width: 350px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .auth-box h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #1976d2;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #125ca1;
+    }
+    .switch {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .switch a {
+      color: #1976d2;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <header>Aplikasi Jadwal & Pengajuan Cuti</header>
-  <main>
-    <div class="left-panel">
-      <h1>Satu Akses Untuk Semua</h1>
-      <p>Portal internal untuk pengelolaan <b>jadwal & cuti pegawai</b>.</p>
-      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Login">
-    </div>
 
-    <div class="right-panel">
-      <div class="card">
-        <h3>Login</h3>
-        <input type="email" id="loginEmail" placeholder="Email"/>
-        <input type="password" id="loginPassword" placeholder="Password"/>
-        <button id="btnLogin">Masuk</button>
-        <div class="link">Belum punya akun? <a href="register.html">Daftar</a></div>
-      </div>
+  <!-- Login Form -->
+  <div id="login-section" class="auth-box">
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button onclick="loginUser()">Login</button>
+    <div class="switch">
+      Belum punya akun? <a onclick="showRegister()">Register</a>
     </div>
-  </main>
+  </div>
 
+  <!-- Register Form -->
+  <div id="register-section" class="auth-box" style="display: none;">
+    <h2>Register</h2>
+    <input type="email" id="regEmail" placeholder="Email">
+    <input type="password" id="regPassword" placeholder="Password">
+    <button onclick="registerUser()">Register</button>
+    <div class="switch">
+      Sudah punya akun? <a onclick="showLogin()">Login</a>
+    </div>
+  </div>
+
+  <!-- Firebase Auth -->
   <script type="module">
-    import { loginUser } from "./app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-    document.getElementById('btnLogin').onclick = async () => {
-      const email = loginEmail.value;
-      const password = loginPassword.value;
-      try {
-        await loginUser(email, password);
+    const firebaseConfig = {
+      apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
+      authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
+      projectId: "aplikasi-jadwal-1d54d",
+      storageBucket: "aplikasi-jadwal-1d54d.firebasestorage.app",
+      messagingSenderId: "860941812271",
+      appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const loginSection = document.getElementById('login-section');
+    const registerSection = document.getElementById('register-section');
+
+    // 🧠 Cek apakah sudah login → langsung ke dashboard
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
         window.location.href = "dashboard.html";
-      } catch (err) {
-        alert(err.message);
       }
-    };
-  </script>
-</body>
-</html>
-____
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Registrasi - Aplikasi Jadwal</title>
-  <link rel="stylesheet" href="style.css"/>
-</head>
-<body>
-  <header>Registrasi Akun</header>
-  <main>
-    <div class="left-panel">
-      <h1>Gabung Sekarang</h1>
-      <p>Buat akun untuk mengakses portal jadwal dan pengajuan cuti.</p>
-      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Register">
-    </div>
+    });
 
-    <div class="right-panel">
-      <div class="card">
-        <h3>Registrasi</h3>
-        <input type="text" id="regName" placeholder="Nama Lengkap" />
-        <input type="email" id="regEmail" placeholder="Email" />
-        <input type="password" id="regPassword" placeholder="Password" />
-        <label><input type="checkbox" id="regIsAdmin"> Daftar sebagai admin</label>
-        <button id="btnRegister">Daftar</button>
-        <div class="link">Sudah punya akun? <a href="login.html">Login</a></div>
-      </div>
-    </div>
-  </main>
-
-  <script type="module">
-    import { registerUser } from "./app.js";
-
-    document.getElementById('btnRegister').onclick = async () => {
-      const name = regName.value;
-      const email = regEmail.value;
-      const password = regPassword.value;
-      const isAdmin = regIsAdmin.checked;
+    // 🔑 Login
+    window.loginUser = async () => {
+      const email = document.getElementById('loginEmail').value;
+      const pass = document.getElementById('loginPassword').value;
       try {
-        await registerUser(name, email, password, isAdmin);
-        alert('Registrasi berhasil! Silakan login.');
-        window.location.href = "login.html";
+        await signInWithEmailAndPassword(auth, email, pass);
+        // Redirect otomatis oleh onAuthStateChanged
       } catch (err) {
-        alert(err.message);
+        alert("Login gagal: " + err.message);
       }
     };
+
+    // 📝 Register
+    window.registerUser = async () => {
+      const email = document.getElementById('regEmail').value;
+      const pass = document.getElementById('regPassword').value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+        alert("Registrasi berhasil! Silakan login.");
+        showLogin();
+      } catch (err) {
+        alert("Registrasi gagal: " + err.message);
+      }
+    };
+
+    // Switch UI
+    window.showRegister = () => {
+      loginSection.style.display = "none";
+      registerSection.style.display = "block";
+    };
+    window.showLogin = () => {
+      registerSection.style.display = "none";
+      loginSection.style.display = "block";
+    };
   </script>
+
 </body>
 </html>
-_____
