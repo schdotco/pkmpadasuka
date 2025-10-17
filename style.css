@@ -171,3 +171,10 @@ button:hover { background: #125aa0; }
 .profile-form button:hover {
   background-color: #0056b3;
 }
+
+/* file: style.css */
+select {
+  width: 250px;
+  height: 40px;
+  font-size: 14px;
+}
