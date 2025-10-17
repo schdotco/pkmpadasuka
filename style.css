@@ -135,12 +135,13 @@ button:hover { background: #125aa0; }
 }
 
 .profile-image img {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 10px;
+  width: 90px;              /* Lebar pas foto */
+  height: 120px;            /* Tinggi pas foto 3x4 */
+  object-fit: cover;        /* Agar foto terpotong rapi */
+  border-radius: 6px;       /* Sudut sedikit melengkung */
   border: 2px solid #007bff;
+  margin-bottom: 10px;
+  background: #f0f0f0;      /* Background netral saat belum ada foto */
 }
 
 .profile-form {
