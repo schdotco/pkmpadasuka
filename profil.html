@@ -239,5 +239,20 @@
     // 🚪 Logout
     document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
   </script>
+  <script>
+  const fileInput = document.getElementById('profilePicInput');
+  const preview = document.getElementById('profilePicPreview');
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        preview.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+</script>
 </body>
 </html>
