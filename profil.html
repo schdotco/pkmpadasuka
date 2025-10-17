@@ -1,54 +1,113 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
-  <link rel="stylesheet" href="style.css"/>
   <style>
-    /* === Tambahan styling untuk profil === */
-    #profile-section {
-      max-width: 400px;
-      margin: 30px auto;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      background: #1976d2;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+    }
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .navbar .menu {
+      display: flex;
+      gap: 15px;
+    }
+    .navbar .menu a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
+    .navbar button {
       background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      display: none;
-    }
-    #profile-section h2 {
-      text-align: center;
       color: #1976d2;
-      margin-top: 0;
-    }
-    #profile-section input {
-      width: 100%;
-      padding: 8px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
+      border: none;
+      padding: 6px 10px;
       border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
     }
-    #profile-section button {
+
+    /* DASHBOARD */
+    .dashboard {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 15px;
+    }
+    .dashboard h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    /* CARD GRID */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+    }
+    .card img {
       width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+    .card-content {
+      padding: 15px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: #1976d2;
+      margin: 0 0 8px 0;
+    }
+    .card p {
+      font-size: 13px;
+      color: #555;
+      margin: 0;
+    }
+    .card button {
       background: #1976d2;
       color: #fff;
       border: none;
       padding: 10px;
-      margin-top: 10px;
-      border-radius: 4px;
+      font-size: 13px;
       cursor: pointer;
+      width: 100%;
+      margin-top: auto;
     }
-    #profile-section button:hover {
+    .card button:hover {
       background: #125ca1;
-    }
-    #profilePicPreview {
-      display: block;
-      margin: 0 auto 10px;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #1976d2;
     }
   </style>
 </head>
@@ -65,33 +124,6 @@
       <a href="#">Kehadiran</a>
     </div>
     <button id="logoutBtn">Logout</button>
-  </div>
-
-  <!-- DASHBOARD CONTENT -->
-  <div id="dashboard" class="dashboard" style="padding:20px; max-width:1100px; margin:auto;">
-    <h2>Jadwal Pegawai</h2>
-    <div class="card-grid">
-      <div class="card">
-        <h3>JADWAL</h3>
-        <p>Jadwal Harian Pegawai UPTD Puskesmas Padasuka</p>
-        <button>Masuk</button>
-      </div>
-      <div class="card">
-        <h3>CUTI</h3>
-        <p>Pengajuan Cuti Pegawai</p>
-        <button>Masuk</button>
-      </div>
-      <div class="card">
-        <h3>LAPORAN</h3>
-        <p>Laporan Padasuka</p>
-        <button>Masuk</button>
-      </div>
-      <div class="card">
-        <h3>BLC</h3>
-        <p>Grafik Register Padasuka</p>
-        <button>Masuk</button>
-      </div>
-    </div>
   </div>
 
   <!-- PROFILE SECTION -->
