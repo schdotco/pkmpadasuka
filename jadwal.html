@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  
   <meta charset="UTF-8">
   <title>Setting Jadwal - UPTD Puskesmas Padasuka</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -85,6 +86,46 @@
     </div>
      <button onclick="logout()">Logout</button>
   </div>
+
+<script type="module">
+  import { db } from './app.js';
+  import { ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+  const btnSimpan = document.getElementById('btnSimpanJadwal');
+
+  btnSimpan.addEventListener('click', () => {
+    const tanggal = document.getElementById('jadwalTanggal').value;
+    const dressCode = document.getElementById('dressCode').value;
+    const pembina = document.getElementById('pembina').value;
+
+    if (!tanggal || !dressCode || !pembina) {
+      alert('Mohon lengkapi semua data utama!');
+      return;
+    }
+
+    const dataJadwal = {
+      tanggal,
+      dressCode,
+      pembina,
+      dibuatPada: new Date().toISOString()
+    };
+
+    const jadwalRef = ref(db, 'jadwal');
+    const newRef = push(jadwalRef);
+
+    set(newRef, dataJadwal)
+      .then(() => {
+        alert('✅ Data jadwal berhasil tersimpan!');
+        window.location.href = 'hasil-jadwal.html';
+      })
+      .catch((error) => {
+        console.error(error);
+        alert('❌ Gagal menyimpan jadwal: ' + error.message);
+      });
+  });
+</script>
+
+  
   <main>
     <!-- Bagian Atas -->
     <h2>Informasi Umum</h2>
