@@ -15,17 +15,25 @@
       <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Register">
     </div>
 
-    <div class="right-panel">
-      <div class="card">
-        <h3>Registrasi</h3>
-        <input type="text" id="regName" placeholder="Nama Lengkap" />
-        <input type="email" id="regEmail" placeholder="Email" />
-        <input type="password" id="regPassword" placeholder="Password" />
-        <label><input type="checkbox" id="regIsAdmin"> Daftar sebagai admin</label>
-        <button id="btnRegister">Daftar</button>
-        <div class="link">Sudah punya akun? <a href="login.html">Login</a></div>
-      </div>
+<div class="right-panel">
+  <div class="card">
+    <h3>Registrasi</h3>
+    <input type="text" id="regName" placeholder="Nama Lengkap" />
+    <input type="email" id="regEmail" placeholder="Email" />
+    <input type="password" id="regPassword" placeholder="Password" />
+    
+    <!-- 🕵️ Kolom kode rahasia admin -->
+    <input type="text" id="adminCode" placeholder="jayajayjayakayaraya" style="display:none;" />
+
+    <!-- Tombol untuk menampilkan kolom kode -->
+    <div class="link">
+      <a href="#" onclick="toggleAdminCode(event)">Punya kode admin?</a>
     </div>
+
+    <button id="btnRegister">Daftar</button>
+    <div class="link">Sudah punya akun? <a href="login.html">Login</a></div>
+  </div>
+</div>
   </main>
 
   <script type="module">
