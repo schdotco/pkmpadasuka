@@ -413,26 +413,6 @@
       // Setelah list pegawai didapat → generate semua dropdown
       generateDropdowns();
     });
-
-   function createDropdown(jumlah, containerId) {
-      const container = document.getElementById(containerId);
-      for (let i = 0; i < jumlah; i++) {
-        const select = document.createElement("select");
-        const optDefault = document.createElement("option");
-        optDefault.value = "";
-        optDefault.textContent = `-- Pegawai ${i+1} --`;
-        select.appendChild(optDefault);
-
-        pegawaiList.forEach(nama => {
-          const opt = document.createElement("option");
-          opt.value = nama;
-          opt.textContent = nama;
-          select.appendChild(opt);
-        });
-
-        container.appendChild(select);
-      }
-    }
     
     function generateDropdowns() {
     createDropdown(5, "screeningCKG");
