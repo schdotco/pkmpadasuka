@@ -218,6 +218,49 @@
       // Bisa kirim ke Firebase / simpan ke database di sini
       alert('✅ Jadwal berhasil disimpan!');
     };
+// Sembunyikan form, tampilkan tabel hasil
+      document.getElementById('formJadwal').style.display = 'none';
+      document.getElementById('hasilJadwal').style.display = 'block';
+
+      // Bangun isi tabel hasil
+      const tbody = document.querySelector('#tabelJadwal tbody');
+      tbody.innerHTML = ''; // reset isi
+
+      function ambilData(containerId, namaKegiatan) {
+        const selects = document.querySelectorAll(`#${containerId} select`);
+        const petugas = Array.from(selects)
+          .map(s => s.value)
+          .filter(v => v !== '')
+          .join(', ');
+        if (petugas) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${namaKegiatan}</td><td>${petugas}</td>`;
+          tbody.appendChild(tr);
+          return `${namaKegiatan}: ${petugas}`;
+        }
+        return '';
+      }
+
+      const dataPesan = [];
+      dataPesan.push(`📅 *Jadwal Pegawai*`);
+      dataPesan.push(`Tanggal: ${tanggal}`);
+      dataPesan.push(`Dress Code: ${dressCode}`);
+      dataPesan.push(`Pembina: ${pembina}`);
+      dataPesan.push('');
+      dataPesan.push(ambilData('screeningCKG', 'Screening CKG'));
+      dataPesan.push(ambilData('bpjs', 'Pendaftaran & Skrining BPJS'));
+      dataPesan.push(ambilData('posyandu', 'Posyandu'));
+
+      // Simpan ke variabel global untuk WA
+      window.jadwalPesanWA = dataPesan.filter(v => v !== '').join('\n');
+    };
+
+    // Tombol WhatsApp
+    document.getElementById('btnKirimWA').onclick = () => {
+      const pesan = encodeURIComponent(window.jadwalPesanWA);
+      const waLink = `https://wa.me/?text=${pesan}`;
+      window.open(waLink, '_blank');
+    };
   </script>
 </body>
 </html>
