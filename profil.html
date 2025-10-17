@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    /* === Tambahan styling untuk profil === */
+    #profile-section {
+      max-width: 400px;
+      margin: 30px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: none;
+    }
+    #profile-section h2 {
+      text-align: center;
+      color: #1976d2;
+      margin-top: 0;
+    }
+    #profile-section input {
+      width: 100%;
+      padding: 8px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #profile-section button {
+      width: 100%;
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #profile-section button:hover {
+      background: #125ca1;
+    }
+    #profilePicPreview {
+      display: block;
+      margin: 0 auto 10px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #1976d2;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div class="menu">
+      <a href="#" onclick="showSection('dashboard')">Dashboard</a>
+      <a href="#" onclick="showSection('profile-section')">Profil</a>
+      <a href="#">Informasi</a>
+      <a href="#">Pengumuman</a>
+      <a href="#">Kehadiran</a>
+    </div>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- DASHBOARD CONTENT -->
+  <div id="dashboard" class="dashboard" style="padding:20px; max-width:1100px; margin:auto;">
+    <h2>Jadwal Pegawai</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h3>JADWAL</h3>
+        <p>Jadwal Harian Pegawai UPTD Puskesmas Padasuka</p>
+        <button>Masuk</button>
+      </div>
+      <div class="card">
+        <h3>CUTI</h3>
+        <p>Pengajuan Cuti Pegawai</p>
+        <button>Masuk</button>
+      </div>
+      <div class="card">
+        <h3>LAPORAN</h3>
+        <p>Laporan Padasuka</p>
+        <button>Masuk</button>
+      </div>
+      <div class="card">
+        <h3>BLC</h3>
+        <p>Grafik Register Padasuka</p>
+        <button>Masuk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE SECTION -->
+  <div id="profile-section">
+    <h2>Profil Akun</h2>
+    <img id="profilePicPreview" src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Foto Profil">
+    <input type="file" id="profilePicInput" accept="image/*" />
+    <input type="text" id="profileName" placeholder="Nama Lengkap">
+    <input type="email" id="profileEmail" placeholder="Email">
+    <input type="password" id="newPassword" placeholder="Password Baru (opsional)">
+    <button id="btnSaveProfile">Simpan Perubahan</button>
+  </div>
+
+  <!-- Firebase & Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, updateProfile, updateEmail, updatePassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
+      authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
+      databaseURL: "https://aplikasi-jadwal-1d54d-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "aplikasi-jadwal-1d54d",
+      storageBucket: "aplikasi-jadwal-1d54d.firebasestorage.app",
+      messagingSenderId: "860941812271",
+      appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+
+    // 🧭 Ganti tampilan section
+    window.showSection = (id) => {
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('profile-section').style.display = 'none';
+      document.getElementById(id).style.display = 'block';
+    };
+
+    // 👤 Load data user saat login
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+      document.getElementById('profileName').value = user.displayName || "";
+      document.getElementById('profileEmail').value = user.email;
+
+      // Ambil foto profil dari database jika ada
+      const snap = await get(ref(db, 'users/' + user.uid));
+      if (snap.exists() && snap.val().photoURL) {
+        document.getElementById('profilePicPreview').src = snap.val().photoURL;
+      }
+    });
+
+    // 🖼️ Upload foto profil
+    const picInput = document.getElementById('profilePicInput');
+    picInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const user = auth.currentUser;
+      const fileRef = sRef(storage, 'profilePics/' + user.uid);
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+
+      await updateProfile(user, { photoURL: downloadURL });
+      await update(ref(db, 'users/' + user.uid), { photoURL: downloadURL });
+
+      document.getElementById('profilePicPreview').src = downloadURL;
+      alert('Foto profil berhasil diupload ✅');
+    });
+
+    // ✏️ Simpan perubahan profil
+    document.getElementById('btnSaveProfile').addEventListener('click', async () => {
+      const user = auth.currentUser;
+      const newName = document.getElementById('profileName').value.trim();
+      const newEmail = document.getElementById('profileEmail').value.trim();
+      const newPass = document.getElementById('newPassword').value;
+
+      try {
+        if (newName && newName !== user.displayName) {
+          await updateProfile(user, { displayName: newName });
+          await update(ref(db, 'users/' + user.uid), { name: newName });
+        }
+
+        if (newEmail && newEmail !== user.email) {
+          await updateEmail(user, newEmail);
+          await update(ref(db, 'users/' + user.uid), { email: newEmail });
+        }
+
+        if (newPass) {
+          await updatePassword(user, newPass);
+        }
+
+        alert("Profil berhasil diperbarui ✅");
+      } catch (err) {
+        alert("Gagal memperbarui profil: " + err.message);
+      }
+    });
+
+    // 🚪 Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+  </script>
+</body>
+</html>
