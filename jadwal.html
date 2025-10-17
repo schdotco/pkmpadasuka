@@ -74,7 +74,17 @@
 </head>
 <body>
   <header>🗓️ Setting Jadwal Pegawai</header>
-
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div class="menu">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profil.html">Profil</a>
+      <a href="#">Pengumuman</a>
+      <a href="#">Kehadiran</a>
+    </div>
+     <button onclick="logout()">Logout</button>
+  </div>
   <main>
     <!-- Bagian Atas -->
     <h2>Informasi Umum</h2>
@@ -153,6 +163,8 @@
     </div>
 
     <button id="btnSimpanJadwal">💾 Simpan Jadwal</button>
+      </div>
+     <button onclick="HasilJadwal()">Hasil Jadwal</button>
   </main>
 
   <script>
@@ -222,10 +234,7 @@
     
   </script>
 
-  </div>
-     <button onclick="HasilJadwal()">Hasil Jadwal</button>
-  </div>
-    <script>
+  <script>
     function HasilJadwal() {
       // Arahkan ke halaman Login
       window.location.href = "hasil-jadwal.html";
