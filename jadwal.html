@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <title>🗓️ Setting Jadwal Pegawai - Puskesmas Padasuka</title>
   <style>
     body {
       margin: 0;
@@ -46,68 +46,89 @@
       font-size: 13px;
     }
 
-    /* DASHBOARD */
-    .dashboard {
+    /* MAIN CONTAINER */
+    main {
       max-width: 1100px;
       margin: 30px auto;
-      padding: 0 15px;
-    }
-    .dashboard h2 {
-      font-size: 20px;
-      color: #333;
-      margin-bottom: 20px;
-    }
-
-    /* CARD GRID */
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
+      padding: 20px;
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-      transition: transform 0.2s ease;
     }
-    .card:hover {
-      transform: translateY(-4px);
-    }
-    .card img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-    }
-    .card-content {
-      padding: 15px;
-    }
-    .card h3 {
-      font-size: 16px;
+
+    h2 {
+      font-size: 20px;
       color: #1976d2;
-      margin: 0 0 8px 0;
+      margin-top: 0;
+      border-bottom: 2px solid #1976d2;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
     }
-    .card p {
-      font-size: 13px;
-      color: #555;
-      margin: 0;
+
+    label {
+      font-size: 14px;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
     }
-    .card button {
+
+    input[type="date"],
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      background: #fafafa;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .section {
+      margin-top: 30px;
+    }
+
+    .dropdown-group {
+      margin-bottom: 20px;
+    }
+
+    .dropdown-row select {
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    button.save-btn {
       background: #1976d2;
       color: #fff;
       border: none;
-      padding: 10px;
-      font-size: 13px;
+      padding: 12px 20px;
+      font-size: 15px;
+      border-radius: 4px;
       cursor: pointer;
-      width: 100%;
-      margin-top: auto;
+      margin-top: 20px;
     }
-    .card button:hover {
+    button.save-btn:hover {
       background: #125ca1;
+    }
+
+    .btn-secondary {
+      background: #555;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background: #333;
     }
   </style>
 </head>
@@ -120,142 +141,112 @@
       <a href="#">Pengumuman</a>
       <a href="#">Kehadiran</a>
     </div>
-     <button onclick="logout()">Logout</button>
+    <button onclick="logout()">Logout</button>
   </div>
-  
-<h2>🗓️ Setting Jadwal Pegawai</h2>
 
-<script type="module">
-  import { db } from './app.js';
-  import { ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
-
-  const btnSimpan = document.getElementById('btnSimpanJadwal');
-
-  btnSimpan.addEventListener('click', () => {
-    const tanggal = document.getElementById('jadwalTanggal').value;
-    const dressCode = document.getElementById('dressCode').value;
-    const pembina = document.getElementById('pembina').value;
-
-    if (!tanggal || !dressCode || !pembina) {
-      alert('Mohon lengkapi semua data utama!');
-      return;
-    }
-
-    const dataJadwal = {
-      tanggal,
-      dressCode,
-      pembina,
-      dibuatPada: new Date().toISOString()
-    };
-
-    const jadwalRef = ref(db, 'jadwal');
-    const newRef = push(jadwalRef);
-
-    set(newRef, dataJadwal)
-      .then(() => {
-        alert('✅ Data jadwal berhasil tersimpan!');
-        window.location.href = 'hasil-jadwal.html';
-      })
-      .catch((error) => {
-        console.error(error);
-        alert('❌ Gagal menyimpan jadwal: ' + error.message);
-      });
-  });
-</script>
-
-  
   <main>
-    <!-- Bagian Atas -->
-    <h2>Informasi Umum</h2>
-    <label for="jadwalTanggal">Tanggal</label>
-    <input type="date" id="jadwalTanggal">
+    <h2>🗓️ Setting Jadwal Pegawai</h2>
 
-    <label for="dressCode">Dress Code</label>
-    <input type="text" id="dressCode" placeholder="Contoh: Batik / Seragam Putih">
-
-    <label for="pembina">Pembina Stand up Briefing (Pukul 07.30)</label>
-    <select id="pembina">
-      <option value="">-- Pilih Pembina --</option>
-    </select>
+    <!-- Informasi Umum -->
+    <div class="form-grid">
+      <div>
+        <label for="jadwalTanggal">Tanggal</label>
+        <input type="date" id="jadwalTanggal">
+      </div>
+      <div>
+        <label for="dressCode">Dress Code</label>
+        <input type="text" id="dressCode" placeholder="Contoh: Batik / Seragam Putih">
+      </div>
+      <div>
+        <label for="pembina">Pembina Stand up Briefing (Pukul 07.30)</label>
+        <select id="pembina">
+          <option value="">-- Pilih Pembina --</option>
+        </select>
+      </div>
+    </div>
 
     <!-- Kegiatan Dalam Gedung -->
     <div class="section">
       <h2>I. Kegiatan Dalam Gedung</h2>
 
-      <h3>a. Klaster 1</h3>
       <div class="dropdown-group">
-        <label>Screening CKG</label>
+        <label>Screening CKG (5 Pegawai)</label>
         <div class="dropdown-row" id="screeningCKG"></div>
       </div>
 
       <div class="dropdown-group">
-        <label>Pendaftaran & Skrining BPJS</label>
+        <label>Pendaftaran & Skrining BPJS (5 Pegawai)</label>
         <div class="dropdown-row" id="bpjs"></div>
       </div>
 
       <div class="dropdown-group">
-        <label>Rekam Medis</label>
+        <label>Rekam Medis (5 Pegawai)</label>
         <div class="dropdown-row" id="rekamMedis"></div>
       </div>
 
       <div class="dropdown-group">
-        <label>Pusat Informasi & Rujukan</label>
+        <label>Pusat Informasi & Rujukan (1 Pegawai)</label>
         <div class="dropdown-row" id="pusatInformasi"></div>
-      </div>
-
-      <!-- Tambah klaster lain (KLASTER 2–5) dengan pola serupa -->
-      <!-- Untuk contoh agar tidak terlalu panjang, saya tunjukkan KLASTER 2 -->
-      <h3>b. Klaster 2</h3>
-      <div class="dropdown-group">
-        <label>KIA</label>
-        <div class="dropdown-row" id="kia"></div>
-      </div>
-
-      <div class="dropdown-group">
-        <label>PONED</label>
-        <div class="dropdown-row" id="poned"></div>
       </div>
     </div>
 
     <!-- Kegiatan Luar Gedung -->
     <div class="section">
       <h2>II. Kegiatan Luar Gedung</h2>
+
       <div class="dropdown-group">
-        <label>Posyandu</label>
+        <label>Posyandu (10 Pegawai)</label>
         <div class="dropdown-row" id="posyandu"></div>
       </div>
 
       <div class="dropdown-group">
-        <label>Rapat & Pelatihan</label>
+        <label>Rapat & Pelatihan (30 Pegawai)</label>
         <div class="dropdown-row" id="rapat"></div>
-      </div>
-
-      <div class="dropdown-group">
-        <label>Sakit</label>
-        <div class="dropdown-row" id="sakit"></div>
-      </div>
-
-      <div class="dropdown-group">
-        <label>Cuti Tahunan</label>
-        <div class="dropdown-row" id="cuti"></div>
       </div>
     </div>
 
-    <button id="btnSimpanJadwal">💾 Simpan Jadwal</button>
-      </div>
-     <button onclick="HasilJadwal()">Hasil Jadwal</button>
+    <button id="btnSimpanJadwal" class="save-btn">💾 Simpan Jadwal</button>
+    <button onclick="window.location.href='hasil-jadwal.html'" class="btn-secondary">📄 Lihat Jadwal</button>
   </main>
 
-  <script>
-    // Contoh list pegawai — nanti bisa di-load dari Firebase
-    const pegawaiList = [
-      "Ani", "Budi", "Citra", "Dedi", "Eka",
-      "Farhan", "Gina", "Hadi", "Intan", "Joko"
-    ];
+  <script type="module">
+    import { db } from './app.js';
+    import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    // Fungsi buat dropdown
+    const pembinaSelect = document.getElementById('pembina');
+    let pegawaiList = [];
+
+    // Ambil data pegawai dari Firebase (pegawai.html)
+    const pegawaiRef = ref(db, 'pegawai');
+    onValue(pegawaiRef, (snapshot) => {
+      pegawaiList = [];
+      pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
+      snapshot.forEach(child => {
+        const data = child.val();
+        const namaLengkap = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
+        pegawaiList.push(namaLengkap);
+        const opt = document.createElement('option');
+        opt.value = namaLengkap;
+        opt.textContent = namaLengkap;
+        pembinaSelect.appendChild(opt);
+      });
+
+      // Setelah list pegawai didapat → generate semua dropdown
+      generateDropdowns();
+    });
+
+    function generateDropdowns() {
+      createDropdown(5, "screeningCKG");
+      createDropdown(5, "bpjs");
+      createDropdown(5, "rekamMedis");
+      createDropdown(1, "pusatInformasi");
+      createDropdown(10, "posyandu");
+      createDropdown(30, "rapat");
+    }
+
     function createDropdown(jumlah, containerId) {
       const container = document.getElementById(containerId);
+      container.innerHTML = "";
       for (let i = 0; i < jumlah; i++) {
         const select = document.createElement("select");
         const optDefault = document.createElement("option");
@@ -269,34 +260,12 @@
           opt.textContent = nama;
           select.appendChild(opt);
         });
-
         container.appendChild(select);
       }
     }
 
-    // Generate dropdown berdasarkan jumlah
-    createDropdown(5, "screeningCKG");
-    createDropdown(5, "bpjs");
-    createDropdown(5, "rekamMedis");
-    createDropdown(1, "pusatInformasi");
-    createDropdown(3, "kia");
-    createDropdown(3, "poned");
-    createDropdown(10, "posyandu");
-    createDropdown(30, "rapat");
-    createDropdown(30, "sakit");
-    createDropdown(30, "cuti");
-
-    // Isi dropdown pembina
-    const pembinaSelect = document.getElementById('pembina');
-    pegawaiList.forEach(nama => {
-      const opt = document.createElement('option');
-      opt.value = nama;
-      opt.textContent = nama;
-      pembinaSelect.appendChild(opt);
-    });
-
-    // Tombol simpan
-    document.getElementById('btnSimpanJadwal').onclick = () => {
+    // Simpan Jadwal ke Firebase
+    document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
       const tanggal = document.getElementById('jadwalTanggal').value;
       const dressCode = document.getElementById('dressCode').value;
       const pembina = pembinaSelect.value;
@@ -306,19 +275,23 @@
         return;
       }
 
-      // Bisa kirim ke Firebase / simpan ke database di sini
-      alert('✅ Jadwal berhasil disimpan!');
-      window.location.href = 'hasil-jadwal.html';
-    };
-    
-  </script>
+      const dataJadwal = {
+        tanggal,
+        dressCode,
+        pembina,
+        dibuatPada: new Date().toISOString()
+      };
 
-  <script>
-    function HasilJadwal() {
-      // Arahkan ke halaman Login
-      window.location.href = "hasil-jadwal.html";
-    }
+      const jadwalRef = ref(db, 'jadwal');
+      const newRef = push(jadwalRef);
+
+      set(newRef, dataJadwal)
+        .then(() => {
+          alert('✅ Jadwal berhasil disimpan!');
+          window.location.href = 'hasil-jadwal.html';
+        })
+        .catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
+    });
   </script>
-  
 </body>
 </html>
