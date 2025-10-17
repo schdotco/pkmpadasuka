@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registrasi - Aplikasi Jadwal</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header>Registrasi Akun</header>
+  <main>
+    <div class="left-panel">
+      <h1>Gabung Sekarang</h1>
+      <p>Buat akun untuk mengakses portal jadwal dan pengajuan cuti.</p>
+      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Register">
+    </div>
+
+    <div class="right-panel">
+      <div class="card">
+        <h3>Registrasi</h3>
+        <input type="text" id="regName" placeholder="Nama Lengkap" />
+        <input type="email" id="regEmail" placeholder="Email" />
+        <input type="password" id="regPassword" placeholder="Password" />
+        <label><input type="checkbox" id="regIsAdmin"> Daftar sebagai admin</label>
+        <button id="btnRegister">Daftar</button>
+        <div class="link">Sudah punya akun? <a href="login.html">Login</a></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { registerUser } from "./app.js";
+
+    document.getElementById('btnRegister').onclick = async () => {
+      const name = regName.value;
+      const email = regEmail.value;
+      const password = regPassword.value;
+      const isAdmin = regIsAdmin.checked;
+      try {
+        await registerUser(name, email, password, isAdmin);
+        alert('Registrasi berhasil! Silakan login.');
+        window.location.href = "login.html";
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+  </script>
+</body>
+</html>
