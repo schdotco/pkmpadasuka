@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Pegawai</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f6fa; }
+    h2 { margin-bottom: 20px; }
+    button { padding: 8px 12px; background: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    button:hover { background: #45a049; }
+
+    table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #f0f0f0; }
+
+    .action-btn {
+      border: none; cursor: pointer; padding: 6px 8px; border-radius: 4px; margin-right: 5px;
+    }
+    .edit-btn { background: #2196F3; color: white; }
+    .delete-btn { background: #f44336; color: white; }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 300px;
+      position: relative;
+    }
+    .modal-content h3 { margin-top: 0; }
+    .modal-content input {
+      width: 100%; padding: 8px; margin: 8px 0;
+      border: 1px solid #ccc; border-radius: 4px;
+    }
+    .close {
+      position: absolute;
+      right: 15px; top: 10px;
+      cursor: pointer; font-size: 18px; font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📋 Daftar Pegawai</h2>
+  <button id="btnTambahPegawai">+ Tambah Pegawai</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>Nama Lengkap</th>
+        <th>Gelar</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="pegawaiTableBody">
+      <!-- Data dari Firebase akan muncul di sini -->
+    </tbody>
+  </table>
+
+  <!-- Modal Form -->
+  <div id="modalPegawai" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h3 id="modalTitle">Tambah Pegawai</h3>
+      <input type="text" id="namaPegawai" placeholder="Nama Lengkap">
+      <input type="text" id="gelarPegawai" placeholder="Gelar (contoh: dr., S.Kep)">
+      <button id="btnSimpanPegawai">Simpan</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db } from './app.js';
+    import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+    const modal = document.getElementById('modalPegawai');
+    const btnTambah = document.getElementById('btnTambahPegawai');
+    const btnSimpan = document.getElementById('btnSimpanPegawai');
+    const btnClose = document.getElementById('closeModal');
+    const namaInput = document.getElementById('namaPegawai');
+    const gelarInput = document.getElementById('gelarPegawai');
+    const tableBody = document.getElementById('pegawaiTableBody');
+    const modalTitle = document.getElementById('modalTitle');
+
+    let editId = null; // untuk cek mode edit
+
+    // 🟢 Buka modal Tambah
+    btnTambah.addEventListener('click', () => {
+      modal.style.display = 'flex';
+      modalTitle.textContent = 'Tambah Pegawai';
+      btnSimpan.textContent = 'Simpan';
+      editId = null;
+      namaInput.value = '';
+      gelarInput.value = '';
+    });
+
+    // 🔴 Tutup modal
+    btnClose.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    // 📝 Simpan atau Update ke Firebase
+    btnSimpan.addEventListener('click', () => {
+      const nama = namaInput.value.trim();
+      const gelar = gelarInput.value.trim();
+
+      if (!nama) {
+        alert('Nama tidak boleh kosong!');
+        return;
+      }
+
+      if (editId) {
+        // Mode Edit
+        const updateRef = ref(db, 'pegawai/' + editId);
+        update(updateRef, { nama, gelar })
+          .then(() => {
+            alert('✏️ Data berhasil diperbarui!');
+            modal.style.display = 'none';
+          })
+          .catch(err => alert('Gagal update: ' + err.message));
+      } else {
+        // Mode Tambah
+        const pegawaiRef = ref(db, 'pegawai');
+        const newPegawaiRef = push(pegawaiRef);
+        set(newPegawaiRef, { nama, gelar })
+          .then(() => {
+            alert('✅ Pegawai berhasil ditambahkan!');
+            modal.style.display = 'none';
+          })
+          .catch(err => alert('Gagal simpan: ' + err.message));
+      }
+    });
+
+    // 📡 Ambil data realtime dari Firebase
+    const dataRef = ref(db, 'pegawai');
+    onValue(dataRef, (snapshot) => {
+      tableBody.innerHTML = '';
+      let no = 1;
+      snapshot.forEach((child) => {
+        const data = child.val();
+        const id = child.key;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${no++}</td>
+          <td>${data.nama}</td>
+          <td>${data.gelar || '-'}</td>
+          <td>
+            <button class="action-btn edit-btn" data-id="${id}">✏️</button>
+            <button class="action-btn delete-btn" data-id="${id}">🗑️</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      // ✏️ Event edit
+      document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const data = snapshot.child(id).val();
+          editId = id;
+          namaInput.value = data.nama;
+          gelarInput.value = data.gelar || '';
+          modalTitle.textContent = 'Edit Pegawai';
+          btnSimpan.textContent = 'Update';
+          modal.style.display = 'flex';
+        });
+      });
+
+      // 🗑️ Event delete
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const yakin = confirm('Apakah yakin ingin menghapus data ini?');
+          if (yakin) {
+            const delRef = ref(db, 'pegawai/' + id);
+            remove(delRef)
+              .then(() => alert('🗑️ Data berhasil dihapus!'))
+              .catch(err => alert('Gagal hapus: ' + err.message));
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
