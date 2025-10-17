@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Aplikasi Jadwal</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header>Aplikasi Jadwal & Pengajuan Cuti</header>
+  <main>
+    <div class="left-panel">
+      <h1>Satu Akses Untuk Semua</h1>
+      <p>Portal internal untuk pengelolaan <b>jadwal & cuti pegawai</b>.</p>
+      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Login">
+    </div>
+
+    <div class="right-panel">
+      <div class="card">
+        <h3>Login</h3>
+        <input type="email" id="loginEmail" placeholder="Email"/>
+        <input type="password" id="loginPassword" placeholder="Password"/>
+        <button id="btnLogin">Masuk</button>
+        <div class="link">Belum punya akun? <a href="register.html">Daftar</a></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { loginUser } from "./app.js";
+
+    document.getElementById('btnLogin').onclick = async () => {
+      const email = loginEmail.value;
+      const password = loginPassword.value;
+      try {
+        await loginUser(email, password);
+        window.location.href = "dashboard.html";
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+  </script>
+</body>
+</html>
