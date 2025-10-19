@@ -53,7 +53,7 @@ btnSimpan.addEventListener('click', () => {
   }
 
   if (editId) {
-    update(ref(db, 'Pegawai/' + editId), { nama, gelar })
+    update(ref(db, 'pegawai/' + editId), { nama, gelar })
       .then(() => {
         alert('✏️ Data berhasil diperbarui!');
         modal.style.display = 'none';
@@ -63,10 +63,10 @@ btnSimpan.addEventListener('click', () => {
       })
       .catch(err => alert('Gagal update: ' + err.message));
   } else {
-    const newRef = push(ref(db, 'Pegawai'));
+    const newRef = push(ref(db, 'pegawai'));
     set(newRef, { nama, gelar })
       .then(() => {
-        alert('✅ Pegawai berhasil ditambahkan!');
+        alert('✅ pegawai berhasil ditambahkan!');
         modal.style.display = 'none';
         namaInput.value = '';
         gelarInput.value = '';
@@ -76,7 +76,7 @@ btnSimpan.addEventListener('click', () => {
 });
 
 // 🟨 Ambil Data Realtime
-const dataRef = ref(db, 'Pegawai'); // huruf "P" sesuai database
+const dataRef = ref(db, 'pegawai'); // huruf "P" sesuai database
 onValue(dataRef, (snapshot) => {
   semuaPegawai = [];
   snapshot.forEach(child => {
@@ -136,7 +136,7 @@ function renderTable(data) {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       if (confirm('Apakah yakin ingin menghapus data ini?')) {
-        remove(ref(db, 'Pegawai/' + id))
+        remove(ref(db, 'pegawai/' + id))
           .then(() => alert('🗑️ Data berhasil dihapus!'))
           .catch(err => alert('Gagal hapus: ' + err.message));
       }
