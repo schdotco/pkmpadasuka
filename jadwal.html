@@ -478,22 +478,25 @@ import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.1
 const pembinaSelect = document.getElementById('pembina');
 let PegawaiList = [];
 
-    // Ambil data Pegawai dari Firebase
+// 🔹 Ambil data Pegawai dari Firebase
 const PegawaiRef = ref(db, 'Pegawai');
 onValue(PegawaiRef, (snapshot) => {
-PegawaiList = [];
-pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
-snapshot.forEach(child => {
-const data = child.val();
-const namaLengkap = data.gelar ? `${data.nama} ${data.gelar} ` : data.nama;
-PegawaiList.push(namaLengkap);
-const opt = document.createElement('option');
-opt.value = namaLengkap;
-opt.textContent = namaLengkap;
-pembinaSelect.appendChild(opt);
+  PegawaiList = [];
+  pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
+  snapshot.forEach(child => {
+    const data = child.val();
+    const namaLengkap = data.gelar ? `${data.nama} ${data.gelar}` : data.nama;
+    PegawaiList.push(namaLengkap);
+    const opt = document.createElement('option');
+    opt.value = namaLengkap;
+    opt.textContent = namaLengkap;
+    pembinaSelect.appendChild(opt);
+  });
+
+  // Setelah list Pegawai siap → generate semua dropdown
+  generateDropdowns();
 });
 
-      // Setelah list Pegawai didapat → generate semua dropdown
 function generateDropdowns() {
   const config = {
     screeningCKG: 5, bpjs: 5, rekamMedis: 5, pusatInformasi: 1,
@@ -507,100 +510,98 @@ function generateDropdowns() {
 
   Object.entries(config).forEach(([id, jumlah]) => createDropdown(jumlah, id));
 
-// Aktifkan fitur searchable Choices.js setelah dropdown dibuat
-setTimeout(() => {
-  document.querySelectorAll('.dropdown-row select').forEach(sel => {
-    if (typeof Choices !== 'undefined') {
-      new Choices(sel, {
-        searchEnabled: true,
-        shouldSort: false,
-        itemSelectText: '',
-        searchPlaceholderValue: 'Cari nama...',
-      });
+  // Aktifkan fitur searchable Choices.js setelah dropdown dibuat
+  setTimeout(() => {
+    document.querySelectorAll('.dropdown-row select').forEach(sel => {
+      if (typeof Choices !== 'undefined') {
+        new Choices(sel, {
+          searchEnabled: true,
+          shouldSort: false,
+          itemSelectText: '',
+          searchPlaceholderValue: 'Cari nama...',
+        });
+      }
+    });
+  }, 800);
+}
+
+function createDropdown(jumlah, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+  for (let i = 0; i < jumlah; i++) {
+    const select = document.createElement("select");
+    const optDefault = document.createElement("option");
+    optDefault.value = "";
+    optDefault.textContent = `-- Pegawai ${i + 1} --`;
+    select.appendChild(optDefault);
+
+    PegawaiList.forEach(nama => {
+      const opt = document.createElement("option");
+      opt.value = nama;
+      opt.textContent = nama;
+      select.appendChild(opt);
+    });
+    container.appendChild(select);
+  }
+}
+
+// 🔹 Simpan Jadwal ke Firebase
+document.getElementById('btnSimpanJadwal').addEventListener('click', async () => {
+  const tanggal = document.getElementById('jadwalTanggal').value;
+  const dressCode = document.getElementById('dressCode').value;
+  const pembina = pembinaSelect.value;
+
+  if (!tanggal || !dressCode || !pembina) {
+    alert('Mohon lengkapi semua data utama!');
+    return;
+  }
+
+  // Ambil semua dropdown dan simpan ke objek kegiatan
+  const kegiatan = {};
+  document.querySelectorAll('.dropdown-group').forEach(group => {
+    const label = group.querySelector('label').textContent;
+    const selects = group.querySelectorAll('select');
+    const pegawaiList = Array.from(selects)
+      .map(sel => sel.value)
+      .filter(v => v !== "");
+    if (pegawaiList.length > 0) {
+      kegiatan[label] = pegawaiList;
     }
   });
-}, 500);
-}
-    
-function createDropdown(jumlah, containerId) {
-const container = document.getElementById(containerId);
-container.innerHTML = "";
-for (let i = 0; i < jumlah; i++) {
-const select = document.createElement("select");
-const optDefault = document.createElement("option");
-optDefault.value = "";
-optDefault.textContent = `-- Pegawai ${i+1} --`;
-select.appendChild(optDefault);
 
-PegawaiList.forEach(nama => {
-const opt = document.createElement("option");
-opt.value = nama;
-opt.textContent = nama;
-select.appendChild(opt);
-});
-container.appendChild(select);
-}
-}
+  const dataJadwal = {
+    tanggal,
+    dressCode,
+    pembina,
+    kegiatan,
+    dibuatPada: new Date().toISOString()
+  };
 
-    // Simpan Jadwal ke Firebase
-document.getElementById('btnSimpanJadwal').addEventListener('click', async () => {
-const tanggal = document.getElementById('jadwalTanggal').value;
-const dressCode = document.getElementById('dressCode').value;
-const pembina = pembinaSelect.value;
-const kegiatan = kegiatanSelect.value;
+  try {
+    const jadwalRef = ref(db, 'jadwal');
+    const newRef = push(jadwalRef);
+    await set(newRef, dataJadwal);
 
+    const ringkasan = encodeURIComponent(
+      `🗓️ *Jadwal Pegawai Puskesmas Padasuka*%0A` +
+      `📅 Tanggal: ${tanggal}%0A` +
+      `👔 Dress Code: ${dressCode}%0A` +
+      `🧑‍🏫 Pembina: ${pembina}%0A%0A` +
+      `📋 Total Kegiatan: ${Object.keys(kegiatan).length}%0A` +
+      `Lihat detail di aplikasi jadwal.`
+    );
+    const whatsappUrl = `https://wa.me/?text=${ringkasan}`;
+    alert('✅ Jadwal berhasil disimpan!');
 
-if (!tanggal || !dressCode || !pembina) {
-alert('Mohon lengkapi semua data utama!');
-return;
-}
-
-    //* Ambil semua dropdown dan simpan keobjek kegiatan
-    const kegiatan = {};
-    document.querySelectorAll('.dropdown-group').forEach(group =>{
-        const label = group.querySelector('label').textContent;
-        const selects = group.querySelectorAll('select');
-        const pegawaiList = Array.from(selects)
-            .map(sel => sel.value)
-            .filter(v => v !== "");
-        if (pegawaiList.length > 0) {
-            kegiatan[label] = pegawaiList;
-        }
-    });
-    
-const dataJadwal = {
-tanggal,
-dressCode,
-pembina,
-kegiatan,
-dibuatPada: new Date().toISOString()
-};
-
-const jadwalRef = ref(db, 'jadwal');
-const newRef = push(jadwalRef);
-
-  await set(newRef, dataJadwal)
-    .then(() => {
-      // Buat ringkasan untuk WhatsApp
-      const ringkasan = encodeURIComponent(
-        `🗓️ *Jadwal Pegawai Puskesmas Padasuka*%0A` +
-        `📅 Tanggal: ${tanggal}%0A` +
-        `👔 Dress Code: ${dressCode}%0A` +
-        `🧑‍🏫 Pembina: ${pembina}%0A%0A` +
-        `📋 Total Kegiatan: ${Object.keys(kegiatan).length}%0A` +
-        `Lihat detail di aplikasi jadwal.`
-      );
-
-      const whatsappUrl = `https://wa.me/?text=${ringkasan}`;
-      alert('✅ Jadwal berhasil disimpan!');
-      // Tampilkan tombol Share
-      const shareBtn = document.createElement('button');
-      shareBtn.textContent = '📤 Share ke WhatsApp';
-      shareBtn.className = 'btn-secondary';
-      shareBtn.onclick = () => window.open(whatsappUrl, '_blank');
-      document.querySelector('main').appendChild(shareBtn);
-    })
-    .catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
+    const shareBtn = document.createElement('button');
+    shareBtn.textContent = '📤 Share ke WhatsApp';
+    shareBtn.className = 'btn-secondary';
+    shareBtn.onclick = () => window.open(whatsappUrl, '_blank');
+    document.querySelector('main').appendChild(shareBtn);
+  } catch (err) {
+    alert('❌ Gagal menyimpan jadwal: ' + err.message);
+  }
 });
 </script>
 </body>
