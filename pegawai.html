@@ -1,11 +1,41 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <meta charset="UTF-8">
+  <title>Data Pegawai</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
-  <title>📋 Daftar Pegawai - UPTD Puskesmas Padasuka</title>
   <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f6fa; }
+    h2 { margin-bottom: 20px; }
+    button { padding: 8px 12px; background: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    button:hover { background: #45a049; }
+
+    table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #f0f0f0; }
+
+    .action-btn {
+      border: none; cursor: pointer; padding: 6px 8px; border-radius: 4px; margin-right: 5px;
+    }
+    .edit-btn { background: #2196F3; color: white; }
+    .delete-btn { background: #f44336; color: white; }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -50,24 +80,13 @@
     /* DASHBOARD */
     .dashboard {
       max-width: 1100px;
-    /* PAGE CONTAINER */
-    .container {
-      max-width: 900px;
       margin: 30px auto;
       padding: 0 15px;
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     .dashboard h2 {
-    .container h2 {
       font-size: 20px;
       color: #333;
       margin-bottom: 20px;
-      color: #1976d2;
-      margin-top: 0;
-      margin-bottom: 15px;
     }
 
     /* CARD GRID */
@@ -75,135 +94,61 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 20px;
-    /* TABLE */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    thead {
-      background: #1976d2;
-      color: #fff;
-    }
-    th, td {
-      text-align: left;
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-      font-size: 14px;
-    }
-    tr:hover {
-      background: #f9f9f9;
-    }
-    .action-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      margin: 0 4px;
-    }
-    .edit-btn {
-      color: #1976d2;
-    }
-    .delete-btn {
-      color: #d32f2f;
     }
 
     .card {
       background: #fff;
       border-radius: 8px;
+      width: 300px;
+      position: relative;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       overflow: hidden;
       transition: transform 0.2s ease;
-    /* BUTTON */
-    #btnTambahPegawai {
-      background: #1976d2;
-      color: #fff;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
     }
     .card:hover {
       transform: translateY(-4px);
-    #btnTambahPegawai:hover {
-      background: #125ca1;
     }
     .card img {
-
-    /* MODAL */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 10;
-      left: 0;
-      top: 0;
       width: 100%;
       height: 120px;
       object-fit: cover;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.4);
-      justify-content: center;
-      align-items: center;
     }
     .card-content {
       padding: 15px;
-    .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
-      position: relative;
     }
     .card h3 {
       font-size: 16px;
-    .modal-content h3 {
-      margin-top: 0;
       color: #1976d2;
       margin: 0 0 8px 0;
-      font-size: 18px;
     }
+    .modal-content h3 { margin-top: 0; }
+    .modal-content input {
+      width: 100%; padding: 8px; margin: 8px 0;
+      border: 1px solid #ccc; border-radius: 4px;
     .card p {
       font-size: 13px;
       color: #555;
       margin: 0;
-    .modal-content input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
     }
+    .close {
+      position: absolute;
+      right: 15px; top: 10px;
+      cursor: pointer; font-size: 18px; font-weight: bold;
     .card button {
-    .modal-content button {
-      width: 100%;
       background: #1976d2;
       color: #fff;
       border: none;
       padding: 10px;
       font-size: 13px;
-      font-size: 14px;
-      border-radius: 4px;
       cursor: pointer;
       width: 100%;
       margin-top: auto;
     }
     .card button:hover {
-    .modal-content button:hover {
       background: #125ca1;
-    }
-    .close {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      font-size: 20px;
-      cursor: pointer;
-      color: #555;
     }
   </style>
 </head>
@@ -219,16 +164,11 @@
       <a href="#">Kehadiran</a>
     </div>
      <button onclick="logout()">Logout</button>
-    <button onclick="logout()">Logout</button>
   </div>
 <body>
 
   <h2>📋 Daftar Pegawai</h2>
   <button id="btnTambahPegawai">+ Tambah Pegawai</button>
-  <!-- Content -->
-  <div class="container">
-    <h2>📋 Daftar Pegawai</h2>
-    <button id="btnTambahPegawai">+ Tambah Pegawai</button>
 
   <table>
     <thead>
@@ -243,23 +183,8 @@
       <!-- Data dari Firebase akan muncul di sini -->
     </tbody>
   </table>
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Nama Lengkap</th>
-          <th>Gelar</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="pegawaiTableBody">
-        <!-- Data dari Firebase muncul di sini -->
-      </tbody>
-    </table>
-  </div>
 
   <!-- Modal Form -->
-  <!-- Modal Tambah/Edit Pegawai -->
   <div id="modalPegawai" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
@@ -270,8 +195,7 @@
     </div>
   </div>
 
-  <!-- Script Firebase -->
- <script type="module">
+  <script type="module">
   import { db } from './app.js';
   import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
@@ -422,6 +346,6 @@
       })
       .catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
   });
- </script>
+</script>
 </body>
 </html>
