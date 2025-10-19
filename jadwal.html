@@ -494,52 +494,18 @@ pembinaSelect.appendChild(opt);
 });
 
       // Setelah list Pegawai didapat → generate semua dropdown
-generateDropdowns();
-});
-
 function generateDropdowns() {
-  createDropdown(5, "screeningCKG");
-  createDropdown(5, "bpjs");
-  createDropdown(5, "rekamMedis");
-  createDropdown(1, "pusatInformasi");
-  createDropdown(3, "kasir");
-  createDropdown(3, "kepegawaian");
-  createDropdown(3, "mutu");
-  createDropdown(3, "aset");
-  createDropdown(3, "bok");
-  createDropdown(3, "blud");
-  createDropdown(3, "satpam");
-  createDropdown(3, "supir");
-  createDropdown(3, "cs");
-  createDropdown(3, "koki");
-  createDropdown(3, "kia");
-  createDropdown(3, "mtbs");
-  createDropdown(3, "poned");
-  createDropdown(3, "bumil");
-  createDropdown(3, "usg");
-  createDropdown(3, "imunisasi");
-  createDropdown(3, "asik");
-  createDropdown(3, "penapisan");
-  createDropdown(3, "umum");
-  createDropdown(3, "lansia");
-  createDropdown(3, "kb");
-  createDropdown(3, "tb");
-  createDropdown(3, "surveilans");
-  createDropdown(2, "kesling");
-  createDropdown(2, "gigi1");
-  createDropdown(2, "gigi2");
-  createDropdown(5, "nc");
-  createDropdown(3, "farmasi");
-  createDropdown(3, "lab");
-  createDropdown(3, "konseling");
-  createDropdown(3, "igd");
-  createDropdown(3, "psikolog");
-  createDropdown(3, "ckg");
-  createDropdown(10, "posyandu");
-  createDropdown(30, "rapat");
-  createDropdown(30, "sakit");
-  createDropdown(30, "cuti");
-}
+  const config = {
+    screeningCKG: 5, bpjs: 5, rekamMedis: 5, pusatInformasi: 1,
+    kasir: 3, kepegawaian: 3, mutu: 3, aset: 3, bok: 3, blud: 3,
+    satpam: 3, supir: 3, cs: 3, koki: 3, kia: 3, mtbs: 3, poned: 3,
+    bumil: 3, usg: 3, imunisasi: 3, asik: 3, penapisan: 3, umum: 3,
+    lansia: 3, kb: 3, tb: 3, surveilans: 3, kesling: 2, gigi1: 2, gigi2: 2,
+    nc: 5, farmasi: 3, lab: 3, konseling: 3, igd: 3, psikolog: 3, ckg: 3,
+    posyandu: 10, rapat: 30, sakit: 30, cuti: 30
+  };
+
+  Object.entries(config).forEach(([id, jumlah]) => createDropdown(jumlah, id));
 
 // Aktifkan fitur searchable Choices.js setelah dropdown dibuat
 setTimeout(() => {
