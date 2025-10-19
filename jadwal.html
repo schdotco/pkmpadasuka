@@ -93,34 +93,21 @@ background: #fafafa;
       box-sizing: border-box;
     }
 
-/* Susunan dropdown agar vertikal (1 kolom rapi ke bawah) */
-.dropdown-row {
-  display: flex;
-  flex-direction: column; /* urut ke bawah */
-  gap: 8px;               /* jarak antar dropdown */
-  max-width: 250px;       /* opsional: batasi lebar total */
-}
+    /* Batasi ukuran dropdown agar tidak terlalu panjang */
+    .dropdown-row select {
+      width: 220px;
+      margin: 4px;
+      display: inline-block;
+      vertical-align: top;
+    }
 
-.dropdown-row select {
-  width: 100%;            /* penuh sesuai lebar container */
-  height: 38px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 8px 10px;
-  background-color: #fff;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.dropdown-row select:focus {
-  border-color: #1976d2;
-  box-shadow: 0 0 4px rgba(25, 118, 210, 0.4);
+    .dropdown-group {
+      margin-bottom: 15px;
 }
 
 .form-grid {
 display: grid;
-grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 gap: 20px;
 }
 
@@ -202,6 +189,7 @@ background: #333;
 <div class="section">
 <h2>I. Kegiatan Dalam Gedung</h2>
        <h3>Kluster 1</h3>     
+      <h3>Kluster 1</h3>     
 <div class="dropdown-group">
 <label>Screening CKG</label>
 <div class="dropdown-row" id="screeningCKG"></div>
@@ -441,6 +429,7 @@ import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.1
 const pembinaSelect = document.getElementById('pembina');
 let pegawaiList = [];
 
+    // Ambil data pegawai dari Firebase (pegawai.html)
     // Ambil data pegawai dari Firebase
 const pegawaiRef = ref(db, 'pegawai');
 onValue(pegawaiRef, (snapshot) => {
@@ -526,6 +515,7 @@ container.appendChild(select);
 }
 
     // Simpan Jadwal ke Firebase
+    // Simpan Jadwal
 document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
 const tanggal = document.getElementById('jadwalTanggal').value;
 const dressCode = document.getElementById('dressCode').value;
