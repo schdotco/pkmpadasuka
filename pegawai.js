@@ -7,7 +7,7 @@ const btnSimpan = document.getElementById('btnSimpanPegawai');
 const btnClose = document.getElementById('closeModal');
 const namaInput = document.getElementById('namaPegawai');
 const gelarInput = document.getElementById('gelarPegawai');
-const tableBody = document.getElementById('pegawaiTableBody');
+const tableBody = document.getElementById('PegawaiTableBody');
 const modalTitle = document.getElementById('modalTitle');
 const searchInput = document.getElementById('searchInput');
 
@@ -53,7 +53,7 @@ btnSimpan.addEventListener('click', () => {
   }
 
   if (editId) {
-    update(ref(db, 'pegawai/' + editId), { nama, gelar })
+    update(ref(db, 'Pegawai/' + editId), { nama, gelar })
       .then(() => {
         alert('✏️ Data berhasil diperbarui!');
         modal.style.display = 'none';
@@ -63,10 +63,10 @@ btnSimpan.addEventListener('click', () => {
       })
       .catch(err => alert('Gagal update: ' + err.message));
   } else {
-    const newRef = push(ref(db, 'pegawai'));
+    const newRef = push(ref(db, 'Pegawai'));
     set(newRef, { nama, gelar })
       .then(() => {
-        alert('✅ pegawai berhasil ditambahkan!');
+        alert('✅ Pegawai berhasil ditambahkan!');
         modal.style.display = 'none';
         namaInput.value = '';
         gelarInput.value = '';
@@ -76,7 +76,7 @@ btnSimpan.addEventListener('click', () => {
 });
 
 // 🟨 Ambil Data Realtime
-const dataRef = ref(db, 'pegawai'); // huruf "P" sesuai database
+const dataRef = ref(db, 'Pegawai'); // huruf "P" sesuai database
 onValue(dataRef, (snapshot) => {
   semuaPegawai = [];
   snapshot.forEach(child => {
@@ -95,7 +95,7 @@ function renderTable(data) {
     const emptyRow = document.createElement('tr');
     emptyRow.innerHTML = `
       <td colspan="4" style="text-align:center; padding:15px; color:#666;">
-        Tidak ada data pegawai
+        Tidak ada data Pegawai
       </td>
     `;
     tableBody.appendChild(emptyRow);
@@ -136,7 +136,7 @@ function renderTable(data) {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       if (confirm('Apakah yakin ingin menghapus data ini?')) {
-        remove(ref(db, 'pegawai/' + id))
+        remove(ref(db, 'Pegawai/' + id))
           .then(() => alert('🗑️ Data berhasil dihapus!'))
           .catch(err => alert('Gagal hapus: ' + err.message));
       }
