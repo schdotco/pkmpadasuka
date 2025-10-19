@@ -20,10 +20,7 @@
       align-items: center;
       padding: 12px 20px;
     }
-    .navbar h1 {
-      font-size: 18px;
-      margin: 0;
-    }
+    .navbar h1 { font-size: 18px; margin: 0; }
     .navbar .menu {
       display: flex;
       gap: 15px;
@@ -53,10 +50,23 @@
       font-size: 20px;
     }
 
-    /* TOMBOL TAMBAH */
-    #btnTambahPegawai {
+    /* SEARCH BAR */
+    .search-container {
+      max-width: 1100px;
       margin: 0 auto 20px;
-      display: block;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 15px;
+      gap: 10px;
+    }
+    #searchInput {
+      flex: 1;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #btnTambahPegawai {
       background: #1976d2;
       color: #fff;
       border: none;
@@ -64,10 +74,9 @@
       font-size: 14px;
       cursor: pointer;
       border-radius: 4px;
+      white-space: nowrap;
     }
-    #btnTambahPegawai:hover {
-      background: #125ca1;
-    }
+    #btnTambahPegawai:hover { background: #125ca1; }
 
     /* TABEL */
     table {
@@ -84,9 +93,7 @@
       text-align: left;
       font-size: 14px;
     }
-    th {
-      background: #f0f0f0;
-    }
+    th { background: #f0f0f0; }
     .action-btn {
       background: none;
       border: none;
@@ -112,10 +119,9 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      position: relative;
     }
-    .modal-content h3 {
-      margin-top: 0;
-    }
+    .modal-content h3 { margin-top: 0; }
     .modal-content input {
       padding: 8px;
       font-size: 14px;
@@ -131,9 +137,7 @@
       cursor: pointer;
       border-radius: 4px;
     }
-    .modal-content button:hover {
-      background: #125ca1;
-    }
+    .modal-content button:hover { background: #125ca1; }
     .close {
       position: absolute;
       top: 10px;
@@ -158,8 +162,14 @@
   </div>
 
   <h2>📋 Daftar Pegawai</h2>
-  <button id="btnTambahPegawai">+ Tambah Pegawai</button>
 
+  <!-- Search + Tambah -->
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="🔍 Cari nama atau gelar...">
+    <button id="btnTambahPegawai">+ Tambah Pegawai</button>
+  </div>
+
+  <!-- Tabel Pegawai -->
   <table>
     <thead>
       <tr>
@@ -169,9 +179,7 @@
         <th>Aksi</th>
       </tr>
     </thead>
-    <tbody id="pegawaiTableBody">
-      <!-- Data dari Firebase akan muncul di sini -->
-    </tbody>
+    <tbody id="pegawaiTableBody"></tbody>
   </table>
 
   <!-- Modal Form -->
@@ -185,7 +193,7 @@
     </div>
   </div>
 
-  <!-- Firebase & Script -->
+  <!-- Script Firebase -->
   <script type="module">
     import { db } from './app.js';
     import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
@@ -198,8 +206,10 @@
     const gelarInput = document.getElementById('gelarPegawai');
     const tableBody = document.getElementById('pegawaiTableBody');
     const modalTitle = document.getElementById('modalTitle');
+    const searchInput = document.getElementById('searchInput');
 
     let editId = null;
+    let semuaPegawai = []; // cache semua data untuk pencarian
 
     // ===== Modal =====
     btnTambah.addEventListener('click', () => {
@@ -229,9 +239,7 @@
       }
 
       if (editId) {
-        // Update
-        const updateRef = ref(db, 'pegawai/' + editId);
-        update(updateRef, { nama, gelar })
+        update(ref(db, 'pegawai/' + editId), { nama, gelar })
           .then(() => {
             alert('✏️ Data berhasil diperbarui!');
             modal.style.display = 'none';
@@ -241,9 +249,7 @@
           })
           .catch(err => alert('Gagal update: ' + err.message));
       } else {
-        // Tambah
-        const pegawaiRef = ref(db, 'pegawai');
-        const newRef = push(pegawaiRef);
+        const newRef = push(ref(db, 'pegawai'));
         set(newRef, { nama, gelar })
           .then(() => {
             alert('✅ Pegawai berhasil ditambahkan!');
@@ -255,33 +261,42 @@
       }
     });
 
-    // ===== List Data Realtime =====
+    // ===== Realtime Table =====
     const dataRef = ref(db, 'pegawai');
     onValue(dataRef, (snapshot) => {
+      semuaPegawai = [];
+      snapshot.forEach(child => {
+        semuaPegawai.push({
+          id: child.key,
+          ...child.val()
+        });
+      });
+      renderTable(semuaPegawai);
+    });
+
+    // ===== Render Table =====
+    function renderTable(data) {
       tableBody.innerHTML = '';
       let no = 1;
-      snapshot.forEach(child => {
-        const data = child.val();
-        const id = child.key;
-
+      data.forEach(item => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${no++}</td>
-          <td>${data.nama}</td>
-          <td>${data.gelar || '-'}</td>
+          <td>${item.nama}</td>
+          <td>${item.gelar || '-'}</td>
           <td>
-            <button class="action-btn edit-btn" data-id="${id}">✏️</button>
-            <button class="action-btn delete-btn" data-id="${id}">🗑️</button>
+            <button class="action-btn edit-btn" data-id="${item.id}">✏️</button>
+            <button class="action-btn delete-btn" data-id="${item.id}">🗑️</button>
           </td>
         `;
         tableBody.appendChild(tr);
       });
 
-      // Edit Event
+      // Event edit
       document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-id');
-          const data = snapshot.child(id).val();
+          const data = semuaPegawai.find(p => p.id === id);
           editId = id;
           namaInput.value = data.nama;
           gelarInput.value = data.gelar || '';
@@ -291,7 +306,7 @@
         });
       });
 
-      // Delete Event
+      // Event delete
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-id');
@@ -302,6 +317,16 @@
           }
         });
       });
+    }
+
+    // ===== Pencarian Realtime =====
+    searchInput.addEventListener('input', () => {
+      const keyword = searchInput.value.toLowerCase();
+      const filtered = semuaPegawai.filter(item =>
+        item.nama.toLowerCase().includes(keyword) ||
+        (item.gelar && item.gelar.toLowerCase().includes(keyword))
+      );
+      renderTable(filtered);
     });
   </script>
 </body>
