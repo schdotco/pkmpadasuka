@@ -1,6 +1,8 @@
-import { db } from './app.js';
-import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+// pegawai.js
+import { db, logoutUser } from './app.js';
+import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
+// Element
 const modal = document.getElementById('modalPegawai');
 const btnTambah = document.getElementById('btnTambahPegawai');
 const btnSimpan = document.getElementById('btnSimpanPegawai');
@@ -14,7 +16,7 @@ const searchInput = document.getElementById('searchInput');
 let editId = null;
 let semuaPegawai = [];
 
-// ===== Modal =====
+// ===== Modal Open/Close =====
 btnTambah.addEventListener('click', () => {
   modal.style.display = 'flex';
   modalTitle.textContent = 'Tambah Pegawai';
@@ -31,7 +33,7 @@ btnClose.addEventListener('click', () => {
   editId = null;
 });
 
-// ===== Simpan / Update =====
+// ===== Simpan / Update Data =====
 btnSimpan.addEventListener('click', () => {
   const nama = namaInput.value.trim();
   const gelar = gelarInput.value.trim();
@@ -64,7 +66,7 @@ btnSimpan.addEventListener('click', () => {
   }
 });
 
-// ===== Realtime Table =====
+// ===== Load Data Realtime dari Firebase =====
 const dataRef = ref(db, 'pegawai');
 onValue(dataRef, (snapshot) => {
   semuaPegawai = [];
@@ -95,7 +97,7 @@ function renderTable(data) {
     tableBody.appendChild(tr);
   });
 
-  // Edit
+  // Tombol edit
   document.querySelectorAll('.edit-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
@@ -109,7 +111,7 @@ function renderTable(data) {
     });
   });
 
-  // Hapus
+  // Tombol hapus
   document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
@@ -122,7 +124,7 @@ function renderTable(data) {
   });
 }
 
-// ===== Pencarian Realtime =====
+// ===== Pencarian =====
 searchInput.addEventListener('input', () => {
   const keyword = searchInput.value.toLowerCase();
   const filtered = semuaPegawai.filter(item =>
@@ -131,3 +133,9 @@ searchInput.addEventListener('input', () => {
   );
   renderTable(filtered);
 });
+
+// ===== Logout =====
+window.logout = async function () {
+  await logoutUser();
+  window.location.href = 'index.html';
+};
