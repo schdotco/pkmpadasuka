@@ -486,7 +486,7 @@ PegawaiList = [];
 pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
 snapshot.forEach(child => {
 const data = child.val();
-const namaLengkap = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
+const namaLengkap = data.gelar ? `${data.nama} ${data.gelar} ` : data.nama;
 PegawaiList.push(namaLengkap);
 const opt = document.createElement('option');
 opt.value = namaLengkap;
