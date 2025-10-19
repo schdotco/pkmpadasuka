@@ -1,3 +1,4 @@
+// js/app.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { 
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut 
@@ -36,13 +37,4 @@ export async function registerUser(name, email, password, isAdmin) {
 // Logout
 export async function logoutUser() {
   await signOut(auth);
-}
-
-btnClose.addEventListener('click', closeModal);
-
-function closeModal() {
-  modal.style.display = 'none';
-  namaInput.value = '';
-  gelarInput.value = '';
-  editId = null;
 }
