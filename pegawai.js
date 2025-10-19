@@ -1,28 +1,29 @@
-// pegawai.js
 import { db } from './app.js';
-import { ref, set, push, update, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-// === Ambil elemen dari halaman ===
-const btnTambah = document.getElementById('btnTambahPegawai');
 const modal = document.getElementById('modalPegawai');
-const btnClose = document.getElementById('closeModal');
+const btnTambah = document.getElementById('btnTambahPegawai');
 const btnSimpan = document.getElementById('btnSimpanPegawai');
+const btnClose = document.getElementById('closeModal');
 const namaInput = document.getElementById('namaPegawai');
 const gelarInput = document.getElementById('gelarPegawai');
-const tabelBody = document.getElementById('tabelPegawaiBody');
+const tableBody = document.getElementById('pegawaiTableBody');
+const modalTitle = document.getElementById('modalTitle');
+const searchInput = document.getElementById('searchInput');
 
 let editId = null;
+let semuaPegawai = [];
 
-// === Fungsi Buka Modal Tambah ===
+// ===== Modal =====
 btnTambah.addEventListener('click', () => {
   modal.style.display = 'flex';
+  modalTitle.textContent = 'Tambah Pegawai';
   btnSimpan.textContent = 'Simpan';
+  editId = null;
   namaInput.value = '';
   gelarInput.value = '';
-  editId = null;
 });
 
-// === Fungsi Tutup Modal ===
 btnClose.addEventListener('click', () => {
   modal.style.display = 'none';
   namaInput.value = '';
@@ -30,75 +31,103 @@ btnClose.addEventListener('click', () => {
   editId = null;
 });
 
-// === Simpan Data ke Firebase ===
-btnSimpan.addEventListener('click', async () => {
+// ===== Simpan / Update =====
+btnSimpan.addEventListener('click', () => {
   const nama = namaInput.value.trim();
   const gelar = gelarInput.value.trim();
 
-  if (nama === '') {
+  if (!nama) {
     alert('Nama tidak boleh kosong!');
     return;
   }
 
-  try {
-    if (editId) {
-      // update data yang sudah ada
-      await update(ref(db, `pegawai/${editId}`), { nama, gelar });
-    } else {
-      // tambah data baru
-      const newRef = push(ref(db, 'pegawai'));
-      await set(newRef, { nama, gelar });
-    }
-
-    modal.style.display = 'none';
-    namaInput.value = '';
-    gelarInput.value = '';
-    editId = null;
-  } catch (error) {
-    console.error('Gagal simpan data:', error);
-    alert('Terjadi kesalahan saat menyimpan data.');
+  if (editId) {
+    update(ref(db, 'pegawai/' + editId), { nama, gelar })
+      .then(() => {
+        alert('✏️ Data berhasil diperbarui!');
+        modal.style.display = 'none';
+        namaInput.value = '';
+        gelarInput.value = '';
+        editId = null;
+      })
+      .catch(err => alert('Gagal update: ' + err.message));
+  } else {
+    const newRef = push(ref(db, 'pegawai'));
+    set(newRef, { nama, gelar })
+      .then(() => {
+        alert('✅ Pegawai berhasil ditambahkan!');
+        modal.style.display = 'none';
+        namaInput.value = '';
+        gelarInput.value = '';
+      })
+      .catch(err => alert('Gagal simpan: ' + err.message));
   }
 });
 
-// === Load data realtime dari Firebase ===
-onValue(ref(db, 'pegawai'), (snapshot) => {
-  tabelBody.innerHTML = ''; // bersihkan tabel sebelum render ulang
-  const data = snapshot.val();
-  if (data) {
-    Object.keys(data).forEach((id) => {
-      const { nama, gelar } = data[id];
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${nama}</td>
-        <td>${gelar || ''}</td>
-        <td>
-          <button class="editBtn" data-id="${id}">Edit</button>
-        </td>
-      `;
-      tabelBody.appendChild(tr);
+// ===== Realtime Table =====
+const dataRef = ref(db, 'pegawai');
+onValue(dataRef, (snapshot) => {
+  semuaPegawai = [];
+  snapshot.forEach(child => {
+    semuaPegawai.push({
+      id: child.key,
+      ...child.val()
     });
-
-    // Tambahkan event listener edit setelah render
-    document.querySelectorAll('.editBtn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const id = e.target.getAttribute('data-id');
-        editData(id);
-      });
-    });
-  }
+  });
+  renderTable(semuaPegawai);
 });
 
-// === Fungsi Edit Data ===
-function editData(id) {
-  const itemRef = ref(db, `pegawai/${id}`);
-  onValue(itemRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      modal.style.display = 'flex';
+// ===== Render Table =====
+function renderTable(data) {
+  tableBody.innerHTML = '';
+  let no = 1;
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${no++}</td>
+      <td>${item.nama}</td>
+      <td>${item.gelar || '-'}</td>
+      <td>
+        <button class="action-btn edit-btn" data-id="${item.id}">✏️</button>
+        <button class="action-btn delete-btn" data-id="${item.id}">🗑️</button>
+      </td>
+    `;
+    tableBody.appendChild(tr);
+  });
+
+  // Edit
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      const data = semuaPegawai.find(p => p.id === id);
+      editId = id;
       namaInput.value = data.nama;
       gelarInput.value = data.gelar || '';
+      modalTitle.textContent = 'Edit Pegawai';
       btnSimpan.textContent = 'Update';
-      editId = id;
-    }
-  }, { onlyOnce: true });
+      modal.style.display = 'flex';
+    });
+  });
+
+  // Hapus
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      if (confirm('Apakah yakin ingin menghapus data ini?')) {
+        remove(ref(db, 'pegawai/' + id))
+          .then(() => alert('🗑️ Data berhasil dihapus!'))
+          .catch(err => alert('Gagal hapus: ' + err.message));
+      }
+    });
+  });
 }
+
+// ===== Pencarian Realtime =====
+searchInput.addEventListener('input', () => {
+  const keyword = searchInput.value.toLowerCase();
+  const filtered = semuaPegawai.filter(item =>
+    item.nama.toLowerCase().includes(keyword) ||
+    (item.gelar && item.gelar.toLowerCase().includes(keyword))
+  );
+  renderTable(filtered);
+});
