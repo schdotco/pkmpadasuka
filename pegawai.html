@@ -47,98 +47,99 @@
     }
 
     h2 {
-      text-align: center;
-      margin-top: 20px;
+      max-width: 1100px;
+      margin: 30px auto 10px;
+      padding: 0 15px;
+      font-size: 20px;
+    }
+
+    /* TOMBOL TAMBAH */
+    #btnTambahPegawai {
+      margin: 0 auto 20px;
+      display: block;
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    #btnTambahPegawai:hover {
+      background: #125ca1;
     }
 
     /* TABEL */
     table {
       width: 90%;
-      max-width: 800px;
-      margin: 20px auto;
+      max-width: 1100px;
+      margin: 0 auto;
       border-collapse: collapse;
       background: #fff;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     th, td {
-      border: 1px solid #ddd;
       padding: 10px;
-      text-align: center;
+      border: 1px solid #ddd;
+      text-align: left;
+      font-size: 14px;
     }
     th {
-      background: #1976d2;
-      color: #fff;
+      background: #f0f0f0;
     }
-
-    button#btnTambahPegawai {
-      display: block;
-      margin: 15px auto;
-      background: #1976d2;
-      color: #fff;
+    .action-btn {
+      background: none;
       border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
       cursor: pointer;
+      font-size: 16px;
     }
 
     /* MODAL */
     .modal {
-      display: none; /* default: hidden */
+      display: none;
       position: fixed;
-      z-index: 999;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.5);
+      z-index: 999;
       justify-content: center;
       align-items: center;
     }
-
     .modal-content {
       background: #fff;
       padding: 20px;
       border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
-      position: relative;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-
     .modal-content h3 {
       margin-top: 0;
     }
-
     .modal-content input {
-      display: block;
-      width: 100%;
-      margin: 10px 0;
       padding: 8px;
       font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
-
     .modal-content button {
       background: #1976d2;
       color: #fff;
       border: none;
-      padding: 10px;
-      width: 100%;
+      padding: 8px;
+      font-size: 14px;
       cursor: pointer;
-      border-radius: 5px;
+      border-radius: 4px;
     }
-
+    .modal-content button:hover {
+      background: #125ca1;
+    }
     .close {
       position: absolute;
       top: 10px;
       right: 15px;
       font-size: 22px;
       cursor: pointer;
-    }
-
-    .action-btn {
-      cursor: pointer;
-      background: none;
-      border: none;
-      font-size: 16px;
     }
   </style>
 </head>
@@ -148,9 +149,9 @@
   <div class="navbar">
     <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
     <div class="menu">
-      <a href="#">Dashboard</a>
-      <a href="#">Profil</a>
-      <a href="#">Pegawai</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profil.html">Profil</a>
+      <a href="pegawai.html">Pegawai</a>
       <a href="#">Kehadiran</a>
     </div>
     <button onclick="logout()">Logout</button>
@@ -184,7 +185,7 @@
     </div>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase & Script -->
   <script type="module">
     import { db } from './app.js';
     import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
@@ -200,7 +201,7 @@
 
     let editId = null;
 
-    // === Modal ===
+    // ===== Modal =====
     btnTambah.addEventListener('click', () => {
       modal.style.display = 'flex';
       modalTitle.textContent = 'Tambah Pegawai';
@@ -212,9 +213,12 @@
 
     btnClose.addEventListener('click', () => {
       modal.style.display = 'none';
+      namaInput.value = '';
+      gelarInput.value = '';
+      editId = null;
     });
 
-    // === Simpan / Update ===
+    // ===== Simpan / Update =====
     btnSimpan.addEventListener('click', () => {
       const nama = namaInput.value.trim();
       const gelar = gelarInput.value.trim();
@@ -225,26 +229,33 @@
       }
 
       if (editId) {
+        // Update
         const updateRef = ref(db, 'pegawai/' + editId);
         update(updateRef, { nama, gelar })
           .then(() => {
             alert('✏️ Data berhasil diperbarui!');
             modal.style.display = 'none';
+            namaInput.value = '';
+            gelarInput.value = '';
+            editId = null;
           })
           .catch(err => alert('Gagal update: ' + err.message));
       } else {
+        // Tambah
         const pegawaiRef = ref(db, 'pegawai');
         const newRef = push(pegawaiRef);
         set(newRef, { nama, gelar })
           .then(() => {
             alert('✅ Pegawai berhasil ditambahkan!');
             modal.style.display = 'none';
+            namaInput.value = '';
+            gelarInput.value = '';
           })
           .catch(err => alert('Gagal simpan: ' + err.message));
       }
     });
 
-    // === Realtime Tabel ===
+    // ===== List Data Realtime =====
     const dataRef = ref(db, 'pegawai');
     onValue(dataRef, (snapshot) => {
       tableBody.innerHTML = '';
@@ -266,7 +277,7 @@
         tableBody.appendChild(tr);
       });
 
-      // Edit
+      // Edit Event
       document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-id');
@@ -280,11 +291,11 @@
         });
       });
 
-      // Delete
+      // Delete Event
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-id');
-          if (confirm('Yakin ingin menghapus data ini?')) {
+          if (confirm('Apakah yakin ingin menghapus data ini?')) {
             remove(ref(db, 'pegawai/' + id))
               .then(() => alert('🗑️ Data berhasil dihapus!'))
               .catch(err => alert('Gagal hapus: ' + err.message));
