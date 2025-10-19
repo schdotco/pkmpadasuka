@@ -1,4 +1,7 @@
+/* === style.css (versi diperbaiki agar Choices.js berfungsi) === */
+
 * { box-sizing: border-box; }
+
 body { 
   margin: 0; 
   font-family: "Segoe UI", Arial, sans-serif; 
@@ -6,6 +9,7 @@ body {
   color: #333; 
 }
 
+/* ==== HEADER ==== */
 header { 
   background: #1976d2; 
   color: white; 
@@ -15,6 +19,7 @@ header {
   font-weight: bold;
 }
 
+/* ==== LAYOUT ==== */
 main {
   display: flex;
   flex-wrap: wrap;
@@ -82,7 +87,6 @@ button {
   cursor: pointer;
   transition: background 0.2s;
 }
-
 button:hover { background: #125aa0; }
 
 .link {
@@ -106,6 +110,7 @@ button:hover { background: #125aa0; }
   .left-panel h1 { font-size: 1.4rem; }
 }
 
+/* ==== PROFIL ==== */
 #profile-section {
   max-width: 500px;
   margin: 50px auto;
@@ -135,13 +140,13 @@ button:hover { background: #125aa0; }
 }
 
 .profile-image img {
-  width: 90px;              /* Lebar pas foto */
-  height: 120px;            /* Tinggi pas foto 3x4 */
-  object-fit: cover;        /* Agar foto terpotong rapi */
-  border-radius: 6px;       /* Sudut sedikit melengkung */
+  width: 90px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
   border: 2px solid #007bff;
   margin-bottom: 10px;
-  background: #f0f0f0;      /* Background netral saat belum ada foto */
+  background: #f0f0f0;
 }
 
 .profile-form {
@@ -167,20 +172,47 @@ button:hover { background: #125aa0; }
   border-radius: 6px;
   cursor: pointer;
 }
-
 .profile-form button:hover {
   background-color: #0056b3;
 }
 
-/* file: style.css */
-select {
+/* ==== STYLE UNTUK HALAMAN JADWAL ==== */
+.dropdown-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Gaya select hanya untuk dropdown manual, bukan untuk Choices.js */
+.dropdown-row select, 
+.form-grid select {
   width: 250px;
   height: 40px;
   font-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 35px 8px 10px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
+                    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(1em + 2px), calc(100% - 13px) calc(1em + 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.dropdown-row select:focus,
+.form-grid select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 4px rgba(25, 118, 210, 0.4);
 }
 
-
-/* === FIX untuk Choices.js tidak muncul === */
+/* ==== FIX AGAR Choices.js TAMPIL ==== */
 .choices {
   width: 250px !important;
   display: inline-block !important;
@@ -191,17 +223,21 @@ select {
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 14px;
+  background-color: #fff;
 }
 
 .choices__list--dropdown {
-  z-index: 9999; /* agar dropdown muncul di atas elemen lain */
+  z-index: 9999; /* tampil di atas elemen lain */
 }
 
 .choices[data-type*=select-one] select {
-  display: none !important; /* sembunyikan select asli */
+  display: none !important;
 }
 
-/* Hindari override style.js */
+.choices__input {
+  font-size: 14px;
+}
+
 select {
-  background-image: none !important;
+  background-image: none !important; /* cegah tumpang tindih icon */
 }
