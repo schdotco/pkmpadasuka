@@ -5,6 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>🗓️ Setting Jadwal Pegawai - Puskesmas Padasuka</title>
 <style>
+    /* STYLE untuk dropdown modern */
+.dropdown-row select {
+  width: 200px;
+  height: 38px;
+  font-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 35px 8px 10px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
+                    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(1em + 2px), 
+                      calc(100% - 13px) calc(1em + 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
  
 .dropdown-row select:focus {
   outline: none;
@@ -102,39 +126,24 @@ background: #fafafa;
 /* Susunan dropdown dari kiri ke kanan */
 .dropdown-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap; /* agar turun ke baris berikutnya jika terlalu panjang */
   gap: 8px;
-  margin-bottom: 8px;
 }
 
-/* STYLE untuk dropdown modern */
 .dropdown-row select {
-  width: 200px !important;
-  height: 38px;
-  font-size: 14px;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 8px 35px 8px 10px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  cursor: pointer;
-  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
-                    linear-gradient(135deg, #555 50%, transparent 50%);
-  background-position: calc(100% - 18px) calc(1em + 2px), 
-                      calc(100% - 13px) calc(1em + 2px);
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  background-origin: content-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 200px;      /* lebar tiap dropdown */
+  display: inline-block;
+  vertical-align: top;
 }
 
-.dropdown-row select:focus {
-  outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 4px rgba(25, 118, 210, 0.4);
+.form-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+gap: 20px;
+}
+
+.section {
+margin-top: 30px;
 }
 
 
@@ -163,6 +172,29 @@ cursor: pointer;
 }
 .btn-secondary:hover {
 background: #333;
+}
+       /* STYLE untuk dropdown modern */
+.dropdown-row select {
+  width: 200px !important;
+  height: 38px;
+  font-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 35px 8px 10px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
+                    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(1em + 2px), 
+                      calc(100% - 13px) calc(1em + 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 </style>
 </head>
@@ -222,61 +254,61 @@ background: #333;
 <label>Pusat Informasi & Rujukan</label>
 <div class="dropdown-row" id="pusatInformasi"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>Kasir</label>
 <div class="dropdown-row" id="kasir"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
         <label>Kepegawaian dan Administrasi Surat</label>
 <div class="dropdown-row" id="kepegawaian"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>Mutu/Monitoring PPI</label>
 <div class="dropdown-row" id="mutu"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>Aset</label>
 <div class="dropdown-row" id="aset"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>BOK</label>
 <div class="dropdown-row" id="bok"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>BLUD</label>
 <div class="dropdown-row" id="blud"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>Security</label>
 <div class="dropdown-row" id="satpam"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>Driver</label>
 <div class="dropdown-row" id="supir"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>Cleaning Service</label>
 <div class="dropdown-row" id="cs"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>Juru Masak</label>
@@ -288,32 +320,32 @@ background: #333;
         <label>KIA</label>
         <div class="dropdown-row" id="kia"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>MTBS (Kesehatan Anak)</label>
         <div class="dropdown-row" id="mtbs"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>PONED</label>
         <div class="dropdown-row" id="poned"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>Kelas Bumi</label>
         <div class="dropdown-row" id="bumil"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>USG</label>
         <div class="dropdown-row" id="usg"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>Imunisasi</label>
         <div class="dropdown-row" id="imunisasi"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>Input ASIK</label>
         <div class="dropdown-row" id="asik"></div>
@@ -324,17 +356,17 @@ background: #333;
         <label>Penapisan</label>
         <div class="dropdown-row" id="penapisan"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>Dewasa</label>
         <div class="dropdown-row" id="umum"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>Lansia</label>
         <div class="dropdown-row" id="lansia"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>KB</label>
         <div class="dropdown-row" id="kb"></div>
@@ -345,12 +377,12 @@ background: #333;
         <label>TB</label>
         <div class="dropdown-row" id="tb"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>Surveilans</label>
         <div class="dropdown-row" id="surveilans"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>Kesling</label>
         <div class="dropdown-row" id="kesling"></div>
@@ -361,42 +393,42 @@ background: #333;
         <label>Gigi & Mulut 1</label>
         <div class="dropdown-row" id="gigi1"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>Gigi & Mulut 2</label>
         <div class="dropdown-row" id="gigi2"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>NC</label>
         <div class="dropdown-row" id="nc"></div>
       </div>
-            
+
       <div class="dropdown-group">
         <label>Farmasi</label>
         <div class="dropdown-row" id="farmasi"></div>
       </div>
-                  
+
       <div class="dropdown-group">
         <label>Laboratorium</label>
         <div class="dropdown-row" id="lab"></div>
       </div>
-                  
+
       <div class="dropdown-group">
         <label>Konseling Terpadu</label>
         <div class="dropdown-row" id="konseling"></div>
       </div>
-                  
+
       <div class="dropdown-group">
         <label>IGD/Tindakan</label>
         <div class="dropdown-row" id="igd"></div>
       </div>
-                  
+
       <div class="dropdown-group">
         <label>Psikolog</label>
         <div class="dropdown-row" id="psikolog"></div>
       </div>
-                  
+
       <div class="dropdown-group">
         <label>CKG & MCU</label>
         <div class="dropdown-row" id="ckg"></div>
@@ -417,13 +449,13 @@ background: #333;
 <label>Rapat & Pelatihan</label>
 <div class="dropdown-row" id="rapat"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>Sakit</label>
 <div class="dropdown-row" id="sakit"></div>
 </div>
-      
+
 
 <div class="dropdown-group">
 <label>Cuti Tahunan</label>
@@ -460,7 +492,7 @@ pembinaSelect.appendChild(opt);
       // Setelah list Pegawai didapat → generate semua dropdown
 generateDropdowns();
 });
-    
+
 
 function generateDropdowns() {
   createDropdown(5, "screeningCKG");
