@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <title>📋 Daftar Pegawai - UPTD Puskesmas Padasuka</title>
   <style>
     body {
       margin: 0;
@@ -46,68 +46,123 @@
       font-size: 13px;
     }
 
-    /* DASHBOARD */
-    .dashboard {
-      max-width: 1100px;
+    /* PAGE CONTAINER */
+    .container {
+      max-width: 900px;
       margin: 30px auto;
-      padding: 0 15px;
-    }
-    .dashboard h2 {
-      font-size: 20px;
-      color: #333;
-      margin-bottom: 20px;
-    }
-
-    /* CARD GRID */
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
       background: #fff;
       border-radius: 8px;
+      padding: 20px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-      transition: transform 0.2s ease;
     }
-    .card:hover {
-      transform: translateY(-4px);
-    }
-    .card img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-    }
-    .card-content {
-      padding: 15px;
-    }
-    .card h3 {
-      font-size: 16px;
+    .container h2 {
+      font-size: 20px;
       color: #1976d2;
-      margin: 0 0 8px 0;
+      margin-top: 0;
+      margin-bottom: 15px;
     }
-    .card p {
-      font-size: 13px;
-      color: #555;
-      margin: 0;
+
+    /* TABLE */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
     }
-    .card button {
+    thead {
+      background: #1976d2;
+      color: #fff;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+    }
+    tr:hover {
+      background: #f9f9f9;
+    }
+    .action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 0 4px;
+    }
+    .edit-btn {
+      color: #1976d2;
+    }
+    .delete-btn {
+      color: #d32f2f;
+    }
+
+    /* BUTTON */
+    #btnTambahPegawai {
+      background: #1976d2;
+      color: #fff;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #btnTambahPegawai:hover {
+      background: #125ca1;
+    }
+
+    /* MODAL */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      position: relative;
+    }
+    .modal-content h3 {
+      margin-top: 0;
+      color: #1976d2;
+      font-size: 18px;
+    }
+    .modal-content input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .modal-content button {
+      width: 100%;
       background: #1976d2;
       color: #fff;
       border: none;
       padding: 10px;
-      font-size: 13px;
+      font-size: 14px;
+      border-radius: 4px;
       cursor: pointer;
-      width: 100%;
-      margin-top: auto;
     }
-    .card button:hover {
+    .modal-content button:hover {
       background: #125ca1;
+    }
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 20px;
+      cursor: pointer;
+      color: #555;
     }
   </style>
 </head>
@@ -122,28 +177,30 @@
       <a href="pegawai.html">Pegawai</a>
       <a href="#">Kehadiran</a>
     </div>
-     <button onclick="logout()">Logout</button>
+    <button onclick="logout()">Logout</button>
   </div>
-<body>
 
-  <h2>📋 Daftar Pegawai</h2>
-  <button id="btnTambahPegawai">+ Tambah Pegawai</button>
+  <!-- Content -->
+  <div class="container">
+    <h2>📋 Daftar Pegawai</h2>
+    <button id="btnTambahPegawai">+ Tambah Pegawai</button>
 
-  <table>
-    <thead>
-      <tr>
-        <th>No</th>
-        <th>Nama Lengkap</th>
-        <th>Gelar</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="pegawaiTableBody">
-      <!-- Data dari Firebase akan muncul di sini -->
-    </tbody>
-  </table>
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Lengkap</th>
+          <th>Gelar</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="pegawaiTableBody">
+        <!-- Data dari Firebase muncul di sini -->
+      </tbody>
+    </table>
+  </div>
 
-  <!-- Modal Form -->
+  <!-- Modal Tambah/Edit Pegawai -->
   <div id="modalPegawai" class="modal">
     <div class="modal-content">
       <span class="close" id="closeModal">&times;</span>
@@ -154,6 +211,7 @@
     </div>
   </div>
 
+  <!-- Script Firebase -->
   <script type="module">
     import { db } from './app.js';
     import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
@@ -167,7 +225,7 @@
     const tableBody = document.getElementById('pegawaiTableBody');
     const modalTitle = document.getElementById('modalTitle');
 
-    let editId = null; // untuk cek mode edit
+    let editId = null;
 
     // 🟢 Buka modal Tambah
     btnTambah.addEventListener('click', () => {
@@ -184,7 +242,7 @@
       modal.style.display = 'none';
     });
 
-    // 📝 Simpan atau Update ke Firebase
+    // 📝 Simpan / Update ke Firebase
     btnSimpan.addEventListener('click', () => {
       const nama = namaInput.value.trim();
       const gelar = gelarInput.value.trim();
@@ -237,7 +295,7 @@
         tableBody.appendChild(tr);
       });
 
-      // ✏️ Event edit
+      // ✏️ Edit event
       document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-id');
@@ -251,7 +309,7 @@
         });
       });
 
-      // 🗑️ Event delete
+      // 🗑️ Delete event
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-id');
