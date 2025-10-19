@@ -1,8 +1,6 @@
-// pegawai.js
-import { db, logoutUser } from './app.js';
+import { db } from './app.js';
 import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
-// Element
 const modal = document.getElementById('modalPegawai');
 const btnTambah = document.getElementById('btnTambahPegawai');
 const btnSimpan = document.getElementById('btnSimpanPegawai');
@@ -16,7 +14,17 @@ const searchInput = document.getElementById('searchInput');
 let editId = null;
 let semuaPegawai = [];
 
-// ===== Modal Open/Close =====
+// 🌀 Buat elemen loading spinner
+const loadingRow = document.createElement('tr');
+loadingRow.innerHTML = `
+  <td colspan="4" style="text-align:center; padding:20px;">
+    <div class="spinner"></div>
+    <p>Sedang memuat data...</p>
+  </td>
+`;
+tableBody.appendChild(loadingRow);
+
+// 🟦 Modal Tambah
 btnTambah.addEventListener('click', () => {
   modal.style.display = 'flex';
   modalTitle.textContent = 'Tambah Pegawai';
@@ -26,6 +34,7 @@ btnTambah.addEventListener('click', () => {
   gelarInput.value = '';
 });
 
+// 🟥 Modal Tutup
 btnClose.addEventListener('click', () => {
   modal.style.display = 'none';
   namaInput.value = '';
@@ -33,7 +42,7 @@ btnClose.addEventListener('click', () => {
   editId = null;
 });
 
-// ===== Simpan / Update Data =====
+// 🟩 Simpan / Update Data
 btnSimpan.addEventListener('click', () => {
   const nama = namaInput.value.trim();
   const gelar = gelarInput.value.trim();
@@ -44,7 +53,7 @@ btnSimpan.addEventListener('click', () => {
   }
 
   if (editId) {
-    update(ref(db, 'pegawai/' + editId), { nama, gelar })
+    update(ref(db, 'Pegawai/' + editId), { nama, gelar })
       .then(() => {
         alert('✏️ Data berhasil diperbarui!');
         modal.style.display = 'none';
@@ -54,7 +63,7 @@ btnSimpan.addEventListener('click', () => {
       })
       .catch(err => alert('Gagal update: ' + err.message));
   } else {
-    const newRef = push(ref(db, 'pegawai'));
+    const newRef = push(ref(db, 'Pegawai'));
     set(newRef, { nama, gelar })
       .then(() => {
         alert('✅ Pegawai berhasil ditambahkan!');
@@ -66,8 +75,8 @@ btnSimpan.addEventListener('click', () => {
   }
 });
 
-// ===== Load Data Realtime dari Firebase =====
-const dataRef = ref(db, 'pegawai');
+// 🟨 Ambil Data Realtime
+const dataRef = ref(db, 'Pegawai'); // huruf "P" sesuai database
 onValue(dataRef, (snapshot) => {
   semuaPegawai = [];
   snapshot.forEach(child => {
@@ -79,9 +88,20 @@ onValue(dataRef, (snapshot) => {
   renderTable(semuaPegawai);
 });
 
-// ===== Render Table =====
+// 📝 Render Table
 function renderTable(data) {
   tableBody.innerHTML = '';
+  if (data.length === 0) {
+    const emptyRow = document.createElement('tr');
+    emptyRow.innerHTML = `
+      <td colspan="4" style="text-align:center; padding:15px; color:#666;">
+        Tidak ada data pegawai
+      </td>
+    `;
+    tableBody.appendChild(emptyRow);
+    return;
+  }
+
   let no = 1;
   data.forEach(item => {
     const tr = document.createElement('tr');
@@ -97,7 +117,7 @@ function renderTable(data) {
     tableBody.appendChild(tr);
   });
 
-  // Tombol edit
+  // Event Edit
   document.querySelectorAll('.edit-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
@@ -111,12 +131,12 @@ function renderTable(data) {
     });
   });
 
-  // Tombol hapus
+  // Event Delete
   document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       if (confirm('Apakah yakin ingin menghapus data ini?')) {
-        remove(ref(db, 'pegawai/' + id))
+        remove(ref(db, 'Pegawai/' + id))
           .then(() => alert('🗑️ Data berhasil dihapus!'))
           .catch(err => alert('Gagal hapus: ' + err.message));
       }
@@ -124,7 +144,7 @@ function renderTable(data) {
   });
 }
 
-// ===== Pencarian =====
+// 🔍 Pencarian realtime
 searchInput.addEventListener('input', () => {
   const keyword = searchInput.value.toLowerCase();
   const filtered = semuaPegawai.filter(item =>
@@ -133,9 +153,3 @@ searchInput.addEventListener('input', () => {
   );
   renderTable(filtered);
 });
-
-// ===== Logout =====
-window.logout = async function () {
-  await logoutUser();
-  window.location.href = 'index.html';
-};
