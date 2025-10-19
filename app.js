@@ -56,33 +56,3 @@ function closeModal() {
   gelarInput.value = '';
   editId = null;
 }
-
-// ===== Simpan / Update (Hanya 1 Event Listener!) =====
-btnSimpan.onclick = () => {
-  const nama = namaInput.value.trim();
-  const gelar = gelarInput.value.trim();
-
-  if (!nama) {
-    alert('Nama tidak boleh kosong!');
-    return;
-  }
-
-  if (editId) {
-    // MODE EDIT
-    update(ref(db, 'pegawai/' + editId), { nama, gelar })
-      .then(() => {
-        alert('✏️ Data berhasil diperbarui!');
-        closeModal();
-      })
-      .catch(err => alert('Gagal update: ' + err.message));
-  } else {
-    // MODE TAMBAH
-    const newRef = push(ref(db, 'pegawai'));
-    set(newRef, { nama, gelar })
-      .then(() => {
-        alert('✅ Pegawai berhasil ditambahkan!');
-        closeModal();
-      })
-      .catch(err => alert('Gagal simpan: ' + err.message));
-  }
-};
