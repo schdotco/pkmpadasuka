@@ -6,10 +6,6 @@
 <title>🗓️ Setting Jadwal Pegawai - Puskesmas Padasuka</title>
 <style>
 
-    <!-- Tambahkan library Choices.js -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-    
     /* STYLE untuk dropdown modern */
 .dropdown-row select {
   width: 200px;
@@ -202,6 +198,10 @@ background: #333;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 </style>
+        <!-- Tambahkan library Choices.js -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    
 </head>
 <body>
 <div class="navbar">
@@ -542,6 +542,22 @@ function generateDropdowns() {
   createDropdown(30, "cuti");
 }
 
+  // Aktifkan fitur searchable Choices.js setelah dropdown dibuat
+  setTimeout(() => {
+    document.querySelectorAll('.dropdown-row select').forEach(sel => {
+      // Jika Choices tidak tersedia, skrip ini tidak akan error — cek dulu
+      if (typeof Choices !== 'undefined') {
+        new Choices(sel, {
+          searchEnabled: true,
+          shouldSort: false,
+          itemSelectText: '',
+          searchPlaceholderValue: 'Cari nama...',
+        });
+      }
+    });
+  }, 500);
+}
+    
 function createDropdown(jumlah, containerId) {
 const container = document.getElementById(containerId);
 container.innerHTML = "";
@@ -576,10 +592,10 @@ return;
 
     //* Ambil semua dropdown dan simpan keobjek kegiatan
     const kegiatan = {};
-    documentquerySelectorAll('.dropdown-group').forEach(group =>{
+    document.querySelectorAll('.dropdown-group').forEach(group =>{
         const label = group.querySelector('label').textContent;
         const selects = group.querySelectorAll('select');
-        const pegawaiList = Arrayfrom(selects)
+        const pegawaiList = Array.from(selects)
             .map(sel => sel.value)
             .filter(v => v !== "");
         if (pegawaiList.length > 0) {
