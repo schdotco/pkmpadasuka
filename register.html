@@ -5,16 +5,144 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registrasi - Data & Informasi UPTD Puskesmas Padasuka</title>
   <link rel="stylesheet" href="style.css"/>
+  <style>
+    /* 🌐 Tambahan styling agar sama seperti login */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1976d2;
+      color: #fff;
+      text-align: center;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    main {
+      display: flex;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .left-panel {
+      background: #1976d2;
+      color: #fff;
+      flex: 1;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .left-panel h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .left-panel p {
+      font-size: 15px;
+      line-height: 1.5;
+      max-width: 300px;
+    }
+
+    .left-panel img {
+      width: 180px;
+      margin-top: 20px;
+    }
+
+    .right-panel {
+      flex: 1;
+      min-width: 280px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      background: #f4f6f9;
+    }
+
+    .card {
+      background: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card h3 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #1976d2;
+    }
+
+    .card input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .card button {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      font-size: 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .card button:hover {
+      background: #125ca1;
+    }
+
+    .link {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .link a {
+      color: #1976d2;
+      text-decoration: none;
+    }
+
+    .link a:hover {
+      text-decoration: underline;
+    }
+
+    #adminCode {
+      margin-top: 5px;
+    }
+  </style>
 </head>
 <body>
-  <header>Registrasi Akun</header>
+  <header>Registrasi Akun - Data & Informasi UPTD Puskesmas Padasuka</header>
+
   <main>
+    <!-- Panel kiri -->
     <div class="left-panel">
       <h1>Gabung Sekarang</h1>
       <p>Buat akun untuk mengakses portal Data & Informasi UPTD Puskesmas Padasuka.</p>
       <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Register">
     </div>
 
+    <!-- Panel kanan -->
     <div class="right-panel">
       <div class="card">
         <h3>Registrasi</h3>
@@ -22,7 +150,7 @@
         <input type="email" id="regEmail" placeholder="Email" />
         <input type="password" id="regPassword" placeholder="Password" />
 
-        <!-- 🕵️ Kolom kode rahasia admin -->
+        <!-- Kolom kode rahasia admin -->
         <input type="text" id="adminCode" placeholder="Masukkan kode admin (optional)" style="display:none;" />
 
         <!-- Tombol untuk menampilkan kolom kode -->
@@ -36,7 +164,7 @@
     </div>
   </main>
 
-  <!-- 🚀 JavaScript Register + Validasi Kode -->
+  <!-- Script Registrasi -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -57,14 +185,14 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // ✅ Toggle kolom kode admin
+    // Toggle kolom kode admin
     window.toggleAdminCode = (e) => {
       e.preventDefault();
       const codeField = document.getElementById('adminCode');
       codeField.style.display = codeField.style.display === 'none' ? 'block' : 'none';
     };
 
-    // 📝 Logika Registrasi
+    // Registrasi
     document.getElementById('btnRegister').addEventListener('click', async () => {
       const name = document.getElementById('regName').value.trim();
       const email = document.getElementById('regEmail').value.trim();
@@ -76,7 +204,6 @@
         return;
       }
 
-      // Kode rahasia admin (ubah sesuai keinginanmu)
       const SECRET_ADMIN_CODE = "jayajayajayakayaraya";
 
       let role = "user";
@@ -91,10 +218,8 @@
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Update nama ke Firebase Auth
         await updateProfile(user, { displayName: name });
 
-        // Simpan data user ke Realtime Database
         await set(ref(db, 'users/' + user.uid), {
           name: name,
           email: email,
