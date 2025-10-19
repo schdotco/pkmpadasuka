@@ -1,99 +1,99 @@
 * { box-sizing: border-box; }
 body { 
-margin: 0; 
-font-family: "Segoe UI", Arial, sans-serif; 
-background: #f4f7fa; 
-color: #333; 
+  margin: 0; 
+  font-family: "Segoe UI", Arial, sans-serif; 
+  background: #f4f7fa; 
+  color: #333; 
 }
 
 header { 
-background: #1976d2; 
-color: white; 
-padding: 15px; 
-text-align: center; 
-font-size: 1.2rem;
-font-weight: bold;
+  background: #1976d2; 
+  color: white; 
+  padding: 15px; 
+  text-align: center; 
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
 main {
-display: flex;
-flex-wrap: wrap;
-min-height: calc(100vh - 60px);
+  display: flex;
+  flex-wrap: wrap;
+  min-height: calc(100vh - 60px);
 }
 
 .left-panel {
-flex: 1;
-background: #1976d2;
-color: white;
-display: flex;
-flex-direction: column;
-justify-content: center;
-align-items: center;
-padding: 40px 20px;
-min-width: 280px;
+  flex: 1;
+  background: #1976d2;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  min-width: 280px;
 }
 .left-panel h1 { font-size: 1.8rem; margin-bottom: 15px; text-align: center; }
 .left-panel p { font-size: 0.95rem; max-width: 400px; text-align: center; line-height: 1.5; }
 .left-panel img { margin-top: 30px; width: 180px; max-width: 90%; }
 
 .right-panel {
-flex: 1;
-display: flex;
-justify-content: center;
-align-items: center;
-padding: 40px 20px;
-min-width: 300px;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  min-width: 300px;
 }
 
 .card {
-background: white;
-padding: 30px 25px;
-border-radius: 10px;
-width: 100%;
-max-width: 400px;
-box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-animation: fadeIn 0.4s ease;
+  background: white;
+  padding: 30px 25px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  animation: fadeIn 0.4s ease;
 }
 
 @keyframes fadeIn {
-from { opacity: 0; transform: translateY(10px); }
-to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 h3 {
-text-align: center;
-margin-bottom: 20px;
-color: #1976d2;
+  text-align: center;
+  margin-bottom: 20px;
+  color: #1976d2;
 }
 
 input, button {
-width: 100%;
-padding: 10px;
-margin: 8px 0;
-border-radius: 6px;
-border: 1px solid #ccc;
-font-size: 0.95rem;
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
 }
 
 button {
-background: #1976d2;
-color: white;
-font-weight: 600;
-cursor: pointer;
-transition: background 0.2s;
+  background: #1976d2;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
 button:hover { background: #125aa0; }
 
 .link {
-text-align: center;
-margin-top: 10px;
-font-size: 0.9rem;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.9rem;
 }
 .link a {
-color: #1976d2;
-text-decoration: underline;
-cursor: pointer;
+  color: #1976d2;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .hidden { display: none; }
@@ -101,82 +101,82 @@ cursor: pointer;
 #dashboard .card { max-width: 700px; margin: 15px auto; }
 
 @media (max-width: 768px) {
-main { flex-direction: column; }
-.left-panel { padding: 20px; }
-.left-panel h1 { font-size: 1.4rem; }
+  main { flex-direction: column; }
+  .left-panel { padding: 20px; }
+  .left-panel h1 { font-size: 1.4rem; }
 }
 
 #profile-section {
-max-width: 500px;
-margin: 50px auto;
-background: #fff;
-padding: 20px;
-border-radius: 12px;
-box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-text-align: center;
+  max-width: 500px;
+  margin: 50px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  text-align: center;
 }
 
 #profile-section h2 {
-margin-bottom: 20px;
-color: #333;
+  margin-bottom: 20px;
+  color: #333;
 }
 
 .profile-card {
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
 }
 
 .profile-image {
-display: flex;
-flex-direction: column;
-align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .profile-image img {
-width: 90px;              /* Lebar pas foto */
-height: 120px;            /* Tinggi pas foto 3x4 */
-object-fit: cover;        /* Agar foto terpotong rapi */
-border-radius: 6px;       /* Sudut sedikit melengkung */
-border: 2px solid #007bff;
-margin-bottom: 10px;
-background: #f0f0f0;      /* Background netral saat belum ada foto */
+  width: 90px;              /* Lebar pas foto */
+  height: 120px;            /* Tinggi pas foto 3x4 */
+  object-fit: cover;        /* Agar foto terpotong rapi */
+  border-radius: 6px;       /* Sudut sedikit melengkung */
+  border: 2px solid #007bff;
+  margin-bottom: 10px;
+  background: #f0f0f0;      /* Background netral saat belum ada foto */
 }
 
 .profile-form {
-display: flex;
-flex-direction: column;
-width: 100%;
-gap: 10px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 10px;
 }
 
 .profile-form input {
-padding: 10px;
-font-size: 14px;
-border: 1px solid #ccc;
-border-radius: 6px;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
 .profile-form button {
-background-color: #007bff;
-color: white;
-padding: 10px;
-font-size: 15px;
-border: none;
-border-radius: 6px;
-cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  font-size: 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .profile-form button:hover {
-background-color: #0056b3;
+  background-color: #0056b3;
 }
 
 /* file: style.css */
 select {
-width: 250px;
-height: 40px;
-font-size: 14px;
+  width: 250px;
+  height: 40px;
+  font-size: 14px;
 }
 
 /* STYLE untuk combobox jadwal.html */
