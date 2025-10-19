@@ -501,7 +501,7 @@ generateDropdowns();
 
 function generateDropdowns() {
     const list = [
-  "screeningCKG");
+  createDropdown(5,"screeningCKG");
   createDropdown(5, "bpjs");
   createDropdown(5, "rekamMedis");
   createDropdown(1, "pusatInformasi");
@@ -543,18 +543,14 @@ function generateDropdowns() {
   createDropdown(30, "sakit");
   createDropdown(30, "cuti");
 }
-    // Aktifkan searchable setelah dropdown dibuat
-    setTimeot(() => {
-        documentquerySelectorAll('.dropdown-row select')dorEach(sel => {
-            new Choices(sel, {
-                searchEnabled: true,
-                shouldSort: false
-                itemSelectedText: '',
-                searchPlaceholderValue: 'Cari nama...',
-                });
-            });
-        }, 1000);
-    }
+// Jadikan semua dropdown searchable (pakai Select2)
+setTimeout(() => {
+  $('.dropdown-row select').select2({
+    placeholder: "Cari nama pegawai...",
+    allowClear: true,
+    width: '200px'
+  });
+}, 2000);
 
 function createDropdown(jumlah, containerId) {
 const container = document.getElementById(containerId);
