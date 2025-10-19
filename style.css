@@ -210,3 +210,29 @@ select:focus {
   gap: 8px;
   margin-bottom: 8px;
 }
+
+/* === FIX untuk Choices.js tidak muncul === */
+.choices {
+  width: 250px !important;
+  display: inline-block !important;
+}
+
+.choices__inner {
+  min-height: 38px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.choices__list--dropdown {
+  z-index: 9999; /* agar dropdown muncul di atas elemen lain */
+}
+
+.choices[data-type*=select-one] select {
+  display: none !important; /* sembunyikan select asli */
+}
+
+/* Hindari override style.js */
+select {
+  background-image: none !important;
+}
