@@ -564,11 +564,13 @@ container.appendChild(select);
 }
 
     // Simpan Jadwal ke Firebase
-    // Simpan Jadwal
 document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
 const tanggal = document.getElementById('jadwalTanggal').value;
 const dressCode = document.getElementById('dressCode').value;
 const pembina = pembinaSelect.value;
+const screeningCKG = screeningCKGSelect.value;
+const screeningCKG = bpjsSelect.value;
+
 
 if (!tanggal || !dressCode || !pembina) {
 alert('Mohon lengkapi semua data utama!');
