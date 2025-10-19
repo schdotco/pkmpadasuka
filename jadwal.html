@@ -498,7 +498,6 @@ pembinaSelect.appendChild(opt);
 generateDropdowns();
 });
 
-
 function generateDropdowns() {
   createDropdown(5, "screeningCKG");
   createDropdown(5, "bpjs");
@@ -568,8 +567,6 @@ document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
 const tanggal = document.getElementById('jadwalTanggal').value;
 const dressCode = document.getElementById('dressCode').value;
 const pembina = pembinaSelect.value;
-const screeningCKG = screeningCKGSelect.value;
-const screeningCKG = bpjsSelect.value;
 
 
 if (!tanggal || !dressCode || !pembina) {
