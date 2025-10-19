@@ -5,111 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registrasi - Data & Informasi UPTD Puskesmas Padasuka</title>
   <link rel="stylesheet" href="style.css"/>
-</head>
-  <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - Aplikasi Jadwal Puskesmas</title>
   <style>
-    * { box-sizing: border-box; }
+    /* 🌐 Tambahan styling agar sama seperti login */
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
+      flex-direction: column;
       min-height: 100vh;
     }
 
-    /* Bagian kiri */
-    .left-panel {
-      flex: 1;
-      background: #406cff;
+    header {
+      background: #1976d2;
       color: #fff;
+      text-align: center;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    main {
+      display: flex;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .left-panel {
+      background: #1976d2;
+      color: #fff;
+      flex: 1;
+      min-width: 280px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 200px;
-    }
-    left-content {
-      max-width: 250px;
-    }
-    .left-panel h1 {
-      font-size: 28px;
-      margin-bottom: 10px;
-    }
-    .left-panel p {
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .left-panel img {
-      margin-top: 30px;
-      max-width: 200px;
+      padding: 30px;
+      text-align: center;
     }
 
-    /* Bagian kanan (form) */
+    .left-panel h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .left-panel p {
+      font-size: 15px;
+      line-height: 1.5;
+      max-width: 300px;
+    }
+
+    .left-panel img {
+      width: 180px;
+      margin-top: 20px;
+    }
+
     .right-panel {
       flex: 1;
+      min-width: 280px;
       display: flex;
       justify-content: center;
       align-items: center;
+      padding: 30px;
       background: #f4f6f9;
-      padding: 20px;
     }
-    .login-card {
+
+    .card {
       background: #fff;
-      padding: 25px 30px;
+      padding: 25px;
       border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 350px;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-    .login-card h3 {
-      margin-top: 0;
-      margin-bottom: 20px;
+
+    .card h3 {
       text-align: center;
+      margin-bottom: 10px;
       color: #1976d2;
     }
-    .login-card input {
-      width: 100%;
+
+    .card input {
       padding: 10px;
-      margin-bottom: 12px;
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 14px;
-    }
-    .login-card button {
       width: 100%;
-      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    .card button {
       background: #1976d2;
       color: #fff;
       border: none;
+      padding: 10px;
+      font-size: 15px;
       border-radius: 4px;
-      font-size: 14px;
       cursor: pointer;
+      margin-top: 10px;
     }
-    .login-card button:hover {
+
+    .card button:hover {
       background: #125ca1;
     }
+
     .link {
-      margin-top: 10px;
-      font-size: 13px;
       text-align: center;
+      font-size: 14px;
+      margin-top: 5px;
     }
+
     .link a {
       color: #1976d2;
       text-decoration: none;
     }
-    .link a:hover { text-decoration: underline; }
 
-    @media (max-width: 768px) {
-      body { flex-direction: column; }
-      .left-panel { padding: 30px; text-align: center; }
-      .left-panel img { margin: 20px auto 0; }
+    .link a:hover {
+      text-decoration: underline;
+    }
+
+    #adminCode {
+      margin-top: 5px;
     }
   </style>
 </head>
-   <header>Login Akun - Data & Informasi UPTD Puskesmas Padasuka</header>
 <body>
+  <header>Login Akun - Data & Informasi UPTD Puskesmas Padasuka</header>
 
   <!-- Panel Kiri -->
   <div class="left-panel">
