@@ -575,6 +575,19 @@ alert('Mohon lengkapi semua data utama!');
 return;
 }
 
+    //* Ambil semua dropdown dan simpan keobjek kegiatan
+    const kegiatan = {};
+    documentquerySelectorAll('.dropdown-group').forEach(group =>{
+        const label = group.querySelector('label').textContent;
+        const selects = group.querySelectorAll('select');
+        const pegawaiList = Arrayfrom(selects)
+            .map(sel => sel.value)
+            .filter(v => v !== "");
+        if (pegawaiList.length > 0) {
+            kegiatan[label] = pegawaiList;
+        }
+    });
+    
 const dataJadwal = {
 tanggal,
 dressCode,
@@ -585,20 +598,29 @@ dibuatPada: new Date().toISOString()
 const jadwalRef = ref(db, 'jadwal');
 const newRef = push(jadwalRef);
 
-set(newRef, dataJadwal)
-.then(() => {
-alert('✅ Jadwal berhasil disimpan!');
-window.location.href = 'hasil-jadwal.html';
-})
-.catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
+  await set(newRef, dataJadwal)
+    .then(() => {
+      // Buat ringkasan untuk WhatsApp
+      const ringkasan = encodeURIComponent(
+        `🗓️ *Jadwal Pegawai Puskesmas Padasuka*%0A` +
+        `📅 Tanggal: ${tanggal}%0A` +
+        `👔 Dress Code: ${dressCode}%0A` +
+        `🧑‍🏫 Pembina: ${pembina}%0A%0A` +
+        `📋 Total Kegiatan: ${Object.keys(kegiatan).length}%0A` +
+        `Lihat detail di aplikasi jadwal.`
+      );
+
+      const whatsappUrl = `https://wa.me/?text=${ringkasan}`;
+      alert('✅ Jadwal berhasil disimpan!');
+      // Tampilkan tombol Share
+      const shareBtn = document.createElement('button');
+      shareBtn.textContent = '📤 Share ke WhatsApp';
+      shareBtn.className = 'btn-secondary';
+      shareBtn.onclick = () => window.open(whatsappUrl, '_blank');
+      document.querySelector('main').appendChild(shareBtn);
+    })
+    .catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
 });
 </script>
-
-  <script>
-    function logout() {
-      // Arahkan ke halaman Login
-      window.location.href = "login.html";
-    }
-  </script>
 </body>
 </html>
