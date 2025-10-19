@@ -541,20 +541,19 @@ function generateDropdowns() {
   createDropdown(30, "cuti");
 }
 
-  // Aktifkan fitur searchable Choices.js setelah dropdown dibuat
-  setTimeout(() => {
-    document.querySelectorAll('.dropdown-row select').forEach(sel => {
-      // Jika Choices tidak tersedia, skrip ini tidak akan error — cek dulu
-      if (typeof Choices !== 'undefined') {
-        new Choices(sel, {
-          searchEnabled: true,
-          shouldSort: false,
-          itemSelectText: '',
-          searchPlaceholderValue: 'Cari nama...',
-        });
-      }
-    });
-  }, 500);
+// Aktifkan fitur searchable Choices.js setelah dropdown dibuat
+setTimeout(() => {
+  document.querySelectorAll('.dropdown-row select').forEach(sel => {
+    if (typeof Choices !== 'undefined') {
+      new Choices(sel, {
+        searchEnabled: true,
+        shouldSort: false,
+        itemSelectText: '',
+        searchPlaceholderValue: 'Cari nama...',
+      });
+    }
+  });
+}, 500);
 }
     
 function createDropdown(jumlah, containerId) {
@@ -578,10 +577,11 @@ container.appendChild(select);
 }
 
     // Simpan Jadwal ke Firebase
-document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
+document.getElementById('btnSimpanJadwal').addEventListener('click', async () => {
 const tanggal = document.getElementById('jadwalTanggal').value;
 const dressCode = document.getElementById('dressCode').value;
 const pembina = pembinaSelect.value;
+const kegiatan = kegiatanSelect.value;
 
 
 if (!tanggal || !dressCode || !pembina) {
@@ -606,6 +606,7 @@ const dataJadwal = {
 tanggal,
 dressCode,
 pembina,
+kegiatan,
 dibuatPada: new Date().toISOString()
 };
 
