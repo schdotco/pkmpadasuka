@@ -1,279 +1,568 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard - Data Pegawai</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f6f9;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🗓️ Setting Jadwal Pegawai - Puskesmas Padasuka</title>
+<style>
+body {
+margin: 0;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background: #f4f6f9;
+}
+
+/* NAVBAR */
+.navbar {
+background: #1976d2;
+color: #fff;
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 12px 20px;
+}
+.navbar h1 {
+font-size: 18px;
+margin: 0;
+}
+.navbar .menu {
+display: flex;
+gap: 15px;
+}
+.navbar .menu a {
+color: #fff;
+text-decoration: none;
+font-size: 14px;
+}
+.navbar .menu a:hover {
+text-decoration: underline;
+}
+.navbar button {
+background: #fff;
+color: #1976d2;
+border: none;
+padding: 6px 10px;
+border-radius: 4px;
+cursor: pointer;
+font-size: 13px;
+}
+
+/* MAIN CONTAINER */
+main {
+max-width: 1100px;
+margin: 30px auto;
+padding: 20px;
+background: #fff;
+border-radius: 8px;
+box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+h2 {
+font-size: 20px;
+color: #1976d2;
+margin-top: 0;
+border-bottom: 2px solid #1976d2;
+padding-bottom: 5px;
+margin-bottom: 20px;
+}
+
+    h3 {
+      font-size: 16px;
+      margin-top: 25px;
+      color: #444;
     }
 
-    /* Navbar */
-    .navbar {
-      background: #1976d2;
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px;
-    }
-    .navbar h1 {
-      font-size: 18px;
-      margin: 0;
-    }
-    .navbar .menu a {
-      color: #fff;
-      text-decoration: none;
-      margin-left: 15px;
-      font-size: 14px;
-    }
-    .navbar .menu a:hover {
-      text-decoration: underline;
-    }
+label {
+font-size: 14px;
+font-weight: 500;
+display: block;
+margin-bottom: 5px;
+color: #333;
+}
 
-    /* Layout */
-    .container {
-      max-width: 900px;
-      margin: 30px auto;
-      padding: 0 15px;
-    }
-    h2 {
-      color: #333;
-    }
-
-    /* Tabel */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      background: #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    table th, table td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    table th {
-      background: #1976d2;
-      color: #fff;
-    }
-
-    /* Tombol */
-    button {
-      cursor: pointer;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 4px;
-    }
-    #btnTambahPegawai {
-      background: #1976d2;
-      color: #fff;
+input[type="date"],
+input[type="text"],
+select {
+width: 100%;
+padding: 8px 10px;
+      margin-bottom: 15px;
       margin-bottom: 10px;
-    }
-    .edit-btn {
-      background: #ffc107;
-      color: #000;
-      margin-right: 5px;
-    }
-    .delete-btn {
-      background: #f44336;
-      color: #fff;
+border: 1px solid #ccc;
+border-radius: 4px;
+font-size: 14px;
+background: #fafafa;
+      box-sizing: border-box;
     }
 
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
+    /* Batasi ukuran dropdown agar tidak terlalu panjang */
+    .dropdown-row select {
+      width: 220px;
+      margin: 4px;
+      display: inline-block;
+      vertical-align: top;
     }
-    .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      width: 300px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+
+    .dropdown-group {
+      margin-bottom: 15px;
+}
+
+.form-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+gap: 20px;
+}
+
+.section {
+margin-top: 30px;
+}
+
+    .dropdown-group {
+      margin-bottom: 20px;
     }
-    .modal-content input {
-      padding: 8px;
-      font-size: 14px;
-      width: 100%;
+
+    .dropdown-row select {
+      margin-bottom: 8px;
+      display: block;
     }
-    .modal-content h3 {
-      margin-top: 0;
-    }
-    .close {
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      font-size: 20px;
-      cursor: pointer;
-    }
-  </style>
+
+button.save-btn {
+background: #1976d2;
+color: #fff;
+border: none;
+padding: 12px 20px;
+font-size: 15px;
+border-radius: 4px;
+cursor: pointer;
+margin-top: 20px;
+}
+button.save-btn:hover {
+background: #125ca1;
+}
+
+.btn-secondary {
+background: #555;
+color: #fff;
+padding: 10px 15px;
+border: none;
+border-radius: 4px;
+margin-left: 10px;
+cursor: pointer;
+}
+.btn-secondary:hover {
+background: #333;
+}
+</style>
 </head>
 <body>
+<div class="navbar">
+<h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+<div class="menu">
+<a href="dashboard.html">Dashboard</a>
+<a href="profil.html">Profil</a>
+<a href="#">Pengumuman</a>
+<a href="#">Kehadiran</a>
+</div>
+<button onclick="logout()">Logout</button>
+</div>
 
-  <!-- Navbar -->
-  <div class="navbar">
-    <h1>🏛️ UPTD Puskesmas Padasuka</h1>
-    <div class="menu">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="profil.html">Profil</a>
-      <a href="pegawai.html">Pegawai</a>
-    </div>
-  </div>
+<main>
+<h2>🗓️ Setting Jadwal Pegawai</h2>
 
-  <div class="container">
-    <h2>📋 Daftar Pegawai</h2>
-    <button id="btnTambahPegawai">+ Tambah Pegawai</button>
+<!-- Informasi Umum -->
+<div class="form-grid">
+<div>
+<label for="jadwalTanggal">Tanggal</label>
+<input type="date" id="jadwalTanggal">
+</div>
+<div>
+<label for="dressCode">Dress Code</label>
+<input type="text" id="dressCode" placeholder="Contoh: Batik / Seragam Putih">
+</div>
+<div>
+<label for="pembina">Pembina Stand up Briefing (Pukul 07.30)</label>
+<select id="pembina">
+<option value="">-- Pilih Pembina --</option>
+</select>
+</div>
+</div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Nama Lengkap</th>
-          <th>Gelar</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="pegawaiTableBody">
-        <!-- Data realtime akan muncul di sini -->
-      </tbody>
-    </table>
-  </div>
+<!-- Kegiatan Dalam Gedung -->
+<div class="section">
+<h2>I. Kegiatan Dalam Gedung</h2>
+       <h3>Kluster 1</h3>     
+      <h3>Kluster 1</h3>     
+<div class="dropdown-group">
+<label>Screening CKG</label>
+<div class="dropdown-row" id="screeningCKG"></div>
+</div>
 
-  <!-- Modal -->
-  <div id="modalPegawai" class="modal">
-    <div class="modal-content">
-      <span class="close" id="closeModal">&times;</span>
-      <h3 id="modalTitle">Tambah Pegawai</h3>
-      <input type="text" id="namaPegawai" placeholder="Nama Lengkap">
-      <input type="text" id="gelarPegawai" placeholder="Gelar (contoh: dr., S.Kep)">
-      <button id="btnSimpanPegawai">Simpan</button>
-    </div>
-  </div>
+<div class="dropdown-group">
+<label>Pendaftaran & Skrining BPJS</label>
+<div class="dropdown-row" id="bpjs"></div>
+</div>
 
-  <script type="module">
-    import { db } from './app.js';
-    import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+<div class="dropdown-group">
+<label>Rekam Medis</label>
+<div class="dropdown-row" id="rekamMedis"></div>
+</div>
 
-    const btnTambah = document.getElementById('btnTambahPegawai');
-    const modal = document.getElementById('modalPegawai');
-    const btnClose = document.getElementById('closeModal');
-    const btnSimpan = document.getElementById('btnSimpanPegawai');
-    const namaInput = document.getElementById('namaPegawai');
-    const gelarInput = document.getElementById('gelarPegawai');
-    const tableBody = document.getElementById('pegawaiTableBody');
-    const modalTitle = document.getElementById('modalTitle');
+<div class="dropdown-group">
+<label>Pusat Informasi & Rujukan</label>
+<div class="dropdown-row" id="pusatInformasi"></div>
+</div>
+      
 
-    let editId = null;
+<div class="dropdown-group">
+<label>Kasir</label>
+<div class="dropdown-row" id="kasir"></div>
+</div>
+      
 
-    // Open modal tambah
-    btnTambah.addEventListener('click', () => {
-      modal.style.display = 'flex';
-      modalTitle.textContent = 'Tambah Pegawai';
-      btnSimpan.textContent = 'Simpan';
-      editId = null;
-      namaInput.value = '';
-      gelarInput.value = '';
-    });
+<div class="dropdown-group">
+        <label>Kepegawaian dan Administrasi Surat/label>
+        <label>Kepegawaian dan Administrasi Surat</label>
+<div class="dropdown-row" id="kepegawaian"></div>
+</div>
+      
 
-    // Close modal
-    btnClose.addEventListener('click', closeModal);
-    function closeModal() {
-      modal.style.display = 'none';
-      namaInput.value = '';
-      gelarInput.value = '';
-      editId = null;
-    }
+<div class="dropdown-group">
+<label>Mutu/Monitoring PPI</label>
+<div class="dropdown-row" id="mutu"></div>
+</div>
+      
 
-    // Simpan atau Update data (HANYA 1 event listener)
-    btnSimpan.onclick = () => {
-      const nama = namaInput.value.trim();
-      const gelar = gelarInput.value.trim();
+<div class="dropdown-group">
+<label>Aset</label>
+<div class="dropdown-row" id="aset"></div>
+</div>
+      
 
-      if (!nama) {
-        alert('Nama tidak boleh kosong!');
-        return;
-      }
+<div class="dropdown-group">
+<label>BOK</label>
+<div class="dropdown-row" id="bok"></div>
+</div>
+      
 
-      if (editId) {
-        update(ref(db, 'pegawai/' + editId), { nama, gelar })
-          .then(() => {
-            alert('✏️ Data berhasil diperbarui!');
-            closeModal();
-          })
-          .catch(err => alert('Gagal update: ' + err.message));
-      } else {
-        const newRef = push(ref(db, 'pegawai'));
-        set(newRef, { nama, gelar })
-          .then(() => {
-            alert('✅ Pegawai berhasil ditambahkan!');
-            closeModal();
-          })
-          .catch(err => alert('Gagal simpan: ' + err.message));
-      }
-    };
+<div class="dropdown-group">
+<label>BLUD</label>
+<div class="dropdown-row" id="blud"></div>
+</div>
+      
 
-    // Realtime Tabel Pegawai
-    const dataRef = ref(db, 'pegawai');
-    onValue(dataRef, (snapshot) => {
-      tableBody.innerHTML = '';
-      let no = 1;
-      snapshot.forEach(child => {
-        const id = child.key;
-        const data = child.val();
+<div class="dropdown-group">
+<label>Security</label>
+<div class="dropdown-row" id="satpam"></div>
+</div>
+      
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${no++}</td>
-          <td>${data.nama}</td>
-          <td>${data.gelar || '-'}</td>
-          <td>
-            <button class="edit-btn" data-id="${id}">✏️ Edit</button>
-            <button class="delete-btn" data-id="${id}">🗑️ Hapus</button>
-          </td>
-        `;
-        tableBody.appendChild(tr);
-      });
+<div class="dropdown-group">
+<label>Driver</label>
+<div class="dropdown-row" id="supir"></div>
+</div>
+      
 
-      // Event edit
-      document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.onclick = () => {
-          const id = btn.getAttribute('data-id');
-          const data = snapshot.child(id).val();
-          editId = id;
-          namaInput.value = data.nama;
-          gelarInput.value = data.gelar || '';
-          modalTitle.textContent = 'Edit Pegawai';
-          btnSimpan.textContent = 'Update';
-          modal.style.display = 'flex';
-        };
-      });
+<div class="dropdown-group">
+<label>Cleaning Service</label>
+<div class="dropdown-row" id="cs"></div>
+</div>
+      
 
-      // Event delete
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.onclick = () => {
-          const id = btn.getAttribute('data-id');
-          if (confirm('Yakin ingin menghapus data ini?')) {
-            remove(ref(db, 'pegawai/' + id))
-              .then(() => alert('🗑️ Data berhasil dihapus!'))
-              .catch(err => alert('Gagal hapus: ' + err.message));
-          }
-        };
-      });
-    });
-  </script>
+<div class="dropdown-group">
+<label>Juru Masak</label>
+<div class="dropdown-row" id="koki"></div>
+</div>
+
+    <h3>Klaster 2</h3>  
+      <div class="dropdown-group">
+        <label>KIA</label>
+        <div class="dropdown-row" id="kia"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>MTBS (Kesehatan Anak)</label>
+        <div class="dropdown-row" id="mtbs"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>PONED</label>
+        <div class="dropdown-row" id="poned"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>Kelas Bumi</label>
+        <div class="dropdown-row" id="bumil"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>USG</label>
+        <div class="dropdown-row" id="usg"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>Imunisasi</label>
+        <div class="dropdown-row" id="imunisasi"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>Input ASIK</label>
+        <div class="dropdown-row" id="asik"></div>
+      </div>
+
+    <h3>Klaster 3</h3>  
+      <div class="dropdown-group">
+        <label>Penapisan</label>
+        <div class="dropdown-row" id="penapisan"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>Dewasa</label>
+        <div class="dropdown-row" id="umum"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>Lansia</label>
+        <div class="dropdown-row" id="lansia"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>KB</label>
+        <div class="dropdown-row" id="kb"></div>
+      </div>
+
+    <h3>Klaster 4</h3>
+      <div class="dropdown-group">
+        <label>TB</label>
+        <div class="dropdown-row" id="tb"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>Surveilans</label>
+        <div class="dropdown-row" id="surveilans"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>Kesling</label>
+        <div class="dropdown-row" id="kesling"></div>
+      </div>
+
+    <h3>Klaster 5</h3>  
+      <div class="dropdown-group">
+        <label>Gigi & Mulut 1</label>
+        <div class="dropdown-row" id="gigi1"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>Gigi & Mulut 2</label>
+        <div class="dropdown-row" id="gigi2"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>NC</label>
+        <div class="dropdown-row" id="nc"></div>
+      </div>
+            
+      <div class="dropdown-group">
+        <label>Farmasi</label>
+        <div class="dropdown-row" id="farmasi"></div>
+      </div>
+                  
+      <div class="dropdown-group">
+        <label>Laboratorium</label>
+        <div class="dropdown-row" id="lab"></div>
+      </div>
+                  
+      <div class="dropdown-group">
+        <label>Konseling Terpadu</label>
+        <div class="dropdown-row" id="konseling"></div>
+      </div>
+                  
+      <div class="dropdown-group">
+        <label>IGD/Tindakan</label>
+        <div class="dropdown-row" id="igd"></div>
+      </div>
+                  
+      <div class="dropdown-group">
+        <label>Psikolog</label>
+        <div class="dropdown-row" id="psikolog"></div>
+      </div>
+                  
+      <div class="dropdown-group">
+        <label>CKG & MCU</label>
+        <div class="dropdown-row" id="ckg"></div>
+      </div>
+      <!-- Kluster berikutnya tetap sama... -->
+</div>
+
+<!-- Kegiatan Luar Gedung -->
+<div class="section">
+<h2>II. Kegiatan Luar Gedung</h2>
+
+<div class="dropdown-group">
+<label>Posyandu</label>
+<div class="dropdown-row" id="posyandu"></div>
+</div>
+
+<div class="dropdown-group">
+<label>Rapat & Pelatihan</label>
+<div class="dropdown-row" id="rapat"></div>
+</div>
+      
+
+<div class="dropdown-group">
+<label>Sakit</label>
+<div class="dropdown-row" id="sakit"></div>
+</div>
+      
+
+<div class="dropdown-group">
+<label>Cuti Tahunan</label>
+<div class="dropdown-row" id="cuti"></div>
+</div>
+</div>
+
+<button id="btnSimpanJadwal" class="save-btn">💾 Simpan Jadwal</button>
+<button onclick="window.location.href='hasil-jadwal.html'" class="btn-secondary">📄 Lihat Jadwal</button>
+</main>
+
+<script type="module">
+import { db } from './app.js';
+import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+const pembinaSelect = document.getElementById('pembina');
+let pegawaiList = [];
+
+    // Ambil data pegawai dari Firebase (pegawai.html)
+    // Ambil data pegawai dari Firebase
+const pegawaiRef = ref(db, 'pegawai');
+onValue(pegawaiRef, (snapshot) => {
+pegawaiList = [];
+pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
+snapshot.forEach(child => {
+const data = child.val();
+const namaLengkap = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
+pegawaiList.push(namaLengkap);
+const opt = document.createElement('option');
+opt.value = namaLengkap;
+opt.textContent = namaLengkap;
+pembinaSelect.appendChild(opt);
+});
+
+      // Setelah list pegawai didapat → generate semua dropdown
+generateDropdowns();
+});
+    
+
+function generateDropdowns() {
+    createDropdown(5, "screeningCKG");
+    createDropdown(5, "bpjs");
+    createDropdown(5, "rekamMedis");
+    createDropdown(1, "pusatInformasi");
+    createDropdown(3, "kasir");
+    createDropdown(3, "kepegawaian");
+    createDropdown(3, "mutu");
+    createDropdown(3, "aset");
+    createDropdown(3, "bok");
+    createDropdown(3, "blud");
+    createDropdown(3, "satpam");
+    createDropdown(3, "supir");
+    createDropdown(3, "cs");
+    createDropdown(3, "koki");
+    createDropdown(3, "kia");
+    createDropdown(3, "mtbs");
+    createDropdown(3, "poned");
+    createDropdown(3, "bumil");
+    createDropdown(3, "usg");
+    createDropdown(3, "imunisasi");
+    createDropdown(3, "asik");
+    createDropdown(3, "penapisan");
+    createDropdown(3, "umum");
+    createDropdown(3, "lansia");
+    createDropdown(3, "kb");
+    createDropdown(3, "tb");
+    createDropdown(3, "surveilans");
+    createDropdown(2, "kesling");
+    createDropdown(2, "gigi1");
+    createDropdown(2, "gigi2");
+    createDropdown(5, "nc");
+    createDropdown(3, "farmasi");
+    createDropdown(3, "lab");
+    createDropdown(3, "konseling");
+    createDropdown(3, "igd");
+    createDropdown(3, "psikolog");
+    createDropdown(3, "ckg");
+    createDropdown(10, "posyandu");
+    createDropdown(30, "rapat");
+    createDropdown(30, "sakit");
+    createDropdown(30, "cuti");
+      createDropdown(5, "screeningCKG");
+      createDropdown(5, "bpjs");
+      createDropdown(5, "rekamMedis");
+      createDropdown(1, "pusatInformasi");
+      createDropdown(3, "kasir");
+      createDropdown(3, "kepegawaian");
+      createDropdown(3, "mutu");
+      createDropdown(3, "aset");
+      createDropdown(3, "bok");
+      createDropdown(3, "blud");
+      createDropdown(3, "satpam");
+      createDropdown(3, "supir");
+      createDropdown(3, "cs");
+      createDropdown(3, "koki");
+      createDropdown(10, "posyandu");
+      createDropdown(30, "rapat");
+      createDropdown(30, "sakit");
+      createDropdown(30, "cuti");
+}
+    <link rel="stylesheet" href="style.css">
+
+function createDropdown(jumlah, containerId) {
+const container = document.getElementById(containerId);
+container.innerHTML = "";
+for (let i = 0; i < jumlah; i++) {
+const select = document.createElement("select");
+const optDefault = document.createElement("option");
+optDefault.value = "";
+optDefault.textContent = `-- Pegawai ${i+1} --`;
+select.appendChild(optDefault);
+
+pegawaiList.forEach(nama => {
+const opt = document.createElement("option");
+opt.value = nama;
+opt.textContent = nama;
+select.appendChild(opt);
+});
+container.appendChild(select);
+}
+}
+
+    // Simpan Jadwal ke Firebase
+    // Simpan Jadwal
+document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
+const tanggal = document.getElementById('jadwalTanggal').value;
+const dressCode = document.getElementById('dressCode').value;
+const pembina = pembinaSelect.value;
+
+if (!tanggal || !dressCode || !pembina) {
+alert('Mohon lengkapi semua data utama!');
+return;
+}
+
+const dataJadwal = {
+tanggal,
+dressCode,
+pembina,
+dibuatPada: new Date().toISOString()
+};
+
+const jadwalRef = ref(db, 'jadwal');
+const newRef = push(jadwalRef);
+
+set(newRef, dataJadwal)
+.then(() => {
+alert('✅ Jadwal berhasil disimpan!');
+window.location.href = 'hasil-jadwal.html';
+})
+.catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
+});
+</script>
 </body>
 </html>
