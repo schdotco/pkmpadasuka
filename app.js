@@ -37,3 +37,52 @@ export async function registerUser(name, email, password, isAdmin) {
 export async function logoutUser() {
   await signOut(auth);
 }
+
+// ===== Modal Open & Close =====
+btnTambah.addEventListener('click', () => {
+  modal.style.display = 'flex';
+  modalTitle.textContent = 'Tambah Pegawai';
+  btnSimpan.textContent = 'Simpan';
+  editId = null;
+  namaInput.value = '';
+  gelarInput.value = '';
+});
+
+btnClose.addEventListener('click', closeModal);
+
+function closeModal() {
+  modal.style.display = 'none';
+  namaInput.value = '';
+  gelarInput.value = '';
+  editId = null;
+}
+
+// ===== Simpan / Update (Hanya 1 Event Listener!) =====
+btnSimpan.onclick = () => {
+  const nama = namaInput.value.trim();
+  const gelar = gelarInput.value.trim();
+
+  if (!nama) {
+    alert('Nama tidak boleh kosong!');
+    return;
+  }
+
+  if (editId) {
+    // MODE EDIT
+    update(ref(db, 'pegawai/' + editId), { nama, gelar })
+      .then(() => {
+        alert('✏️ Data berhasil diperbarui!');
+        closeModal();
+      })
+      .catch(err => alert('Gagal update: ' + err.message));
+  } else {
+    // MODE TAMBAH
+    const newRef = push(ref(db, 'pegawai'));
+    set(newRef, { nama, gelar })
+      .then(() => {
+        alert('✅ Pegawai berhasil ditambahkan!');
+        closeModal();
+      })
+      .catch(err => alert('Gagal simpan: ' + err.message));
+  }
+};
