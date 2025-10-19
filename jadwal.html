@@ -502,10 +502,10 @@ generateDropdowns();
 function generateDropdowns() {
     const list = [
    "screeningCKG", "bpjs", "rekamMedis", "pusatInformasi", "kasir", "kepegawaian", "mutu", "aset", "bok", "blud", "satpam", "supir", "cs", "koki", "kia", "mtbs", "poned", "bumil",
-        "usg", "imunisasi", "asik", "penapisan", "umum", "lansia", "kb", "tb", "surveilans", "kesling", "gigi1", "gigi2", "nc", "farmasi""lab", "konseling", "igd", "psikolog",
+        "usg", "imunisasi", "asik", "penapisan", "umum", "lansia", "kb", "tb", "surveilans", "kesling", "gigi1", "gigi2", "nc", "farmasi", "lab", "konseling", "igd", "psikolog",
         "ckg", "posyandu", "rapat", "sakit", "cuti"
     ];
-    listforEach(id => createDropdown(5, id));
+    list.forEach(id => createDropdown(5, id));
 }
   // Aktifkan searchable setelah dropdown dibuat
   setTimeout(() => {
