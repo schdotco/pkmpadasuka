@@ -21,26 +21,15 @@
       padding: 12px 20px;
     }
     .navbar h1 { font-size: 18px; margin: 0; }
-    .navbar .menu {
-      display: flex;
-      gap: 15px;
-    }
+    .navbar .menu { display: flex; gap: 15px; }
     .navbar .menu a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 14px;
+      color: #fff; text-decoration: none; font-size: 14px;
     }
-    .navbar .menu a:hover {
-      text-decoration: underline;
-    }
+    .navbar .menu a:hover { text-decoration: underline; }
     .navbar button {
-      background: #fff;
-      color: #1976d2;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
+      background: #fff; color: #1976d2;
+      border: none; padding: 6px 10px;
+      border-radius: 4px; cursor: pointer; font-size: 13px;
     }
 
     h2 {
@@ -67,44 +56,33 @@
       border-radius: 4px;
     }
     #btnTambahPegawai {
-      background: #1976d2;
-      color: #fff;
-      border: none;
-      padding: 10px 15px;
-      font-size: 14px;
-      cursor: pointer;
-      border-radius: 4px;
-      white-space: nowrap;
+      background: #1976d2; color: #fff;
+      border: none; padding: 10px 15px;
+      font-size: 14px; cursor: pointer;
+      border-radius: 4px; white-space: nowrap;
     }
     #btnTambahPegawai:hover { background: #125ca1; }
 
     /* TABEL */
     table {
-      width: 90%;
-      max-width: 1100px;
-      margin: 0 auto;
-      border-collapse: collapse;
+      width: 90%; max-width: 1100px;
+      margin: 0 auto; border-collapse: collapse;
       background: #fff;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     th, td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: left;
-      font-size: 14px;
+      padding: 10px; border: 1px solid #ddd;
+      text-align: left; font-size: 14px;
     }
     th { background: #f0f0f0; }
     .action-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
+      background: none; border: none;
+      cursor: pointer; font-size: 16px;
     }
 
     /* MODAL */
     .modal {
-      display: none;
-      position: fixed;
+      display: none; position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.5);
       z-index: 999;
@@ -112,38 +90,26 @@
       align-items: center;
     }
     .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      min-width: 300px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      position: relative;
+      background: #fff; padding: 20px;
+      border-radius: 8px; min-width: 300px;
+      display: flex; flex-direction: column;
+      gap: 10px; position: relative;
     }
     .modal-content h3 { margin-top: 0; }
     .modal-content input {
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 8px; font-size: 14px;
+      border: 1px solid #ccc; border-radius: 4px;
     }
     .modal-content button {
-      background: #1976d2;
-      color: #fff;
-      border: none;
-      padding: 8px;
-      font-size: 14px;
-      cursor: pointer;
+      background: #1976d2; color: #fff;
+      border: none; padding: 8px;
+      font-size: 14px; cursor: pointer;
       border-radius: 4px;
     }
     .modal-content button:hover { background: #125ca1; }
     .close {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      font-size: 22px;
-      cursor: pointer;
+      position: absolute; top: 10px; right: 15px;
+      font-size: 22px; cursor: pointer;
     }
   </style>
 </head>
@@ -193,141 +159,7 @@
     </div>
   </div>
 
-  <!-- Script Firebase -->
-  <script type="module">
-    import { db } from './app.js';
-    import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
-
-    const modal = document.getElementById('modalPegawai');
-    const btnTambah = document.getElementById('btnTambahPegawai');
-    const btnSimpan = document.getElementById('btnSimpanPegawai');
-    const btnClose = document.getElementById('closeModal');
-    const namaInput = document.getElementById('namaPegawai');
-    const gelarInput = document.getElementById('gelarPegawai');
-    const tableBody = document.getElementById('pegawaiTableBody');
-    const modalTitle = document.getElementById('modalTitle');
-    const searchInput = document.getElementById('searchInput');
-
-    let editId = null;
-    let semuaPegawai = []; // cache semua data untuk pencarian
-
-    // ===== Modal =====
-    btnTambah.addEventListener('click', () => {
-      modal.style.display = 'flex';
-      modalTitle.textContent = 'Tambah Pegawai';
-      btnSimpan.textContent = 'Simpan';
-      editId = null;
-      namaInput.value = '';
-      gelarInput.value = '';
-    });
-
-    btnClose.addEventListener('click', () => {
-      modal.style.display = 'none';
-      namaInput.value = '';
-      gelarInput.value = '';
-      editId = null;
-    });
-
-    // ===== Simpan / Update =====
-    btnSimpan.addEventListener('click', () => {
-      const nama = namaInput.value.trim();
-      const gelar = gelarInput.value.trim();
-
-      if (!nama) {
-        alert('Nama tidak boleh kosong!');
-        return;
-      }
-
-      if (editId) {
-        update(ref(db, 'pegawai/' + editId), { nama, gelar })
-          .then(() => {
-            alert('✏️ Data berhasil diperbarui!');
-            modal.style.display = 'none';
-            namaInput.value = '';
-            gelarInput.value = '';
-            editId = null;
-          })
-          .catch(err => alert('Gagal update: ' + err.message));
-      } else {
-        const newRef = push(ref(db, 'pegawai'));
-        set(newRef, { nama, gelar })
-          .then(() => {
-            alert('✅ Pegawai berhasil ditambahkan!');
-            modal.style.display = 'none';
-            namaInput.value = '';
-            gelarInput.value = '';
-          })
-          .catch(err => alert('Gagal simpan: ' + err.message));
-      }
-    });
-
-    // ===== Realtime Table =====
-    const dataRef = ref(db, 'pegawai');
-    onValue(dataRef, (snapshot) => {
-      semuaPegawai = [];
-      snapshot.forEach(child => {
-        semuaPegawai.push({
-          id: child.key,
-          ...child.val()
-        });
-      });
-      renderTable(semuaPegawai);
-    });
-
-    // ===== Render Table =====
-    function renderTable(data) {
-      tableBody.innerHTML = '';
-      let no = 1;
-      data.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${no++}</td>
-          <td>${item.nama}</td>
-          <td>${item.gelar || '-'}</td>
-          <td>
-            <button class="action-btn edit-btn" data-id="${item.id}">✏️</button>
-            <button class="action-btn delete-btn" data-id="${item.id}">🗑️</button>
-          </td>
-        `;
-        tableBody.appendChild(tr);
-      });
-
-      // Event edit
-      document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-id');
-          const data = semuaPegawai.find(p => p.id === id);
-          editId = id;
-          namaInput.value = data.nama;
-          gelarInput.value = data.gelar || '';
-          modalTitle.textContent = 'Edit Pegawai';
-          btnSimpan.textContent = 'Update';
-          modal.style.display = 'flex';
-        });
-      });
-
-      // Event delete
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-id');
-          if (confirm('Apakah yakin ingin menghapus data ini?')) {
-            remove(ref(db, 'pegawai/' + id))
-              .then(() => alert('🗑️ Data berhasil dihapus!'))
-              .catch(err => alert('Gagal hapus: ' + err.message));
-          }
-        });
-      });
-    }
-
-    // ===== Pencarian Realtime =====
-    searchInput.addEventListener('input', () => {
-      const keyword = searchInput.value.toLowerCase();
-      const filtered = semuaPegawai.filter(item =>
-        item.nama.toLowerCase().includes(keyword) ||
-        (item.gelar && item.gelar.toLowerCase().includes(keyword))
-      );
-      renderTable(filtered);
-    });
-  </script>
+  <!-- Script Firebase & Pegawai -->
+  <script type="module" src="./pegawai.js"></script>
 </body>
 </html>
