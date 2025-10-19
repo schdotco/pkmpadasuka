@@ -1,45 +1,72 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📋 Daftar Pegawai - UPTD Puskesmas Padasuka</title>
-<style>
-body {
-margin: 0;
-@@ -46,69 +46,124 @@
-font-size: 13px;
-}
+  <title>🗓️ Setting Jadwal Pegawai - Puskesmas Padasuka</title>
+  <meta charset="UTF-8">
+  <title>Data Pegawai</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+@@ -46,161 +49,178 @@
+      font-size: 13px;
+    }
 
-    /* DASHBOARD */
-    .dashboard {
-      max-width: 1100px;
     /* PAGE CONTAINER */
     .container {
       max-width: 900px;
-margin: 30px auto;
-      padding: 0 15px;
+    /* MAIN CONTAINER */
+    main {
+      max-width: 1100px;
+      margin: 30px auto;
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f6fa; }
+    h2 { margin-bottom: 20px; }
+    button { padding: 8px 12px; background: #4CAF50; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    button:hover { background: #45a049; }
+
+    table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #f0f0f0; }
+
+    .action-btn {
+      border: none; cursor: pointer; padding: 6px 8px; border-radius: 4px; margin-right: 5px;
+    }
+    .edit-btn { background: #2196F3; color: white; }
+    .delete-btn { background: #f44336; color: white; }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
       background: #fff;
       border-radius: 8px;
       padding: 20px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-    .dashboard h2 {
+    }
     .container h2 {
-font-size: 20px;
-      color: #333;
-      margin-bottom: 20px;
+
+    h2 {
+      font-size: 20px;
       color: #1976d2;
       margin-top: 0;
       margin-bottom: 15px;
-}
+      border-bottom: 2px solid #1976d2;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
+    }
 
-    /* CARD GRID */
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
     /* TABLE */
     table {
       width: 100%;
@@ -49,15 +76,36 @@ font-size: 20px;
     thead {
       background: #1976d2;
       color: #fff;
+    label {
+      font-size: 14px;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
     }
     th, td {
       text-align: left;
       padding: 10px;
       border-bottom: 1px solid #ddd;
+
+    input[type="date"],
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
       font-size: 14px;
+      background: #fafafa;
     }
     tr:hover {
       background: #f9f9f9;
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
     }
     .action-btn {
       background: none;
@@ -65,39 +113,42 @@ font-size: 20px;
       cursor: pointer;
       font-size: 16px;
       margin: 0 4px;
+
+    .section {
+      margin-top: 30px;
     }
     .edit-btn {
       color: #1976d2;
+
+    .dropdown-group {
+      margin-bottom: 20px;
     }
     .delete-btn {
       color: #d32f2f;
-}
 
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-      transition: transform 0.2s ease;
+    .dropdown-row select {
+      margin-bottom: 8px;
+      display: block;
+    }
+
     /* BUTTON */
     #btnTambahPegawai {
+    button.save-btn {
       background: #1976d2;
       color: #fff;
       padding: 8px 12px;
       border: none;
+      padding: 12px 20px;
+      font-size: 15px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 14px;
-}
-    .card:hover {
-      transform: translateY(-4px);
+      margin-top: 20px;
+    }
     #btnTambahPegawai:hover {
+    button.save-btn:hover {
       background: #125ca1;
-}
-    .card img {
+    }
 
     /* MODAL */
     .modal {
@@ -106,36 +157,26 @@ font-size: 20px;
       z-index: 10;
       left: 0;
       top: 0;
-width: 100%;
-      height: 120px;
-      object-fit: cover;
+      width: 100%;
       height: 100%;
       background: rgba(0, 0, 0, 0.4);
       justify-content: center;
       align-items: center;
-}
-    .card-content {
-      padding: 15px;
+    }
     .modal-content {
       background: #fff;
       padding: 20px;
       border-radius: 8px;
       width: 90%;
       max-width: 400px;
+      width: 300px;
       position: relative;
-}
-    .card h3 {
-      font-size: 16px;
+    }
     .modal-content h3 {
       margin-top: 0;
-color: #1976d2;
-      margin: 0 0 8px 0;
+      color: #1976d2;
       font-size: 18px;
-}
-    .card p {
-      font-size: 13px;
-      color: #555;
-      margin: 0;
+    }
     .modal-content input {
       width: 100%;
       padding: 8px;
@@ -143,25 +184,31 @@ color: #1976d2;
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 14px;
-}
-    .card button {
+    }
     .modal-content button {
       width: 100%;
-background: #1976d2;
-color: #fff;
-border: none;
-padding: 10px;
-      font-size: 13px;
+      background: #1976d2;
+
+    .btn-secondary {
+      background: #555;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      padding: 10px;
       font-size: 14px;
       border-radius: 4px;
-cursor: pointer;
-      width: 100%;
-      margin-top: auto;
-}
-    .card button:hover {
+      margin-left: 10px;
+      cursor: pointer;
+    .modal-content h3 { margin-top: 0; }
+    .modal-content input {
+      width: 100%; padding: 8px; margin: 8px 0;
+      border: 1px solid #ccc; border-radius: 4px;
+    }
     .modal-content button:hover {
-background: #125ca1;
-}
+      background: #125ca1;
+    }
+    .btn-secondary:hover {
+      background: #333;
     .close {
       position: absolute;
       top: 10px;
@@ -169,62 +216,25 @@ background: #125ca1;
       font-size: 20px;
       cursor: pointer;
       color: #555;
+      right: 15px; top: 10px;
+      cursor: pointer; font-size: 18px; font-weight: bold;
     }
-</style>
+  </style>
 </head>
 <body>
-@@ -122,28 +177,30 @@
-<a href="pegawai.html">Pegawai</a>
-<a href="#">Kehadiran</a>
-</div>
-     <button onclick="logout()">Logout</button>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div class="menu">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profil.html">Profil</a>
+      <a href="pegawai.html">Pegawai</a>
+      <a href="#">Pengumuman</a>
+      <a href="#">Kehadiran</a>
+    </div>
     <button onclick="logout()">Logout</button>
-</div>
-<body>
-
-  <h2>📋 Daftar Pegawai</h2>
-  <button id="btnTambahPegawai">+ Tambah Pegawai</button>
-  <!-- Content -->
-  <div class="container">
-    <h2>📋 Daftar Pegawai</h2>
-    <button id="btnTambahPegawai">+ Tambah Pegawai</button>
-
-  <table>
-    <thead>
-      <tr>
-        <th>No</th>
-        <th>Nama Lengkap</th>
-        <th>Gelar</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="pegawaiTableBody">
-      <!-- Data dari Firebase akan muncul di sini -->
-    </tbody>
-  </table>
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Nama Lengkap</th>
-          <th>Gelar</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="pegawaiTableBody">
-        <!-- Data dari Firebase muncul di sini -->
-      </tbody>
-    </table>
   </div>
-
-  <!-- Modal Form -->
-  <!-- Modal Tambah/Edit Pegawai -->
-<div id="modalPegawai" class="modal">
-<div class="modal-content">
-<span class="close" id="closeModal">&times;</span>
-@@ -154,6 +211,7 @@
-</div>
-</div>
 
   <!-- Script Firebase -->
 <script type="module">
