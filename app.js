@@ -38,16 +38,6 @@ export async function logoutUser() {
   await signOut(auth);
 }
 
-// ===== Modal Open & Close =====
-btnTambah.addEventListener('click', () => {
-  modal.style.display = 'flex';
-  modalTitle.textContent = 'Tambah Pegawai';
-  btnSimpan.textContent = 'Simpan';
-  editId = null;
-  namaInput.value = '';
-  gelarInput.value = '';
-});
-
 btnClose.addEventListener('click', closeModal);
 
 function closeModal() {
