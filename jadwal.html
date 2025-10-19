@@ -1,49 +1,44 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🗓️ Setting Jadwal Pegawai - Puskesmas Padasuka</title>
-
-  <!-- Library CSS Choices.js -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-
-  <!-- File CSS utama kamu -->
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Jangan taruh di dalam <style> -->
-  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🗓️ Setting Jadwal Pegawai - Puskesmas Padasuka</title>
 <style>
-    /* STYLE untuk dropdown modern */
+
+<!-- Tambahkan library Choices.js -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+/* STYLE untuk dropdown modern */
 .dropdown-row select {
-  width: 200px;
-  height: 38px;
-  font-size: 14px;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 8px 35px 8px 10px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  cursor: pointer;
-  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
-                    linear-gradient(135deg, #555 50%, transparent 50%);
-  background-position: calc(100% - 18px) calc(1em + 2px), 
-                      calc(100% - 13px) calc(1em + 2px);
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  background-origin: content-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
+width: 200px;
+height: 38px;
+font-size: 14px;
+appearance: none;
+-webkit-appearance: none;
+-moz-appearance: none;
+background-color: #fff;
+border: 1px solid #ccc;
+border-radius: 6px;
+padding: 8px 35px 8px 10px;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+cursor: pointer;
+background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
+linear-gradient(135deg, #555 50%, transparent 50%);
+background-position: calc(100% - 18px) calc(1em + 2px), 
+calc(100% - 13px) calc(1em + 2px);
+background-size: 5px 5px, 5px 5px;
+background-repeat: no-repeat;
+background-origin: content-box;
+transition: border-color 0.2s, box-shadow 0.2s;
 }
 
- 
+
 .dropdown-row select:focus {
-  outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 4px rgba(25, 118, 210, 0.4);
+outline: none;
+border-color: #1976d2;
+box-shadow: 0 0 4px rgba(25, 118, 210, 0.4);
 }
 body {
 margin: 0;
@@ -105,11 +100,11 @@ padding-bottom: 5px;
 margin-bottom: 20px;
 }
 
-    h3 {
-      font-size: 16px;
-      margin-top: 25px;
-      color: #444;
-    }
+h3 {
+font-size: 16px;
+margin-top: 25px;
+color: #444;
+}
 
 label {
 font-size: 14px;
@@ -124,26 +119,26 @@ input[type="text"],
 select {
 width: 100%;
 padding: 8px 10px;
-      margin-bottom: 15px;
-      margin-bottom: 10px;
+margin-bottom: 15px;
+margin-bottom: 10px;
 border: 1px solid #ccc;
 border-radius: 4px;
 font-size: 14px;
 background: #fafafa;
-      box-sizing: border-box;
-    }
+box-sizing: border-box;
+}
 
 /* Susunan dropdown dari kiri ke kanan */
 .dropdown-row {
-  display: flex;
-  flex-wrap: wrap; /* agar turun ke baris berikutnya jika terlalu panjang */
-  gap: 8px;
+display: flex;
+flex-wrap: wrap; /* agar turun ke baris berikutnya jika terlalu panjang */
+gap: 8px;
 }
 
 .dropdown-row select {
-  width: 200px;      /* lebar tiap dropdown */
-  display: inline-block;
-  vertical-align: top;
+width: 200px;      /* lebar tiap dropdown */
+display: inline-block;
+vertical-align: top;
 }
 
 .form-grid {
@@ -183,28 +178,28 @@ cursor: pointer;
 .btn-secondary:hover {
 background: #333;
 }
-       /* STYLE untuk dropdown modern */
+/* STYLE untuk dropdown modern */
 .dropdown-row select {
-  width: 200px !important;
-  height: 38px;
-  font-size: 14px;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 8px 35px 8px 10px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  cursor: pointer;
-  background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
-                    linear-gradient(135deg, #555 50%, transparent 50%);
-  background-position: calc(100% - 18px) calc(1em + 2px), 
-                      calc(100% - 13px) calc(1em + 2px);
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  background-origin: content-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
+width: 200px !important;
+height: 38px;
+font-size: 14px;
+appearance: none;
+-webkit-appearance: none;
+-moz-appearance: none;
+background-color: #fff;
+border: 1px solid #ccc;
+border-radius: 6px;
+padding: 8px 35px 8px 10px;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+cursor: pointer;
+background-image: linear-gradient(45deg, transparent 50%, #555 50%), 
+linear-gradient(135deg, #555 50%, transparent 50%);
+background-position: calc(100% - 18px) calc(1em + 2px), 
+calc(100% - 13px) calc(1em + 2px);
+background-size: 5px 5px, 5px 5px;
+background-repeat: no-repeat;
+background-origin: content-box;
+transition: border-color 0.2s, box-shadow 0.2s;
 }
 </style>
 </head>
@@ -244,7 +239,7 @@ background: #333;
 <!-- Kegiatan Dalam Gedung -->
 <div class="section">
 <h2>I. Kegiatan Dalam Gedung</h2>
-       <h3>Kluster 1</h3>     
+<h3>Kluster 1</h3>     
 <div class="dropdown-group">
 <label>Screening CKG</label>
 <div class="dropdown-row" id="screeningCKG"></div>
@@ -325,125 +320,125 @@ background: #333;
 <div class="dropdown-row" id="koki"></div>
 </div>
 
-    <h3>Klaster 2</h3>  
-      <div class="dropdown-group">
-        <label>KIA</label>
-        <div class="dropdown-row" id="kia"></div>
-      </div>
+<h3>Klaster 2</h3>  
+<div class="dropdown-group">
+<label>KIA</label>
+<div class="dropdown-row" id="kia"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>MTBS (Kesehatan Anak)</label>
-        <div class="dropdown-row" id="mtbs"></div>
-      </div>
+<div class="dropdown-group">
+<label>MTBS (Kesehatan Anak)</label>
+<div class="dropdown-row" id="mtbs"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>PONED</label>
-        <div class="dropdown-row" id="poned"></div>
-      </div>
+<div class="dropdown-group">
+<label>PONED</label>
+<div class="dropdown-row" id="poned"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Kelas Bumi</label>
-        <div class="dropdown-row" id="bumil"></div>
-      </div>
+<div class="dropdown-group">
+<label>Kelas Bumi</label>
+<div class="dropdown-row" id="bumil"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>USG</label>
-        <div class="dropdown-row" id="usg"></div>
-      </div>
+<div class="dropdown-group">
+<label>USG</label>
+<div class="dropdown-row" id="usg"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Imunisasi</label>
-        <div class="dropdown-row" id="imunisasi"></div>
-      </div>
+<div class="dropdown-group">
+<label>Imunisasi</label>
+<div class="dropdown-row" id="imunisasi"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Input ASIK</label>
-        <div class="dropdown-row" id="asik"></div>
-      </div>
+<div class="dropdown-group">
+<label>Input ASIK</label>
+<div class="dropdown-row" id="asik"></div>
+</div>
 
-    <h3>Klaster 3</h3>  
-      <div class="dropdown-group">
-        <label>Penapisan</label>
-        <div class="dropdown-row" id="penapisan"></div>
-      </div>
+<h3>Klaster 3</h3>  
+<div class="dropdown-group">
+<label>Penapisan</label>
+<div class="dropdown-row" id="penapisan"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Dewasa</label>
-        <div class="dropdown-row" id="umum"></div>
-      </div>
+<div class="dropdown-group">
+<label>Dewasa</label>
+<div class="dropdown-row" id="umum"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Lansia</label>
-        <div class="dropdown-row" id="lansia"></div>
-      </div>
+<div class="dropdown-group">
+<label>Lansia</label>
+<div class="dropdown-row" id="lansia"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>KB</label>
-        <div class="dropdown-row" id="kb"></div>
-      </div>
+<div class="dropdown-group">
+<label>KB</label>
+<div class="dropdown-row" id="kb"></div>
+</div>
 
-    <h3>Klaster 4</h3>
-      <div class="dropdown-group">
-        <label>TB</label>
-        <div class="dropdown-row" id="tb"></div>
-      </div>
+<h3>Klaster 4</h3>
+<div class="dropdown-group">
+<label>TB</label>
+<div class="dropdown-row" id="tb"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Surveilans</label>
-        <div class="dropdown-row" id="surveilans"></div>
-      </div>
+<div class="dropdown-group">
+<label>Surveilans</label>
+<div class="dropdown-row" id="surveilans"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Kesling</label>
-        <div class="dropdown-row" id="kesling"></div>
-      </div>
+<div class="dropdown-group">
+<label>Kesling</label>
+<div class="dropdown-row" id="kesling"></div>
+</div>
 
-    <h3>Klaster 5</h3>  
-      <div class="dropdown-group">
-        <label>Gigi & Mulut 1</label>
-        <div class="dropdown-row" id="gigi1"></div>
-      </div>
+<h3>Klaster 5</h3>  
+<div class="dropdown-group">
+<label>Gigi & Mulut 1</label>
+<div class="dropdown-row" id="gigi1"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Gigi & Mulut 2</label>
-        <div class="dropdown-row" id="gigi2"></div>
-      </div>
+<div class="dropdown-group">
+<label>Gigi & Mulut 2</label>
+<div class="dropdown-row" id="gigi2"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>NC</label>
-        <div class="dropdown-row" id="nc"></div>
-      </div>
+<div class="dropdown-group">
+<label>NC</label>
+<div class="dropdown-row" id="nc"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Farmasi</label>
-        <div class="dropdown-row" id="farmasi"></div>
-      </div>
+<div class="dropdown-group">
+<label>Farmasi</label>
+<div class="dropdown-row" id="farmasi"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Laboratorium</label>
-        <div class="dropdown-row" id="lab"></div>
-      </div>
+<div class="dropdown-group">
+<label>Laboratorium</label>
+<div class="dropdown-row" id="lab"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Konseling Terpadu</label>
-        <div class="dropdown-row" id="konseling"></div>
-      </div>
+<div class="dropdown-group">
+<label>Konseling Terpadu</label>
+<div class="dropdown-row" id="konseling"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>IGD/Tindakan</label>
-        <div class="dropdown-row" id="igd"></div>
-      </div>
+<div class="dropdown-group">
+<label>IGD/Tindakan</label>
+<div class="dropdown-row" id="igd"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>Psikolog</label>
-        <div class="dropdown-row" id="psikolog"></div>
-      </div>
+<div class="dropdown-group">
+<label>Psikolog</label>
+<div class="dropdown-row" id="psikolog"></div>
+</div>
 
-      <div class="dropdown-group">
-        <label>CKG & MCU</label>
-        <div class="dropdown-row" id="ckg"></div>
-      </div>
-      <!-- Kluster berikutnya tetap sama... -->
+<div class="dropdown-group">
+<label>CKG & MCU</label>
+<div class="dropdown-row" id="ckg"></div>
+</div>
+<!-- Kluster berikutnya tetap sama... -->
 </div>
 
 <!-- Kegiatan Luar Gedung -->
@@ -484,7 +479,7 @@ import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.1
 const pembinaSelect = document.getElementById('pembina');
 let PegawaiList = [];
 
-    // Ambil data Pegawai dari Firebase
+// Ambil data Pegawai dari Firebase
 const PegawaiRef = ref(db, 'Pegawai');
 onValue(PegawaiRef, (snapshot) => {
 PegawaiList = [];
@@ -499,94 +494,134 @@ opt.textContent = namaLengkap;
 pembinaSelect.appendChild(opt);
 });
 
-    // Ambil data Pegawai dari Firebase
-    const PegawaiRef = ref(db, 'Pegawai');
-    onValue(PegawaiRef, (snapshot) => {
-      PegawaiList = [];
-      pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
-      snapshot.forEach(child => {
-        const data = child.val();
-        const namaLengkap = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
-        PegawaiList.push(namaLengkap);
-        const opt = document.createElement('option');
-        opt.value = namaLengkap;
-        opt.textContent = namaLengkap;
-        pembinaSelect.appendChild(opt);
-      });
-      generateDropdowns();
-    });
+// Setelah list Pegawai didapat → generate semua dropdown
+generateDropdowns();
+});
 
-    function generateDropdowns() {
-      const list = ["screeningCKG", "bpjs", "rekamMedis", "pusatInformasi", "kasir", "kepegawaian"];
-      list.forEach(id => createDropdown(3, id));
 
-      // aktifkan Choices.js setelah semua dropdown dibuat
-      setTimeout(() => {
-        document.querySelectorAll('.dropdown-row select').forEach(sel => {
-          new Choices(sel, {
-            searchEnabled: true,
-            shouldSort: false,
-            itemSelectText: '',
-            searchPlaceholderValue: 'Cari nama...',
-          });
-        });
-      }, 1200);
+function generateDropdowns() {
+const list = [
+  "screeningCKG");
+  createDropdown(5,"screeningCKG");
+createDropdown(5, "bpjs");
+createDropdown(5, "rekamMedis");
+createDropdown(1, "pusatInformasi");
+createDropdown(3, "kasir");
+createDropdown(3, "kepegawaian");
+createDropdown(3, "mutu");
+createDropdown(3, "aset");
+createDropdown(3, "bok");
+createDropdown(3, "blud");
+createDropdown(3, "satpam");
+createDropdown(3, "supir");
+createDropdown(3, "cs");
+createDropdown(3, "koki");
+createDropdown(3, "kia");
+createDropdown(3, "mtbs");
+createDropdown(3, "poned");
+createDropdown(3, "bumil");
+createDropdown(3, "usg");
+createDropdown(3, "imunisasi");
+createDropdown(3, "asik");
+createDropdown(3, "penapisan");
+createDropdown(3, "umum");
+createDropdown(3, "lansia");
+createDropdown(3, "kb");
+createDropdown(3, "tb");
+createDropdown(3, "surveilans");
+createDropdown(2, "kesling");
+createDropdown(2, "gigi1");
+createDropdown(2, "gigi2");
+createDropdown(5, "nc");
+createDropdown(3, "farmasi");
+createDropdown(3, "lab");
+createDropdown(3, "konseling");
+createDropdown(3, "igd");
+createDropdown(3, "psikolog");
+createDropdown(3, "ckg");
+createDropdown(10, "posyandu");
+createDropdown(30, "rapat");
+createDropdown(30, "sakit");
+createDropdown(30, "cuti");
+}
+    // Aktifkan searchable setelah dropdown dibuat
+    setTimeot(() => {
+        documentquerySelectorAll('.dropdown-row select')dorEach(sel => {
+            new Choices(sel, {
+                searchEnabled: true,
+                shouldSort: false
+                itemSelectedText: '',
+                searchPlaceholderValue: 'Cari nama...',
+                });
+            });
+        }, 1000);
     }
+// Jadikan semua dropdown searchable (pakai Select2)
+setTimeout(() => {
+  $('.dropdown-row select').select2({
+    placeholder: "Cari nama pegawai...",
+    allowClear: true,
+    width: '200px'
+  });
+}, 2000);
 
-    function createDropdown(jumlah, containerId) {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-      container.innerHTML = "";
-      for (let i = 0; i < jumlah; i++) {
-        const select = document.createElement("select");
-        const optDefault = document.createElement("option");
-        optDefault.value = "";
-        optDefault.textContent = `-- Pegawai ${i + 1} --`;
-        select.appendChild(optDefault);
+function createDropdown(jumlah, containerId) {
+const container = document.getElementById(containerId);
+if (!container) return;
+container.innerHTML = "";
+for (let i = 0; i < jumlah; i++) {
+const select = document.createElement("select");
+const optDefault = document.createElement("option");
+optDefault.value = "";
+optDefault.textContent = `-- Pegawai ${i+1} --`;
+select.appendChild(optDefault);
 
-        PegawaiList.forEach(nama => {
-          const opt = document.createElement("option");
-          opt.value = nama;
-          opt.textContent = nama;
-          select.appendChild(opt);
-        });
-        container.appendChild(select);
-      }
-    }
+PegawaiList.forEach(nama => {
+const opt = document.createElement("option");
+opt.value = nama;
+opt.textContent = nama;
+select.appendChild(opt);
+});
+container.appendChild(select);
+}
+}
 
-    document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
-      const tanggal = document.getElementById('jadwalTanggal').value;
-      const dressCode = document.getElementById('dressCode').value;
-      const pembina = pembinaSelect.value;
+// Simpan Jadwal ke Firebase
+// Simpan Jadwal
+document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
+const tanggal = document.getElementById('jadwalTanggal').value;
+const dressCode = document.getElementById('dressCode').value;
+const pembina = pembinaSelect.value;
 
-      if (!tanggal || !dressCode || !pembina) {
-        alert('Mohon lengkapi semua data utama!');
-        return;
-      }
+if (!tanggal || !dressCode || !pembina) {
+alert('Mohon lengkapi semua data utama!');
+return;
+}
 
-      const dataJadwal = {
-        tanggal,
-        dressCode,
-        pembina,
-        dibuatPada: new Date().toISOString()
-      };
+const dataJadwal = {
+tanggal,
+dressCode,
+pembina,
+dibuatPada: new Date().toISOString()
+};
 
-      const jadwalRef = ref(db, 'jadwal');
-      const newRef = push(jadwalRef);
+const jadwalRef = ref(db, 'jadwal');
+const newRef = push(jadwalRef);
 
-      set(newRef, dataJadwal)
-        .then(() => {
-          alert('✅ Jadwal berhasil disimpan!');
-          window.location.href = 'hasil-jadwal.html';
-        })
-        .catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
-    });
-  </script>
+set(newRef, dataJadwal)
+.then(() => {
+alert('✅ Jadwal berhasil disimpan!');
+window.location.href = 'hasil-jadwal.html';
+})
+.catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
+});
+</script>
 
-  <script>
-    function logout() {
-      window.location.href = "login.html";
-    }
-  </script>
+<script>
+function logout() {
+// Arahkan ke halaman Login
+window.location.href = "login.html";
+}
+</script>
 </body>
 </html>
