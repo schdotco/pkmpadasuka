@@ -500,7 +500,8 @@ generateDropdowns();
 
 
 function generateDropdowns() {
-  createDropdown(5, "screeningCKG");
+    const list = [
+  "screeningCKG");
   createDropdown(5, "bpjs");
   createDropdown(5, "rekamMedis");
   createDropdown(1, "pusatInformasi");
@@ -542,9 +543,22 @@ function generateDropdowns() {
   createDropdown(30, "sakit");
   createDropdown(30, "cuti");
 }
+    // Aktifkan searchable setelah dropdown dibuat
+    setTimeot(() => {
+        documentquerySelectorAll('.dropdown-row select')dorEach(sel => {
+            new Choices(sel, {
+                searchEnabled: true,
+                shouldSort: false
+                itemSelectedText: '',
+                searchPlaceholderValue: 'Cari nama...',
+                });
+            });
+        }, 1000);
+    }
 
 function createDropdown(jumlah, containerId) {
 const container = document.getElementById(containerId);
+if (!container) return;
 container.innerHTML = "";
 for (let i = 0; i < jumlah; i++) {
 const select = document.createElement("select");
