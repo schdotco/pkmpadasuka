@@ -419,25 +419,24 @@ import { db } from './app.js';
 import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
 const pembinaSelect = document.getElementById('pembina');
-let pegawaiList = [];
+let PegawaiList = [];
 
-    // Ambil data pegawai dari Firebase (pegawai.html)
-    // Ambil data pegawai dari Firebase
-const pegawaiRef = ref(db, 'pegawai');
-onValue(pegawaiRef, (snapshot) => {
-pegawaiList = [];
+    // Ambil data Pegawai dari Firebase
+const PegawaiRef = ref(db, 'Pegawai');
+onValue(PegawaiRef, (snapshot) => {
+PegawaiList = [];
 pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
 snapshot.forEach(child => {
 const data = child.val();
 const namaLengkap = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
-pegawaiList.push(namaLengkap);
+PegawaiList.push(namaLengkap);
 const opt = document.createElement('option');
 opt.value = namaLengkap;
 opt.textContent = namaLengkap;
 pembinaSelect.appendChild(opt);
 });
 
-      // Setelah list pegawai didapat → generate semua dropdown
+      // Setelah list Pegawai didapat → generate semua dropdown
 generateDropdowns();
 });
     
@@ -448,7 +447,7 @@ function generateDropdowns() {
   createDropdown(5, "rekamMedis");
   createDropdown(1, "pusatInformasi");
   createDropdown(3, "kasir");
-  createDropdown(3, "kepegawaian");
+  createDropdown(3, "kePegawaian");
   createDropdown(3, "mutu");
   createDropdown(3, "aset");
   createDropdown(3, "bok");
@@ -496,7 +495,7 @@ optDefault.value = "";
 optDefault.textContent = `-- Pegawai ${i+1} --`;
 select.appendChild(optDefault);
 
-pegawaiList.forEach(nama => {
+PegawaiList.forEach(nama => {
 const opt = document.createElement("option");
 opt.value = nama;
 opt.textContent = nama;
