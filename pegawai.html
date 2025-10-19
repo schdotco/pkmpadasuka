@@ -46,68 +46,99 @@
       font-size: 13px;
     }
 
-    /* DASHBOARD */
-    .dashboard {
-      max-width: 1100px;
-      margin: 30px auto;
-      padding: 0 15px;
-    }
-    .dashboard h2 {
-      font-size: 20px;
-      color: #333;
-      margin-bottom: 20px;
+    h2 {
+      text-align: center;
+      margin-top: 20px;
     }
 
-    /* CARD GRID */
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
+    /* TABEL */
+    table {
+      width: 90%;
+      max-width: 800px;
+      margin: 20px auto;
+      border-collapse: collapse;
       background: #fff;
-      border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-      transition: transform 0.2s ease;
     }
-    .card:hover {
-      transform: translateY(-4px);
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
     }
-    .card img {
+    th {
+      background: #1976d2;
+      color: #fff;
+    }
+
+    button#btnTambahPegawai {
+      display: block;
+      margin: 15px auto;
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* MODAL */
+    .modal {
+      display: none; /* default: hidden */
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
       width: 100%;
-      height: 120px;
-      object-fit: cover;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
     }
-    .card-content {
-      padding: 15px;
+
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      position: relative;
     }
-    .card h3 {
-      font-size: 16px;
-      color: #1976d2;
-      margin: 0 0 8px 0;
+
+    .modal-content h3 {
+      margin-top: 0;
     }
-    .card p {
-      font-size: 13px;
-      color: #555;
-      margin: 0;
+
+    .modal-content input {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 8px;
+      font-size: 14px;
     }
-    .card button {
+
+    .modal-content button {
       background: #1976d2;
       color: #fff;
       border: none;
       padding: 10px;
-      font-size: 13px;
-      cursor: pointer;
       width: 100%;
-      margin-top: auto;
+      cursor: pointer;
+      border-radius: 5px;
     }
-    .card button:hover {
-      background: #125ca1;
+
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .action-btn {
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -117,12 +148,12 @@
   <div class="navbar">
     <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
     <div class="menu">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="profil.html">Profil</a>
-      <a href="pegawai.html">Pegawai</a>
+      <a href="#">Dashboard</a>
+      <a href="#">Profil</a>
+      <a href="#">Pegawai</a>
       <a href="#">Kehadiran</a>
     </div>
-     <button onclick="logout()">Logout</button>
+    <button onclick="logout()">Logout</button>
   </div>
 
   <h2>📋 Daftar Pegawai</h2>
@@ -153,157 +184,114 @@
     </div>
   </div>
 
+  <!-- Firebase -->
   <script type="module">
-  import { db } from './app.js';
-  import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    import { db } from './app.js';
+    import { ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-  // ====== ELEMEN UTAMA ======
-  const pembinaSelect = document.getElementById('pembina');
-  const modal = document.getElementById('modalPegawai');
-  const btnTambah = document.getElementById('btnTambahPegawai');
-  const btnSimpan = document.getElementById('btnSimpanPegawai');
-  const btnClose = document.getElementById('closeModal');
-  const namaInput = document.getElementById('namaPegawai');
-  const gelarInput = document.getElementById('gelarPegawai');
-  const tableBody = document.getElementById('pegawaiTableBody');
-  const modalTitle = document.getElementById('modalTitle');
+    const modal = document.getElementById('modalPegawai');
+    const btnTambah = document.getElementById('btnTambahPegawai');
+    const btnSimpan = document.getElementById('btnSimpanPegawai');
+    const btnClose = document.getElementById('closeModal');
+    const namaInput = document.getElementById('namaPegawai');
+    const gelarInput = document.getElementById('gelarPegawai');
+    const tableBody = document.getElementById('pegawaiTableBody');
+    const modalTitle = document.getElementById('modalTitle');
 
-  let pegawaiList = [];
-  let editId = null; // mode edit atau tambah
+    let editId = null;
 
-  // ====== MODAL ======
-  btnTambah.addEventListener('click', () => {
-    modal.style.display = 'flex';
-    modalTitle.textContent = 'Tambah Pegawai';
-    btnSimpan.textContent = 'Simpan';
-    editId = null;
-    namaInput.value = '';
-    gelarInput.value = '';
-  });
-
-  btnClose.addEventListener('click', () => {
-    modal.style.display = 'none';
-  });
-
-  // ====== SIMPAN / UPDATE DATA PEGAWAI ======
-  btnSimpan.addEventListener('click', () => {
-    const nama = namaInput.value.trim();
-    const gelar = gelarInput.value.trim();
-
-    if (!nama) {
-      alert('Nama tidak boleh kosong!');
-      return;
-    }
-
-    if (editId) {
-      // Mode edit
-      const updateRef = ref(db, 'pegawai/' + editId);
-      update(updateRef, { nama, gelar })
-        .then(() => {
-          alert('✏️ Data berhasil diperbarui!');
-          modal.style.display = 'none';
-        })
-        .catch(err => alert('Gagal update: ' + err.message));
-    } else {
-      // Mode tambah
-      const pegawaiRef = ref(db, 'pegawai');
-      const newRef = push(pegawaiRef);
-      set(newRef, { nama, gelar })
-        .then(() => {
-          alert('✅ Pegawai berhasil ditambahkan!');
-          modal.style.display = 'none';
-        })
-        .catch(err => alert('Gagal simpan: ' + err.message));
-    }
-  });
-
-  // ====== LIST DATA PEGAWAI REALTIME ======
-  const dataRef = ref(db, 'pegawai');
-  onValue(dataRef, (snapshot) => {
-    tableBody.innerHTML = '';
-    pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
-    pegawaiList = [];
-
-    let no = 1;
-    snapshot.forEach(child => {
-      const data = child.val();
-      const id = child.key;
-      pegawaiList.push(data.gelar ? `${data.gelar} ${data.nama}` : data.nama);
-
-      // Tabel
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${no++}</td>
-        <td>${data.nama}</td>
-        <td>${data.gelar || '-'}</td>
-        <td>
-          <button class="action-btn edit-btn" data-id="${id}">✏️</button>
-          <button class="action-btn delete-btn" data-id="${id}">🗑️</button>
-        </td>
-      `;
-      tableBody.appendChild(tr);
-
-      // Pilihan dropdown pembina
-      const opt = document.createElement('option');
-      opt.value = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
-      opt.textContent = opt.value;
-      pembinaSelect.appendChild(opt);
+    // === Modal ===
+    btnTambah.addEventListener('click', () => {
+      modal.style.display = 'flex';
+      modalTitle.textContent = 'Tambah Pegawai';
+      btnSimpan.textContent = 'Simpan';
+      editId = null;
+      namaInput.value = '';
+      gelarInput.value = '';
     });
 
-    // Event edit
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        const data = snapshot.child(id).val();
-        editId = id;
-        namaInput.value = data.nama;
-        gelarInput.value = data.gelar || '';
-        modalTitle.textContent = 'Edit Pegawai';
-        btnSimpan.textContent = 'Update';
-        modal.style.display = 'flex';
+    btnClose.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    // === Simpan / Update ===
+    btnSimpan.addEventListener('click', () => {
+      const nama = namaInput.value.trim();
+      const gelar = gelarInput.value.trim();
+
+      if (!nama) {
+        alert('Nama tidak boleh kosong!');
+        return;
+      }
+
+      if (editId) {
+        const updateRef = ref(db, 'pegawai/' + editId);
+        update(updateRef, { nama, gelar })
+          .then(() => {
+            alert('✏️ Data berhasil diperbarui!');
+            modal.style.display = 'none';
+          })
+          .catch(err => alert('Gagal update: ' + err.message));
+      } else {
+        const pegawaiRef = ref(db, 'pegawai');
+        const newRef = push(pegawaiRef);
+        set(newRef, { nama, gelar })
+          .then(() => {
+            alert('✅ Pegawai berhasil ditambahkan!');
+            modal.style.display = 'none';
+          })
+          .catch(err => alert('Gagal simpan: ' + err.message));
+      }
+    });
+
+    // === Realtime Tabel ===
+    const dataRef = ref(db, 'pegawai');
+    onValue(dataRef, (snapshot) => {
+      tableBody.innerHTML = '';
+      let no = 1;
+      snapshot.forEach(child => {
+        const data = child.val();
+        const id = child.key;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${no++}</td>
+          <td>${data.nama}</td>
+          <td>${data.gelar || '-'}</td>
+          <td>
+            <button class="action-btn edit-btn" data-id="${id}">✏️</button>
+            <button class="action-btn delete-btn" data-id="${id}">🗑️</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      // Edit
+      document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const data = snapshot.child(id).val();
+          editId = id;
+          namaInput.value = data.nama;
+          gelarInput.value = data.gelar || '';
+          modalTitle.textContent = 'Edit Pegawai';
+          btnSimpan.textContent = 'Update';
+          modal.style.display = 'flex';
+        });
+      });
+
+      // Delete
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          if (confirm('Yakin ingin menghapus data ini?')) {
+            remove(ref(db, 'pegawai/' + id))
+              .then(() => alert('🗑️ Data berhasil dihapus!'))
+              .catch(err => alert('Gagal hapus: ' + err.message));
+          }
+        });
       });
     });
-
-    // Event delete
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        if (confirm('Apakah yakin ingin menghapus data ini?')) {
-          remove(ref(db, 'pegawai/' + id))
-            .then(() => alert('🗑️ Data berhasil dihapus!'))
-            .catch(err => alert('Gagal hapus: ' + err.message));
-        }
-      });
-    });
-  });
-
-  // ====== SIMPAN JADWAL ======
-  document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
-    const tanggal = document.getElementById('jadwalTanggal').value;
-    const dressCode = document.getElementById('dressCode').value;
-    const pembina = pembinaSelect.value;
-
-    if (!tanggal || !dressCode || !pembina) {
-      alert('Mohon lengkapi semua data utama!');
-      return;
-    }
-
-    const dataJadwal = {
-      tanggal,
-      dressCode,
-      pembina,
-      dibuatPada: new Date().toISOString()
-    };
-
-    const jadwalRef = ref(db, 'jadwal');
-    const newJadwal = push(jadwalRef);
-    set(newJadwal, dataJadwal)
-      .then(() => {
-        alert('✅ Jadwal berhasil disimpan!');
-        window.location.href = 'hasil-jadwal.html';
-      })
-      .catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
-  });
-</script>
+  </script>
 </body>
 </html>
