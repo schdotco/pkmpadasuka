@@ -273,7 +273,7 @@ background: #333;
 
 
 <div class="dropdown-group">
-        <label>Kepegawaian dan Administrasi Surat</label>
+<label>Kepegawaian dan Administrasi Surat</label>
 <div class="dropdown-row" id="kepegawaian"></div>
 </div>
 
@@ -499,87 +499,92 @@ opt.textContent = namaLengkap;
 pembinaSelect.appendChild(opt);
 });
 
-      // Setelah list Pegawai didapat → generate semua dropdown
-generateDropdowns();
-});
-
-
-function generateDropdowns() {
-    const list = [
-   "screeningCKG", "bpjs", "rekamMedis", "pusatInformasi", "kasir", "kepegawaian", "mutu", "aset", "bok", "blud", "satpam", "supir", "cs", "koki", "kia", "mtbs", "poned", "bumil",
-        "usg", "imunisasi", "asik", "penapisan", "umum", "lansia", "kb", "tb", "surveilans", "kesling", "gigi1", "gigi2", "nc", "farmasi", "lab", "konseling", "igd", "psikolog",
-        "ckg", "posyandu", "rapat", "sakit", "cuti"
-    ];
-    list.forEach(id => createDropdown(5, id));
-}
-  // Aktifkan searchable setelah dropdown dibuat
-  setTimeout(() => {
-    document.querySelectorAll('.dropdown-row select').forEach(sel => {
-      new Choices(sel, {
-        searchEnabled: true,
-        shouldSort: false,
-        itemSelectText: '',
-        searchPlaceholderValue: 'Cari nama...',
+    // Ambil data Pegawai dari Firebase
+    const PegawaiRef = ref(db, 'Pegawai');
+    onValue(PegawaiRef, (snapshot) => {
+      PegawaiList = [];
+      pembinaSelect.innerHTML = `<option value="">-- Pilih Pembina --</option>`;
+      snapshot.forEach(child => {
+        const data = child.val();
+        const namaLengkap = data.gelar ? `${data.gelar} ${data.nama}` : data.nama;
+        PegawaiList.push(namaLengkap);
+        const opt = document.createElement('option');
+        opt.value = namaLengkap;
+        opt.textContent = namaLengkap;
+        pembinaSelect.appendChild(opt);
       });
+      generateDropdowns();
     });
-  }, 1000);
-}
 
-function createDropdown(jumlah, containerId) {
-const container = document.getElementById(containerId);
-if (!container) return;
-container.innerHTML = "";
-for (let i = 0; i < jumlah; i++) {
-const select = document.createElement("select");
-const optDefault = document.createElement("option");
-optDefault.value = "";
-optDefault.textContent = `-- Pegawai ${i+1} --`;
-select.appendChild(optDefault);
+    function generateDropdowns() {
+      const list = ["screeningCKG", "bpjs", "rekamMedis", "pusatInformasi", "kasir", "kepegawaian"];
+      list.forEach(id => createDropdown(3, id));
 
-PegawaiList.forEach(nama => {
-const opt = document.createElement("option");
-opt.value = nama;
-opt.textContent = nama;
-select.appendChild(opt);
-});
-container.appendChild(select);
-}
-}
+      // aktifkan Choices.js setelah semua dropdown dibuat
+      setTimeout(() => {
+        document.querySelectorAll('.dropdown-row select').forEach(sel => {
+          new Choices(sel, {
+            searchEnabled: true,
+            shouldSort: false,
+            itemSelectText: '',
+            searchPlaceholderValue: 'Cari nama...',
+          });
+        });
+      }, 1200);
+    }
 
-    // Simpan Jadwal ke Firebase
-    // Simpan Jadwal
-document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
-const tanggal = document.getElementById('jadwalTanggal').value;
-const dressCode = document.getElementById('dressCode').value;
-const pembina = pembinaSelect.value;
+    function createDropdown(jumlah, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = "";
+      for (let i = 0; i < jumlah; i++) {
+        const select = document.createElement("select");
+        const optDefault = document.createElement("option");
+        optDefault.value = "";
+        optDefault.textContent = `-- Pegawai ${i + 1} --`;
+        select.appendChild(optDefault);
 
-if (!tanggal || !dressCode || !pembina) {
-alert('Mohon lengkapi semua data utama!');
-return;
-}
+        PegawaiList.forEach(nama => {
+          const opt = document.createElement("option");
+          opt.value = nama;
+          opt.textContent = nama;
+          select.appendChild(opt);
+        });
+        container.appendChild(select);
+      }
+    }
 
-const dataJadwal = {
-tanggal,
-dressCode,
-pembina,
-dibuatPada: new Date().toISOString()
-};
+    document.getElementById('btnSimpanJadwal').addEventListener('click', () => {
+      const tanggal = document.getElementById('jadwalTanggal').value;
+      const dressCode = document.getElementById('dressCode').value;
+      const pembina = pembinaSelect.value;
 
-const jadwalRef = ref(db, 'jadwal');
-const newRef = push(jadwalRef);
+      if (!tanggal || !dressCode || !pembina) {
+        alert('Mohon lengkapi semua data utama!');
+        return;
+      }
 
-set(newRef, dataJadwal)
-.then(() => {
-alert('✅ Jadwal berhasil disimpan!');
-window.location.href = 'hasil-jadwal.html';
-})
-.catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
-});
-</script>
+      const dataJadwal = {
+        tanggal,
+        dressCode,
+        pembina,
+        dibuatPada: new Date().toISOString()
+      };
+
+      const jadwalRef = ref(db, 'jadwal');
+      const newRef = push(jadwalRef);
+
+      set(newRef, dataJadwal)
+        .then(() => {
+          alert('✅ Jadwal berhasil disimpan!');
+          window.location.href = 'hasil-jadwal.html';
+        })
+        .catch(err => alert('❌ Gagal menyimpan jadwal: ' + err.message));
+    });
+  </script>
 
   <script>
     function logout() {
-      // Arahkan ke halaman Login
       window.location.href = "login.html";
     }
   </script>
