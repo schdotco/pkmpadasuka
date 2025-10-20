@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📅 Kalender Cuti Pegawai - Admin</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+    }
+    .navbar {
+      background: #1976d2;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin-right: 15px;
+    }
+    .navbar a:hover {
+      text-decoration: underline;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 30px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #1976d2;
+      margin-top: 0;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .calendar-header button {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .calendar-header button:hover {
+      background: #125ca1;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+    .day-header {
+      font-weight: bold;
+      text-align: center;
+      background: #e3f2fd;
+      padding: 6px;
+      border-radius: 4px;
+    }
+    .day-cell {
+      min-height: 90px;
+      background: #fafafa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 4px;
+      font-size: 13px;
+      position: relative;
+    }
+    .day-number {
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+    .cuti-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 12px;
+    }
+    .cuti-list li {
+      background: #e1f5fe;
+      color: #1976d2;
+      padding: 2px 4px;
+      margin-bottom: 2px;
+      border-radius: 3px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .no-day {
+      background: transparent;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <div>🏛️ UPTD Puskesmas Padasuka</div>
+    <div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="cuti-user.html">Pengajuan</a>
+      <a href="cuti-admin.html">Persetujuan</a>
+      <a href="cuti-list.html">Daftar Cuti</a>
+      <a href="kalender.html"><b>Kalender</b></a>
+    </div>
+  </div>
+
+  <!-- Konten -->
+  <main>
+    <div class="calendar-header">
+      <button id="prevMonth">&lt; Sebelumnya</button>
+      <h2 id="monthYear"></h2>
+      <button id="nextMonth">Berikutnya &gt;</button>
+    </div>
+
+    <div class="calendar-grid" id="calendarGrid">
+      <!-- Header hari -->
+    </div>
+  </main>
+
+<script type="module">
+import { db } from './app.js';
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+const calendarGrid = document.getElementById('calendarGrid');
+const monthYearLabel = document.getElementById('monthYear');
+const prevMonthBtn = document.getElementById('prevMonth');
+const nextMonthBtn = document.getElementById('nextMonth');
+
+const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+let currentDate = new Date();
+let approvedCuti = [];
+
+// Ambil data cuti Approved dari Firebase
+onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
+  approvedCuti = [];
+  snapshot.forEach(child => {
+    const data = child.val();
+    if (data.status === 'Approved') {
+      approvedCuti.push({
+        nama: data.nama,
+        start: new Date(data.tanggalMulai),
+        end: new Date(data.tanggalSelesai)
+      });
+    }
+  });
+  renderCalendar(currentDate);
+});
+
+function renderCalendar(date) {
+  calendarGrid.innerHTML = '';
+
+  // Header hari
+    dayNames.forEach(day => {
+    const div = document.createElement('div');
+    div.className = 'day-header';
+    div.textContent = day;
+    calendarGrid.appendChild(div);
+  });
+
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  monthYearLabel.textContent = date.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+
+  // Sel kosong sebelum tanggal 1
+  for (let i = 0; i < firstDay; i++) {
+    const emptyCell = document.createElement('div');
+    emptyCell.className = 'day-cell no-day';
+    calendarGrid.appendChild(emptyCell);
+  }
+
+  // Tanggal dalam bulan
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cellDate = new Date(year, month, day);
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+
+    const dayNumber = document.createElement('div');
+    dayNumber.className = 'day-number';
+    dayNumber.textContent = day;
+    cell.appendChild(dayNumber);
+
+    const ul = document.createElement('ul');
+    ul.className = 'cuti-list';
+
+    // Tampilkan pegawai cuti pada tanggal ini
+    approvedCuti.forEach(cuti => {
+      if (cellDate >= cuti.start && cellDate <= cuti.end) {
+        const li = document.createElement('li');
+        li.textContent = cuti.nama;
+        ul.appendChild(li);
+      }
+    });
+
+    cell.appendChild(ul);
+    calendarGrid.appendChild(cell);
+  }
+}
+
+prevMonthBtn.onclick = () => {
+  currentDate.setMonth(currentDate.getMonth() - 1);
+  renderCalendar(currentDate);
+};
+nextMonthBtn.onclick = () => {
+  currentDate.setMonth(currentDate.getMonth() + 1);
+  renderCalendar(currentDate);
+};
+
+// Render awal
+renderCalendar(currentDate);
+</script>
+
+</body>
+</html>
