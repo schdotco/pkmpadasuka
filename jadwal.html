@@ -563,6 +563,12 @@ document.getElementById('btnSimpanJadwal').addEventListener('click', async () =>
 }
     
 const kegiatan = {};
+// Ambil semua dropdown dan simpan ke objek kegiatan
+function sanitizeKey(str) {
+  return str.replace(/[.#$/\[\]/]/g, '_');
+}
+
+const kegiatan = {};
 document.querySelectorAll('.dropdown-group').forEach(group => {
   const label = group.querySelector('label').textContent.trim();
   const key = sanitizeKey(label);
@@ -571,9 +577,9 @@ document.querySelectorAll('.dropdown-group').forEach(group => {
     .map(sel => sel.value)
     .filter(v => v !== "");
       
-    kegiatan[label] = pegawaiList.length > 0 ? pegawaiList : ["-"];
-    }
-  });
+  kegiatan[key] = pegawaiList.length > 0 ? pegawaiList : ["-"];
+});
+
 
   const dataJadwal = {
     tanggal,
