@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📝 Pengajuan Cuti Pegawai</title>
 
-  <!-- ✅ Choices.js untuk searchable dropdown -->
+  <!-- Choices.js untuk dropdown searchable -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
@@ -83,7 +83,7 @@
     </div>
   </div>
 
-  <!-- Form Pengajuan Cuti -->
+  <!-- Form Pengajuan -->
   <main>
     <h2>📝 Pengajuan Cuti Pegawai</h2>
     <form id="formCuti">
@@ -118,7 +118,7 @@
 import { db } from './app.js';
 import { ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-// Ambil data pegawai dari Firebase
+// Ambil daftar pegawai dari Firebase
 const namaSelect = document.getElementById('namaPegawai');
 onValue(ref(db, 'Pegawai'), (snapshot) => {
   namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
@@ -130,8 +130,7 @@ onValue(ref(db, 'Pegawai'), (snapshot) => {
     opt.textContent = nama;
     namaSelect.appendChild(opt);
   });
-
-  // ✅ Aktifkan Choices.js setelah data terisi
+  // Aktifkan dropdown dengan search
   new Choices(namaSelect, {
     searchEnabled: true,
     shouldSort: false,
@@ -140,9 +139,8 @@ onValue(ref(db, 'Pegawai'), (snapshot) => {
   });
 });
 
-// Simpan pengajuan cuti ke Firebase
-const form = document.getElementById('formCuti');
-form.addEventListener('submit', async (e) => {
+// Simpan pengajuan ke database
+document.getElementById('formCuti').addEventListener('submit', async (e) => {
   e.preventDefault();
   const nama = namaSelect.value;
   const jenisCuti = document.getElementById('jenisCuti').value;
@@ -168,7 +166,7 @@ form.addEventListener('submit', async (e) => {
   });
 
   alert('✅ Pengajuan cuti berhasil dikirim!');
-  form.reset();
+  e.target.reset();
 });
 </script>
 
