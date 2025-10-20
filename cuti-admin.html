@@ -286,29 +286,33 @@ function loadData() {
   });
 }
 
-// Tutup popup
+// Tutup popup manual
 popupCancel.onclick = () => popupOverlay.style.display = 'none';
 
-// Konfirmasi perubahan status
+// Simpan perubahan status
 popupConfirm.onclick = async () => {
   if (!selectedId || !selectedAction) return;
-  try {
-    await update(ref(db, 'pengajuan_cuti/' + selectedId), {
-      status: selectedAction,
-      catatanAdmin: popupCatatan.value.trim(),
-      disetujuiPada: new Date().toISOString()
-    });
 
-    // Tutup popup setelah update berhasil
-    popupOverlay.style.display = 'none';
-    selectedId = null;
-    selectedAction = null;
-    alert(`Pengajuan berhasil ${selectedAction?.toLowerCase() || ''}!`);
+  // 🔹 Tutup popup dulu biar langsung hilang dari layar
+  popupOverlay.style.display = 'none';
 
-  } catch (err) {
-    console.error('Gagal memperbarui data:', err);
-    alert('Terjadi kesalahan saat menyimpan perubahan.');
-  }
+  // 🔹 Sedikit delay agar CSS repaint dulu sebelum update Firebase
+  setTimeout(async () => {
+    try {
+      await update(ref(db, 'pengajuan_cuti/' + selectedId), {
+        status: selectedAction,
+        catatanAdmin: popupCatatan.value.trim(),
+        disetujuiPada: new Date().toISOString()
+      });
+
+      // Reset variabel
+      selectedId = null;
+      selectedAction = null;
+    } catch (err) {
+      console.error('Gagal memperbarui data:', err);
+      alert('Terjadi kesalahan saat menyimpan perubahan.');
+    }
+  }, 150); // 150ms cukup untuk transisi visual
 };
 
 // Jalankan realtime listener
