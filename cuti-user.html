@@ -133,8 +133,11 @@
     <form id="formCuti">
       <div>
         <label for="nama">Nama Pegawai</label>
-        <input type="text" id="nama" name="nama" placeholder="Nama lengkap" required>
+        <select id="nama" name="nama" required>
+          <option value="">-- Pilih Pegawai --</option>
+        </select>
       </div>
+
 
       <div>
         <label for="nip">NIP/NIK</label>
@@ -178,11 +181,33 @@
 
 <script type="module">
   import { db } from './app.js';
-  import { ref, push } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+  import { ref, get, push } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
   const form = document.getElementById('formCuti');
   const successMsg = document.getElementById('successMsg');
+  const selectNama = document.getElementById('nama');
 
+  // ✅ Ambil daftar pegawai dari node "data_pegawai"
+  async function loadNamaPegawai() {
+    try {
+      const snapshot = await get(ref(db, 'data_pegawai'));
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        Object.values(data).forEach(pegawai => {
+          const option = document.createElement('option');
+          option.value = pegawai.nama;
+          option.textContent = pegawai.nama;
+          selectNama.appendChild(option);
+        });
+      }
+    } catch (err) {
+      console.error('Gagal memuat data pegawai:', err);
+    }
+  }
+
+  loadNamaPegawai(); // Jalankan saat halaman dibuka
+
+  // 📝 Form submit
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
