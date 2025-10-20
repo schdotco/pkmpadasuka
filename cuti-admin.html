@@ -96,11 +96,17 @@ async function loadData() {
       item.status === 'Ditolak' ? 'status-ditolak' :
       'status-menunggu';
 
-    const aksi =
-      item.status === 'Menunggu Persetujuan'
-        ? `<button class='btn btn-approve' data-id='${item.id}' data-act='Disetujui'>Setujui</button>
-           <button class='btn btn-reject' data-id='${item.id}' data-act='Ditolak'>Tolak</button>`
-        : `<span>${item.status}</span>`;
+    // ✅ Perbaikan logika status yang termasuk "menunggu"
+    const isMenunggu =
+      item.status === 'Menunggu' ||
+      item.status === 'Pending' ||
+      item.status === 'Menunggu Persetujuan';
+
+    // ✅ Perbaikan variabel aksi
+    const aksiCell = isMenunggu
+      ? `<button class="btn btn-approve" data-id="${item.id}" data-action="Disetujui">Setujui</button>
+         <button class="btn btn-reject" data-id="${item.id}" data-action="Ditolak">Tolak</button>`
+      : `<span>${item.status}</span>`;
 
     tr.innerHTML = `
       <td>${item.nama}</td>
@@ -108,15 +114,16 @@ async function loadData() {
       <td>${item.tanggalMulai} s/d ${item.tanggalSelesai}</td>
       <td>${item.keterangan || '-'}</td>
       <td><span class="${statusClass}">${item.status}</span></td>
-      <td>${aksi}</td>
+      <td>${aksiCell}</td>
     `;
     tabel.appendChild(tr);
   });
 
-  document.querySelectorAll('.btn').forEach(btn => {
+  // ✅ Pastikan tombol berfungsi
+  document.querySelectorAll('.btn-approve, .btn-reject').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedId = btn.dataset.id;
-      selectedAction = btn.dataset.act;
+      selectedAction = btn.dataset.action;
       popupTitle.textContent = `${selectedAction} Pengajuan Cuti`;
       popupCatatan.value = '';
       popupOverlay.style.display = 'flex';
@@ -124,6 +131,7 @@ async function loadData() {
   });
 }
 
+// Popup actions
 popupCancel.onclick = () => popupOverlay.style.display = 'none';
 
 popupConfirm.onclick = async () => {
