@@ -121,56 +121,50 @@
     </div>
   </main>
 
-  <script type="module">
-    import { db } from './app.js';
-    import { ref, get, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+ <script type="module">
+import { db } from './app.js';
+import { ref, get, query, limitToLast, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    const tbody = document.querySelector('#tabelHasil tbody');
-    const btnShare = document.getElementById('btnShareWA');
-    const btnDelete = document.getElementById('btnDelete');
+const tbody = document.querySelector('#tabelHasil tbody');
+const btnShare = document.getElementById('btnShareWA');
+const btnDelete = document.getElementById('btnDelete');
 
-    // 🆕 Tombol delete
-    const btnDelete = document.createElement('button');
-    btnDelete.textContent = '🗑 Hapus Jadwal Ini';
-    btnDelete.style.background = '#d32f2f';
-    btnDelete.style.marginLeft = '10px';
-    btnDelete.onclick = deleteData;
-    document.querySelector('main').appendChild(btnDelete);
-    
-    // 🔹 Ambil data terakhir dari Firebase
-    const jadwalRef = query(ref(db, 'jadwal'), limitToLast(1));
-    const snapshot = await get(jadwalRef);
+let jadwalKey = null;
+let dataJadwal = null;
 
-    if (!snapshot.exists()) {
-      alert('Tidak ada data jadwal ditemukan!');
-      window.location.href = 'jadwal.html';
-    }
+// 🔹 Ambil data terakhir dari Firebase
+const jadwalRef = query(ref(db, 'jadwal'), limitToLast(1));
+const snapshot = await get(jadwalRef);
 
-    let dataJadwal = null;
-    snapshot.forEach(child => {
-      jadwalKey = child.key;
-      dataJadwal = child.val();
-    });
+if (!snapshot.exists()) {
+  alert('Tidak ada data jadwal ditemukan!');
+  window.location.href = 'jadwal.html';
+}
 
-    function addRow(label, value) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<th>${label}</th><td>${value}</td>`;
-      tbody.appendChild(tr);
-    }
+snapshot.forEach(child => {
+  jadwalKey = child.key;
+  dataJadwal = child.val();
+});
 
-    // 🔹 Info utama
-    addRow('Tanggal', dataJadwal.tanggal);
-    addRow('Dress Code', dataJadwal.dressCode);
-    addRow('Pembina', dataJadwal.pembina);
+function addRow(label, value) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<th>${label}</th><td>${value}</td>`;
+  tbody.appendChild(tr);
+}
 
-    // 🔹 Tampilkan seluruh kegiatan
-    if (dataJadwal.kegiatan && Object.keys(dataJadwal.kegiatan).length > 0) {
-      Object.entries(dataJadwal.kegiatan).forEach(([namaKegiatan, pegawai]) => {
-        addRow(namaKegiatan, pegawai.join(', '));
-      });
-    } else {
-      addRow('Kegiatan', '<i>Tidak ada data kegiatan.</i>');
-    }
+// 🔹 Info utama
+addRow('Tanggal', dataJadwal.tanggal);
+addRow('Dress Code', dataJadwal.dressCode);
+addRow('Pembina', dataJadwal.pembina);
+
+// 🔹 Tampilkan seluruh kegiatan
+if (dataJadwal.kegiatan && Object.keys(dataJadwal.kegiatan).length > 0) {
+  Object.entries(dataJadwal.kegiatan).forEach(([namaKegiatan, pegawai]) => {
+    addRow(namaKegiatan, pegawai.join(', '));
+  });
+} else {
+  addRow('Kegiatan', '<i>Tidak ada data kegiatan.</i>');
+}
 
 // ✨ Tombol Share WhatsApp (rapi)
 btnShare.onclick = () => {
@@ -192,12 +186,11 @@ btnShare.onclick = () => {
   pesan += `📌 _Pesan ini dikirim otomatis dari Aplikasi Jadwal Pegawai_`;
 
   const encodedMessage = encodeURIComponent(pesan);
-  const waURL = `https://wa.me/?text=${encodedMessage}`;
-  window.open(waURL, '_blank');
+  window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
 };
 
 // 🗑 Fungsi Hapus Data
-async function deleteData() {
+btnDelete.onclick = async () => {
   if (!jadwalKey) {
     alert('❌ Data jadwal tidak ditemukan.');
     return;
@@ -213,7 +206,7 @@ async function deleteData() {
   } catch (err) {
     alert('❌ Gagal menghapus data: ' + err.message);
   }
-}
-  </script>
+};
+</script>
 </body>
 </html>
