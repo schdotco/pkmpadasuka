@@ -34,6 +34,14 @@
     const tbody = document.querySelector('#tabelHasil tbody');
     const btnShare = document.getElementById('btnShareWA');
 
+    // 🆕 Tombol delete
+    const btnDelete = document.createElement('button');
+    btnDelete.textContent = '🗑 Hapus Jadwal Ini';
+    btnDelete.style.background = '#d32f2f';
+    btnDelete.style.marginLeft = '10px';
+    btnDelete.onclick = deleteData;
+    document.querySelector('main').appendChild(btnDelete);
+    
     // 🔹 Ambil data terakhir dari Firebase
     const jadwalRef = query(ref(db, 'jadwal'), limitToLast(1));
     const snapshot = await get(jadwalRef);
@@ -45,6 +53,7 @@
 
     let dataJadwal = null;
     snapshot.forEach(child => {
+      jadwalKey = child.key;
       dataJadwal = child.val();
     });
 
@@ -91,6 +100,25 @@ btnShare.onclick = () => {
   const waURL = `https://wa.me/?text=${encodedMessage}`;
   window.open(waURL, '_blank');
 };
+
+// 🗑 Fungsi Hapus Data
+async function deleteData() {
+  if (!jadwalKey) {
+    alert('❌ Data jadwal tidak ditemukan.');
+    return;
+  }
+
+  const konfirmasi = confirm('⚠️ Apakah Anda yakin ingin menghapus jadwal ini?');
+  if (!konfirmasi) return;
+
+  try {
+    await remove(ref(db, 'jadwal/' + jadwalKey));
+    alert('✅ Jadwal berhasil dihapus.');
+    window.location.href = 'jadwal.html';
+  } catch (err) {
+    alert('❌ Gagal menghapus data: ' + err.message);
+  }
+}
   </script>
 </body>
 </html>
