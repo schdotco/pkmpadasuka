@@ -68,24 +68,29 @@
       addRow('Kegiatan', '<i>Tidak ada data kegiatan.</i>');
     }
 
-    // 🔹 Tombol Share WhatsApp
-    btnShare.onclick = () => {
-      let pesan = `🗓️ *Jadwal Pegawai Puskesmas Padasuka*\n`;
-      pesan += `📅 Tanggal: ${dataJadwal.tanggal}\n`;
-      pesan += `👔 Dress Code: ${dataJadwal.dressCode}\n`;
-      pesan += `🧑‍🏫 Pembina: ${dataJadwal.pembina}\n\n`;
-      pesan += `📋 *Daftar Kegiatan:*\n`;
+// ✨ Tombol Share WhatsApp (rapi)
+btnShare.onclick = () => {
+  let pesan = `✨ *Jadwal Pegawai - UPTD Puskesmas Padasuka* ✨\n`;
+  pesan += `───────────────────────\n`;
+  pesan += `📅 *Tanggal:* ${dataJadwal.tanggal}\n`;
+  pesan += `👔 *Dress Code:* ${dataJadwal.dressCode}\n`;
+  pesan += `🧑‍🏫 *Pembina:* ${dataJadwal.pembina}\n`;
+  pesan += `───────────────────────\n`;
+  pesan += `📋 *DAFTAR KEGIATAN*\n\n`;
 
-      if (dataJadwal.kegiatan) {
-        Object.entries(dataJadwal.kegiatan).forEach(([namaKegiatan, pegawai]) => {
-          pesan += `• ${namaKegiatan}: ${pegawai.join(', ')}\n`;
-        });
-      }
+  if (dataJadwal.kegiatan) {
+    Object.entries(dataJadwal.kegiatan).forEach(([namaKegiatan, pegawai]) => {
+      pesan += `• *${namaKegiatan}*\n  👤 ${pegawai.join(', ')}\n\n`;
+    });
+  }
 
-      const encodedMessage = encodeURIComponent(pesan);
-      const waURL = `https://wa.me/?text=${encodedMessage}`;
-      window.open(waURL, '_blank');
-    };
+  pesan += `───────────────────────\n`;
+  pesan += `📌 _Pesan ini dikirim otomatis dari Aplikasi Jadwal Pegawai_`;
+
+  const encodedMessage = encodeURIComponent(pesan);
+  const waURL = `https://wa.me/?text=${encodedMessage}`;
+  window.open(waURL, '_blank');
+};
   </script>
 </body>
 </html>
