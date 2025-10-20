@@ -270,7 +270,7 @@ btnShare.onclick = () => {
         const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
         const pegawai = dataJadwal.kegiatan[key];
         if (pegawai) {
-          pesan += `• *${namaAsli}*\n  👤 ${pegawai.join(', ')}\n`;
+          pesan += `• *${namaAsli}*\n  ${pegawai.join(', ')}\n`;
         }
       });
       pesan += `\n`;
