@@ -1,43 +1,43 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>👨‍💼 Persetujuan Cuti Pegawai</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - Persetujuan Cuti Pegawai</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      background: #f4f6f9;
       margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
     }
+
     .navbar {
       background: #1976d2;
-      color: white;
-      padding: 12px 20px;
+      color: #fff;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 12px 20px;
     }
-    .navbar a {
-      color: white;
-      text-decoration: none;
-      margin-right: 15px;
+    .navbar h1 { font-size: 18px; margin: 0; }
+    .navbar .menu { display: flex; gap: 15px; }
+    .navbar .menu a { color: #fff; text-decoration: none; font-size: 14px; }
+    .navbar .menu a:hover { text-decoration: underline; }
+    .navbar button {
+      background: #fff; color: #1976d2; border: none;
+      padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px;
     }
-    .navbar a:hover {
-      text-decoration: underline;
-    }
+
     main {
       max-width: 1000px;
       margin: 30px auto;
-      background: white;
+      background: #fff;
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    h2 {
-      color: #1976d2;
-      margin-top: 0;
-    }
+    h2 { color: #1976d2; margin-top: 0; }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -46,95 +46,90 @@
     th, td {
       border: 1px solid #ddd;
       padding: 8px;
+      text-align: left;
       font-size: 14px;
     }
-    th {
-      background: #f0f0f0;
-      text-align: left;
-    }
+    th { background: #f0f0f0; }
+
     .btn {
       padding: 5px 8px;
-      font-size: 13px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      margin-right: 5px;
+      font-size: 13px;
     }
-    .btn-approve { background: #4caf50; color: white; }
-    .btn-approve:hover { background: #3e8e41; }
-    .btn-reject { background: #d32f2f; color: white; }
-    .btn-reject:hover { background: #b71c1c; }
-    .status { font-weight: bold; }
-    .status.Menunggu { color: #ff9800; }
-    .status.Approved { color: #4caf50; }
-    .status.Rejected { color: #d32f2f; }
+    .btn-approve { background: #4caf50; color: #fff; }
+    .btn-reject { background: #f44336; color: #fff; }
 
-    /* Popup overlay */
+    /* Popup */
     .popup-overlay {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
       background: rgba(0,0,0,0.5);
-      display: none;
+      display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
+      z-index: 9999;
     }
-    .popup {
-      background: white;
+    .popup-box {
+      background: #fff;
       padding: 20px;
       border-radius: 8px;
-      max-width: 400px;
-      width: 100%;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      width: 320px;
+      max-width: 90%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      animation: fadeIn 0.2s ease;
     }
-    .popup h3 {
+    .popup-box h3 {
       margin-top: 0;
+      font-size: 16px;
       color: #1976d2;
-      font-size: 18px;
     }
-    .popup textarea {
+    .popup-box textarea {
       width: 100%;
-      height: 80px;
-      margin-top: 8px;
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      resize: vertical;
-    }
-    .popup .actions {
-      margin-top: 15px;
-      text-align: right;
-    }
-    .popup .actions button {
-      padding: 6px 12px;
+      min-height: 70px;
+      margin-top: 10px;
+      padding: 6px;
       font-size: 13px;
-      margin-left: 5px;
+    }
+    .popup-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .popup-buttons button {
+      padding: 6px 10px;
+      font-size: 13px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
     }
-    .btn-confirm { background: #1976d2; color: white; }
-    .btn-cancel { background: #999; color: white; }
+    .btn-cancel { background: #ccc; color: #000; }
+    .btn-confirm { background: #1976d2; color: #fff; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
 
-  <!-- Navbar -->
   <div class="navbar">
-    <div>🏛️ UPTD Puskesmas Padasuka</div>
-    <div>
+    <h1>🏛️ Admin Cuti - Puskesmas Padasuka</h1>
+    <div class="menu">
       <a href="dashboard.html">Dashboard</a>
       <a href="cuti-user.html">Pengajuan</a>
       <a href="cuti-list.html">Daftar Cuti</a>
+      <a href="kalender.html">Kalender</a>
     </div>
+    <button onclick="window.location.href='login.html'">Logout</button>
   </div>
 
-  <!-- Konten -->
   <main>
-    <h2>👨‍💼 Persetujuan Pengajuan Cuti Pegawai</h2>
-    <table>
+    <h2>📋 Daftar Pengajuan Cuti</h2>
+    <table id="tabelCuti">
       <thead>
         <tr>
           <th>Nama</th>
@@ -145,94 +140,85 @@
           <th>Aksi</th>
         </tr>
       </thead>
-      <tbody id="tbodyCuti"></tbody>
+      <tbody></tbody>
     </table>
   </main>
 
-  <!-- Popup konfirmasi -->
-  <div class="popup-overlay" id="popupOverlay">
-    <div class="popup">
-      <h3 id="popupTitle">Konfirmasi</h3>
-      <p>Tulis catatan untuk pengajuan ini (opsional):</p>
-      <textarea id="catatanAdmin" placeholder="Contoh: Disetujui karena memenuhi syarat..."></textarea>
-      <div class="actions">
-        <button class="btn-cancel" id="btnCancelPopup">Batal</button>
-        <button class="btn-confirm" id="btnConfirmPopup">Konfirmasi</button>
-      </div>
-    </div>
-  </div>
-
 <script type="module">
-import { db } from './app.js';
-import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+  import { db } from './app.js';
+  import { ref, get, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-const tbody = document.getElementById('tbodyCuti');
-const popupOverlay = document.getElementById('popupOverlay');
-const popupTitle = document.getElementById('popupTitle');
-const catatanAdmin = document.getElementById('catatanAdmin');
-const btnCancelPopup = document.getElementById('btnCancelPopup');
-const btnConfirmPopup = document.getElementById('btnConfirmPopup');
+  const tbody = document.querySelector('#tabelCuti tbody');
 
-let selectedId = null;
-let selectedAction = null;
+  // 🔹 Ambil semua pengajuan cuti
+  async function loadCuti() {
+    tbody.innerHTML = '';
+    const snapshot = await get(ref(db, 'pengajuan_cuti'));
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      Object.entries(data).forEach(([id, item]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.nama}</td>
+          <td>${item.jenisCuti}</td>
+          <td>${item.tanggalMulai} s/d ${item.tanggalSelesai}</td>
+          <td>${item.keterangan || '-'}</td>
+          <td>${item.status}</td>
+          <td>
+            <button class="btn btn-approve" data-id="${id}">Setujui</button>
+            <button class="btn btn-reject" data-id="${id}">Tolak</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } else {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada pengajuan cuti</td></tr>`;
+    }
 
-// Ambil semua pengajuan cuti dari Firebase
-onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
-  tbody.innerHTML = '';
-  snapshot.forEach(child => {
-    const data = child.val();
-    const tr = document.createElement('tr');
-
-    tr.innerHTML = `
-      <td>${data.nama}</td>
-      <td>${data.jenisCuti}</td>
-      <td>${data.tanggalMulai} s.d ${data.tanggalSelesai}</td>
-      <td>${data.keterangan || '-'}</td>
-      <td><span class="status ${data.status.replace(/\s/g,'')}">${data.status}</span></td>
-      <td>
-        ${data.status === 'Menunggu Persetujuan' ? `
-          <button class="btn btn-approve" data-id="${data.id}" data-action="approve">Setujui</button>
-          <button class="btn btn-reject" data-id="${data.id}" data-action="reject">Tolak</button>
-        ` : '-'}
-      </td>
-    `;
-
-    tbody.appendChild(tr);
-  });
-
-  document.querySelectorAll('.btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedId = btn.getAttribute('data-id');
-      selectedAction = btn.getAttribute('data-action');
-
-      popupTitle.textContent = selectedAction === 'approve' ? 'Setujui Pengajuan Cuti' : 'Tolak Pengajuan Cuti';
-      catatanAdmin.value = '';
-      popupOverlay.style.display = 'flex';
+    // Pasang event handler setelah render
+    document.querySelectorAll('.btn-approve').forEach(btn => {
+      btn.onclick = () => showPopup('approve', btn.dataset.id);
     });
-  });
-});
+    document.querySelectorAll('.btn-reject').forEach(btn => {
+      btn.onclick = () => showPopup('reject', btn.dataset.id);
+    });
+  }
 
-btnCancelPopup.onclick = () => {
-  popupOverlay.style.display = 'none';
-  selectedId = null;
-  selectedAction = null;
-};
+  // 🔸 Fungsi popup konfirmasi
+  function showPopup(action, id) {
+    const overlay = document.createElement('div');
+    overlay.className = 'popup-overlay';
 
-btnConfirmPopup.onclick = async () => {
-  if (!selectedId || !selectedAction) return;
+    const popup = document.createElement('div');
+    popup.className = 'popup-box';
+    popup.innerHTML = `
+      <h3>${action === 'approve' ? 'Setujui Cuti' : 'Tolak Cuti'}</h3>
+      <p>Tambahkan catatan:</p>
+      <textarea id="popupNote" placeholder="Tulis catatan..."></textarea>
+      <div class="popup-buttons">
+        <button class="btn-cancel">Batal</button>
+        <button class="btn-confirm">Konfirmasi</button>
+      </div>
+    `;
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
 
-  const statusBaru = selectedAction === 'approve' ? 'Approved' : 'Rejected';
-  const cutiRef = ref(db, 'pengajuan_cuti/' + selectedId);
+    popup.querySelector('.btn-cancel').onclick = () => {
+      document.body.removeChild(overlay);
+    };
 
-  await update(cutiRef, {
-    status: statusBaru,
-    catatanAdmin: catatanAdmin.value.trim() || '-'
-  });
+    popup.querySelector('.btn-confirm').onclick = async () => {
+      const note = popup.querySelector('#popupNote').value;
+      await update(ref(db, 'pengajuan_cuti/' + id), {
+        status: action === 'approve' ? 'Disetujui' : 'Ditolak',
+        catatanAdmin: note
+      });
+      document.body.removeChild(overlay);
+      loadCuti();
+    };
+  }
 
-  popupOverlay.style.display = 'none';
-  alert(`✅ Pengajuan cuti telah di${selectedAction === 'approve' ? 'setujui' : 'tolak'}.`);
-};
+  loadCuti();
 </script>
-
 </body>
 </html>
