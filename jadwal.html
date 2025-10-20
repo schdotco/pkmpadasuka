@@ -478,7 +478,12 @@ import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.1
 const pembinaSelect = document.getElementById('pembina');
 let PegawaiList = [];
 
-// 🔹 Ambil data Pegawai dari Firebase
+// Fungsi untuk sanitize key Firebase
+function sanitizeKey(str) {
+  return str.replace(/[.#$/\[\]/]/g, '_');
+}
+
+// Ambil data Pegawai dari Firebase
 const PegawaiRef = ref(db, 'Pegawai');
 onValue(PegawaiRef, (snapshot) => {
   PegawaiList = [];
@@ -492,10 +497,13 @@ onValue(PegawaiRef, (snapshot) => {
     opt.textContent = namaLengkap;
     pembinaSelect.appendChild(opt);
   });
-
-  // Setelah list Pegawai siap → generate semua dropdown
   generateDropdowns();
 });
+
+// Jika pegawai gagal load, tetap generate dropdown kosong
+setTimeout(() => {
+  if (PegawaiList.length === 0) generateDropdowns();
+}, 2000);
 
 function generateDropdowns() {
   const config = {
@@ -510,7 +518,6 @@ function generateDropdowns() {
 
   Object.entries(config).forEach(([id, jumlah]) => createDropdown(jumlah, id));
 
-  // Aktifkan fitur searchable Choices.js setelah dropdown dibuat
   setTimeout(() => {
     document.querySelectorAll('.dropdown-row select').forEach(sel => {
       if (typeof Choices !== 'undefined') {
@@ -522,7 +529,7 @@ function generateDropdowns() {
         });
       }
     });
-  }, 800);
+  }, 500);
 }
 
 function createDropdown(jumlah, containerId) {
@@ -546,7 +553,7 @@ function createDropdown(jumlah, containerId) {
   }
 }
 
-// 🔹 Simpan Jadwal ke Firebase
+// Simpan ke Firebase
 document.getElementById('btnSimpanJadwal').addEventListener('click', async () => {
   const tanggal = document.getElementById('jadwalTanggal').value;
   const dressCode = document.getElementById('dressCode').value;
@@ -557,29 +564,15 @@ document.getElementById('btnSimpanJadwal').addEventListener('click', async () =>
     return;
   }
 
-  // Ambil semua dropdown dan simpan ke objek kegiatan
-  function sanitizeKey(str) {
-  return str.replace(/[.#$/\[\]/]/g, '_');
-}
-    
-const kegiatan = {};
-// Ambil semua dropdown dan simpan ke objek kegiatan
-function sanitizeKey(str) {
-  return str.replace(/[.#$/\[\]/]/g, '_');
-}
-
-const kegiatan = {};
-document.querySelectorAll('.dropdown-group').forEach(group => {
-  const label = group.querySelector('label').textContent.trim();
-  const key = sanitizeKey(label);
-  const selects = group.querySelectorAll('select');
-  const pegawaiList = Array.from(selects)
-    .map(sel => sel.value)
-    .filter(v => v !== "");
-      
-  kegiatan[key] = pegawaiList.length > 0 ? pegawaiList : ["-"];
-});
-
+  const kegiatan = {};
+  document.querySelectorAll('.dropdown-group').forEach(group => {
+    const label = group.querySelector('label').textContent.trim();
+    const key = sanitizeKey(label);
+    const pegawaiList = Array.from(group.querySelectorAll('select'))
+      .map(sel => sel.value)
+      .filter(v => v !== "");
+    kegiatan[key] = pegawaiList.length > 0 ? pegawaiList : ["-"];
+  });
 
   const dataJadwal = {
     tanggal,
@@ -602,13 +595,16 @@ document.querySelectorAll('.dropdown-group').forEach(group => {
       `📋 Total Kegiatan: ${Object.keys(kegiatan).length}%0A` +
       `Lihat detail di aplikasi jadwal.`
     );
-    alert('✅ Jadwal berhasil disimpan!');
 
+    const whatsappUrl = `https://wa.me/?text=${ringkasan}`;
+
+    alert('✅ Jadwal berhasil disimpan!');
     const shareBtn = document.createElement('button');
     shareBtn.textContent = '📤 Share ke WhatsApp';
     shareBtn.className = 'btn-secondary';
     shareBtn.onclick = () => window.open(whatsappUrl, '_blank');
     document.querySelector('main').appendChild(shareBtn);
+
   } catch (err) {
     alert('❌ Gagal menyimpan jadwal: ' + err.message);
   }
