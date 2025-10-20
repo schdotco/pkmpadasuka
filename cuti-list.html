@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📋 Daftar Pengajuan Cuti - UPTD Puskesmas Padasuka</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      background: #1976d2;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+    }
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .navbar .menu {
+      display: flex;
+      gap: 15px;
+    }
+    .navbar .menu a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
+    .navbar button {
+      background: #fff;
+      color: #1976d2;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      font-size: 20px;
+      color: #1976d2;
+      margin-top: 0;
+      border-bottom: 2px solid #1976d2;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-size: 14px;
+    }
+    th {
+      background: #e3f2fd;
+      text-align: left;
+    }
+
+    .status-menunggu {
+      background: #fff3cd;
+      color: #856404;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: inline-block;
+    }
+    .status-disetujui {
+      background: #d4edda;
+      color: #155724;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: inline-block;
+    }
+    .status-ditolak {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: inline-block;
+    }
+
+    .filter-buttons {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .filter-buttons button {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .filter-buttons button:hover {
+      background: #125ca1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div class="menu">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="cuti.html">Ajukan Cuti</a>
+    </div>
+    <button onclick="window.location.href='login.html'">Logout</button>
+  </div>
+
+  <main>
+    <h2>📋 Daftar Pengajuan Cuti Pegawai</h2>
+
+    <div class="filter-buttons">
+      <button onclick="filterStatus('all')">Semua</button>
+      <button onclick="filterStatus('Menunggu Persetujuan')">Menunggu</button>
+      <button onclick="filterStatus('Disetujui')">Disetujui</button>
+      <button onclick="filterStatus('Ditolak')">Ditolak</button>
+    </div>
+
+    <table id="tabelCuti">
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Jenis Cuti</th>
+          <th>Tanggal</th>
+          <th>Status</th>
+          <th>Keterangan</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+<script type="module">
+import { db } from './app.js';
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+const tbody = document.querySelector('#tabelCuti tbody');
+let semuaData = [];
+
+function renderTable(data) {
+  tbody.innerHTML = '';
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#888;">Tidak ada data cuti</td></tr>`;
+    return;
+  }
+
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.nama}</td>
+      <td>${item.jenisCuti}</td>
+      <td>${item.tanggalMulai} s/d ${item.tanggalSelesai}</td>
+      <td>
+        ${item.status === 'Menunggu Persetujuan' ? `<span class="status-menunggu">Menunggu</span>` :
+          item.status === 'Disetujui' ? `<span class="status-disetujui">Disetujui</span>` :
+          `<span class="status-ditolak">Ditolak</span>`}
+      </td>
+      <td>${item.keterangan || '-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Ambil data cuti dari Firebase
+onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
+  semuaData = [];
+  if (snapshot.exists()) {
+    snapshot.forEach(child => {
+      semuaData.push(child.val());
+    });
+  }
+  renderTable(semuaData);
+});
+
+// Filter status
+window.filterStatus = (status) => {
+  if (status === 'all') {
+    renderTable(semuaData);
+  } else {
+    const filtered = semuaData.filter(item => item.status === status);
+    renderTable(filtered);
+  }
+};
+</script>
+
+</body>
+</html>
