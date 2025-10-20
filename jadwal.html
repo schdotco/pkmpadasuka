@@ -434,7 +434,7 @@ background: #333;
       </div>
 
       <div class="dropdown-group">
-        <label>Cek Kesehatan Gratis/label>
+        <label>Cek Kesehatan Gratis</label>
         <div class="dropdown-row" id="ckg"></div>
       </div>
       <!-- Kluster berikutnya tetap sama... -->
@@ -558,15 +558,20 @@ document.getElementById('btnSimpanJadwal').addEventListener('click', async () =>
   }
 
   // Ambil semua dropdown dan simpan ke objek kegiatan
-  const kegiatan = {};
-  document.querySelectorAll('.dropdown-group').forEach(group => {
-    const label = group.querySelector('label').textContent;
-    const selects = group.querySelectorAll('select');
-    const pegawaiList = Array.from(selects)
-      .map(sel => sel.value)
-      .filter(v => v !== "");
+  function sanitizeKey(str) {
+  return str.replace(/[.#$/\[\]/]/g, '_');
+}
+    
+const kegiatan = {};
+document.querySelectorAll('.dropdown-group').forEach(group => {
+  const label = group.querySelector('label').textContent.trim();
+  const key = sanitizeKey(label);
+  const selects = group.querySelectorAll('select');
+  const pegawaiList = Array.from(selects)
+    .map(sel => sel.value)
+    .filter(v => v !== "");
       
-      kegiatan[label] = pegawaiList; > 0 ? pegawaiList : ["-"];
+    kegiatan[label] = pegawaiList.length > 0 ? pegawaiList : ["-"];
     }
   });
 
@@ -588,7 +593,7 @@ document.getElementById('btnSimpanJadwal').addEventListener('click', async () =>
       `📅 Tanggal: ${tanggal}%0A` +
       `👔 Dress Code: ${dressCode}%0A` +
       `🧑‍🏫 Pembina: ${pembina}%0A%0A` +
-      `📋 Total Kegiatan: ${Object.keys.kegiatan.length}%0A` +
+      `📋 Total Kegiatan: ${Object.keys(kegiatan).length}%0A` +
       `Lihat detail di aplikasi jadwal.`
     );
     alert('✅ Jadwal berhasil disimpan!');
