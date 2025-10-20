@@ -231,7 +231,7 @@ if (dataJadwal.kegiatan) {
     const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
     const pegawai = dataJadwal.kegiatan[key];
     if (pegawai) {
-      pesan += `• *${namaAsli}*\n  👤 ${pegawai.join(', ')}\n\n`;
+      pesan += `• *${namaAsli}*\n ${pegawai.join(', ')}\n\n`;
     }
   });
 }
