@@ -132,85 +132,92 @@ const btnDelete = document.getElementById('btnDelete');
 let jadwalKey = null;
 let dataJadwal = null;
 
-// ✅ Struktur kluster dan urutan kegiatan
+// ✅ Struktur kluster & kegiatan (sudah diperbaiki)
 const klusterData = [
   {
     judulUtama: "I. Kegiatan Dalam Gedung",
     sub: [
       {
-    judul: "Kluster 1",
-    kegiatan: [
-      "Screening CKG",
-      "Pendaftaran & Skrining BPJS",
-      "Rekam Medis",
-      "Pusat Informasi & Rujukan",
-      "Kasir",
-      "Kepegawaian dan Administrasi Surat",
-      "Mutu dan Monitoring PPI",
-      "Aset",
-      "BOK",
-      "BLUD",
-      "Security",
-      "Driver",
-      "Cleaning Service",
-      "Juru Masak"
+        judul: "Kluster 1",
+        kegiatan: [
+          "Screening CKG",
+          "Pendaftaran & Skrining BPJS",
+          "Rekam Medis",
+          "Pusat Informasi & Rujukan",
+          "Kasir",
+          "Kepegawaian dan Administrasi Surat",
+          "Mutu dan Monitoring PPI",
+          "Aset",
+          "BOK",
+          "BLUD",
+          "Security",
+          "Driver",
+          "Cleaning Service",
+          "Juru Masak"
+        ]
+      },
+      {
+        judul: "Kluster 2",
+        kegiatan: [
+          "KIA",
+          "MTBS (Kesehatan Anak)",
+          "PONED",
+          "Kelas Bumil",
+          "USG",
+          "Imunisasi",
+          "Input ASIK"
+        ]
+      },
+      {
+        judul: "Kluster 3",
+        kegiatan: [
+          "Penapisan",
+          "Dewasa",
+          "Lansia",
+          "KB"
+        ]
+      },
+      {
+        judul: "Kluster 4",
+        kegiatan: [
+          "TB",
+          "Surveilans",
+          "Kesling"
+        ]
+      },
+      {
+        judul: "Kluster 5",
+        kegiatan: [
+          "Gigi & Mulut 1",
+          "Gigi & Mulut 2",
+          "NC",
+          "Farmasi",
+          "Laboratorium",
+          "Konseling Terpadu",
+          "IGD Tindakan",
+          "Psikolog",
+          "Cek Kesehatan Gratis"
+        ]
+      }
     ]
   },
   {
-    judul: "Kluster 2",
-    kegiatan: [
-      "KIA",
-      "MTBS (Kesehatan Anak)",
-      "PONED",
-      "Kelas Bumil",
-      "USG",
-      "Imunisasi",
-      "Input ASIK"
-    ]
-  },
-  {
-    judul: "Kluster 3",
-    kegiatan: [
-      "Penapisan",
-      "Dewasa",
-      "Lansia",
-      "KB"
-    ]
-  },
-  {
-    judul: "Kluster 4",
-    kegiatan: [
-      "TB",
-      "Surveilans",
-      "Kesling"
-    ]
-  },
-  {
-    judul: "Kluster 5",
-    kegiatan: [
-      "Gigi & Mulut 1",
-      "Gigi & Mulut 2",
-      "NC",
-      "Farmasi",
-      "Laboratorium",
-      "Konseling Terpadu",
-      "IGD Tindakan",
-      "Psikolog",
-      "Cek Kesehatan Gratis"
-    ]
-  },
-  {
-    judul: "II. Kegiatan Luar Gedung",
-    kegiatan: [
-      "Posyandu, PKG Sekolah, BIAS",
-      "Rapat & Pelatihan",
-      "Sakit",
-      "Cuti Tahunan"
+    judulUtama: "II. Kegiatan Luar Gedung",
+    sub: [
+      {
+        judul: "Kegiatan Luar",
+        kegiatan: [
+          "Posyandu, PKG Sekolah, BIAS",
+          "Rapat & Pelatihan",
+          "Sakit",
+          "Cuti Tahunan"
+        ]
+      }
     ]
   }
 ];
 
-// Ambil data terakhir dari Firebase
+// 🔹 Ambil data terakhir dari Firebase
 const jadwalRef = query(ref(db, 'jadwal'), limitToLast(1));
 const snapshot = await get(jadwalRef);
 
@@ -224,6 +231,7 @@ snapshot.forEach(child => {
   dataJadwal = child.val();
 });
 
+// 🔹 Fungsi bantu untuk isi tabel
 function addRow(label, value) {
   const tr = document.createElement('tr');
   tr.innerHTML = `<th>${label}</th><td>${value}</td>`;
@@ -237,27 +245,30 @@ function addHeaderRow(title) {
 }
 
 // 🔹 Info utama
-addRow('Tanggal', dataJadwal.tanggal);
-addRow('Dress Code', dataJadwal.dressCode);
-addRow('Pembina', dataJadwal.pembina);
+addRow('Tanggal', dataJadwal.tanggal || '-');
+addRow('Dress Code', dataJadwal.dressCode || '-');
+addRow('Pembina', dataJadwal.pembina || '-');
 
 // 🔹 Tampilkan kegiatan per kluster
 if (dataJadwal.kegiatan && Object.keys(dataJadwal.kegiatan).length > 0) {
-  klusterData.forEach(kluster => {
-    addHeaderRow(kluster.judul);
-    kluster.kegiatan.forEach(namaAsli => {
-      const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
-      const pegawai = dataJadwal.kegiatan[key];
-      if (pegawai) {
-        addRow(namaAsli, pegawai.join(', '));
-      }
+  klusterData.forEach(utama => {
+    addHeaderRow(utama.judulUtama);
+    utama.sub.forEach(kluster => {
+      addHeaderRow("🔹 " + kluster.judul);
+      kluster.kegiatan.forEach(namaAsli => {
+        const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
+        const pegawai = dataJadwal.kegiatan[key];
+        if (pegawai && pegawai.length > 0) {
+          addRow(namaAsli, pegawai.join(', '));
+        }
+      });
     });
   });
 } else {
   addRow('Kegiatan', '<i>Tidak ada data kegiatan.</i>');
 }
 
-// ✨ Tombol Share WhatsApp (rapi dengan kluster)
+// ✨ Tombol Share WhatsApp
 btnShare.onclick = () => {
   let pesan = `✨ *Jadwal Pegawai - UPTD Puskesmas Padasuka* ✨\n`;
   pesan += `───────────────────────\n`;
@@ -267,16 +278,19 @@ btnShare.onclick = () => {
   pesan += `───────────────────────\n`;
 
   if (dataJadwal.kegiatan) {
-    klusterData.forEach(kluster => {
-      pesan += `*${kluster.judul}*\n`;
-      kluster.kegiatan.forEach(namaAsli => {
-        const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
-        const pegawai = dataJadwal.kegiatan[key];
-        if (pegawai) {
-          pesan += `• *${namaAsli}*\n  ${pegawai.join(', ')}\n`;
-        }
+    klusterData.forEach(utama => {
+      pesan += `*${utama.judulUtama}*\n`;
+      utama.sub.forEach(kluster => {
+        pesan += `> _${kluster.judul}_\n`;
+        kluster.kegiatan.forEach(namaAsli => {
+          const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
+          const pegawai = dataJadwal.kegiatan[key];
+          if (pegawai && pegawai.length > 0) {
+            pesan += `• *${namaAsli}*\n  ${pegawai.join(', ')}\n`;
+          }
+        });
+        pesan += `\n`;
       });
-      pesan += `\n`;
     });
   }
 
@@ -287,7 +301,7 @@ btnShare.onclick = () => {
   window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
 };
 
-// 🗑 Fungsi Hapus Data
+// 🗑 Tombol Hapus Jadwal
 btnDelete.onclick = async () => {
   if (!jadwalKey) {
     alert('❌ Data jadwal tidak ditemukan.');
