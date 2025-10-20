@@ -1,236 +1,175 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📝 Pengajuan Cuti Pegawai - UPTD Puskesmas Padasuka</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📝 Pengajuan Cuti Pegawai</title>
+
+  <!-- ✅ Choices.js untuk searchable dropdown -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
       background: #f4f6f9;
+      margin: 0;
     }
-
-    /* NAVBAR */
     .navbar {
       background: #1976d2;
-      color: #fff;
+      color: white;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 20px;
     }
-    .navbar h1 {
-      font-size: 18px;
-      margin: 0;
-    }
-    .navbar .menu {
-      display: flex;
-      gap: 15px;
-    }
-    .navbar .menu a {
-      color: #fff;
+    .navbar a {
+      color: white;
       text-decoration: none;
-      font-size: 14px;
+      margin-right: 15px;
     }
-    .navbar .menu a:hover {
+    .navbar a:hover {
       text-decoration: underline;
     }
-    .navbar button {
-      background: #fff;
-      color: #1976d2;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-
-    /* CONTAINER */
-    .container {
-      max-width: 600px;
-      margin: 30px auto;
-      background: #fff;
+    main {
+      max-width: 500px;
+      background: white;
       padding: 20px;
+      margin: 30px auto;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-
     h2 {
-      font-size: 20px;
       color: #1976d2;
       margin-top: 0;
-      border-bottom: 2px solid #1976d2;
-      padding-bottom: 5px;
-      margin-bottom: 20px;
     }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
     label {
+      display: block;
+      margin-top: 12px;
       font-weight: 600;
-      font-size: 14px;
-      color: #333;
     }
-
     input, select, textarea {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
       width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
       box-sizing: border-box;
     }
-
-    textarea {
-      resize: vertical;
-    }
-
-    button[type="submit"] {
+    button {
       background: #1976d2;
-      color: #fff;
-      padding: 10px;
+      color: white;
       border: none;
-      border-radius: 5px;
-      font-size: 15px;
-      cursor: pointer;
-    }
-    button[type="submit"]:hover {
-      background: #125ca1;
-    }
-
-    .success-message {
-      background: #e8f5e9;
-      color: #2e7d32;
-      padding: 10px;
+      padding: 10px 15px;
       margin-top: 15px;
-      border-radius: 5px;
-      display: none;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #125ca1;
     }
   </style>
 </head>
 <body>
 
-  <!-- NAVBAR -->
+  <!-- Navbar -->
   <div class="navbar">
-    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
-    <div class="menu">
+    <div>🏛️ UPTD Puskesmas Padasuka</div>
+    <div>
       <a href="dashboard.html">Dashboard</a>
-      <a href="profil.html">Profil</a>
-      <a href="jadwal.html">Jadwal</a>
-      <a href="cuti-user.html" style="text-decoration:underline;">Cuti</a>
+      <a href="cuti-list.html">Daftar Cuti</a>
     </div>
-    <button onclick="window.location.href='login.html'">Logout</button>
   </div>
 
-  <!-- FORM CUTI -->
-  <div class="container">
-    <h2>📝 Form Pengajuan Cuti Pegawai</h2>
+  <!-- Form Pengajuan Cuti -->
+  <main>
+    <h2>📝 Pengajuan Cuti Pegawai</h2>
     <form id="formCuti">
-      <div>
-        <label for="nama">Nama Pegawai</label>
-        <select id="nama" name="nama" required>
-          <option value="">-- Pilih Pegawai --</option>
-        </select>
-      </div>
+      <label>Nama Pegawai</label>
+      <select id="namaPegawai" required>
+        <option value="">-- Pilih Pegawai --</option>
+      </select>
 
+      <label>Jenis Cuti</label>
+      <select id="jenisCuti" required>
+        <option value="">-- Pilih Jenis Cuti --</option>
+        <option value="Cuti Tahunan">Cuti Tahunan</option>
+        <option value="Cuti Sakit">Cuti Sakit</option>
+        <option value="Cuti Melahirkan">Cuti Melahirkan</option>
+        <option value="Cuti Lainnya">Cuti Lainnya</option>
+      </select>
 
-      <div>
-        <label for="nip">NIP/NIK</label>
-        <input type="text" id="nip" name="nip" placeholder="Masukkan NIP/NIK" required>
-      </div>
+      <label>Tanggal Mulai</label>
+      <input type="date" id="tanggalMulai" required>
 
-      <div>
-        <label for="jenisCuti">Jenis Cuti</label>
-        <select id="jenisCuti" name="jenisCuti" required>
-          <option value="">-- Pilih Jenis Cuti --</option>
-          <option value="Cuti Tahunan">Cuti Tahunan</option>
-          <option value="Cuti Sakit">Cuti Sakit</option>
-          <option value="Cuti Melahirkan">Cuti Melahirkan</option>
-          <option value="Cuti Besar">Cuti Besar</option>
-          <option value="Cuti Alasan Penting">Cuti Alasan Penting</option>
-        </select>
-      </div>
+      <label>Tanggal Selesai</label>
+      <input type="date" id="tanggalSelesai" required>
 
-      <div>
-        <label for="tanggalMulai">Tanggal Mulai</label>
-        <input type="date" id="tanggalMulai" name="tanggalMulai" required>
-      </div>
+      <label>Keterangan</label>
+      <textarea id="keterangan" placeholder="Contoh: keperluan keluarga..." rows="3"></textarea>
 
-      <div>
-        <label for="tanggalSelesai">Tanggal Selesai</label>
-        <input type="date" id="tanggalSelesai" name="tanggalSelesai" required>
-      </div>
-
-      <div>
-        <label for="keterangan">Keterangan</label>
-        <textarea id="keterangan" name="keterangan" rows="3" placeholder="Tuliskan alasan cuti..." required></textarea>
-      </div>
-
-      <button type="submit">Ajukan Cuti</button>
+      <button type="submit">Kirim Pengajuan</button>
     </form>
-
-    <div class="success-message" id="successMsg">
-      ✅ Pengajuan cuti berhasil dikirim! Menunggu persetujuan admin.
-    </div>
-  </div>
+  </main>
 
 <script type="module">
-  import { db } from './app.js';
-  import { ref, get, push } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+import { db } from './app.js';
+import { ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-  const form = document.getElementById('formCuti');
-  const successMsg = document.getElementById('successMsg');
-  const selectNama = document.getElementById('nama');
+// Ambil data pegawai dari Firebase
+const namaSelect = document.getElementById('namaPegawai');
+onValue(ref(db, 'Pegawai'), (snapshot) => {
+  namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+  snapshot.forEach(child => {
+    const data = child.val();
+    const nama = data.gelar ? `${data.nama} ${data.gelar}` : data.nama;
+    const opt = document.createElement('option');
+    opt.value = nama;
+    opt.textContent = nama;
+    namaSelect.appendChild(opt);
+  });
 
-  // ✅ Ambil daftar pegawai dari node "data_pegawai"
-  async function loadNamaPegawai() {
-    try {
-      const snapshot = await get(ref(db, 'data_pegawai'));
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        Object.values(data).forEach(pegawai => {
-          const option = document.createElement('option');
-          option.value = pegawai.nama;
-          option.textContent = pegawai.nama;
-          selectNama.appendChild(option);
-        });
-      }
-    } catch (err) {
-      console.error('Gagal memuat data pegawai:', err);
-    }
+  // ✅ Aktifkan Choices.js setelah data terisi
+  new Choices(namaSelect, {
+    searchEnabled: true,
+    shouldSort: false,
+    itemSelectText: '',
+    searchPlaceholderValue: 'Cari nama pegawai...',
+  });
+});
+
+// Simpan pengajuan cuti ke Firebase
+const form = document.getElementById('formCuti');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nama = namaSelect.value;
+  const jenisCuti = document.getElementById('jenisCuti').value;
+  const tanggalMulai = document.getElementById('tanggalMulai').value;
+  const tanggalSelesai = document.getElementById('tanggalSelesai').value;
+  const keterangan = document.getElementById('keterangan').value;
+
+  if (!nama || !jenisCuti || !tanggalMulai || !tanggalSelesai) {
+    alert('⚠️ Lengkapi semua data!');
+    return;
   }
 
-  loadNamaPegawai(); // Jalankan saat halaman dibuka
-
-  // 📝 Form submit
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const data = {
-      nama: form.nama.value,
-      nip: form.nip.value,
-      jenisCuti: form.jenisCuti.value,
-      tanggalMulai: form.tanggalMulai.value,
-      tanggalSelesai: form.tanggalSelesai.value,
-      keterangan: form.keterangan.value,
-      status: 'Menunggu Persetujuan',
-      tanggalPengajuan: new Date().toISOString()
-    };
-
-    try {
-      await push(ref(db, 'pengajuan_cuti'), data);
-      successMsg.style.display = 'block';
-      form.reset();
-      window.scrollTo(0,0);
-    } catch (err) {
-      alert('Gagal mengajukan cuti: ' + err.message);
-    }
+  const cutiRef = push(ref(db, 'pengajuan_cuti'));
+  await set(cutiRef, {
+    id: cutiRef.key,
+    nama,
+    jenisCuti,
+    tanggalMulai,
+    tanggalSelesai,
+    keterangan,
+    status: 'Menunggu Persetujuan',
+    dibuatPada: new Date().toISOString()
   });
+
+  alert('✅ Pengajuan cuti berhasil dikirim!');
+  form.reset();
+});
 </script>
 
 </body>
