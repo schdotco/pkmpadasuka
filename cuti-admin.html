@@ -1,226 +1,80 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pengajuan Cuti Pegawai - UPTD Puskesmas Padasuka</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f6f9;
-    }
+<script type="module">
+import { db } from './app.js';
+import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    /* NAVBAR */
-    .navbar {
-      background: #1976d2;
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px;
-    }
-    .navbar h1 {
-      font-size: 18px;
-      margin: 0;
-    }
-    .navbar .menu {
-      display: flex;
-      gap: 15px;
-    }
-    .navbar .menu a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 14px;
-    }
-    .navbar .menu a:hover {
-      text-decoration: underline;
-    }
-    .navbar button {
-      background: #fff;
-      color: #1976d2;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-    }
+const tbody = document.getElementById('cutiTable');
+const popup = document.getElementById('popupCatatan');
+const catatanInput = document.getElementById('catatanAdmin');
+const btnKonfirmasi = document.getElementById('btnKonfirmasiPopup');
+let selectedId = null;
+let selectedAction = null;
 
-    /* MAIN FORM */
-    main {
-      max-width: 700px;
-      margin: 30px auto;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      padding: 20px;
-    }
-    h2 {
-      font-size: 20px;
-      color: #1976d2;
-      margin-top: 0;
-      border-bottom: 2px solid #1976d2;
-      padding-bottom: 5px;
-      margin-bottom: 20px;
-    }
+// Ambil data realtime
+onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
+  tbody.innerHTML = '';
+  if (snapshot.exists()) {
+    const data = snapshot.val();
+    Object.entries(data).forEach(([id, item]) => {
+      const status = item.status || 'Menunggu'; // ✅ Default jika kosong/null
+      const tanggal = `${item.tanggalMulai || '-'} s/d ${item.tanggalSelesai || '-'}`;
+      const tr = document.createElement('tr');
 
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
+      let aksiHtml = '';
+      if (status === 'Menunggu') {
+        aksiHtml = `
+          <button class="btn-approve" data-id="${id}" data-action="Disetujui">Setujui</button>
+          <button class="btn-reject" data-id="${id}" data-action="Ditolak">Tolak</button>
+        `;
+      } else {
+        aksiHtml = `<span style="font-weight:bold;color:${status === 'Disetujui' ? '#2e7d32' : '#c62828'};">${status}</span>`;
+      }
 
-    label {
-      font-weight: 600;
-      font-size: 14px;
-    }
+      tr.innerHTML = `
+        <td>${item.nama}</td>
+        <td>${item.jenisCuti}</td>
+        <td>${tanggal}</td>
+        <td>${status}</td>
+        <td>${item.catatanAdmin || '-'}</td>
+        <td>${aksiHtml}</td>
+      `;
+      tbody.appendChild(tr);
+    });
 
-    input, select, textarea {
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 100%;
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-
-    button[type="submit"] {
-      background: #1976d2;
-      color: #fff;
-      padding: 10px;
-      font-size: 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button[type="submit"]:hover {
-      background: #125ca1;
-    }
-
-    .success {
-      background: #e8f5e9;
-      color: #2e7d32;
-      padding: 10px;
-      border-radius: 4px;
-      font-size: 14px;
-      display: none;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Navbar -->
-  <div class="navbar">
-    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
-    <div class="menu">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="profil.html">Profil</a>
-      <a href="pegawai.html">Pegawai</a>
-      <a href="cuti-list.html">List Cuti</a>
-    </div>
-    <button onclick="window.location.href='login.html'">Logout</button>
-  </div>
-
-  <main>
-    <h2>📝 Form Pengajuan Cuti Pegawai</h2>
-
-    <div id="notifSuccess" class="success">✅ Pengajuan cuti berhasil dikirim!</div>
-
-    <form id="formCuti">
-      <div>
-        <label for="namaPegawai">Nama Pegawai</label>
-        <select id="namaPegawai" required>
-          <option value="">-- Pilih Pegawai --</option>
-        </select>
-      </div>
-
-      <div>
-        <label for="jenisCuti">Jenis Cuti</label>
-        <select id="jenisCuti" required>
-          <option value="">-- Pilih Jenis Cuti --</option>
-          <option value="Cuti Tahunan">Cuti Tahunan</option>
-          <option value="Cuti Sakit">Cuti Sakit</option>
-          <option value="Cuti Melahirkan">Cuti Melahirkan</option>
-          <option value="Cuti Alasan Penting">Cuti Alasan Penting</option>
-          <option value="Izin Lainnya">Izin Lainnya</option>
-        </select>
-      </div>
-
-      <div>
-        <label for="tanggalMulai">Tanggal Mulai</label>
-        <input type="date" id="tanggalMulai" required />
-      </div>
-
-      <div>
-        <label for="tanggalSelesai">Tanggal Selesai</label>
-        <input type="date" id="tanggalSelesai" required />
-      </div>
-
-      <div>
-        <label for="alasan">Alasan Cuti</label>
-        <textarea id="alasan" required></textarea>
-      </div>
-
-      <button type="submit">Kirim Pengajuan</button>
-    </form>
-  </main>
-
-  <script type="module">
-  import { db } from './app.js';
-  import { ref, push, get } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
-  import Choices from "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js";
-
-  const form = document.getElementById('formCuti');
-  const namaSelect = document.getElementById('namaPegawai');
-  const notif = document.getElementById('notifSuccess');
-
-  // ✅ Ambil data pegawai dari Firebase dan tampilkan ke dropdown
-  async function loadPegawai() {
-    const snap = await get(ref(db, 'data_pegawai'));
-    if (snap.exists()) {
-      const data = snap.val();
-      Object.values(data).forEach(pegawai => {
-        const option = document.createElement('option');
-        option.value = pegawai.nama;
-        option.textContent = pegawai.nama;
-        namaSelect.appendChild(option);
+    // Event tombol popup
+    tbody.querySelectorAll('button[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedId = btn.dataset.id;
+        selectedAction = btn.dataset.action;
+        document.getElementById('popupJudul').innerText = `Catatan (${selectedAction})`;
+        catatanInput.value = '';
+        popup.style.display = 'flex';
       });
+    });
 
-      // Buat searchable
-      new Choices(namaSelect, {
-        searchEnabled: true,
-        itemSelectText: '',
-        noResultsText: 'Pegawai tidak ditemukan'
-      });
-    }
+  } else {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada pengajuan</td></tr>';
   }
-  loadPegawai();
+});
 
-  // ✅ Kirim pengajuan cuti
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Konfirmasi popup
+btnKonfirmasi.addEventListener('click', async () => {
+  if (!selectedId || !selectedAction) return;
+  const catatan = catatanInput.value.trim();
 
-    const pengajuan = {
-      nama: namaSelect.value,
-      jenisCuti: document.getElementById('jenisCuti').value,
-      tanggalMulai: document.getElementById('tanggalMulai').value,
-      tanggalSelesai: document.getElementById('tanggalSelesai').value,
-      alasan: document.getElementById('alasan').value,
-      status: 'Menunggu', // status awal
-      catatanAdmin: ''    // catatan masih kosong
-    };
-
-    await push(ref(db, 'pengajuan_cuti'), pengajuan);
-
-    notif.style.display = 'block';
-    form.reset();
-    setTimeout(() => notif.style.display = 'none', 3000);
+  await update(ref(db, `pengajuan_cuti/${selectedId}`), {
+    status: selectedAction,
+    catatanAdmin: catatan
   });
-  </script>
-</body>
-</html>
+
+  popup.style.display = 'none';
+  selectedId = null;
+  selectedAction = null;
+});
+
+// Tutup popup manual
+window.tutupPopup = function() {
+  popup.style.display = 'none';
+  selectedId = null;
+  selectedAction = null;
+};
+</script>
