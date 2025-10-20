@@ -1,166 +1,37 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Persetujuan Pengajuan Cuti - Admin</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📋 Persetujuan Pengajuan Cuti</title>
   <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f6f9;
-    }
-
-    /* NAVBAR */
-    .navbar {
-      background: #1976d2;
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px;
-    }
-    .navbar h1 {
-      font-size: 18px;
-      margin: 0;
-    }
-    .navbar .menu {
-      display: flex;
-      gap: 15px;
-    }
-    .navbar .menu a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 14px;
-    }
-    .navbar .menu a:hover {
-      text-decoration: underline;
-    }
-    .navbar button {
-      background: #fff;
-      color: #1976d2;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-
-    /* MAIN */
-    main {
-      max-width: 1000px;
-      margin: 30px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    h2 {
-      font-size: 20px;
-      color: #1976d2;
-      margin-top: 0;
-      border-bottom: 2px solid #1976d2;
-      padding-bottom: 5px;
-      margin-bottom: 20px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-      font-size: 14px;
-      vertical-align: top;
-    }
-    th {
-      background: #f0f0f0;
-    }
-
-    .btn {
-      padding: 6px 10px;
-      font-size: 13px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      color: #fff;
-      margin-right: 5px;
-    }
-    .btn-setuju { background: #28a745; }
-    .btn-tolak { background: #dc3545; }
-    .btn-setuju:hover { background: #218838; }
-    .btn-tolak:hover { background: #c82333; }
-
-    .status {
-      font-weight: 600;
-      padding: 4px 6px;
-      border-radius: 4px;
-      display: inline-block;
-    }
-    .status-menunggu { background: #fff3cd; color: #856404; }
-    .status-disetujui { background: #d4edda; color: #155724; }
-    .status-ditolak { background: #f8d7da; color: #721c24; }
-
-    /* POPUP */
-    .popup-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    .popup {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-    .popup h3 {
-      margin-top: 0;
-      font-size: 18px;
-      color: #1976d2;
-    }
-    .popup textarea {
-      width: 100%;
-      min-height: 80px;
-      margin-top: 10px;
-      margin-bottom: 15px;
-      font-family: inherit;
-      font-size: 14px;
-      padding: 8px;
-    }
-    .popup button {
-      margin-right: 8px;
-      padding: 6px 10px;
-      font-size: 13px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .popup .confirm-btn { background: #1976d2; color: #fff; }
-    .popup .cancel-btn { background: #aaa; color: #fff; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f9; margin: 0; }
+    .navbar { background: #1976d2; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .navbar .menu a { color: white; margin-left: 15px; text-decoration: none; }
+    main { max-width: 1000px; background: white; padding: 20px; margin: 30px auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h2 { color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    .btn { padding: 5px 10px; border: none; border-radius: 4px; color: white; cursor: pointer; }
+    .btn-approve { background: #28a745; }
+    .btn-reject { background: #dc3545; }
+    .status-menunggu { background: #fff3cd; color: #856404; padding: 4px 6px; border-radius: 4px; }
+    .status-disetujui { background: #d4edda; color: #155724; padding: 4px 6px; border-radius: 4px; }
+    .status-ditolak { background: #f8d7da; color: #721c24; padding: 4px 6px; border-radius: 4px; }
+    .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; }
+    .popup { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; }
   </style>
 </head>
 <body>
 
-  <!-- Navbar -->
   <div class="navbar">
-    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div>🏛️ UPTD Puskesmas Padasuka</div>
     <div class="menu">
       <a href="dashboard.html">Dashboard</a>
-      <a href="cuti-user.html">Pengajuan</a>
-      <a href="cuti-admin.html">Persetujuan</a>
-      <a href="cuti-list.html">Daftar Cuti</a>
+      <a href="cuti-user.html">Ajukan</a>
+      <a href="cuti-list.html">Daftar</a>
     </div>
-    <button onclick="window.location.href='login.html'">Logout</button>
   </div>
 
   <main>
@@ -169,9 +40,9 @@
       <thead>
         <tr>
           <th>Nama</th>
-          <th>Jenis Cuti</th>
+          <th>Jenis</th>
           <th>Tanggal</th>
-          <th>Alasan</th>
+          <th>Keterangan</th>
           <th>Status</th>
           <th>Aksi</th>
         </tr>
@@ -180,95 +51,92 @@
     </table>
   </main>
 
-  <!-- POPUP -->
+  <!-- Popup konfirmasi -->
   <div class="popup-overlay" id="popupOverlay">
     <div class="popup">
       <h3 id="popupTitle"></h3>
-      <textarea id="popupCatatan" placeholder="Masukkan catatan (opsional)..."></textarea>
-      <button class="confirm-btn" id="popupConfirm">Konfirmasi</button>
-      <button class="cancel-btn" id="popupCancel">Batal</button>
+      <textarea id="popupCatatan" placeholder="Catatan (opsional)" rows="4"></textarea>
+      <div style="margin-top:10px;text-align:right;">
+        <button id="popupConfirm">Konfirmasi</button>
+        <button id="popupCancel">Batal</button>
+      </div>
     </div>
   </div>
 
-  <script type="module">
-    import { db } from './app.js';
-    import { ref, get, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+<script type="module">
+import { db } from './app.js';
+import { ref, get, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    const tabel = document.getElementById('tabelAdmin');
-    const popupOverlay = document.getElementById('popupOverlay');
-    const popupTitle = document.getElementById('popupTitle');
-    const popupCatatan = document.getElementById('popupCatatan');
-    const popupConfirm = document.getElementById('popupConfirm');
-    const popupCancel = document.getElementById('popupCancel');
+const tabel = document.getElementById('tabelAdmin');
+const popupOverlay = document.getElementById('popupOverlay');
+const popupTitle = document.getElementById('popupTitle');
+const popupCatatan = document.getElementById('popupCatatan');
+const popupConfirm = document.getElementById('popupConfirm');
+const popupCancel = document.getElementById('popupCancel');
 
-    let selectedId = null;
-    let selectedAction = null;
+let selectedId = null;
+let selectedAction = null;
 
-    async function loadData() {
-      tabel.innerHTML = '';
-      const snap = await get(ref(db, 'pengajuan_cuti'));
-      if (!snap.exists()) {
-        tabel.innerHTML = `<tr><td colspan="6" style="text-align:center"><i>Tidak ada data pengajuan.</i></td></tr>`;
-        return;
-      }
+async function loadData() {
+  tabel.innerHTML = '';
+  const snap = await get(ref(db, 'pengajuan_cuti'));
+  if (!snap.exists()) {
+    tabel.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada data pengajuan</td></tr>`;
+    return;
+  }
 
-      const data = [];
-      snap.forEach(child => data.push({ id: child.key, ...child.val() }));
-      data.reverse(); // terbaru di atas
+  const data = [];
+  snap.forEach(c => data.push({ id: c.key, ...c.val() }));
+  data.reverse();
 
-      data.forEach(item => {
-        const tr = document.createElement('tr');
-        let statusClass = 'status-menunggu';
-        if (item.status === 'Disetujui') statusClass = 'status-disetujui';
-        else if (item.status === 'Ditolak') statusClass = 'status-ditolak';
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    let statusClass =
+      item.status === 'Disetujui' ? 'status-disetujui' :
+      item.status === 'Ditolak' ? 'status-ditolak' :
+      'status-menunggu';
 
-        tr.innerHTML = `
-          <td>${item.nama}</td>
-          <td>${item.jenisCuti}</td>
-          <td>${item.tanggalMulai} s/d ${item.tanggalSelesai}</td>
-          <td>${item.alasan}</td>
-          <td><span class="status ${statusClass}">${item.status}</span></td>
-          <td>
-            ${item.status === 'Menunggu' ? `
-              <button class="btn btn-setuju" data-id="${item.id}" data-action="Disetujui">Setujui</button>
-              <button class="btn btn-tolak" data-id="${item.id}" data-action="Ditolak">Tolak</button>
-            ` : ''}
-          </td>
-        `;
-        tabel.appendChild(tr);
-      });
+    const aksi =
+      item.status === 'Menunggu Persetujuan'
+        ? `<button class='btn btn-approve' data-id='${item.id}' data-act='Disetujui'>Setujui</button>
+           <button class='btn btn-reject' data-id='${item.id}' data-act='Ditolak'>Tolak</button>`
+        : `<span>${item.status}</span>`;
 
-      document.querySelectorAll('.btn-setuju, .btn-tolak').forEach(btn => {
-        btn.addEventListener('click', () => {
-          selectedId = btn.dataset.id;
-          selectedAction = btn.dataset.action;
-          popupTitle.textContent = `${selectedAction} Pengajuan Cuti`;
-          popupCatatan.value = '';
-          popupOverlay.style.display = 'flex';
-        });
-      });
-    }
+    tr.innerHTML = `
+      <td>${item.nama}</td>
+      <td>${item.jenisCuti}</td>
+      <td>${item.tanggalMulai} s/d ${item.tanggalSelesai}</td>
+      <td>${item.keterangan || '-'}</td>
+      <td><span class="${statusClass}">${item.status}</span></td>
+      <td>${aksi}</td>
+    `;
+    tabel.appendChild(tr);
+  });
 
-    popupCancel.onclick = () => {
-      popupOverlay.style.display = 'none';
-    };
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedId = btn.dataset.id;
+      selectedAction = btn.dataset.act;
+      popupTitle.textContent = `${selectedAction} Pengajuan Cuti`;
+      popupCatatan.value = '';
+      popupOverlay.style.display = 'flex';
+    });
+  });
+}
 
-    popupConfirm.onclick = async () => {
-      if (!selectedId || !selectedAction) return;
+popupCancel.onclick = () => popupOverlay.style.display = 'none';
 
-      const updates = {
-        status: selectedAction,
-        catatanAdmin: popupCatatan.value.trim()
-      };
-      await update(ref(db, 'pengajuan_cuti/' + selectedId), updates);
+popupConfirm.onclick = async () => {
+  if (!selectedId || !selectedAction) return;
+  await update(ref(db, 'pengajuan_cuti/' + selectedId), {
+    status: selectedAction,
+    catatanAdmin: popupCatatan.value.trim()
+  });
+  popupOverlay.style.display = 'none';
+  loadData();
+};
 
-      popupOverlay.style.display = 'none';
-      selectedId = null;
-      selectedAction = null;
-      loadData();
-    };
-
-    loadData();
-  </script>
+loadData();
+</script>
 </body>
 </html>
