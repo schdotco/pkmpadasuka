@@ -132,6 +132,51 @@ const btnDelete = document.getElementById('btnDelete');
 let jadwalKey = null;
 let dataJadwal = null;
 
+// ✅ Urutan kegiatan sesuai input di jadwal.html
+const urutanKegiatan = [
+  "Screening CKG",
+  "Pendaftaran & Skrining BPJS",
+  "Rekam Medis",
+  "Pusat Informasi & Rujukan",
+  "Kasir",
+  "Kepegawaian dan Administrasi Surat",
+  "Mutu dan Monitoring PPI",
+  "Aset",
+  "BOK",
+  "BLUD",
+  "Security",
+  "Driver",
+  "Cleaning Service",
+  "Juru Masak",
+  "KIA",
+  "MTBS (Kesehatan Anak)",
+  "PONED",
+  "Kelas Bumi",
+  "USG",
+  "Imunisasi",
+  "Input ASIK",
+  "Penapisan",
+  "Dewasa",
+  "Lansia",
+  "KB",
+  "TB",
+  "Surveilans",
+  "Kesling",
+  "Gigi & Mulut 1",
+  "Gigi & Mulut 2",
+  "NC",
+  "Farmasi",
+  "Laboratorium",
+  "Konseling Terpadu",
+  "IGD Tindakan",
+  "Psikolog",
+  "Cek Kesehatan Gratis",
+  "Posyandu, PKG Sekolah, BIAS",
+  "Rapat & Pelatihan",
+  "Sakit",
+  "Cuti Tahunan"
+]; 
+
 // Ambil data terakhir dari Firebase
 const jadwalRef = query(ref(db, 'jadwal'), limitToLast(1));
 const snapshot = await get(jadwalRef);
@@ -157,14 +202,19 @@ addRow('Tanggal', dataJadwal.tanggal);
 addRow('Dress Code', dataJadwal.dressCode);
 addRow('Pembina', dataJadwal.pembina);
 
-// 🔹 Tampilkan seluruh kegiatan
+// 🔹 Tampilkan kegiatan sesuai urutan input jadwal.html
 if (dataJadwal.kegiatan && Object.keys(dataJadwal.kegiatan).length > 0) {
-  Object.entries(dataJadwal.kegiatan).forEach(([namaKegiatan, pegawai]) => {
-    addRow(namaKegiatan, pegawai.join(', '));
+  urutanKegiatan.forEach(namaAsli => {
+    const key = namaAsli.replace(/[.#$/\[\]/]/g, '_'); // samakan dengan sanitizeKey saat input
+    const pegawai = dataJadwal.kegiatan[key];
+    if (pegawai) {
+      addRow(namaAsli, pegawai.join(', '));
+    }
   });
 } else {
   addRow('Kegiatan', '<i>Tidak ada data kegiatan.</i>');
 }
+
 
 // ✨ Tombol Share WhatsApp (rapi)
 btnShare.onclick = () => {
@@ -176,11 +226,15 @@ btnShare.onclick = () => {
   pesan += `───────────────────────\n`;
   pesan += `📋 *DAFTAR KEGIATAN*\n\n`;
 
-  if (dataJadwal.kegiatan) {
-    Object.entries(dataJadwal.kegiatan).forEach(([namaKegiatan, pegawai]) => {
-      pesan += `• *${namaKegiatan}*\n  👤 ${pegawai.join(', ')}\n\n`;
-    });
-  }
+if (dataJadwal.kegiatan) {
+  urutanKegiatan.forEach(namaAsli => {
+    const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
+    const pegawai = dataJadwal.kegiatan[key];
+    if (pegawai) {
+      pesan += `• *${namaAsli}*\n  👤 ${pegawai.join(', ')}\n\n`;
+    }
+  });
+}
 
   pesan += `───────────────────────\n`;
   pesan += `📌 _Pesan ini dikirim otomatis dari Aplikasi Jadwal Pegawai_`;
