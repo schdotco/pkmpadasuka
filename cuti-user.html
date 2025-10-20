@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📝 Pengajuan Cuti Pegawai - UPTD Puskesmas Padasuka</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      background: #1976d2;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+    }
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .navbar .menu {
+      display: flex;
+      gap: 15px;
+    }
+    .navbar .menu a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
+    .navbar button {
+      background: #fff;
+      color: #1976d2;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    /* CONTAINER */
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      font-size: 20px;
+      color: #1976d2;
+      margin-top: 0;
+      border-bottom: 2px solid #1976d2;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 14px;
+      color: #333;
+    }
+
+    input, select, textarea {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button[type="submit"] {
+      background: #1976d2;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    button[type="submit"]:hover {
+      background: #125ca1;
+    }
+
+    .success-message {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 10px;
+      margin-top: 15px;
+      border-radius: 5px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div class="menu">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profil.html">Profil</a>
+      <a href="jadwal.html">Jadwal</a>
+      <a href="cuti-user.html" style="text-decoration:underline;">Cuti</a>
+    </div>
+    <button onclick="window.location.href='login.html'">Logout</button>
+  </div>
+
+  <!-- FORM CUTI -->
+  <div class="container">
+    <h2>📝 Form Pengajuan Cuti Pegawai</h2>
+    <form id="formCuti">
+      <div>
+        <label for="nama">Nama Pegawai</label>
+        <input type="text" id="nama" name="nama" placeholder="Nama lengkap" required>
+      </div>
+
+      <div>
+        <label for="nip">NIP/NIK</label>
+        <input type="text" id="nip" name="nip" placeholder="Masukkan NIP/NIK" required>
+      </div>
+
+      <div>
+        <label for="jenisCuti">Jenis Cuti</label>
+        <select id="jenisCuti" name="jenisCuti" required>
+          <option value="">-- Pilih Jenis Cuti --</option>
+          <option value="Cuti Tahunan">Cuti Tahunan</option>
+          <option value="Cuti Sakit">Cuti Sakit</option>
+          <option value="Cuti Melahirkan">Cuti Melahirkan</option>
+          <option value="Cuti Besar">Cuti Besar</option>
+          <option value="Cuti Alasan Penting">Cuti Alasan Penting</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="tanggalMulai">Tanggal Mulai</label>
+        <input type="date" id="tanggalMulai" name="tanggalMulai" required>
+      </div>
+
+      <div>
+        <label for="tanggalSelesai">Tanggal Selesai</label>
+        <input type="date" id="tanggalSelesai" name="tanggalSelesai" required>
+      </div>
+
+      <div>
+        <label for="keterangan">Keterangan</label>
+        <textarea id="keterangan" name="keterangan" rows="3" placeholder="Tuliskan alasan cuti..." required></textarea>
+      </div>
+
+      <button type="submit">Ajukan Cuti</button>
+    </form>
+
+    <div class="success-message" id="successMsg">
+      ✅ Pengajuan cuti berhasil dikirim! Menunggu persetujuan admin.
+    </div>
+  </div>
+
+<script type="module">
+  import { db } from './app.js';
+  import { ref, push } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+  const form = document.getElementById('formCuti');
+  const successMsg = document.getElementById('successMsg');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const data = {
+      nama: form.nama.value,
+      nip: form.nip.value,
+      jenisCuti: form.jenisCuti.value,
+      tanggalMulai: form.tanggalMulai.value,
+      tanggalSelesai: form.tanggalSelesai.value,
+      keterangan: form.keterangan.value,
+      status: 'Menunggu Persetujuan',
+      tanggalPengajuan: new Date().toISOString()
+    };
+
+    try {
+      await push(ref(db, 'pengajuan_cuti'), data);
+      successMsg.style.display = 'block';
+      form.reset();
+      window.scrollTo(0,0);
+    } catch (err) {
+      alert('Gagal mengajukan cuti: ' + err.message);
+    }
+  });
+</script>
+
+</body>
+</html>
