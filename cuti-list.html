@@ -1,113 +1,47 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📋 List Pengajuan Cuti Pegawai - Puskesmas Padasuka</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📅 Daftar Pengajuan Cuti Pegawai</title>
   <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f6f9;
-    }
-    .navbar {
-      background: #1976d2;
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px;
-    }
-    .navbar h1 {
-      font-size: 18px;
-      margin: 0;
-    }
-    .navbar .menu {
-      display: flex;
-      gap: 15px;
-    }
-    .navbar .menu a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 14px;
-    }
-    .navbar .menu a:hover {
-      text-decoration: underline;
-    }
-    .navbar button {
-      background: #fff;
-      color: #1976d2;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-    }
-
-    main {
-      max-width: 1100px;
-      margin: 30px auto;
-      padding: 20px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      font-size: 20px;
-      color: #1976d2;
-      margin-top: 0;
-      border-bottom: 2px solid #1976d2;
-      padding-bottom: 5px;
-      margin-bottom: 20px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-      vertical-align: top;
-    }
-    th {
-      background: #f0f0f0;
-    }
-
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f9; margin: 0; }
+    .navbar { background: #1976d2; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .navbar .menu a { color: white; text-decoration: none; margin-left: 15px; }
+    main { max-width: 1000px; background: white; padding: 20px; margin: 30px auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h2 { color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
     .status-menunggu { color: #ff9800; font-weight: bold; }
     .status-disetujui { color: #2e7d32; font-weight: bold; }
     .status-ditolak { color: #c62828; font-weight: bold; }
   </style>
 </head>
 <body>
+
   <div class="navbar">
-    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div>🏛️ UPTD Puskesmas Padasuka</div>
     <div class="menu">
       <a href="dashboard.html">Dashboard</a>
-      <a href="cuti-user.html">Ajukan Cuti</a>
-      <a href="cuti-admin.html">Admin Cuti</a>
+      <a href="cuti-user.html">Ajukan</a>
+      <a href="cuti-admin.html">Admin</a>
     </div>
-    <button onclick="window.location.href='dashboard.html'">Kembali</button>
   </div>
 
   <main>
-    <h2>📅 List Pengajuan Cuti Pegawai</h2>
+    <h2>📋 Daftar Pengajuan Cuti Pegawai</h2>
     <table id="tabelCuti">
       <thead>
         <tr>
-          <th>Nama Pegawai</th>
+          <th>Nama</th>
           <th>Jenis Cuti</th>
           <th>Tanggal</th>
           <th>Status</th>
-          <th>Keterangan (Catatan Admin)</th>
+          <th>Catatan Admin</th>
         </tr>
       </thead>
-      <tbody>
-        <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
-      </tbody>
+      <tbody><tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr></tbody>
     </table>
   </main>
 
@@ -117,34 +51,31 @@ import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebas
 
 const tbody = document.querySelector('#tabelCuti tbody');
 
-// 🟡 Gunakan onValue agar realtime update dari admin
-const cutiRef = ref(db, 'pengajuan_cuti');
-onValue(cutiRef, (snapshot) => {
-  if (snapshot.exists()) {
-    const data = snapshot.val();
-    tbody.innerHTML = '';
-
-    Object.entries(data).forEach(([id, item]) => {
-      const statusClass =
-        item.status === 'Disetujui'
-          ? 'status-disetujui'
-          : item.status === 'Ditolak'
-            ? 'status-ditolak'
-            : 'status-menunggu';
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${item.nama || '-'}</td>
-        <td>${item.jenisCuti || '-'}</td>
-        <td>${item.tanggalMulai || '-'} s/d ${item.tanggalSelesai || '-'}</td>
-        <td class="${statusClass}">${item.status || 'Menunggu'}</td>
-        <td>${item.catatanAdmin || '-'}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  } else {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada pengajuan cuti</td></tr>';
+// Realtime listener
+onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
+  if (!snapshot.exists()) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada data</td></tr>`;
+    return;
   }
+
+  const data = snapshot.val();
+  tbody.innerHTML = '';
+
+  Object.values(data).reverse().forEach(item => {
+    const statusClass =
+      item.status === 'Disetujui' ? 'status-disetujui' :
+      item.status === 'Ditolak' ? 'status-ditolak' :
+      'status-menunggu';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.nama || '-'}</td>
+      <td>${item.jenisCuti || '-'}</td>
+      <td>${item.tanggalMulai || '-'} s/d ${item.tanggalSelesai || '-'}</td>
+      <td class="${statusClass}">${item.status}</td>
+      <td>${item.catatanAdmin || '-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 });
 </script>
 </body>
