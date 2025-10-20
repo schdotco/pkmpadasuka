@@ -121,7 +121,7 @@
     </div>
   </main>
 
- <script type="module">
+<script type="module">
 import { db } from './app.js';
 import { ref, get, query, limitToLast, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
@@ -132,7 +132,7 @@ const btnDelete = document.getElementById('btnDelete');
 let jadwalKey = null;
 let dataJadwal = null;
 
-// 🔹 Ambil data terakhir dari Firebase
+// Ambil data terakhir dari Firebase
 const jadwalRef = query(ref(db, 'jadwal'), limitToLast(1));
 const snapshot = await get(jadwalRef);
 
