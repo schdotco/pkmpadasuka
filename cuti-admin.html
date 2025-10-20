@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>👨‍💼 Persetujuan Cuti Pegawai</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+    }
+    .navbar {
+      background: #1976d2;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin-right: 15px;
+    }
+    .navbar a:hover {
+      text-decoration: underline;
+    }
+    main {
+      max-width: 1000px;
+      margin: 30px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #1976d2;
+      margin-top: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      font-size: 14px;
+    }
+    th {
+      background: #f0f0f0;
+      text-align: left;
+    }
+    td {
+      vertical-align: top;
+    }
+    .btn {
+      padding: 5px 8px;
+      font-size: 13px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .btn-approve { background: #4caf50; color: white; }
+    .btn-approve:hover { background: #3e8e41; }
+    .btn-reject { background: #d32f2f; color: white; }
+    .btn-reject:hover { background: #b71c1c; }
+    .status {
+      font-weight: bold;
+    }
+    .status.Menunggu { color: #ff9800; }
+    .status.Approved { color: #4caf50; }
+    .status.Rejected { color: #d32f2f; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <div>🏛️ UPTD Puskesmas Padasuka</div>
+    <div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="cuti-user.html">Pengajuan</a>
+      <a href="cuti-list.html">Daftar Cuti</a>
+    </div>
+  </div>
+
+  <!-- Konten -->
+  <main>
+    <h2>👨‍💼 Persetujuan Pengajuan Cuti Pegawai</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Jenis Cuti</th>
+          <th>Tanggal</th>
+          <th>Keterangan</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyCuti"></tbody>
+    </table>
+  </main>
+
+<script type="module">
+import { db } from './app.js';
+import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+const tbody = document.getElementById('tbodyCuti');
+
+// Ambil semua pengajuan cuti dari Firebase
+onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
+  tbody.innerHTML = '';
+  snapshot.forEach(child => {
+    const data = child.val();
+    const tr = document.createElement('tr');
+
+    tr.innerHTML = `
+      <td>${data.nama}</td>
+      <td>${data.jenisCuti}</td>
+      <td>${data.tanggalMulai} s.d ${data.tanggalSelesai}</td>
+      <td>${data.keterangan || '-'}</td>
+      <td><span class="status ${data.status.replace(/\s/g,'')}">${data.status}</span></td>
+      <td>
+        ${data.status === 'Menunggu Persetujuan' ? `
+          <button class="btn btn-approve" data-id="${data.id}" data-action="approve">Setujui</button>
+          <button class="btn btn-reject" data-id="${data.id}" data-action="reject">Tolak</button>
+        ` : '-'}
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  // Pasang event listener setelah tabel dirender ulang
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const action = btn.getAttribute('data-action');
+
+      const statusBaru = action === 'approve' ? 'Approved' : 'Rejected';
+      const cutiRef = ref(db, 'pengajuan_cuti/' + id);
+      await update(cutiRef, { status: statusBaru });
+
+      alert(`✅ Status pengajuan berhasil diubah menjadi: ${statusBaru}`);
+    });
+  });
+});
+</script>
+
+</body>
+</html>
