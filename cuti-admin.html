@@ -292,6 +292,87 @@ function loadData() {
 popupCancel.onclick = () => popupOverlay.style.display = 'none';
 
 // Simpan perubahan status
+<script type="module">
+import { db } from './app.js';
+import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+const tabel = document.getElementById('tabelAdmin');
+const popupOverlay = document.getElementById('popupOverlay');
+const popupTitle = document.getElementById('popupTitle');
+const popupCatatan = document.getElementById('popupCatatan');
+const popupConfirm = document.getElementById('popupConfirm');
+const popupCancel = document.getElementById('popupCancel');
+
+let selectedId = null;
+let selectedAction = null;
+
+// === Fungsi utama untuk ambil data realtime ===
+function loadData() {
+  onValue(ref(db, 'pengajuan_cuti'), (snap) => {
+    tabel.innerHTML = '';
+
+    if (!snap.exists()) {
+      tabel.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada data pengajuan</td></tr>`;
+      return;
+    }
+
+    const data = [];
+    snap.forEach(c => {
+      const val = c.val();
+      data.push({
+        id: c.key,
+        ...val,
+        dibuatPada: val.dibuatPada || '2000-01-01T00:00:00Z' // fallback jika tidak ada
+      });
+    });
+
+    // Urutkan data berdasarkan waktu dibuat (terbaru di atas)
+    data.sort((a, b) => new Date(b.dibuatPada) - new Date(a.dibuatPada));
+
+    // Render tabel
+    data.forEach(item => {
+      const tr = document.createElement('tr');
+      const statusClass =
+        item.status === 'Disetujui' ? 'status-disetujui' :
+        item.status === 'Ditolak' ? 'status-ditolak' :
+        'status-menunggu';
+
+      // Deteksi status menunggu secara fleksibel
+      const isMenunggu = /menunggu/i.test(item.status) || /pending/i.test(item.status);
+
+      const aksiCell = isMenunggu
+        ? `<button class="btn btn-approve" data-id="${item.id}" data-action="Disetujui">Setujui</button>
+           <button class="btn btn-reject" data-id="${item.id}" data-action="Ditolak">Tolak</button>`
+        : `<span>${item.status}</span>`;
+
+      tr.innerHTML = `
+        <td>${item.nama || '-'}</td>
+        <td>${item.jenisCuti || '-'}</td>
+        <td>${item.tanggalMulai || '-'} s/d ${item.tanggalSelesai || '-'}</td>
+        <td>${item.keterangan || '-'}</td>
+        <td><span class="${statusClass}">${item.status}</span></td>
+        <td>${aksiCell}</td>
+      `;
+      tabel.appendChild(tr);
+    });
+
+    // === Event tombol Setujui / Tolak ===
+    document.querySelectorAll('.btn-approve, .btn-reject').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedId = btn.dataset.id;
+        selectedAction = btn.dataset.action;
+        popupTitle.textContent = `${selectedAction} Pengajuan Cuti`;
+        popupCatatan.value = '';
+        popupOverlay.style.display = 'flex';
+      });
+    });
+  });
+}
+
+// Tutup popup
+popupCancel.onclick = () => popupOverlay.style.display = 'none';
+
+// Simpan perubahan status
 popupConfirm.onclick = async () => {
   if (!selectedId || !selectedAction) return;
   await update(ref(db, 'pengajuan_cuti/' + selectedId), {
@@ -301,6 +382,10 @@ popupConfirm.onclick = async () => {
   });
   popupOverlay.style.display = 'none';
 };
+
+// Jalankan realtime listener
+loadData();
+</script>
 
 // Jalankan realtime listener
 loadData();
