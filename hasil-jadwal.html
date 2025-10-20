@@ -226,27 +226,35 @@ function addRow(label, value) {
   tr.innerHTML = `<th>${label}</th><td>${value}</td>`;
   tbody.appendChild(tr);
 }
+  
+function addHeaderRow(title) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<th colspan="2" style="background:#e3f2fd; color:#1976d2;">${title}</th>`;
+  tbody.appendChild(tr);
+}
 
 // 🔹 Info utama
 addRow('Tanggal', dataJadwal.tanggal);
 addRow('Dress Code', dataJadwal.dressCode);
 addRow('Pembina', dataJadwal.pembina);
 
-// 🔹 Tampilkan kegiatan sesuai urutan input jadwal.html
+// 🔹 Tampilkan kegiatan per kluster
 if (dataJadwal.kegiatan && Object.keys(dataJadwal.kegiatan).length > 0) {
-  urutanKegiatan.forEach(namaAsli => {
-    const key = namaAsli.replace(/[.#$/\[\]/]/g, '_'); // samakan dengan sanitizeKey saat input
-    const pegawai = dataJadwal.kegiatan[key];
-    if (pegawai) {
-      addRow(namaAsli, pegawai.join(', '));
-    }
+  klusterData.forEach(kluster => {
+    addHeaderRow(kluster.judul);
+    kluster.kegiatan.forEach(namaAsli => {
+      const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
+      const pegawai = dataJadwal.kegiatan[key];
+      if (pegawai) {
+        addRow(namaAsli, pegawai.join(', '));
+      }
+    });
   });
 } else {
   addRow('Kegiatan', '<i>Tidak ada data kegiatan.</i>');
 }
 
-
-// ✨ Tombol Share WhatsApp (rapi)
+// ✨ Tombol Share WhatsApp (rapi dengan kluster)
 btnShare.onclick = () => {
   let pesan = `✨ *Jadwal Pegawai - UPTD Puskesmas Padasuka* ✨\n`;
   pesan += `───────────────────────\n`;
@@ -254,17 +262,20 @@ btnShare.onclick = () => {
   pesan += `👔 *Dress Code:* ${dataJadwal.dressCode}\n`;
   pesan += `🧑‍🏫 *Pembina:* ${dataJadwal.pembina}\n`;
   pesan += `───────────────────────\n`;
-  pesan += `📋 *DAFTAR KEGIATAN*\n\n`;
 
-if (dataJadwal.kegiatan) {
-  urutanKegiatan.forEach(namaAsli => {
-    const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
-    const pegawai = dataJadwal.kegiatan[key];
-    if (pegawai) {
-      pesan += `• *${namaAsli}*\n ${pegawai.join(', ')}\n\n`;
-    }
-  });
-}
+  if (dataJadwal.kegiatan) {
+    klusterData.forEach(kluster => {
+      pesan += `*${kluster.judul}*\n`;
+      kluster.kegiatan.forEach(namaAsli => {
+        const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
+        const pegawai = dataJadwal.kegiatan[key];
+        if (pegawai) {
+          pesan += `• *${namaAsli}*\n  👤 ${pegawai.join(', ')}\n`;
+        }
+      });
+      pesan += `\n`;
+    });
+  }
 
   pesan += `───────────────────────\n`;
   pesan += `📌 _Pesan ini dikirim otomatis dari Aplikasi Jadwal Pegawai_`;
