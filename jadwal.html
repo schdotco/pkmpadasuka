@@ -565,8 +565,8 @@ document.getElementById('btnSimpanJadwal').addEventListener('click', async () =>
     const pegawaiList = Array.from(selects)
       .map(sel => sel.value)
       .filter(v => v !== "");
-    if (pegawaiList.length > 0) {
-      kegiatan[label] = pegawaiList;
+      
+      kegiatan[label] = pegawaiList; > 0 ? pegawaiList : ["-"];
     }
   });
 
