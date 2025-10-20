@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📋 Daftar Pengajuan Cuti - UPTD Puskesmas Padasuka</title>
+  <title>📋 List Pengajuan Cuti Pegawai - Puskesmas Padasuka</title>
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f4f6f9;
     }
-
-    /* Navbar */
     .navbar {
       background: #1976d2;
       color: #fff;
@@ -46,7 +44,6 @@
       font-size: 13px;
     }
 
-    /* Konten */
     main {
       max-width: 1100px;
       margin: 30px auto;
@@ -75,105 +72,80 @@
       padding: 8px;
       text-align: left;
       vertical-align: top;
-      font-size: 14px;
     }
     th {
       background: #f0f0f0;
     }
 
-    .status-menunggu {
-      background: #fff3cd;
-      color: #856404;
-      font-weight: 600;
-      padding: 4px 6px;
-      border-radius: 4px;
-    }
-    .status-disetujui {
-      background: #d4edda;
-      color: #155724;
-      font-weight: 600;
-      padding: 4px 6px;
-      border-radius: 4px;
-    }
-    .status-ditolak {
-      background: #f8d7da;
-      color: #721c24;
-      font-weight: 600;
-      padding: 4px 6px;
-      border-radius: 4px;
-    }
-
+    .status-menunggu { color: #ff9800; font-weight: bold; }
+    .status-disetujui { color: #2e7d32; font-weight: bold; }
+    .status-ditolak { color: #c62828; font-weight: bold; }
   </style>
 </head>
 <body>
-
   <div class="navbar">
     <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
     <div class="menu">
       <a href="dashboard.html">Dashboard</a>
       <a href="cuti-user.html">Ajukan Cuti</a>
-      <a href="cuti-admin.html">Admin</a>
+      <a href="cuti-admin.html">Admin Cuti</a>
     </div>
-    <button onclick="window.location.href='login.html'">Logout</button>
+    <button onclick="window.location.href='dashboard.html'">Kembali</button>
   </div>
 
   <main>
-    <h2>📅 Daftar Pengajuan Cuti Pegawai</h2>
+    <h2>📅 List Pengajuan Cuti Pegawai</h2>
     <table id="tabelCuti">
       <thead>
         <tr>
           <th>Nama Pegawai</th>
           <th>Jenis Cuti</th>
-          <th>Periode</th>
-          <th>Keterangan</th>
+          <th>Tanggal</th>
           <th>Status</th>
-          <th>Catatan Admin</th>
+          <th>Keterangan (Catatan Admin)</th>
         </tr>
       </thead>
       <tbody>
-        <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
+        <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
       </tbody>
     </table>
   </main>
 
 <script type="module">
 import { db } from './app.js';
-import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
 const tbody = document.querySelector('#tabelCuti tbody');
 
-async function loadCutiList() {
-  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>`;
-
-  const snapshot = await get(ref(db, 'pengajuan_cuti'));
+// 🟡 Gunakan onValue agar realtime update dari admin
+const cutiRef = ref(db, 'pengajuan_cuti');
+onValue(cutiRef, (snapshot) => {
   if (snapshot.exists()) {
     const data = snapshot.val();
     tbody.innerHTML = '';
 
     Object.entries(data).forEach(([id, item]) => {
-      const statusClass = 
-        item.status === 'Disetujui' ? 'status-disetujui' :
-        item.status === 'Ditolak' ? 'status-ditolak' :
-        'status-menunggu';
+      const statusClass =
+        item.status === 'Disetujui'
+          ? 'status-disetujui'
+          : item.status === 'Ditolak'
+            ? 'status-ditolak'
+            : 'status-menunggu';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${item.nama || '-'}</td>
         <td>${item.jenisCuti || '-'}</td>
         <td>${item.tanggalMulai || '-'} s/d ${item.tanggalSelesai || '-'}</td>
-        <td>${item.keterangan || '-'}</td>
-        <td><span class="${statusClass}">${item.status || 'Menunggu'}</span></td>
+        <td class="${statusClass}">${item.status || 'Menunggu'}</td>
         <td>${item.catatanAdmin || '-'}</td>
       `;
       tbody.appendChild(tr);
     });
   } else {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada data cuti</td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Belum ada pengajuan cuti</td></tr>';
   }
-}
-
-// Panggil saat halaman dibuka
-loadCutiList();
+});
 </script>
 </body>
 </html>
