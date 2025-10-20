@@ -4,12 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📋 Persetujuan Pengajuan Cuti</title>
+
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, sans-serif;
     background: #f4f6f9;
     margin: 0;
   }
+
   .navbar {
     background: #1976d2;
     color: white;
@@ -18,11 +20,13 @@
     justify-content: space-between;
     align-items: center;
   }
+
   .navbar .menu a {
     color: white;
     margin-left: 15px;
     text-decoration: none;
   }
+
   main {
     max-width: 1000px;
     background: white;
@@ -31,21 +35,25 @@
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
+
   h2 {
     color: #1976d2;
     border-bottom: 2px solid #1976d2;
     padding-bottom: 5px;
   }
+
   table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 15px;
   }
+
   th, td {
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
   }
+
   th { background: #f0f0f0; }
 
   .btn {
@@ -56,6 +64,7 @@
     cursor: pointer;
     font-size: 14px;
   }
+
   .btn-approve { background: #28a745; }
   .btn-reject { background: #dc3545; }
   .btn-approve:hover { background: #218838; }
@@ -67,12 +76,14 @@
     padding: 4px 6px;
     border-radius: 4px;
   }
+
   .status-disetujui {
     background: #d4edda;
     color: #155724;
     padding: 4px 6px;
     border-radius: 4px;
   }
+
   .status-ditolak {
     background: #f8d7da;
     color: #721c24;
@@ -158,20 +169,8 @@
     background: #bdbdbd;
   }
 </style>
-
-<!-- Popup konfirmasi -->
-<div class="popup-overlay" id="popupOverlay">
-  <div class="popup">
-    <h3 id="popupTitle">Konfirmasi Pengajuan</h3>
-    <textarea id="popupCatatan" placeholder="Tambahkan catatan (opsional)..."></textarea>
-    <div class="popup-buttons">
-      <button id="popupConfirm">Konfirmasi</button>
-      <button id="popupCancel">Batal</button>
-    </div>
-  </div>
-</div>
-  </style>
 </head>
+
 <body>
 
   <div class="navbar">
@@ -203,9 +202,9 @@
   <!-- Popup konfirmasi -->
   <div class="popup-overlay" id="popupOverlay">
     <div class="popup">
-      <h3 id="popupTitle"></h3>
-      <textarea id="popupCatatan" placeholder="Catatan (opsional)" rows="4"></textarea>
-      <div style="margin-top:10px;text-align:right;">
+      <h3 id="popupTitle">Konfirmasi Pengajuan</h3>
+      <textarea id="popupCatatan" placeholder="Tambahkan catatan (opsional)..."></textarea>
+      <div class="popup-buttons">
         <button id="popupConfirm">Konfirmasi</button>
         <button id="popupCancel">Batal</button>
       </div>
@@ -214,7 +213,7 @@
 
 <script type="module">
 import { db } from './app.js';
-import { ref, get, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
 const tabel = document.getElementById('tabelAdmin');
 const popupOverlay = document.getElementById('popupOverlay');
@@ -226,59 +225,64 @@ const popupCancel = document.getElementById('popupCancel');
 let selectedId = null;
 let selectedAction = null;
 
-async function loadData() {
-  tabel.innerHTML = '';
-  const snap = await get(ref(db, 'pengajuan_cuti'));
-  if (!snap.exists()) {
-    tabel.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada data pengajuan</td></tr>`;
-    return;
-  }
+// === Fungsi utama untuk ambil data realtime ===
+function loadData() {
+  onValue(ref(db, 'pengajuan_cuti'), (snap) => {
+    tabel.innerHTML = '';
 
-  const data = [];
-  snap.forEach(c => data.push({ id: c.key, ...c.val() }));
-  data.reverse();
+    if (!snap.exists()) {
+      tabel.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada data pengajuan</td></tr>`;
+      return;
+    }
 
-  data.forEach(item => {
-    console.log('Status data:', item.status); // 🔍 Cek status di console
-    const tr = document.createElement('tr');
-    let statusClass =
-      item.status === 'Disetujui' ? 'status-disetujui' :
-      item.status === 'Ditolak' ? 'status-ditolak' :
-      'status-menunggu';
+    const data = [];
+    snap.forEach(c => data.push({ id: c.key, ...c.val() }));
 
-    // ✅ Lebih fleksibel, abaikan huruf besar/kecil
-    const isMenunggu = /menunggu/i.test(item.status) || /pending/i.test(item.status);
+    // Urutkan berdasarkan waktu dibuat (terbaru di atas)
+    data.sort((a, b) => new Date(b.dibuatPada) - new Date(a.dibuatPada));
 
-    const aksiCell = isMenunggu
-      ? `<button class="btn btn-approve" data-id="${item.id}" data-action="Disetujui">Setujui</button>
-         <button class="btn btn-reject" data-id="${item.id}" data-action="Ditolak">Tolak</button>`
-      : `<span>${item.status}</span>`;
+    data.forEach(item => {
+      const tr = document.createElement('tr');
+      const statusClass =
+        item.status === 'Disetujui' ? 'status-disetujui' :
+        item.status === 'Ditolak' ? 'status-ditolak' :
+        'status-menunggu';
 
-    tr.innerHTML = `
-      <td>${item.nama}</td>
-      <td>${item.jenisCuti}</td>
-      <td>${item.tanggalMulai} s/d ${item.tanggalSelesai}</td>
-      <td>${item.keterangan || '-'}</td>
-      <td><span class="${statusClass}">${item.status}</span></td>
-      <td>${aksiCell}</td>
-    `;
-    tabel.appendChild(tr);
-  });
+      const isMenunggu = /menunggu/i.test(item.status) || /pending/i.test(item.status);
 
-  // ✅ Pastikan tombol berfungsi
-  document.querySelectorAll('.btn-approve, .btn-reject').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedId = btn.dataset.id;
-      selectedAction = btn.dataset.action;
-      popupTitle.textContent = `${selectedAction} Pengajuan Cuti`;
-      popupCatatan.value = '';
-      popupOverlay.style.display = 'flex';
+      const aksiCell = isMenunggu
+        ? `<button class="btn btn-approve" data-id="${item.id}" data-action="Disetujui">Setujui</button>
+           <button class="btn btn-reject" data-id="${item.id}" data-action="Ditolak">Tolak</button>`
+        : `<span>${item.status}</span>`;
+
+      tr.innerHTML = `
+        <td>${item.nama}</td>
+        <td>${item.jenisCuti}</td>
+        <td>${item.tanggalMulai} s/d ${item.tanggalSelesai}</td>
+        <td>${item.keterangan || '-'}</td>
+        <td><span class="${statusClass}">${item.status}</span></td>
+        <td>${aksiCell}</td>
+      `;
+      tabel.appendChild(tr);
+    });
+
+    // Tombol event popup
+    document.querySelectorAll('.btn-approve, .btn-reject').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedId = btn.dataset.id;
+        selectedAction = btn.dataset.action;
+        popupTitle.textContent = `${selectedAction} Pengajuan Cuti`;
+        popupCatatan.value = '';
+        popupOverlay.style.display = 'flex';
+      });
     });
   });
 }
 
+// Tutup popup
 popupCancel.onclick = () => popupOverlay.style.display = 'none';
 
+// Simpan perubahan status
 popupConfirm.onclick = async () => {
   if (!selectedId || !selectedAction) return;
   await update(ref(db, 'pengajuan_cuti/' + selectedId), {
@@ -286,9 +290,9 @@ popupConfirm.onclick = async () => {
     catatanAdmin: popupCatatan.value.trim()
   });
   popupOverlay.style.display = 'none';
-  loadData();
 };
 
+// Jalankan realtime listener
 loadData();
 </script>
 </body>
