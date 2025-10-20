@@ -52,9 +52,6 @@
       background: #f0f0f0;
       text-align: left;
     }
-    td {
-      vertical-align: top;
-    }
     .btn {
       padding: 5px 8px;
       font-size: 13px;
@@ -67,12 +64,59 @@
     .btn-approve:hover { background: #3e8e41; }
     .btn-reject { background: #d32f2f; color: white; }
     .btn-reject:hover { background: #b71c1c; }
-    .status {
-      font-weight: bold;
-    }
+    .status { font-weight: bold; }
     .status.Menunggu { color: #ff9800; }
     .status.Approved { color: #4caf50; }
     .status.Rejected { color: #d32f2f; }
+
+    /* Popup overlay */
+    .popup-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .popup {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .popup h3 {
+      margin-top: 0;
+      color: #1976d2;
+      font-size: 18px;
+    }
+    .popup textarea {
+      width: 100%;
+      height: 80px;
+      margin-top: 8px;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+    }
+    .popup .actions {
+      margin-top: 15px;
+      text-align: right;
+    }
+    .popup .actions button {
+      padding: 6px 12px;
+      font-size: 13px;
+      margin-left: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-confirm { background: #1976d2; color: white; }
+    .btn-cancel { background: #999; color: white; }
   </style>
 </head>
 <body>
@@ -105,11 +149,32 @@
     </table>
   </main>
 
+  <!-- Popup konfirmasi -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="popup">
+      <h3 id="popupTitle">Konfirmasi</h3>
+      <p>Tulis catatan untuk pengajuan ini (opsional):</p>
+      <textarea id="catatanAdmin" placeholder="Contoh: Disetujui karena memenuhi syarat..."></textarea>
+      <div class="actions">
+        <button class="btn-cancel" id="btnCancelPopup">Batal</button>
+        <button class="btn-confirm" id="btnConfirmPopup">Konfirmasi</button>
+      </div>
+    </div>
+  </div>
+
 <script type="module">
 import { db } from './app.js';
 import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
 const tbody = document.getElementById('tbodyCuti');
+const popupOverlay = document.getElementById('popupOverlay');
+const popupTitle = document.getElementById('popupTitle');
+const catatanAdmin = document.getElementById('catatanAdmin');
+const btnCancelPopup = document.getElementById('btnCancelPopup');
+const btnConfirmPopup = document.getElementById('btnConfirmPopup');
+
+let selectedId = null;
+let selectedAction = null;
 
 // Ambil semua pengajuan cuti dari Firebase
 onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
@@ -135,20 +200,38 @@ onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
     tbody.appendChild(tr);
   });
 
-  // Pasang event listener setelah tabel dirender ulang
   document.querySelectorAll('.btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.getAttribute('data-id');
-      const action = btn.getAttribute('data-action');
+    btn.addEventListener('click', () => {
+      selectedId = btn.getAttribute('data-id');
+      selectedAction = btn.getAttribute('data-action');
 
-      const statusBaru = action === 'approve' ? 'Approved' : 'Rejected';
-      const cutiRef = ref(db, 'pengajuan_cuti/' + id);
-      await update(cutiRef, { status: statusBaru });
-
-      alert(`✅ Status pengajuan berhasil diubah menjadi: ${statusBaru}`);
+      popupTitle.textContent = selectedAction === 'approve' ? 'Setujui Pengajuan Cuti' : 'Tolak Pengajuan Cuti';
+      catatanAdmin.value = '';
+      popupOverlay.style.display = 'flex';
     });
   });
 });
+
+btnCancelPopup.onclick = () => {
+  popupOverlay.style.display = 'none';
+  selectedId = null;
+  selectedAction = null;
+};
+
+btnConfirmPopup.onclick = async () => {
+  if (!selectedId || !selectedAction) return;
+
+  const statusBaru = selectedAction === 'approve' ? 'Approved' : 'Rejected';
+  const cutiRef = ref(db, 'pengajuan_cuti/' + selectedId);
+
+  await update(cutiRef, {
+    status: statusBaru,
+    catatanAdmin: catatanAdmin.value.trim() || '-'
+  });
+
+  popupOverlay.style.display = 'none';
+  alert(`✅ Pengajuan cuti telah di${selectedAction === 'approve' ? 'setujui' : 'tolak'}.`);
+};
 </script>
 
 </body>
