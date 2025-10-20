@@ -588,10 +588,9 @@ document.getElementById('btnSimpanJadwal').addEventListener('click', async () =>
       `📅 Tanggal: ${tanggal}%0A` +
       `👔 Dress Code: ${dressCode}%0A` +
       `🧑‍🏫 Pembina: ${pembina}%0A%0A` +
-      `📋 Total Kegiatan: ${Object.keys(kegiatan).length}%0A` +
+      `📋 Total Kegiatan: ${Object.keys.kegiatan.length}%0A` +
       `Lihat detail di aplikasi jadwal.`
     );
-    const whatsappUrl = `https://wa.me/?text=${ringkasan}`;
     alert('✅ Jadwal berhasil disimpan!');
 
     const shareBtn = document.createElement('button');
