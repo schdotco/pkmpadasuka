@@ -90,19 +90,16 @@ async function loadData() {
   data.reverse();
 
   data.forEach(item => {
+    console.log('Status data:', item.status); // 🔍 Cek status di console
     const tr = document.createElement('tr');
     let statusClass =
       item.status === 'Disetujui' ? 'status-disetujui' :
       item.status === 'Ditolak' ? 'status-ditolak' :
       'status-menunggu';
 
-    // ✅ Perbaikan logika status yang termasuk "menunggu"
-    const isMenunggu =
-      item.status === 'Menunggu' ||
-      item.status === 'Pending' ||
-      item.status === 'Menunggu Persetujuan';
+    // ✅ Lebih fleksibel, abaikan huruf besar/kecil
+    const isMenunggu = /menunggu/i.test(item.status) || /pending/i.test(item.status);
 
-    // ✅ Perbaikan variabel aksi
     const aksiCell = isMenunggu
       ? `<button class="btn btn-approve" data-id="${item.id}" data-action="Disetujui">Setujui</button>
          <button class="btn btn-reject" data-id="${item.id}" data-action="Ditolak">Tolak</button>`
@@ -131,7 +128,6 @@ async function loadData() {
   });
 }
 
-// Popup actions
 popupCancel.onclick = () => popupOverlay.style.display = 'none';
 
 popupConfirm.onclick = async () => {
