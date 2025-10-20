@@ -236,11 +236,19 @@ function loadData() {
     }
 
     const data = [];
-    snap.forEach(c => data.push({ id: c.key, ...c.val() }));
+    snap.forEach(c => {
+      const val = c.val();
+      data.push({
+        id: c.key,
+        ...val,
+        dibuatPada: val.dibuatPada || '2000-01-01T00:00:00Z' // fallback jika tidak ada
+      });
+    });
 
-    // Urutkan berdasarkan waktu dibuat (terbaru di atas)
+    // Urutkan data berdasarkan waktu dibuat (terbaru di atas)
     data.sort((a, b) => new Date(b.dibuatPada) - new Date(a.dibuatPada));
 
+    // Render tabel
     data.forEach(item => {
       const tr = document.createElement('tr');
       const statusClass =
@@ -248,6 +256,7 @@ function loadData() {
         item.status === 'Ditolak' ? 'status-ditolak' :
         'status-menunggu';
 
+      // Deteksi status menunggu secara fleksibel
       const isMenunggu = /menunggu/i.test(item.status) || /pending/i.test(item.status);
 
       const aksiCell = isMenunggu
@@ -256,9 +265,9 @@ function loadData() {
         : `<span>${item.status}</span>`;
 
       tr.innerHTML = `
-        <td>${item.nama}</td>
-        <td>${item.jenisCuti}</td>
-        <td>${item.tanggalMulai} s/d ${item.tanggalSelesai}</td>
+        <td>${item.nama || '-'}</td>
+        <td>${item.jenisCuti || '-'}</td>
+        <td>${item.tanggalMulai || '-'} s/d ${item.tanggalSelesai || '-'}</td>
         <td>${item.keterangan || '-'}</td>
         <td><span class="${statusClass}">${item.status}</span></td>
         <td>${aksiCell}</td>
@@ -266,7 +275,7 @@ function loadData() {
       tabel.appendChild(tr);
     });
 
-    // Tombol event popup
+    // === Event tombol Setujui / Tolak ===
     document.querySelectorAll('.btn-approve, .btn-reject').forEach(btn => {
       btn.addEventListener('click', () => {
         selectedId = btn.dataset.id;
@@ -287,7 +296,8 @@ popupConfirm.onclick = async () => {
   if (!selectedId || !selectedAction) return;
   await update(ref(db, 'pengajuan_cuti/' + selectedId), {
     status: selectedAction,
-    catatanAdmin: popupCatatan.value.trim()
+    catatanAdmin: popupCatatan.value.trim(),
+    disetujuiPada: new Date().toISOString()
   });
   popupOverlay.style.display = 'none';
 };
