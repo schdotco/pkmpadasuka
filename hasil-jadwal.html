@@ -132,50 +132,80 @@ const btnDelete = document.getElementById('btnDelete');
 let jadwalKey = null;
 let dataJadwal = null;
 
-// ✅ Urutan kegiatan sesuai input di jadwal.html
-const urutanKegiatan = [
-  "Screening CKG",
-  "Pendaftaran & Skrining BPJS",
-  "Rekam Medis",
-  "Pusat Informasi & Rujukan",
-  "Kasir",
-  "Kepegawaian dan Administrasi Surat",
-  "Mutu dan Monitoring PPI",
-  "Aset",
-  "BOK",
-  "BLUD",
-  "Security",
-  "Driver",
-  "Cleaning Service",
-  "Juru Masak",
-  "KIA",
-  "MTBS (Kesehatan Anak)",
-  "PONED",
-  "Kelas Bumi",
-  "USG",
-  "Imunisasi",
-  "Input ASIK",
-  "Penapisan",
-  "Dewasa",
-  "Lansia",
-  "KB",
-  "TB",
-  "Surveilans",
-  "Kesling",
-  "Gigi & Mulut 1",
-  "Gigi & Mulut 2",
-  "NC",
-  "Farmasi",
-  "Laboratorium",
-  "Konseling Terpadu",
-  "IGD Tindakan",
-  "Psikolog",
-  "Cek Kesehatan Gratis",
-  "Posyandu, PKG Sekolah, BIAS",
-  "Rapat & Pelatihan",
-  "Sakit",
-  "Cuti Tahunan"
-]; 
+// ✅ Struktur kluster dan urutan kegiatan
+const klusterData = [
+  {
+    judul: "I. Kegiatan Dalam Gedung - Kluster 1",
+    kegiatan: [
+      "Screening CKG",
+      "Pendaftaran & Skrining BPJS",
+      "Rekam Medis",
+      "Pusat Informasi & Rujukan",
+      "Kasir",
+      "Kepegawaian dan Administrasi Surat",
+      "Mutu dan Monitoring PPI",
+      "Aset",
+      "BOK",
+      "BLUD",
+      "Security",
+      "Driver",
+      "Cleaning Service",
+      "Juru Masak"
+    ]
+  },
+  {
+    judul: "Kluster 2",
+    kegiatan: [
+      "KIA",
+      "MTBS (Kesehatan Anak)",
+      "PONED",
+      "Kelas Bumi",
+      "USG",
+      "Imunisasi",
+      "Input ASIK"
+    ]
+  },
+  {
+    judul: "Kluster 3",
+    kegiatan: [
+      "Penapisan",
+      "Dewasa",
+      "Lansia",
+      "KB"
+    ]
+  },
+  {
+    judul: "Kluster 4",
+    kegiatan: [
+      "TB",
+      "Surveilans",
+      "Kesling"
+    ]
+  },
+  {
+    judul: "Kluster 5",
+    kegiatan: [
+      "Gigi & Mulut 1",
+      "Gigi & Mulut 2",
+      "NC",
+      "Farmasi",
+      "Laboratorium",
+      "Konseling Terpadu",
+      "IGD Tindakan",
+      "Psikolog",
+      "Cek Kesehatan Gratis"
+    ]
+  },
+  {
+    judul: "II. Kegiatan Luar Gedung",
+    kegiatan: [
+      "Posyandu, PKG Sekolah, BIAS",
+      "Rapat & Pelatihan",
+      "Sakit",
+      "Cuti Tahunan"
+    ]
+  }
+];
 
 // Ambil data terakhir dari Firebase
 const jadwalRef = query(ref(db, 'jadwal'), limitToLast(1));
