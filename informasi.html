@@ -1,60 +1,54 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Input Jadwal Dokter - UPTD Puskesmas Padasuka</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Input Jadwal Dokter - Puskesmas Padasuka</title>
+
+  <!-- Choices.js untuk dropdown searchable -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js" defer></script>
+
   <style>
-    body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f6f8fa;margin:0; }
-    .navbar { background:#1976d2;color:white;display:flex;justify-content:space-between;align-items:center;padding:12px 20px; }
-    .navbar h1 { font-size:18px;margin:0; }
-    .navbar .menu a { color:white;text-decoration:none;margin-left:15px;font-size:14px; }
-    .navbar .menu a:hover { text-decoration:underline; }
-    main { max-width:900px;margin:30px auto;background:white;padding:25px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    h2 { text-align:center;color:#1976d2;margin-bottom:20px; }
-    select,input[type="text"]{width:100%;padding:10px;margin-bottom:15px;border-radius:6px;border:1px solid #ccc;font-size:14px;}
-    button {width:100%;background:#1976d2;color:white;border:none;padding:12px;border-radius:6px;cursor:pointer;font-size:15px;}
-    button:hover{background:#125ca1;}
-    table{width:100%;border-collapse:collapse;margin-top:25px;}
-    th,td{border:1px solid #ccc;padding:10px;text-align:center;}
-    th{background-color:#1976d2;color:white;}
-    tr:nth-child(even){background-color:#f2f2f2;}
-    .action-btn{padding:6px 10px;border:none;border-radius:4px;color:white;cursor:pointer;font-size:13px;}
-    .edit-btn{background:#ffa000;}
-    .delete-btn{background:#d32f2f;}
-    .edit-btn:hover{background:#ff8f00;}
-    .delete-btn:hover{background:#b71c1c;}
-    .footer{text-align:center;margin-top:20px;font-size:13px;color:#777;}
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f6f8fa; margin:0; }
+    .navbar { background:#1976d2; color:#fff; display:flex; justify-content:space-between; align-items:center; padding:12px 20px; }
+    .navbar h1{margin:0;font-size:18px}
+    .container{max-width:900px;margin:30px auto;background:#fff;padding:24px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+    label{display:block;font-weight:600;margin-top:12px}
+    select,input[type="text"]{width:100%;padding:10px;border-radius:6px;border:1px solid #ccc;margin-top:6px}
+    button{margin-top:16px;width:100%;padding:12px;border-radius:6px;border:0;background:#1976d2;color:#fff;font-size:15px;cursor:pointer}
+    button:hover{background:#125ca1}
+    .note{margin-top:14px;color:#555;font-size:13px}
+    .local-list { margin-top:18px; border-radius:6px; padding:12px; background:#fbfbfb; border:1px solid #eee; font-size:14px; }
+    .local-list b{display:block;margin-bottom:8px}
   </style>
 </head>
 <body>
   <div class="navbar">
     <h1>🏥 Input Jadwal Dokter - Puskesmas Padasuka</h1>
-    <div class="menu">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="hasil-informasi.html" target="_blank">Lihat Jadwal</a>
+    <div>
+      <a href="dashboard.html" style="color:#fff;text-decoration:none;margin-right:12px">Dashboard</a>
+      <a href="hasil-informasi.html" style="color:#fff;text-decoration:underline" target="_blank">Lihat Data (hasil-informasi)</a>
     </div>
   </div>
 
-  <main>
-    <h2>🩺 Tambah Jadwal Dokter</h2>
+  <div class="container">
+    <h2 style="color:#1976d2;margin:0 0 8px 0">🩺 Tambah Jadwal Dokter</h2>
 
-    <label>Hari</label>
+    <label for="hari">Hari</label>
     <select id="hari">
       <option value="">-- Pilih Hari --</option>
       <option>Senin</option><option>Selasa</option><option>Rabu</option>
       <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
     </select>
 
-    <label>Nama Petugas</label>
+    <label for="nama">Nama Petugas</label>
     <select id="nama"><option value="">Memuat daftar pegawai...</option></select>
 
-    <label>Unit Pelayanan</label>
+    <label for="unit">Unit Pelayanan</label>
     <input type="text" id="unit" placeholder="Contoh: Umum, Gigi, Lansia, KIA, dll">
 
-    <label>Status Kehadiran</label>
+    <label for="status">Status Kehadiran</label>
     <select id="status">
       <option value="">-- Pilih Status --</option>
       <option value="Ada">Ada</option>
@@ -64,156 +58,139 @@
 
     <button id="btnSimpan">💾 Simpan Informasi</button>
 
-    <h2 style="margin-top:40px;">📋 Daftar Jadwal Dokter</h2>
-    <table id="tabelInformasi">
-      <thead>
-        <tr><th>Hari</th><th>Nama</th><th>Unit</th><th>Status</th><th>Aksi</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="note">
+      Data akan disimpan ke Firebase dan otomatis direset setiap jam 00:00. Untuk menampilkan data gunakan <code>hasil-informasi.html</code>.
+    </div>
 
-    <div class="footer">Terhubung realtime & reset otomatis 00:00</div>
-  </main>
+    <!-- Optional: List lokal ringkasan entri yang baru disimpan (client-side only, bukan realtime) -->
+    <div class="local-list" id="localList" style="display:none">
+      <b>Entri terbaru (sesi ini)</b>
+      <div id="localItems"></div>
+    </div>
+  </div>
 
   <script type="module">
     import { db } from "./app.js";
-    import {
-      ref, get, push, set, update, remove,
-      onChildAdded, onChildChanged, onChildRemoved
-    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    import { ref, get, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    const hariSelect = document.getElementById("hari");
-    const namaSelect = document.getElementById("nama");
-    const unitInput = document.getElementById("unit");
-    const statusSelect = document.getElementById("status");
-    const btnSimpan = document.getElementById("btnSimpan");
-    const tbody = document.querySelector("#tabelInformasi tbody");
+    const hariEl = document.getElementById('hari');
+    const namaEl = document.getElementById('nama');
+    const unitEl = document.getElementById('unit');
+    const statusEl = document.getElementById('status');
+    const btnSimpan = document.getElementById('btnSimpan');
 
-    let editKey = null;
-    let choicesNama;
+    const localListWrap = document.getElementById('localList');
+    const localItems = document.getElementById('localItems');
+    const localBuffer = []; // menyimpan entri yang baru dibuat pada sesi ini (client-side)
 
-    // --- Ambil daftar pegawai (sekali saja)
-    const pegawaiRef = ref(db, "Pegawai");
-    get(pegawaiRef).then((snap) => {
-      namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
-      snap.forEach(child => {
-        const data = child.val();
-        const nama = data.gelar ? `${data.nama} ${data.gelar}` : data.nama;
-        const opt = document.createElement("option");
-        opt.value = nama;
-        opt.textContent = nama;
-        namaSelect.appendChild(opt);
-      });
-      choicesNama = new Choices(namaSelect, { searchEnabled:true, shouldSort:false, itemSelectText:'' });
-    });
+    let choicesNamaInstance = null;
+    let editKey = null; // untuk fitur edit (jika kamu pakai nanti)
 
-    const infoRef = ref(db, "informasi_dokter");
+    // Ambil daftar pegawai SEKALI (get) -> inisialisasi Choices.js
+    (async function loadPegawai() {
+      try {
+        const pegawaiRef = ref(db, "Pegawai");
+        const snap = await get(pegawaiRef);
+        namaEl.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+        snap.forEach(ch => {
+          const d = ch.val();
+          const nama = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
+          const opt = document.createElement('option');
+          opt.value = nama;
+          opt.textContent = nama;
+          namaEl.appendChild(opt);
+        });
 
-    // --- Tambah data
-    btnSimpan.onclick = async () => {
-      const hari = hariSelect.value.trim();
-      const nama = namaSelect.value.trim();
-      const unit = unitInput.value.trim();
-      const status = statusSelect.value.trim();
+        // init Choices once
+        if (typeof Choices !== 'undefined') {
+          if (choicesNamaInstance) choicesNamaInstance.destroy();
+          choicesNamaInstance = new Choices(namaEl, {
+            searchEnabled: true,
+            shouldSort: false,
+            itemSelectText: '',
+            searchPlaceholderValue: 'Cari nama pegawai...'
+          });
+        }
+      } catch (err) {
+        console.error('Gagal memuat daftar pegawai:', err);
+        alert('Gagal memuat daftar pegawai. Periksa koneksi atau konfigurasi Firebase.');
+      }
+    })();
+
+    // Simpan data (push)
+    btnSimpan.addEventListener('click', async () => {
+      const hari = hariEl.value?.trim();
+      const nama = namaEl.value?.trim();
+      const unit = unitEl.value?.trim();
+      const status = statusEl.value?.trim();
 
       if (!hari || !nama || !unit || !status) {
-        alert("⚠️ Lengkapi semua field!");
+        alert('Lengkapi semua field sebelum menyimpan!');
         return;
       }
 
       try {
+        const infoRef = ref(db, "informasi_dokter");
         if (editKey) {
-          await update(ref(db, "informasi_dokter/" + editKey), { hari, nama, unit, status });
-          alert("✅ Data diperbarui!");
+          // Jika kelak ingin support edit dari halaman ini:
+          await update(ref(db, `informasi_dokter/${editKey}`), { hari, nama, unit, status });
+          alert('Data berhasil diperbarui.');
           editKey = null;
-          btnSimpan.textContent = "💾 Simpan Informasi";
         } else {
           const newRef = push(infoRef);
-          await set(newRef, { hari, nama, unit, status, tanggalInput: new Date().toISOString() });
-          alert("✅ Data berhasil disimpan!");
+          await set(newRef, {
+            hari, nama, unit, status,
+            tanggalInput: new Date().toISOString()
+          });
+          alert('Data berhasil disimpan.');
+          // simpan ringkasan di local buffer (client-only)
+          localBuffer.unshift({ hari, nama, unit, status, id: newRef.key, waktu: new Date().toLocaleString() });
+          renderLocalBuffer();
         }
-        // reset input
-        hariSelect.value = "";
-        unitInput.value = "";
-        statusSelect.value = "";
-        choicesNama.setChoiceByValue("");
+
+        // reset form
+        hariEl.value = '';
+        unitEl.value = '';
+        statusEl.value = '';
+        if (choicesNamaInstance) choicesNamaInstance.setChoiceByValue('');
       } catch (err) {
-        alert("❌ Gagal menyimpan: " + err.message);
+        console.error('Gagal menyimpan:', err);
+        alert('❌ Gagal menyimpan: ' + (err.message || err));
       }
-    };
-
-    // --- Realtime listener tanpa loop
-    const renderRow = (id, data) => {
-      const tr = document.createElement("tr");
-      tr.id = `row-${id}`;
-      tr.innerHTML = `
-        <td>${data.hari}</td>
-        <td>${data.nama}</td>
-        <td>${data.unit}</td>
-        <td>${data.status}</td>
-        <td>
-          <button class="action-btn edit-btn" data-id="${id}">✏️</button>
-          <button class="action-btn delete-btn" data-id="${id}">🗑️</button>
-        </td>`;
-      tbody.prepend(tr);
-    };
-
-    onChildAdded(infoRef, (snap) => renderRow(snap.key, snap.val()));
-
-    onChildChanged(infoRef, (snap) => {
-      const row = document.getElementById(`row-${snap.key}`);
-      if (row) row.outerHTML = `
-        <tr id="row-${snap.key}">
-          <td>${snap.val().hari}</td>
-          <td>${snap.val().nama}</td>
-          <td>${snap.val().unit}</td>
-          <td>${snap.val().status}</td>
-          <td>
-            <button class="action-btn edit-btn" data-id="${snap.key}">✏️</button>
-            <button class="action-btn delete-btn" data-id="${snap.key}">🗑️</button>
-          </td>
-        </tr>`;
     });
 
-    onChildRemoved(infoRef, (snap) => {
-      const row = document.getElementById(`row-${snap.key}`);
-      if (row) row.remove();
-    });
-
-    // --- Edit / Delete handler
-    tbody.onclick = async (e) => {
-      const id = e.target.dataset.id;
-      if (!id) return;
-      if (e.target.classList.contains("edit-btn")) {
-        const snap = await get(ref(db, "informasi_dokter/" + id));
-        if (snap.exists()) {
-          const d = snap.val();
-          hariSelect.value = d.hari;
-          unitInput.value = d.unit;
-          statusSelect.value = d.status;
-          choicesNama.setChoiceByValue(d.nama);
-          editKey = id;
-          btnSimpan.textContent = "🔄 Perbarui Data";
-        }
-      } else if (e.target.classList.contains("delete-btn")) {
-        if (confirm("Hapus data ini?")) {
-          await remove(ref(db, "informasi_dokter/" + id));
-          alert("🗑️ Data dihapus!");
-        }
+    function renderLocalBuffer() {
+      if (localBuffer.length === 0) {
+        localListWrap.style.display = 'none';
+        return;
       }
-    };
-
-    // --- Reset otomatis 00:00
-    function resetDaily() {
-      const now = new Date();
-      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 2);
-      setTimeout(async () => {
-        await remove(infoRef);
-        console.log("🕛 Data direset otomatis!");
-        resetDaily();
-      }, nextMidnight - now);
+      localListWrap.style.display = 'block';
+      localItems.innerHTML = '';
+      localBuffer.slice(0, 10).forEach(it => {
+        const div = document.createElement('div');
+        div.style.marginBottom = '8px';
+        div.textContent = `${it.waktu} — ${it.hari} • ${it.nama} • ${it.unit} • ${it.status}`;
+        localItems.appendChild(div);
+      });
     }
-    resetDaily();
+
+    // Reset otomatis jam 00:00 (lokal browser) — ini akan menghapus node 'informasi_dokter'
+    function scheduleMidnightReset() {
+      const now = new Date();
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+      const ms = nextMidnight - now;
+      setTimeout(async () => {
+        try {
+          await remove(ref(db, "informasi_dokter"));
+          console.log('🔁 Reset otomatis: informasi_dokter dihapus pada', new Date().toLocaleString());
+        } catch (err) {
+          console.error('Gagal reset otomatis:', err);
+        } finally {
+          scheduleMidnightReset(); // jadwalkan untuk besok
+        }
+      }, ms);
+    }
+    scheduleMidnightReset();
   </script>
 </body>
 </html>
