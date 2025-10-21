@@ -78,96 +78,131 @@
     </table>
   </div>
 
-  <script type="module">
-    import { db } from "./app.js";
-    import { ref, get, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+<script type="module">
+import { db } from "./app.js";
+import { ref, get, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    const hariEl = document.getElementById('hari');
-    const namaEl = document.getElementById('nama');
-    const unitEl = document.getElementById('unit');
-    const statusEl = document.getElementById('status');
-    const btnSimpan = document.getElementById('btnSimpan');
-    const tbody = document.querySelector('#tabelInfo tbody');
+const hariEl = document.getElementById('hari');
+const namaEl = document.getElementById('nama');
+const unitEl = document.getElementById('unit');
+const statusEl = document.getElementById('status');
+const btnSimpan = document.getElementById('btnSimpan');
+const tbody = document.querySelector('#tabelInfo tbody');
 
-    let choicesNamaInstance = null;
+let choicesNamaInstance = null;
+let isSaving = false; // 🔹 Tambahkan flag pengaman
 
-    // 🔹 Ambil nama pegawai (sekali)
-    (async function loadPegawai(){
-      try {
-        const pegawaiRef = ref(db, "Pegawai");
-        const snap = await get(pegawaiRef);
-        namaEl.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
-        snap.forEach(ch=>{
-          const d=ch.val();
-          const nama=d.gelar?`${d.nama} ${d.gelar}`:d.nama;
-          const opt=document.createElement('option');
-          opt.value=nama; opt.textContent=nama;
-          namaEl.appendChild(opt);
-        });
-        if(typeof Choices!=='undefined'){
-          if(choicesNamaInstance)choicesNamaInstance.destroy();
-          choicesNamaInstance=new Choices(namaEl,{searchEnabled:true,shouldSort:false,itemSelectText:''});
-        }
-      }catch(e){alert("Gagal memuat daftar pegawai: "+e.message);}
-    })();
-
-    // 🔹 Simpan data
-    btnSimpan.addEventListener('click', async ()=>{
-      const hari=hariEl.value.trim();
-      const nama=namaEl.value.trim();
-      const unit=unitEl.value.trim();
-      const status=statusEl.value.trim();
-      if(!hari||!nama||!unit||!status){alert('Lengkapi semua field!');return;}
-
-      try{
-        const infoRef=ref(db,"informasi_dokter");
-        const newRef=push(infoRef);
-        await set(newRef,{hari,nama,unit,status,tanggalInput:new Date().toISOString()});
-        alert('✅ Data berhasil disimpan!');
-        hariEl.value='';unitEl.value='';statusEl.value='';
-        if(choicesNamaInstance)choicesNamaInstance.setChoiceByValue('');
-      }catch(err){
-        alert("❌ Gagal menyimpan: "+err.message);
-      }
+// 🔹 Ambil nama pegawai sekali
+(async function loadPegawai() {
+  try {
+    const pegawaiRef = ref(db, "Pegawai");
+    const snap = await get(pegawaiRef);
+    namaEl.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+    snap.forEach(ch => {
+      const d = ch.val();
+      const nama = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
+      const opt = document.createElement('option');
+      opt.value = nama;
+      opt.textContent = nama;
+      namaEl.appendChild(opt);
     });
-
-    // 🔹 Tampilkan tabel realtime
-    const infoRef = ref(db,"informasi_dokter");
-    const hariList=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-    const hariIni=hariList[new Date().getDay()];
-
-    onValue(infoRef,(snap)=>{
-      tbody.innerHTML='';
-      if(!snap.exists()){tbody.innerHTML=`<tr><td colspan="4"><i>Tidak ada data.</i></td></tr>`;return;}
-      const data=[];
-      snap.forEach(ch=>{
-        const val=ch.val();
-        if(val.hari===hariIni)data.push(val);
+    if (typeof Choices !== 'undefined') {
+      if (choicesNamaInstance) choicesNamaInstance.destroy();
+      choicesNamaInstance = new Choices(namaEl, {
+        searchEnabled: true,
+        shouldSort: false,
+        itemSelectText: ''
       });
-      if(data.length===0){tbody.innerHTML=`<tr><td colspan="4"><i>Belum ada data untuk hari ${hariIni}</i></td></tr>`;return;}
-      data.sort((a,b)=>a.nama.localeCompare(b.nama));
-      data.forEach(d=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML=`
-          <td>${d.hari}</td>
-          <td>${d.nama}</td>
-          <td>${d.unit}</td>
-          <td class="status-${d.status.toLowerCase().replace(' ','-')}">${d.status}</td>`;
-        tbody.appendChild(tr);
-      });
+    }
+  } catch (e) {
+    alert("Gagal memuat daftar pegawai: " + e.message);
+  }
+})();
+
+// 🔹 Simpan data
+btnSimpan.addEventListener('click', async () => {
+  const hari = hariEl.value.trim();
+  const nama = namaEl.value.trim();
+  const unit = unitEl.value.trim();
+  const status = statusEl.value.trim();
+  if (!hari || !nama || !unit || !status) {
+    alert('Lengkapi semua field!');
+    return;
+  }
+
+  try {
+    isSaving = true; // 🔹 aktifkan flag agar onValue tidak bereaksi dulu
+    const infoRef = ref(db, "informasi_dokter");
+    const newRef = push(infoRef);
+    await set(newRef, {
+      hari,
+      nama,
+      unit,
+      status,
+      tanggalInput: new Date().toISOString()
     });
+    alert('✅ Data berhasil disimpan!');
+    hariEl.value = '';
+    unitEl.value = '';
+    statusEl.value = '';
+    if (choicesNamaInstance) choicesNamaInstance.setChoiceByValue('');
+  } catch (err) {
+    alert("❌ Gagal menyimpan: " + err.message);
+  } finally {
+    // beri jeda agar Firebase sempat update sebelum membaca ulang
+    setTimeout(() => { isSaving = false; }, 1000);
+  }
+});
 
-    // 🔹 Reset otomatis setiap jam 00:00
-    function scheduleMidnightReset(){
-      const now=new Date();
-      const next=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);
-      setTimeout(async()=>{
-        await remove(ref(db,"informasi_dokter"));
-        console.log("Data direset otomatis:",new Date().toLocaleString());
-        scheduleMidnightReset();
-      },next-now);
+// 🔹 Listener realtime aman
+const infoRef = ref(db, "informasi_dokter");
+const hariList = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const hariIni = hariList[new Date().getDay()];
+
+onValue(infoRef, (snap) => {
+  if (isSaving) return; // 🔹 cegah render saat sedang menyimpan data
+  tbody.innerHTML = '';
+  if (!snap.exists()) {
+    tbody.innerHTML = `<tr><td colspan="4"><i>Tidak ada data.</i></td></tr>`;
+    return;
+  }
+  const data = [];
+  snap.forEach(ch => {
+    const val = ch.val();
+    if (val.hari === hariIni) data.push(val);
+  });
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4"><i>Belum ada data untuk hari ${hariIni}</i></td></tr>`;
+    return;
+  }
+  data.sort((a, b) => a.nama.localeCompare(b.nama));
+  data.forEach(d => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${d.hari}</td>
+      <td>${d.nama}</td>
+      <td>${d.unit}</td>
+      <td class="status-${d.status.toLowerCase().replace(' ','-')}">${d.status}</td>`;
+    tbody.appendChild(tr);
+  });
+});
+
+// 🔹 Reset otomatis 00:00
+function scheduleMidnightReset() {
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+  setTimeout(async () => {
+    try {
+      await remove(ref(db, "informasi_dokter"));
+      console.log("Data direset otomatis:", new Date().toLocaleString());
+    } catch (err) {
+      console.error("Gagal reset:", err);
     }
     scheduleMidnightReset();
-  </script>
+  }, next - now);
+}
+scheduleMidnightReset();
+</script>
+
 </body>
 </html>
