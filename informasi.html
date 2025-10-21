@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Input Jadwal Dokter - UPTD Puskesmas Padasuka</title>
+  <title>Input Jadwal Dokter - Puskesmas Padasuka</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
   <style>
@@ -20,19 +20,14 @@
       align-items: center;
       padding: 12px 20px;
     }
-    .navbar h1 {
-      font-size: 18px;
-      margin: 0;
-    }
+    .navbar h1 { font-size: 18px; margin: 0; }
     .navbar .menu a {
       color: white;
       text-decoration: none;
       margin-left: 15px;
       font-size: 14px;
     }
-    .navbar .menu a:hover {
-      text-decoration: underline;
-    }
+    .navbar .menu a:hover { text-decoration: underline; }
 
     main {
       max-width: 900px;
@@ -171,9 +166,9 @@
 
     let editKey = null;
     let choicesNama;
-    let isUpdating = false;
+    let ignoreUpdates = false; // untuk cegah onValue loop
 
-    // Ambil nama pegawai dari Firebase
+    // 🔹 Ambil daftar pegawai
     const pegawaiRef = ref(db, "Pegawai");
     onValue(pegawaiRef, (snap) => {
       namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
@@ -187,54 +182,50 @@
       });
 
       if (choicesNama) choicesNama.destroy();
-      choicesNama = new Choices(namaSelect, {
-        searchEnabled: true, shouldSort: false, itemSelectText: ''
-      });
+      choicesNama = new Choices(namaSelect, { searchEnabled: true, shouldSort: false, itemSelectText: '' });
     }, { onlyOnce: true });
 
-    // Simpan data
+    // 🔹 Simpan atau update data
     btnSimpan.onclick = async () => {
       const hari = hariSelect.value.trim();
       const nama = namaSelect.value.trim();
       const unit = unitInput.value.trim();
       const status = statusSelect.value.trim();
-
       if (!hari || !nama || !unit || !status) {
         alert("⚠️ Lengkapi semua field!");
         return;
       }
 
       try {
-        isUpdating = true;
+        ignoreUpdates = true;
         if (editKey) {
           await update(ref(db, "informasi_dokter/" + editKey), { hari, nama, unit, status });
           alert("✅ Data diperbarui!");
           editKey = null;
           btnSimpan.textContent = "💾 Simpan Informasi";
         } else {
-          await push(ref(db, "informasi_dokter"), {
-            hari, nama, unit, status, tanggalInput: new Date().toISOString()
-          });
-          alert("✅ Data berhasil disimpan!");
+          const newRef = push(ref(db, "informasi_dokter"));
+          await set(newRef, { hari, nama, unit, status, tanggalInput: new Date().toISOString() });
+          alert("✅ Data disimpan!");
         }
 
+        // reset input
         hariSelect.value = "";
         unitInput.value = "";
         statusSelect.value = "";
         choicesNama.setChoiceByValue("");
 
-      } catch (err) {
-        console.error(err);
-        alert("❌ Gagal menyimpan: " + err.message);
+      } catch (e) {
+        alert("❌ Gagal menyimpan: " + e.message);
       } finally {
-        isUpdating = false;
+        setTimeout(() => ignoreUpdates = false, 500); // biar listener aktif lagi
       }
     };
 
-    // Realtime tampilkan data
+    // 🔹 Tampilkan data realtime
     const infoRef = ref(db, "informasi_dokter");
     onValue(infoRef, (snap) => {
-      if (isUpdating) return; // cegah loop
+      if (ignoreUpdates) return;
       tbody.innerHTML = "";
       const data = [];
       snap.forEach(ch => data.push({ key: ch.key, ...ch.val() }));
@@ -255,11 +246,10 @@
       });
     });
 
-    // Edit dan hapus
+    // 🔹 Edit / Delete
     tbody.onclick = async (e) => {
       const id = e.target.dataset.id;
       if (!id) return;
-
       if (e.target.classList.contains("edit-btn")) {
         const snap = await get(ref(db, "informasi_dokter/" + id));
         if (!snap.exists()) return;
@@ -270,30 +260,28 @@
         choicesNama.setChoiceByValue(d.nama);
         editKey = id;
         btnSimpan.textContent = "🔄 Perbarui Data";
-      }
-
-      if (e.target.classList.contains("delete-btn")) {
+      } else if (e.target.classList.contains("delete-btn")) {
         if (confirm("Hapus data ini?")) {
-          isUpdating = true;
+          ignoreUpdates = true;
           await remove(ref(db, "informasi_dokter/" + id));
-          alert("🗑️ Data berhasil dihapus!");
-          isUpdating = false;
+          alert("🗑️ Data dihapus!");
+          setTimeout(() => ignoreUpdates = false, 500);
         }
       }
     };
 
-    // Reset otomatis setiap jam 00:00
-    const resetDaily = async () => {
+    // 🔹 Reset otomatis setiap jam 00:00
+    function scheduleReset() {
       const now = new Date();
-      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
-      const msUntilMidnight = nextMidnight - now;
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 3);
+      const timeout = nextMidnight - now;
       setTimeout(async () => {
         await remove(ref(db, "informasi_dokter"));
-        console.log("🕛 Reset data harian!");
-        resetDaily();
-      }, msUntilMidnight);
-    };
-    resetDaily();
+        console.log("🕛 Data direset otomatis!");
+        scheduleReset();
+      }, timeout);
+    }
+    scheduleReset();
   </script>
 </body>
 </html>
