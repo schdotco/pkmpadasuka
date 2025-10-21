@@ -138,35 +138,43 @@
     import { db } from "./app.js";
     import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    const namaSelect = document.getElementById("nama");
     const hariSelect = document.getElementById("hari");
+    const namaSelect = document.getElementById("nama");
     const unitInput = document.getElementById("unit");
     const statusSelect = document.getElementById("status");
     const btnSimpan = document.getElementById("btnSimpan");
 
-    let PegawaiList = [];
+    let choicesNama; // untuk instance dropdown searchable
 
     // 🔹 Ambil daftar pegawai dari Firebase (node: Pegawai)
     const pegawaiRef = ref(db, "Pegawai");
     onValue(pegawaiRef, (snapshot) => {
-      PegawaiList = [];
-      namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+      const daftarPegawai = [];
       snapshot.forEach(child => {
         const data = child.val();
         const namaLengkap = data.gelar ? `${data.nama} ${data.gelar}` : data.nama;
-        PegawaiList.push(namaLengkap);
+        daftarPegawai.push(namaLengkap);
+      });
+
+      // Reset dulu dropdown
+      namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+      daftarPegawai.forEach(nama => {
         const opt = document.createElement("option");
-        opt.value = namaLengkap;
-        opt.textContent = namaLengkap;
+        opt.value = nama;
+        opt.textContent = nama;
         namaSelect.appendChild(opt);
       });
 
-      // Aktifkan searchable dropdown
-      new Choices(namaSelect, {
+      // 🔸 Hapus instance lama (kalau sudah ada)
+      if (choicesNama) choicesNama.destroy();
+
+      // 🔹 Inisialisasi Choices.js (searchable dropdown)
+      choicesNama = new Choices(namaSelect, {
         searchEnabled: true,
         shouldSort: false,
         itemSelectText: '',
-        searchPlaceholderValue: 'Cari nama pegawai...'
+        searchPlaceholderValue: 'Cari nama pegawai...',
+        noResultsText: 'Tidak ditemukan',
       });
     });
 
@@ -197,7 +205,8 @@
         hariSelect.value = "";
         unitInput.value = "";
         statusSelect.value = "";
-        namaSelect.value = "";
+        // Reset Choices.js dropdown
+        choicesNama.setChoiceByValue("");
       } catch (err) {
         alert("❌ Gagal menyimpan data: " + err.message);
       }
