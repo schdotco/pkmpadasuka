@@ -10,7 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js" defer></script>
 
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f6f8fa; margin:0; }
+    body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:#f6f8fa; margin:0; }
     .navbar { background:#1976d2; color:#fff; display:flex; justify-content:space-between; align-items:center; padding:12px 20px; }
     .navbar h1{margin:0;font-size:18px}
     .container{max-width:900px;margin:30px auto;background:#fff;padding:24px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
@@ -19,8 +19,13 @@
     button{margin-top:16px;width:100%;padding:12px;border-radius:6px;border:0;background:#1976d2;color:#fff;font-size:15px;cursor:pointer}
     button:hover{background:#125ca1}
     .note{margin-top:14px;color:#555;font-size:13px}
-    .local-list { margin-top:18px; border-radius:6px; padding:12px; background:#fbfbfb; border:1px solid #eee; font-size:14px; }
-    .local-list b{display:block;margin-bottom:8px}
+    table{width:100%;border-collapse:collapse;margin-top:25px}
+    th,td{border:1px solid #ccc;padding:8px 10px;text-align:center}
+    th{background:#1976d2;color:#fff}
+    tr:nth-child(even){background:#f9f9f9}
+    td.status-ada{background:#c8e6c9;color:#1b5e20;font-weight:bold}
+    td.status-tidak{background:#ffcdd2;color:#b71c1c;font-weight:bold}
+    td.status-cuti{background:#fff3cd;color:#795548;font-weight:bold}
   </style>
 </head>
 <body>
@@ -28,7 +33,6 @@
     <h1>🏥 Input Jadwal Dokter - Puskesmas Padasuka</h1>
     <div>
       <a href="dashboard.html" style="color:#fff;text-decoration:none;margin-right:12px">Dashboard</a>
-      <a href="hasil-informasi.html" style="color:#fff;text-decoration:underline" target="_blank">Lihat Data (hasil-informasi)</a>
     </div>
   </div>
 
@@ -58,137 +62,110 @@
 
     <button id="btnSimpan">💾 Simpan Informasi</button>
 
-    <div class="note">
-      Data akan disimpan ke Firebase dan otomatis direset setiap jam 00:00. Untuk menampilkan data gunakan <code>hasil-informasi.html</code>.
-    </div>
+    <div class="note">Data akan disimpan ke Firebase dan ditampilkan di tabel di bawah.</div>
 
-    <!-- Optional: List lokal ringkasan entri yang baru disimpan (client-side only, bukan realtime) -->
-    <div class="local-list" id="localList" style="display:none">
-      <b>Entri terbaru (sesi ini)</b>
-      <div id="localItems"></div>
-    </div>
+    <h3 style="margin-top:30px;color:#1976d2;">📋 Jadwal Dokter Hari Ini</h3>
+    <table id="tabelInfo">
+      <thead>
+        <tr>
+          <th>Hari</th>
+          <th>Nama Petugas</th>
+          <th>Unit</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="4"><i>Memuat data...</i></td></tr></tbody>
+    </table>
   </div>
 
   <script type="module">
     import { db } from "./app.js";
-    import { ref, get, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    import { ref, get, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
     const hariEl = document.getElementById('hari');
     const namaEl = document.getElementById('nama');
     const unitEl = document.getElementById('unit');
     const statusEl = document.getElementById('status');
     const btnSimpan = document.getElementById('btnSimpan');
-
-    const localListWrap = document.getElementById('localList');
-    const localItems = document.getElementById('localItems');
-    const localBuffer = []; // menyimpan entri yang baru dibuat pada sesi ini (client-side)
+    const tbody = document.querySelector('#tabelInfo tbody');
 
     let choicesNamaInstance = null;
-    let editKey = null; // untuk fitur edit (jika kamu pakai nanti)
 
-    // Ambil daftar pegawai SEKALI (get) -> inisialisasi Choices.js
-    (async function loadPegawai() {
+    // 🔹 Ambil nama pegawai (sekali)
+    (async function loadPegawai(){
       try {
         const pegawaiRef = ref(db, "Pegawai");
         const snap = await get(pegawaiRef);
         namaEl.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
-        snap.forEach(ch => {
-          const d = ch.val();
-          const nama = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
-          const opt = document.createElement('option');
-          opt.value = nama;
-          opt.textContent = nama;
+        snap.forEach(ch=>{
+          const d=ch.val();
+          const nama=d.gelar?`${d.nama} ${d.gelar}`:d.nama;
+          const opt=document.createElement('option');
+          opt.value=nama; opt.textContent=nama;
           namaEl.appendChild(opt);
         });
-
-        // init Choices once
-        if (typeof Choices !== 'undefined') {
-          if (choicesNamaInstance) choicesNamaInstance.destroy();
-          choicesNamaInstance = new Choices(namaEl, {
-            searchEnabled: true,
-            shouldSort: false,
-            itemSelectText: '',
-            searchPlaceholderValue: 'Cari nama pegawai...'
-          });
+        if(typeof Choices!=='undefined'){
+          if(choicesNamaInstance)choicesNamaInstance.destroy();
+          choicesNamaInstance=new Choices(namaEl,{searchEnabled:true,shouldSort:false,itemSelectText:''});
         }
-      } catch (err) {
-        console.error('Gagal memuat daftar pegawai:', err);
-        alert('Gagal memuat daftar pegawai. Periksa koneksi atau konfigurasi Firebase.');
-      }
+      }catch(e){alert("Gagal memuat daftar pegawai: "+e.message);}
     })();
 
-    // Simpan data (push)
-    btnSimpan.addEventListener('click', async () => {
-      const hari = hariEl.value?.trim();
-      const nama = namaEl.value?.trim();
-      const unit = unitEl.value?.trim();
-      const status = statusEl.value?.trim();
+    // 🔹 Simpan data
+    btnSimpan.addEventListener('click', async ()=>{
+      const hari=hariEl.value.trim();
+      const nama=namaEl.value.trim();
+      const unit=unitEl.value.trim();
+      const status=statusEl.value.trim();
+      if(!hari||!nama||!unit||!status){alert('Lengkapi semua field!');return;}
 
-      if (!hari || !nama || !unit || !status) {
-        alert('Lengkapi semua field sebelum menyimpan!');
-        return;
-      }
-
-      try {
-        const infoRef = ref(db, "informasi_dokter");
-        if (editKey) {
-          // Jika kelak ingin support edit dari halaman ini:
-          await update(ref(db, `informasi_dokter/${editKey}`), { hari, nama, unit, status });
-          alert('Data berhasil diperbarui.');
-          editKey = null;
-        } else {
-          const newRef = push(infoRef);
-          await set(newRef, {
-            hari, nama, unit, status,
-            tanggalInput: new Date().toISOString()
-          });
-          alert('Data berhasil disimpan.');
-          // simpan ringkasan di local buffer (client-only)
-          localBuffer.unshift({ hari, nama, unit, status, id: newRef.key, waktu: new Date().toLocaleString() });
-          renderLocalBuffer();
-        }
-
-        // reset form
-        hariEl.value = '';
-        unitEl.value = '';
-        statusEl.value = '';
-        if (choicesNamaInstance) choicesNamaInstance.setChoiceByValue('');
-      } catch (err) {
-        console.error('Gagal menyimpan:', err);
-        alert('❌ Gagal menyimpan: ' + (err.message || err));
+      try{
+        const infoRef=ref(db,"informasi_dokter");
+        const newRef=push(infoRef);
+        await set(newRef,{hari,nama,unit,status,tanggalInput:new Date().toISOString()});
+        alert('✅ Data berhasil disimpan!');
+        hariEl.value='';unitEl.value='';statusEl.value='';
+        if(choicesNamaInstance)choicesNamaInstance.setChoiceByValue('');
+      }catch(err){
+        alert("❌ Gagal menyimpan: "+err.message);
       }
     });
 
-    function renderLocalBuffer() {
-      if (localBuffer.length === 0) {
-        localListWrap.style.display = 'none';
-        return;
-      }
-      localListWrap.style.display = 'block';
-      localItems.innerHTML = '';
-      localBuffer.slice(0, 10).forEach(it => {
-        const div = document.createElement('div');
-        div.style.marginBottom = '8px';
-        div.textContent = `${it.waktu} — ${it.hari} • ${it.nama} • ${it.unit} • ${it.status}`;
-        localItems.appendChild(div);
-      });
-    }
+    // 🔹 Tampilkan tabel realtime
+    const infoRef = ref(db,"informasi_dokter");
+    const hariList=["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+    const hariIni=hariList[new Date().getDay()];
 
-    // Reset otomatis jam 00:00 (lokal browser) — ini akan menghapus node 'informasi_dokter'
-    function scheduleMidnightReset() {
-      const now = new Date();
-      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
-      const ms = nextMidnight - now;
-      setTimeout(async () => {
-        try {
-          await remove(ref(db, "informasi_dokter"));
-          console.log('🔁 Reset otomatis: informasi_dokter dihapus pada', new Date().toLocaleString());
-        } catch (err) {
-          console.error('Gagal reset otomatis:', err);
-        } finally {
-          scheduleMidnightReset(); // jadwalkan untuk besok
-        }
-      }, ms);
+    onValue(infoRef,(snap)=>{
+      tbody.innerHTML='';
+      if(!snap.exists()){tbody.innerHTML=`<tr><td colspan="4"><i>Tidak ada data.</i></td></tr>`;return;}
+      const data=[];
+      snap.forEach(ch=>{
+        const val=ch.val();
+        if(val.hari===hariIni)data.push(val);
+      });
+      if(data.length===0){tbody.innerHTML=`<tr><td colspan="4"><i>Belum ada data untuk hari ${hariIni}</i></td></tr>`;return;}
+      data.sort((a,b)=>a.nama.localeCompare(b.nama));
+      data.forEach(d=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${d.hari}</td>
+          <td>${d.nama}</td>
+          <td>${d.unit}</td>
+          <td class="status-${d.status.toLowerCase().replace(' ','-')}">${d.status}</td>`;
+        tbody.appendChild(tr);
+      });
+    });
+
+    // 🔹 Reset otomatis setiap jam 00:00
+    function scheduleMidnightReset(){
+      const now=new Date();
+      const next=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);
+      setTimeout(async()=>{
+        await remove(ref(db,"informasi_dokter"));
+        console.log("Data direset otomatis:",new Date().toLocaleString());
+        scheduleMidnightReset();
+      },next-now);
     }
     scheduleMidnightReset();
   </script>
