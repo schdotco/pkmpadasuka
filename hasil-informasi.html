@@ -69,7 +69,7 @@
     }
 
     .container {
-      padding: 10px 40px 70px 40px;
+      padding: 10px 40px 80px 40px;
       box-sizing: border-box;
       height: calc(100vh - 100px);
       overflow-y: auto;
@@ -89,6 +89,68 @@
     tbody tr {
       animation: fadeIn 0.8s ease;
     }
+
+    /* Tombol hapus di kanan bawah */
+    #btnHapusData {
+      position: fixed;
+      bottom: 90px;
+      right: 25px;
+      background: #d32f2f;
+      color: #fff;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+      z-index: 10;
+    }
+    #btnHapusData:hover {
+      background: #b71c1c;
+      transform: scale(1.05);
+    }
+
+    /* Popup konfirmasi */
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    .popup {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      max-width: 400px;
+    }
+    .popup h3 {
+      margin: 0 0 20px;
+      color: #d32f2f;
+    }
+    .popup button {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .btn-confirm {
+      background: #d32f2f;
+      color: #fff;
+    }
+    .btn-cancel {
+      background: #ccc;
+    }
+    .btn-confirm:hover { background: #b71c1c; }
+    .btn-cancel:hover { background: #bbb; }
   </style>
 </head>
 <body>
@@ -113,18 +175,36 @@
 
   <div class="footer" id="footer">Terakhir diperbarui: -</div>
 
+  <button id="btnHapusData">🗑️ Hapus Semua Data</button>
+
+  <!-- Popup konfirmasi -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="popup">
+      <h3>⚠️ Hapus Semua Data?</h3>
+      <p>Apakah Anda yakin ingin menghapus seluruh data jadwal dokter dari sistem?</p>
+      <button class="btn-confirm" id="btnYa">Ya, Hapus</button>
+      <button class="btn-cancel" id="btnBatal">Batal</button>
+    </div>
+  </div>
+
   <script type="module">
     import { db } from "./app.js";
-    import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    import { ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
     const tbody = document.querySelector("#tabelInfo tbody");
     const footer = document.getElementById("footer");
+    const btnHapus = document.getElementById("btnHapusData");
+    const popup = document.getElementById("popupOverlay");
+    const btnYa = document.getElementById("btnYa");
+    const btnBatal = document.getElementById("btnBatal");
+
     const infoRef = ref(db, "informasi_dokter");
 
-    // Ambil nama hari ini dalam bahasa Indonesia
+    // Daftar nama hari dalam bahasa Indonesia
     const hariList = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
     const hariIni = hariList[new Date().getDay()];
 
+    // Tampilkan data realtime
     onValue(infoRef, (snapshot) => {
       tbody.innerHTML = "";
       if (!snapshot.exists()) {
@@ -132,7 +212,6 @@
         return;
       }
 
-      // Ambil dan filter hanya hari ini
       const data = [];
       snapshot.forEach(child => {
         const val = child.val();
@@ -144,24 +223,20 @@
         return;
       }
 
-      // Urutkan agar tampil rapi
       data.sort((a, b) => a.nama.localeCompare(b.nama));
 
-      // Tampilkan data ke tabel
       data.forEach(item => {
         const tr = document.createElement("tr");
-
         const tdHari = document.createElement("td");
-        tdHari.textContent = item.hari || "-";
-
         const tdNama = document.createElement("td");
-        tdNama.textContent = item.nama || "-";
-
         const tdUnit = document.createElement("td");
-        tdUnit.textContent = item.unit || "-";
-
         const tdStatus = document.createElement("td");
+
+        tdHari.textContent = item.hari || "-";
+        tdNama.textContent = item.nama || "-";
+        tdUnit.textContent = item.unit || "-";
         tdStatus.textContent = item.status || "-";
+
         if (item.status?.toLowerCase() === "ada") {
           tdStatus.classList.add("status-ada");
         } else {
@@ -172,7 +247,6 @@
         tbody.appendChild(tr);
       });
 
-      // Update waktu pembaruan
       const now = new Date();
       const waktu = now.toLocaleString("id-ID", {
         day: "2-digit",
@@ -184,7 +258,29 @@
       footer.textContent = `Terakhir diperbarui: ${waktu} | Menampilkan jadwal hari ${hariIni}`;
     });
 
-    // Auto-refresh setiap 1 menit
+    // Tombol hapus data -> tampilkan popup
+    btnHapus.addEventListener("click", () => {
+      popup.style.display = "flex";
+    });
+
+    // Tombol batal -> tutup popup
+    btnBatal.addEventListener("click", () => {
+      popup.style.display = "none";
+    });
+
+    // Tombol konfirmasi hapus -> hapus semua data
+    btnYa.addEventListener("click", async () => {
+      try {
+        await remove(infoRef);
+        alert("🗑️ Semua data berhasil dihapus!");
+      } catch (err) {
+        alert("❌ Gagal menghapus data: " + err.message);
+      } finally {
+        popup.style.display = "none";
+      }
+    });
+
+    // Auto-refresh setiap 1 menit agar layar selalu update
     setInterval(() => window.location.reload(), 60000);
   </script>
 
