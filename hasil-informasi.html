@@ -3,127 +3,171 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hasil Jadwal Dokter - UPTD Puskesmas Padasuka</title>
+  <title>Jadwal Dokter - Layar Informasi Puskesmas</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f6f8fa;
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      overflow: hidden;
     }
+
     h1 {
       text-align: center;
-      color: #333;
-      margin-bottom: 10px;
+      color: #1976d2;
+      background: #e3f2fd;
+      padding: 20px;
+      margin: 0;
+      font-size: 28px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      font-size: 18px;
+      margin-top: 0;
     }
+
     th, td {
       border: 1px solid #ccc;
-      padding: 10px;
+      padding: 14px 10px;
       text-align: center;
     }
+
     th {
-      background-color: #4CAF50;
-      color: white;
-    }
-    tr:nth-child(even){
-      background-color: #f2f2f2;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 30px;
-      font-size: 0.9em;
-      color: #666;
-    }
-    .navbar {
       background: #1976d2;
       color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      font-size: 20px;
     }
-    .navbar h2 {
-      margin: 0;
-      font-size: 18px;
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
     }
-    .navbar a {
-      color: white;
-      text-decoration: none;
-      font-size: 14px;
-      margin-left: 10px;
+
+    td.status-ada {
+      background-color: #c8e6c9;
+      color: #1b5e20;
+      font-weight: bold;
     }
-    .navbar a:hover {
-      text-decoration: underline;
+
+    td.status-tidak {
+      background-color: #ffcdd2;
+      color: #b71c1c;
+      font-weight: bold;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 16px;
+      color: #555;
+      padding: 15px;
+      background: #e3f2fd;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+
+    .container {
+      padding: 10px 40px 70px 40px;
+      box-sizing: border-box;
+      height: calc(100vh - 100px);
+      overflow-y: auto;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    tbody tr {
+      animation: fadeIn 0.8s ease;
     }
   </style>
 </head>
 <body>
 
-  <div class="navbar">
-    <h2>🏥 Jadwal Dokter UPTD Puskesmas Padasuka</h2>
-    <div>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="informasi.html">Input Data</a>
-    </div>
+  <h1>🩺 Jadwal Dokter UPTD Puskesmas Padasuka</h1>
+
+  <div class="container">
+    <table id="tabelInfo">
+      <thead>
+        <tr>
+          <th>Hari</th>
+          <th>Nama Petugas</th>
+          <th>Unit Pelayanan</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="4"><i>Memuat data...</i></td></tr>
+      </tbody>
+    </table>
   </div>
 
-  <h1>📋 Jadwal Dokter & Petugas Puskesmas</h1>
-
-  <table id="tabelDokter">
-    <thead>
-      <tr>
-        <th>Hari</th>
-        <th>Nama Petugas</th>
-        <th>Unit Pelayanan</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
-    </tbody>
-  </table>
-
-  <div class="footer" id="footerUpdate">
-    Terakhir diperbarui: -
-  </div>
+  <div class="footer" id="footer">Terakhir diperbarui: -</div>
 
   <script type="module">
     import { db } from "./app.js";
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    const tabelBody = document.querySelector("#tabelDokter tbody");
-    const footerUpdate = document.getElementById("footerUpdate");
+    const tbody = document.querySelector("#tabelInfo tbody");
+    const footer = document.getElementById("footer");
 
     const infoRef = ref(db, "informasi_dokter");
 
     onValue(infoRef, (snapshot) => {
-      tabelBody.innerHTML = "";
-
+      tbody.innerHTML = "";
       if (!snapshot.exists()) {
-        tabelBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada data dokter</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4"><i>Tidak ada data ditemukan</i></td></tr>`;
         return;
       }
 
-      // Ambil data dan urutkan berdasarkan waktu input (terbaru di atas)
-      const data = Object.values(snapshot.val()).sort(
-        (a, b) => new Date(b.tanggalInput) - new Date(a.tanggalInput)
-      );
+      // Ambil data, urutkan berdasarkan tanggal input terbaru
+      const data = [];
+      snapshot.forEach(child => data.push(child.val()));
+      data.sort((a, b) => new Date(b.tanggalInput) - new Date(a.tanggalInput));
 
       data.forEach(item => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${item.hari}</td>
-          <td>${item.nama}</td>
-          <td>${item.unit}</td>
-          <td>${item.status}</td>
-        `;
-        tabelBody.appendChild(tr);
+
+        const tdHari = document.createElement("td");
+        tdHari.textContent = item.hari || "-";
+
+        const tdNama = document.createElement("td");
+        tdNama.textContent = item.nama || "-";
+
+        const tdUnit = document.createElement("td");
+        tdUnit.textContent = item.unit || "-";
+
+        const tdStatus = document.createElement("td");
+        tdStatus.textContent = item.status || "-";
+        if (item.status === "Ada") {
+          tdStatus.classList.add("status-ada");
+        } else {
+          tdStatus.classList.add("status-tidak");
+        }
+
+        tr.append(tdHari, tdNama, tdUnit, tdStatus);
+        tbody.appendChild(tr);
       });
 
+      // Update footer waktu
       const now = new Date();
-      footer
+      const waktu = now.toLocaleString("id-ID", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      footer.textContent = `Terakhir diperbarui: ${waktu}`;
+    });
+
+    // Auto-refresh setiap 60 detik
+    setInterval(() => window.location.reload(), 60000);
+  </script>
+
+</body>
+</html>
