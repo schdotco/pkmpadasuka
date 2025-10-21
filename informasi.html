@@ -37,7 +37,7 @@
     }
 
     main {
-      max-width: 600px;
+      max-width: 900px;
       margin: 30px auto;
       background: white;
       padding: 25px;
@@ -81,6 +81,36 @@
       background: #125ca1;
     }
 
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #1976d2;
+      color: white;
+    }
+    tr:nth-child(even){
+      background-color: #f2f2f2;
+    }
+    .action-btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .edit-btn { background: #ffa000; }
+    .edit-btn:hover { background: #ff8f00; }
+    .delete-btn { background: #d32f2f; }
+    .delete-btn:hover { background: #b71c1c; }
+
     .footer {
       text-align: center;
       margin-top: 20px;
@@ -95,7 +125,7 @@
     <h1>🏥 Input Jadwal Dokter - Puskesmas Padasuka</h1>
     <div class="menu">
       <a href="dashboard.html">Dashboard</a>
-      <a href="hasil-informasi.html">Lihat Jadwal</a>
+      <a href="hasil-informasi.html" target="_blank">Lihat Jadwal</a>
     </div>
   </div>
 
@@ -131,22 +161,39 @@
 
     <button id="btnSimpan">💾 Simpan Informasi</button>
 
-    <div class="footer">Data akan muncul di halaman hasil-informasi.html</div>
+    <h2 style="margin-top:40px;">📋 Daftar Jadwal Dokter</h2>
+    <table id="tabelInformasi">
+      <thead>
+        <tr>
+          <th>Hari</th>
+          <th>Nama</th>
+          <th>Unit</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="footer">Terhubung realtime dengan layar hasil-informasi.html</div>
   </main>
 
   <script type="module">
     import { db } from "./app.js";
-    import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    import { ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
     const hariSelect = document.getElementById("hari");
     const namaSelect = document.getElementById("nama");
     const unitInput = document.getElementById("unit");
     const statusSelect = document.getElementById("status");
     const btnSimpan = document.getElementById("btnSimpan");
+    const tbody = document.querySelector("#tabelInformasi tbody");
 
-    let choicesNama; // untuk instance dropdown searchable
+    let choicesNama;
+    let editMode = false;
+    let editKey = null;
 
-    // 🔹 Ambil daftar pegawai dari Firebase (node: Pegawai)
+    // 🔹 Ambil daftar pegawai
     const pegawaiRef = ref(db, "Pegawai");
     onValue(pegawaiRef, (snapshot) => {
       const daftarPegawai = [];
@@ -156,7 +203,6 @@
         daftarPegawai.push(namaLengkap);
       });
 
-      // Reset dulu dropdown
       namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
       daftarPegawai.forEach(nama => {
         const opt = document.createElement("option");
@@ -165,10 +211,7 @@
         namaSelect.appendChild(opt);
       });
 
-      // 🔸 Hapus instance lama (kalau sudah ada)
       if (choicesNama) choicesNama.destroy();
-
-      // 🔹 Inisialisasi Choices.js (searchable dropdown)
       choicesNama = new Choices(namaSelect, {
         searchEnabled: true,
         shouldSort: false,
@@ -178,7 +221,7 @@
       });
     });
 
-    // 🔹 Simpan ke Firebase
+    // 🔹 Simpan data
     btnSimpan.addEventListener("click", async () => {
       const hari = hariSelect.value;
       const nama = namaSelect.value;
@@ -191,24 +234,83 @@
       }
 
       try {
-        const infoRef = ref(db, "informasi_dokter");
-        const newRef = push(infoRef);
-        await set(newRef, {
-          hari,
-          nama,
-          unit,
-          status,
-          tanggalInput: new Date().toISOString()
-        });
+        if (editMode && editKey) {
+          await update(ref(db, "informasi_dokter/" + editKey), { hari, nama, unit, status });
+          alert("✅ Data berhasil diperbarui!");
+          editMode = false;
+          editKey = null;
+          btnSimpan.textContent = "💾 Simpan Informasi";
+        } else {
+          const infoRef = ref(db, "informasi_dokter");
+          const newRef = push(infoRef);
+          await set(newRef, {
+            hari, nama, unit, status,
+            tanggalInput: new Date().toISOString()
+          });
+          alert("✅ Data berhasil disimpan!");
+        }
 
-        alert("✅ Data berhasil disimpan!");
+        // Reset form
         hariSelect.value = "";
         unitInput.value = "";
         statusSelect.value = "";
-        // Reset Choices.js dropdown
         choicesNama.setChoiceByValue("");
       } catch (err) {
         alert("❌ Gagal menyimpan data: " + err.message);
+      }
+    });
+
+    // 🔹 Realtime daftar informasi
+    const infoRef = ref(db, "informasi_dokter");
+    onValue(infoRef, (snapshot) => {
+      tbody.innerHTML = "";
+      const dataList = [];
+
+      snapshot.forEach(child => {
+        const key = child.key;
+        const data = child.val();
+        dataList.push({ key, ...data });
+      });
+
+      // urutkan dari terbaru
+      dataList.sort((a, b) => new Date(b.tanggalInput) - new Date(a.tanggalInput));
+
+      dataList.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.hari}</td>
+          <td>${item.nama}</td>
+          <td>${item.unit}</td>
+          <td>${item.status}</td>
+          <td>
+            <button class="action-btn edit-btn" data-id="${item.key}">✏️</button>
+            <button class="action-btn delete-btn" data-id="${item.key}">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+
+    // 🔹 Edit & Hapus listener
+    tbody.addEventListener("click", async (e) => {
+      const id = e.target.dataset.id;
+      if (e.target.classList.contains("edit-btn")) {
+        const dataRef = ref(db, "informasi_dokter/" + id);
+        onValue(dataRef, (snap) => {
+          const data = snap.val();
+          hariSelect.value = data.hari;
+          unitInput.value = data.unit;
+          statusSelect.value = data.status;
+          choicesNama.setChoiceByValue(data.nama);
+          editMode = true;
+          editKey = id;
+          btnSimpan.textContent = "🔄 Perbarui Data";
+        }, { onlyOnce: true });
+      } else if (e.target.classList.contains("delete-btn")) {
+        if (confirm("Hapus data ini?")) {
+          await remove(ref(db, "informasi_dokter/" + id));
+          alert("🗑️ Data berhasil dihapus!");
+        }
       }
     });
   </script>
