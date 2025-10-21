@@ -175,7 +175,7 @@
       <tbody></tbody>
     </table>
 
-    <div class="footer">Terhubung realtime dengan layar hasil-informasi.html</div>
+    <div class="footer">🔄 Data otomatis direset setiap jam 00:00 dan realtime ke hasil-informasi.html</div>
   </main>
 
   <script type="module">
@@ -272,7 +272,6 @@
         dataList.push({ key, ...data });
       });
 
-      // urutkan dari terbaru
       dataList.sort((a, b) => new Date(b.tanggalInput) - new Date(a.tanggalInput));
 
       dataList.forEach(item => {
@@ -313,6 +312,20 @@
         }
       }
     });
+
+    // 🔹 Reset otomatis jam 00:00
+    function scheduleMidnightReset() {
+      const now = new Date();
+      const millisUntilMidnight =
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5) - now; // 00:00:05
+      setTimeout(async () => {
+        await remove(ref(db, "informasi_dokter"));
+        console.log("🔁 Data jadwal dokter direset otomatis jam 00:00");
+        scheduleMidnightReset(); // jadwalkan lagi untuk besok
+      }, millisUntilMidnight);
+    }
+    scheduleMidnightReset();
+
   </script>
 
 </body>
