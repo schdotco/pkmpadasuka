@@ -7,29 +7,107 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
   <style>
-    body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:#f6f8fa; margin:0; padding:0; }
-    .navbar { background:#1976d2; color:white; display:flex; justify-content:space-between; align-items:center; padding:12px 20px; }
-    .navbar h1 { font-size:18px; margin:0; }
-    .navbar .menu a { color:white; text-decoration:none; margin-left:15px; font-size:14px; }
-    .navbar .menu a:hover { text-decoration:underline; }
-    main { max-width:900px; margin:30px auto; background:white; padding:25px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    h2 { text-align:center; color:#1976d2; margin-bottom:20px; }
-    label { font-weight:500; display:block; margin-bottom:6px; }
-    select,input[type=text]{ width:100%; padding:10px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:14px; }
-    button{ width:100%; background:#1976d2; color:white; border:none; padding:12px; border-radius:6px; cursor:pointer; font-size:15px; }
-    button:hover{ background:#125ca1; }
-    table{ width:100%; border-collapse:collapse; margin-top:25px; }
-    th,td{ border:1px solid #ccc; padding:10px; text-align:center; }
-    th{ background:#1976d2; color:white; }
-    tr:nth-child(even){ background:#f2f2f2; }
-    .action-btn{ padding:6px 10px; border:none; border-radius:4px; color:white; cursor:pointer; font-size:13px; }
-    .edit-btn{ background:#ffa000; } .edit-btn:hover{ background:#ff8f00; }
-    .delete-btn{ background:#d32f2f; } .delete-btn:hover{ background:#b71c1c; }
-    .footer{ text-align:center; margin-top:20px; font-size:13px; color:#777; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f6f8fa;
+      margin: 0;
+    }
+    .navbar {
+      background: #1976d2;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+    }
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .navbar .menu a {
+      color: white;
+      text-decoration: none;
+      margin-left: 15px;
+      font-size: 14px;
+    }
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 30px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #1976d2;
+      margin-bottom: 20px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    button:hover { background: #125ca1; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background: #1976d2;
+      color: white;
+    }
+    tr:nth-child(even) { background: #f2f2f2; }
+
+    .action-btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .edit-btn { background: #ffa000; }
+    .delete-btn { background: #d32f2f; }
+    .edit-btn:hover { background: #ff8f00; }
+    .delete-btn:hover { background: #b71c1c; }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #777;
+    }
   </style>
 </head>
 <body>
-
   <div class="navbar">
     <h1>🏥 Input Jadwal Dokter - Puskesmas Padasuka</h1>
     <div class="menu">
@@ -41,7 +119,7 @@
   <main>
     <h2>🩺 Tambah Jadwal Dokter</h2>
 
-    <label for="hari">Hari</label>
+    <label>Hari</label>
     <select id="hari">
       <option value="">-- Pilih Hari --</option>
       <option>Senin</option><option>Selasa</option>
@@ -49,13 +127,15 @@
       <option>Jumat</option><option>Sabtu</option>
     </select>
 
-    <label for="nama">Nama Petugas</label>
-    <select id="nama"><option>Memuat daftar pegawai...</option></select>
+    <label>Nama Petugas</label>
+    <select id="nama">
+      <option value="">Memuat daftar pegawai...</option>
+    </select>
 
-    <label for="unit">Unit Pelayanan</label>
+    <label>Unit Pelayanan</label>
     <input type="text" id="unit" placeholder="Contoh: Umum, Gigi, Lansia, KIA, dll">
 
-    <label for="status">Status Kehadiran</label>
+    <label>Status Kehadiran</label>
     <select id="status">
       <option value="">-- Pilih Status --</option>
       <option value="Ada">Ada</option>
@@ -75,7 +155,7 @@
       <tbody></tbody>
     </table>
 
-    <div class="footer">🔄 Realtime & reset otomatis setiap 00:00</div>
+    <div class="footer">Terhubung realtime & reset otomatis 00:00</div>
   </main>
 
   <script type="module">
@@ -91,40 +171,43 @@
 
     let editKey = null;
     let choicesNama;
-    let initialized = false;
+    let isUpdating = false;
 
-    // 🔹 Ambil daftar pegawai hanya sekali
+    // Ambil nama pegawai dari Firebase
     const pegawaiRef = ref(db, "Pegawai");
     onValue(pegawaiRef, (snap) => {
       namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
-      snap.forEach(ch => {
-        const d = ch.val();
-        const nama = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
+      snap.forEach(child => {
+        const data = child.val();
+        const nama = data.gelar ? `${data.nama} ${data.gelar}` : data.nama;
         const opt = document.createElement("option");
         opt.value = nama;
         opt.textContent = nama;
         namaSelect.appendChild(opt);
       });
-      if (initialized && choicesNama) choicesNama.destroy();
+
+      if (choicesNama) choicesNama.destroy();
       choicesNama = new Choices(namaSelect, {
-        searchEnabled: true, shouldSort: false,
-        itemSelectText: '', searchPlaceholderValue: 'Cari nama pegawai...'
+        searchEnabled: true, shouldSort: false, itemSelectText: ''
       });
-      initialized = true;
     }, { onlyOnce: true });
 
-    // 🔹 Simpan atau update data
+    // Simpan data
     btnSimpan.onclick = async () => {
       const hari = hariSelect.value.trim();
       const nama = namaSelect.value.trim();
       const unit = unitInput.value.trim();
       const status = statusSelect.value.trim();
 
-      if (!hari || !nama || !unit || !status) return alert("⚠️ Lengkapi semua field!");
+      if (!hari || !nama || !unit || !status) {
+        alert("⚠️ Lengkapi semua field!");
+        return;
+      }
 
       try {
+        isUpdating = true;
         if (editKey) {
-          await update(ref(db, `informasi_dokter/${editKey}`), { hari, nama, unit, status });
+          await update(ref(db, "informasi_dokter/" + editKey), { hari, nama, unit, status });
           alert("✅ Data diperbarui!");
           editKey = null;
           btnSimpan.textContent = "💾 Simpan Informasi";
@@ -134,25 +217,36 @@
           });
           alert("✅ Data berhasil disimpan!");
         }
-        hariSelect.value = ""; unitInput.value = ""; statusSelect.value = "";
+
+        hariSelect.value = "";
+        unitInput.value = "";
+        statusSelect.value = "";
         choicesNama.setChoiceByValue("");
+
       } catch (err) {
         console.error(err);
         alert("❌ Gagal menyimpan: " + err.message);
+      } finally {
+        isUpdating = false;
       }
     };
 
-    // 🔹 Tampilkan data realtime
+    // Realtime tampilkan data
     const infoRef = ref(db, "informasi_dokter");
     onValue(infoRef, (snap) => {
+      if (isUpdating) return; // cegah loop
       tbody.innerHTML = "";
       const data = [];
       snap.forEach(ch => data.push({ key: ch.key, ...ch.val() }));
-      data.sort((a,b)=> new Date(b.tanggalInput)-new Date(a.tanggalInput));
+      data.sort((a,b) => new Date(b.tanggalInput) - new Date(a.tanggalInput));
+
       data.forEach(d => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${d.hari}</td><td>${d.nama}</td><td>${d.unit}</td><td>${d.status}</td>
+          <td>${d.hari}</td>
+          <td>${d.nama}</td>
+          <td>${d.unit}</td>
+          <td>${d.status}</td>
           <td>
             <button class="action-btn edit-btn" data-id="${d.key}">✏️</button>
             <button class="action-btn delete-btn" data-id="${d.key}">🗑️</button>
@@ -161,13 +255,13 @@
       });
     });
 
-    // 🔹 Edit / Delete handler
-    tbody.onclick = async e => {
+    // Edit dan hapus
+    tbody.onclick = async (e) => {
       const id = e.target.dataset.id;
       if (!id) return;
 
       if (e.target.classList.contains("edit-btn")) {
-        const snap = await get(ref(db, `informasi_dokter/${id}`));
+        const snap = await get(ref(db, "informasi_dokter/" + id));
         if (!snap.exists()) return;
         const d = snap.val();
         hariSelect.value = d.hari;
@@ -180,25 +274,26 @@
 
       if (e.target.classList.contains("delete-btn")) {
         if (confirm("Hapus data ini?")) {
-          await remove(ref(db, `informasi_dokter/${id}`));
-          alert("🗑️ Data dihapus!");
+          isUpdating = true;
+          await remove(ref(db, "informasi_dokter/" + id));
+          alert("🗑️ Data berhasil dihapus!");
+          isUpdating = false;
         }
       }
     };
 
-    // 🔹 Reset otomatis jam 00:00 lokal
-    const resetDaily = () => {
+    // Reset otomatis setiap jam 00:00
+    const resetDaily = async () => {
       const now = new Date();
-      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0, 0, 5);
-      const ms = nextMidnight - now;
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+      const msUntilMidnight = nextMidnight - now;
       setTimeout(async () => {
         await remove(ref(db, "informasi_dokter"));
-        console.log("🕛 Data direset otomatis");
+        console.log("🕛 Reset data harian!");
         resetDaily();
-      }, ms);
+      }, msUntilMidnight);
     };
     resetDaily();
   </script>
-
 </body>
 </html>
