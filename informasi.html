@@ -180,7 +180,7 @@
 
   <script type="module">
     import { db } from "./app.js";
-    import { ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    import { ref, onValue, push, set, update, remove, get } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
     const hariSelect = document.getElementById("hari");
     const namaSelect = document.getElementById("nama");
@@ -256,11 +256,12 @@
         statusSelect.value = "";
         choicesNama.setChoiceByValue("");
       } catch (err) {
+        console.error(err);
         alert("❌ Gagal menyimpan data: " + err.message);
       }
     });
 
-    // 🔹 Realtime daftar informasi
+    // 🔹 Realtime daftar informasi (tanpa loop)
     const infoRef = ref(db, "informasi_dokter");
     onValue(infoRef, (snapshot) => {
       tbody.innerHTML = "";
@@ -290,12 +291,14 @@
       });
     });
 
-    // 🔹 Edit & Hapus listener
+    // 🔹 Edit & Hapus
     tbody.addEventListener("click", async (e) => {
       const id = e.target.dataset.id;
+      if (!id) return;
+
       if (e.target.classList.contains("edit-btn")) {
-        const dataRef = ref(db, "informasi_dokter/" + id);
-        onValue(dataRef, (snap) => {
+        const snap = await get(ref(db, "informasi_dokter/" + id));
+        if (snap.exists()) {
           const data = snap.val();
           hariSelect.value = data.hari;
           unitInput.value = data.unit;
@@ -304,7 +307,7 @@
           editMode = true;
           editKey = id;
           btnSimpan.textContent = "🔄 Perbarui Data";
-        }, { onlyOnce: true });
+        }
       } else if (e.target.classList.contains("delete-btn")) {
         if (confirm("Hapus data ini?")) {
           await remove(ref(db, "informasi_dokter/" + id));
@@ -316,12 +319,13 @@
     // 🔹 Reset otomatis jam 00:00
     function scheduleMidnightReset() {
       const now = new Date();
-      const millisUntilMidnight =
-        new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5) - now; // 00:00:05
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+      const millisUntilMidnight = nextMidnight - now;
+
       setTimeout(async () => {
         await remove(ref(db, "informasi_dokter"));
-        console.log("🔁 Data jadwal dokter direset otomatis jam 00:00");
-        scheduleMidnightReset(); // jadwalkan lagi untuk besok
+        console.log("🕛 Data direset otomatis jam 00:00");
+        scheduleMidnightReset(); // jadwalkan lagi
       }, millisUntilMidnight);
     }
     scheduleMidnightReset();
