@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil Jadwal Dokter - UPTD Puskesmas Padasuka</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f8fa;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    tr:nth-child(even){
+      background-color: #f2f2f2;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 0.9em;
+      color: #666;
+    }
+    .navbar {
+      background: #1976d2;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      margin-left: 10px;
+    }
+    .navbar a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <h2>🏥 Jadwal Dokter UPTD Puskesmas Padasuka</h2>
+    <div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="informasi.html">Input Data</a>
+    </div>
+  </div>
+
+  <h1>📋 Jadwal Dokter & Petugas Puskesmas</h1>
+
+  <table id="tabelDokter">
+    <thead>
+      <tr>
+        <th>Hari</th>
+        <th>Nama Petugas</th>
+        <th>Unit Pelayanan</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer" id="footerUpdate">
+    Terakhir diperbarui: -
+  </div>
+
+  <script type="module">
+    import { db } from "./app.js";
+    import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+    const tabelBody = document.querySelector("#tabelDokter tbody");
+    const footerUpdate = document.getElementById("footerUpdate");
+
+    const infoRef = ref(db, "informasi_dokter");
+
+    onValue(infoRef, (snapshot) => {
+      tabelBody.innerHTML = "";
+
+      if (!snapshot.exists()) {
+        tabelBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada data dokter</td></tr>`;
+        return;
+      }
+
+      // Ambil data dan urutkan berdasarkan waktu input (terbaru di atas)
+      const data = Object.values(snapshot.val()).sort(
+        (a, b) => new Date(b.tanggalInput) - new Date(a.tanggalInput)
+      );
+
+      data.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.hari}</td>
+          <td>${item.nama}</td>
+          <td>${item.unit}</td>
+          <td>${item.status}</td>
+        `;
+        tabelBody.appendChild(tr);
+      });
+
+      const now = new Date();
+      footer
