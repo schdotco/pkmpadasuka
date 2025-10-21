@@ -90,26 +90,28 @@
       animation: fadeIn 0.8s ease;
     }
 
-    /* Tombol hapus di kanan bawah */
+    /* Tombol hapus kecil di kanan bawah */
     #btnHapusData {
       position: fixed;
-      bottom: 90px;
+      bottom: 85px;
       right: 25px;
-      background: #d32f2f;
-      color: #fff;
+      background: #e3f2fd;
+      color: #d32f2f;
       border: none;
-      padding: 14px 20px;
-      border-radius: 50px;
-      font-size: 16px;
-      font-weight: 600;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      font-size: 22px;
       cursor: pointer;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
       transition: all 0.2s ease;
       z-index: 10;
+      opacity: 0.6;
     }
     #btnHapusData:hover {
-      background: #b71c1c;
+      opacity: 1;
       transform: scale(1.05);
+      background: #f0f4f8;
     }
 
     /* Popup konfirmasi */
@@ -175,7 +177,8 @@
 
   <div class="footer" id="footer">Terakhir diperbarui: -</div>
 
-  <button id="btnHapusData">🗑️ Hapus Semua Data</button>
+  <!-- Tombol kecil ikon trash -->
+  <button id="btnHapusData" title="Hapus semua data">🗑️</button>
 
   <!-- Popup konfirmasi -->
   <div class="popup-overlay" id="popupOverlay">
@@ -200,11 +203,10 @@
 
     const infoRef = ref(db, "informasi_dokter");
 
-    // Daftar nama hari dalam bahasa Indonesia
     const hariList = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
     const hariIni = hariList[new Date().getDay()];
 
-    // Tampilkan data realtime
+    // 🔹 Tampilkan data realtime
     onValue(infoRef, (snapshot) => {
       tbody.innerHTML = "";
       if (!snapshot.exists()) {
@@ -258,17 +260,15 @@
       footer.textContent = `Terakhir diperbarui: ${waktu} | Menampilkan jadwal hari ${hariIni}`;
     });
 
-    // Tombol hapus data -> tampilkan popup
+    // Tombol hapus data
     btnHapus.addEventListener("click", () => {
       popup.style.display = "flex";
     });
 
-    // Tombol batal -> tutup popup
     btnBatal.addEventListener("click", () => {
       popup.style.display = "none";
     });
 
-    // Tombol konfirmasi hapus -> hapus semua data
     btnYa.addEventListener("click", async () => {
       try {
         await remove(infoRef);
@@ -280,7 +280,7 @@
       }
     });
 
-    // Auto-refresh setiap 1 menit agar layar selalu update
+    // Auto-refresh setiap 1 menit
     setInterval(() => window.location.reload(), 60000);
   </script>
 
