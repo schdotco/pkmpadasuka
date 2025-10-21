@@ -7,110 +7,29 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f6f8fa;
-      margin: 0;
-      padding: 0;
-    }
-    .navbar {
-      background: #1976d2;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px;
-    }
-    .navbar h1 {
-      font-size: 18px;
-      margin: 0;
-    }
-    .navbar .menu a {
-      color: white;
-      text-decoration: none;
-      margin-left: 15px;
-      font-size: 14px;
-    }
-    .navbar .menu a:hover {
-      text-decoration: underline;
-    }
-    main {
-      max-width: 900px;
-      margin: 30px auto;
-      background: white;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    h2 {
-      text-align: center;
-      color: #1976d2;
-      margin-bottom: 20px;
-    }
-    label {
-      font-weight: 500;
-      display: block;
-      margin-bottom: 6px;
-    }
-    select, input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-    button {
-      width: 100%;
-      background: #1976d2;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 15px;
-    }
-    button:hover {
-      background: #125ca1;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 25px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background-color: #1976d2;
-      color: white;
-    }
-    tr:nth-child(even){
-      background-color: #f2f2f2;
-    }
-    .action-btn {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .edit-btn { background: #ffa000; }
-    .edit-btn:hover { background: #ff8f00; }
-    .delete-btn { background: #d32f2f; }
-    .delete-btn:hover { background: #b71c1c; }
-    .footer {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 13px;
-      color: #777;
-    }
+    body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:#f6f8fa; margin:0; padding:0; }
+    .navbar { background:#1976d2; color:white; display:flex; justify-content:space-between; align-items:center; padding:12px 20px; }
+    .navbar h1 { font-size:18px; margin:0; }
+    .navbar .menu a { color:white; text-decoration:none; margin-left:15px; font-size:14px; }
+    .navbar .menu a:hover { text-decoration:underline; }
+    main { max-width:900px; margin:30px auto; background:white; padding:25px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    h2 { text-align:center; color:#1976d2; margin-bottom:20px; }
+    label { font-weight:500; display:block; margin-bottom:6px; }
+    select,input[type=text]{ width:100%; padding:10px; margin-bottom:15px; border-radius:6px; border:1px solid #ccc; font-size:14px; }
+    button{ width:100%; background:#1976d2; color:white; border:none; padding:12px; border-radius:6px; cursor:pointer; font-size:15px; }
+    button:hover{ background:#125ca1; }
+    table{ width:100%; border-collapse:collapse; margin-top:25px; }
+    th,td{ border:1px solid #ccc; padding:10px; text-align:center; }
+    th{ background:#1976d2; color:white; }
+    tr:nth-child(even){ background:#f2f2f2; }
+    .action-btn{ padding:6px 10px; border:none; border-radius:4px; color:white; cursor:pointer; font-size:13px; }
+    .edit-btn{ background:#ffa000; } .edit-btn:hover{ background:#ff8f00; }
+    .delete-btn{ background:#d32f2f; } .delete-btn:hover{ background:#b71c1c; }
+    .footer{ text-align:center; margin-top:20px; font-size:13px; color:#777; }
   </style>
 </head>
 <body>
+
   <div class="navbar">
     <h1>🏥 Input Jadwal Dokter - Puskesmas Padasuka</h1>
     <div class="menu">
@@ -156,7 +75,7 @@
       <tbody></tbody>
     </table>
 
-    <div class="footer">🔄 Realtime & Reset otomatis jam 00:00</div>
+    <div class="footer">🔄 Realtime & reset otomatis setiap 00:00</div>
   </main>
 
   <script type="module">
@@ -170,51 +89,52 @@
     const btnSimpan = document.getElementById("btnSimpan");
     const tbody = document.querySelector("#tabelInformasi tbody");
 
-    let choicesNama;
     let editKey = null;
+    let choicesNama;
+    let initialized = false;
 
-    // 🔹 Load nama pegawai (sekali, tidak memicu ulang)
+    // 🔹 Ambil daftar pegawai hanya sekali
     const pegawaiRef = ref(db, "Pegawai");
-    onValue(pegawaiRef, (snapshot) => {
+    onValue(pegawaiRef, (snap) => {
       namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
-      snapshot.forEach(child => {
-        const d = child.val();
-        const namaLengkap = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
+      snap.forEach(ch => {
+        const d = ch.val();
+        const nama = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
         const opt = document.createElement("option");
-        opt.value = namaLengkap;
-        opt.textContent = namaLengkap;
+        opt.value = nama;
+        opt.textContent = nama;
         namaSelect.appendChild(opt);
       });
-      if (choicesNama) choicesNama.destroy();
+      if (initialized && choicesNama) choicesNama.destroy();
       choicesNama = new Choices(namaSelect, {
-        searchEnabled: true,
-        shouldSort: false,
-        itemSelectText: '',
-        searchPlaceholderValue: 'Cari nama pegawai...'
+        searchEnabled: true, shouldSort: false,
+        itemSelectText: '', searchPlaceholderValue: 'Cari nama pegawai...'
       });
+      initialized = true;
     }, { onlyOnce: true });
 
-    // 🔹 Simpan data baru / edit
+    // 🔹 Simpan atau update data
     btnSimpan.onclick = async () => {
-      const hari = hariSelect.value, nama = namaSelect.value,
-            unit = unitInput.value.trim(), status = statusSelect.value;
-      if (!hari || !nama || !unit || !status) return alert("⚠️ Lengkapi semua data!");
+      const hari = hariSelect.value.trim();
+      const nama = namaSelect.value.trim();
+      const unit = unitInput.value.trim();
+      const status = statusSelect.value.trim();
+
+      if (!hari || !nama || !unit || !status) return alert("⚠️ Lengkapi semua field!");
 
       try {
-        const infoRef = ref(db, "informasi_dokter");
         if (editKey) {
           await update(ref(db, `informasi_dokter/${editKey}`), { hari, nama, unit, status });
           alert("✅ Data diperbarui!");
           editKey = null;
           btnSimpan.textContent = "💾 Simpan Informasi";
         } else {
-          const newRef = push(infoRef);
-          await set(newRef, { hari, nama, unit, status, tanggalInput: new Date().toISOString() });
-          alert("✅ Data disimpan!");
+          await push(ref(db, "informasi_dokter"), {
+            hari, nama, unit, status, tanggalInput: new Date().toISOString()
+          });
+          alert("✅ Data berhasil disimpan!");
         }
-        hariSelect.value = "";
-        unitInput.value = "";
-        statusSelect.value = "";
+        hariSelect.value = ""; unitInput.value = ""; statusSelect.value = "";
         choicesNama.setChoiceByValue("");
       } catch (err) {
         console.error(err);
@@ -222,14 +142,14 @@
       }
     };
 
-    // 🔹 Listener realtime daftar
+    // 🔹 Tampilkan data realtime
     const infoRef = ref(db, "informasi_dokter");
     onValue(infoRef, (snap) => {
       tbody.innerHTML = "";
-      const list = [];
-      snap.forEach(ch => list.push({ key: ch.key, ...ch.val() }));
-      list.sort((a,b)=> new Date(b.tanggalInput) - new Date(a.tanggalInput));
-      list.forEach(d => {
+      const data = [];
+      snap.forEach(ch => data.push({ key: ch.key, ...ch.val() }));
+      data.sort((a,b)=> new Date(b.tanggalInput)-new Date(a.tanggalInput));
+      data.forEach(d => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${d.hari}</td><td>${d.nama}</td><td>${d.unit}</td><td>${d.status}</td>
@@ -241,10 +161,11 @@
       });
     });
 
-    // 🔹 Edit / Hapus event
+    // 🔹 Edit / Delete handler
     tbody.onclick = async e => {
       const id = e.target.dataset.id;
       if (!id) return;
+
       if (e.target.classList.contains("edit-btn")) {
         const snap = await get(ref(db, `informasi_dokter/${id}`));
         if (!snap.exists()) return;
@@ -256,26 +177,28 @@
         editKey = id;
         btnSimpan.textContent = "🔄 Perbarui Data";
       }
+
       if (e.target.classList.contains("delete-btn")) {
         if (confirm("Hapus data ini?")) {
           await remove(ref(db, `informasi_dokter/${id}`));
-          alert("🗑️ Dihapus!");
+          alert("🗑️ Data dihapus!");
         }
       }
     };
 
-    // 🔹 Reset otomatis setiap jam 00:00
+    // 🔹 Reset otomatis jam 00:00 lokal
     const resetDaily = () => {
       const now = new Date();
-      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
-      const wait = next - now;
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0, 0, 5);
+      const ms = nextMidnight - now;
       setTimeout(async () => {
         await remove(ref(db, "informasi_dokter"));
-        console.log("🕛 Reset otomatis 00:00");
+        console.log("🕛 Data direset otomatis");
         resetDaily();
-      }, wait);
+      }, ms);
     };
     resetDaily();
   </script>
+
 </body>
 </html>
