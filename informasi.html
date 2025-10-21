@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Input Jadwal Dokter - UPTD Puskesmas Padasuka</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      background: #1976d2;
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .navbar a {
+      color: #fff;
+      text-decoration: none;
+      margin-left: 10px;
+      font-size: 14px;
+    }
+    main {
+      max-width: 800px;
+      margin: 30px auto;
+      background: #fff;
+      padding: 20px 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #1976d2;
+      border-bottom: 2px solid #1976d2;
+      padding-bottom: 5px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    label {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+    input, select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    button {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 10px;
+      font-size: 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    button:hover {
+      background: #125ca1;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <h1>🏥 Input Jadwal Dokter - Puskesmas Padasuka</h1>
+    <div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="hasil-informasi.html">Lihat Hasil</a>
+    </div>
+  </div>
+
+  <main>
+    <h2>📋 Form Input Jadwal Dokter</h2>
+
+    <form id="formJadwal">
+      <div>
+        <label for="hari">Hari</label>
+        <select id="hari" required>
+          <option value="">-- Pilih Hari --</option>
+          <option>Senin</option>
+          <option>Selasa</option>
+          <option>Rabu</option>
+          <option>Kamis</option>
+          <option>Jumat</option>
+          <option>Sabtu</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="nama">Nama Petugas</label>
+        <input type="text" id="nama" placeholder="Masukkan nama petugas" required>
+      </div>
+
+      <div>
+        <label for="unit">Unit Pelayanan</label>
+        <input type="text" id="unit" placeholder="Contoh: Umum, Gigi, Lansia, KIA" required>
+      </div>
+
+      <div>
+        <label for="status">Status Kehadiran</label>
+        <select id="status" required>
+          <option value="">-- Pilih Status --</option>
+          <option value="Ada">Ada</option>
+          <option value="Tidak Ada">Tidak Ada</option>
+        </select>
+      </div>
+
+      <button type="submit">💾 Simpan Jadwal</button>
+    </form>
+
+    <table id="tabelData">
+      <thead>
+        <tr>
+          <th>Hari</th>
+          <th>Nama Petugas</th>
+          <th>Unit</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <script type="module">
+    import { db } from "./app.js";
+    import { ref, push, get } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+    const form = document.getElementById('formJadwal');
+    const tabel = document.querySelector('#tabelData tbody');
+
+    async function loadData() {
+      tabel.innerHTML = '';
+      const snapshot = await get(ref(db, 'informasi_dokter'));
+      if (!snapshot.exists()) {
+        tabel.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada data</td></tr>`;
+        return;
+      }
+
+      const data = snapshot.val();
+      Object.entries(data).forEach(([key, item]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.hari}</td>
+          <td>${item.nama}</td>
+          <td>${item.unit}</td>
+          <td>${item.status}</td>
+        `;
+        tabel.appendChild(tr);
+      });
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const hari = document.getElementById('hari').value;
+      const nama = document.getElementById('nama').value;
+      const unit = document.getElementById('unit').value;
+      const status = document.getElementById('status').value;
+
+      if (!hari || !nama || !unit || !status) {
+        alert('⚠️ Semua kolom harus diisi.');
+        return;
+      }
+
+      await push(ref(db, 'informasi_dokter'), {
+        hari, nama, unit, status,
+        tanggalInput: new Date().toISOString()
+      });
+
+      alert('✅ Data berhasil disimpan!');
+      form.reset();
+      loadData();
+    });
+
+    loadData();
+  </script>
+
+</body>
+</html>
