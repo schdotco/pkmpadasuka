@@ -5,54 +5,51 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Input Jadwal Dokter - Puskesmas Padasuka</title>
 
-  <!-- Choices.js untuk dropdown searchable -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
   <style>
     body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:#f6f8fa; margin:0; }
-    .navbar { background:#1976d2; color:#fff; display:flex; justify-content:space-between; align-items:center; padding:12px 20px; }
-    .navbar h1{margin:0;font-size:18px}
-    .container{max-width:900px;margin:30px auto;background:#fff;padding:24px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
-    label{display:block;font-weight:600;margin-top:12px}
-    select,input[type="text"]{width:100%;padding:10px;border-radius:6px;border:1px solid #ccc;margin-top:6px}
-    button{margin-top:16px;width:100%;padding:12px;border-radius:6px;border:0;background:#1976d2;color:#fff;font-size:15px;cursor:pointer}
-    button:hover{background:#125ca1}
-    .note{margin-top:14px;color:#555;font-size:13px}
-    table{width:100%;border-collapse:collapse;margin-top:25px}
-    th,td{border:1px solid #ccc;padding:8px 10px;text-align:center}
-    th{background:#1976d2;color:#fff}
-    tr:nth-child(even){background:#f9f9f9}
-    td.status-ada{background:#c8e6c9;color:#1b5e20;font-weight:bold}
-    td.status-tidak{background:#ffcdd2;color:#b71c1c;font-weight:bold}
-    td.status-cuti{background:#fff3cd;color:#795548;font-weight:bold}
+    .navbar { background:#1976d2; color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; }
+    .navbar a { color:#fff; text-decoration:none; margin-left:15px; font-size:14px; }
+    .navbar a:hover { text-decoration:underline; }
+
+    main { max-width:600px; margin:30px auto; background:#fff; padding:25px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    h2 { color:#1976d2; text-align:center; }
+    label { display:block; font-weight:600; margin-top:12px; }
+    select, input[type=text] { width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; margin-top:6px; }
+    button { width:100%; padding:12px; border:none; border-radius:6px; background:#1976d2; color:#fff; font-size:15px; margin-top:16px; cursor:pointer; }
+    button:hover { background:#125ca1; }
+    .footer { text-align:center; margin-top:15px; font-size:13px; color:#555; }
   </style>
 </head>
 <body>
+
   <div class="navbar">
-    <h1>🏥 Input Jadwal Dokter - Puskesmas Padasuka</h1>
+    <h1>🏥 Input Jadwal Dokter</h1>
     <div>
-      <a href="dashboard.html" style="color:#fff;text-decoration:none;margin-right:12px">Dashboard</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="hasil-informasi.html" target="_blank">Lihat Jadwal</a>
     </div>
   </div>
 
-  <div class="container">
-    <h2 style="color:#1976d2;margin:0 0 8px 0">🩺 Tambah Jadwal Dokter</h2>
+  <main>
+    <h2>🩺 Tambah Jadwal Dokter</h2>
 
-    <label for="hari">Hari</label>
+    <label>Hari</label>
     <select id="hari">
       <option value="">-- Pilih Hari --</option>
       <option>Senin</option><option>Selasa</option><option>Rabu</option>
       <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
     </select>
 
-    <label for="nama">Nama Petugas</label>
+    <label>Nama Petugas</label>
     <select id="nama"><option value="">Memuat daftar pegawai...</option></select>
 
-    <label for="unit">Unit Pelayanan</label>
+    <label>Unit Pelayanan</label>
     <input type="text" id="unit" placeholder="Contoh: Umum, Gigi, Lansia, KIA, dll">
 
-    <label for="status">Status Kehadiran</label>
+    <label>Status Kehadiran</label>
     <select id="status">
       <option value="">-- Pilih Status --</option>
       <option value="Ada">Ada</option>
@@ -62,147 +59,79 @@
 
     <button id="btnSimpan">💾 Simpan Informasi</button>
 
-    <div class="note">Data akan disimpan ke Firebase dan ditampilkan di tabel di bawah.</div>
+    <div class="footer">Data disimpan otomatis dan direset jam 00:00</div>
+  </main>
 
-    <h3 style="margin-top:30px;color:#1976d2;">📋 Jadwal Dokter Hari Ini</h3>
-    <table id="tabelInfo">
-      <thead>
-        <tr>
-          <th>Hari</th>
-          <th>Nama Petugas</th>
-          <th>Unit</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody><tr><td colspan="4"><i>Memuat data...</i></td></tr></tbody>
-    </table>
-  </div>
+  <script type="module">
+    import { db } from "./app.js";
+    import { ref, get, push, set, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-<script type="module">
-import { db } from "./app.js";
-import { ref, get, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    const hari = document.getElementById("hari");
+    const nama = document.getElementById("nama");
+    const unit = document.getElementById("unit");
+    const status = document.getElementById("status");
+    const btn = document.getElementById("btnSimpan");
+    let choicesNama = null;
 
-const hariEl = document.getElementById('hari');
-const namaEl = document.getElementById('nama');
-const unitEl = document.getElementById('unit');
-const statusEl = document.getElementById('status');
-const btnSimpan = document.getElementById('btnSimpan');
-const tbody = document.querySelector('#tabelInfo tbody');
-
-let choicesNamaInstance = null;
-let isSaving = false; // 🔹 Tambahkan flag pengaman
-
-// 🔹 Ambil nama pegawai sekali
-(async function loadPegawai() {
-  try {
+    // 🔹 Load daftar pegawai sekali
     const pegawaiRef = ref(db, "Pegawai");
     const snap = await get(pegawaiRef);
-    namaEl.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+    nama.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
     snap.forEach(ch => {
       const d = ch.val();
-      const nama = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
-      const opt = document.createElement('option');
-      opt.value = nama;
-      opt.textContent = nama;
-      namaEl.appendChild(opt);
+      const nm = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
+      const opt = document.createElement("option");
+      opt.value = nm;
+      opt.textContent = nm;
+      nama.appendChild(opt);
     });
-    if (typeof Choices !== 'undefined') {
-      if (choicesNamaInstance) choicesNamaInstance.destroy();
-      choicesNamaInstance = new Choices(namaEl, {
-        searchEnabled: true,
-        shouldSort: false,
-        itemSelectText: ''
-      });
-    }
-  } catch (e) {
-    alert("Gagal memuat daftar pegawai: " + e.message);
-  }
-})();
-
-// 🔹 Simpan data
-btnSimpan.addEventListener('click', async () => {
-  const hari = hariEl.value.trim();
-  const nama = namaEl.value.trim();
-  const unit = unitEl.value.trim();
-  const status = statusEl.value.trim();
-  if (!hari || !nama || !unit || !status) {
-    alert('Lengkapi semua field!');
-    return;
-  }
-
-  try {
-    isSaving = true; // 🔹 aktifkan flag agar onValue tidak bereaksi dulu
-    const infoRef = ref(db, "informasi_dokter");
-    const newRef = push(infoRef);
-    await set(newRef, {
-      hari,
-      nama,
-      unit,
-      status,
-      tanggalInput: new Date().toISOString()
+    choicesNama = new Choices(nama, {
+      searchEnabled: true,
+      shouldSort: false,
+      itemSelectText: '',
+      searchPlaceholderValue: 'Cari nama pegawai...'
     });
-    alert('✅ Data berhasil disimpan!');
-    hariEl.value = '';
-    unitEl.value = '';
-    statusEl.value = '';
-    if (choicesNamaInstance) choicesNamaInstance.setChoiceByValue('');
-  } catch (err) {
-    alert("❌ Gagal menyimpan: " + err.message);
-  } finally {
-    // beri jeda agar Firebase sempat update sebelum membaca ulang
-    setTimeout(() => { isSaving = false; }, 1000);
-  }
-});
 
-// 🔹 Listener realtime aman
-const infoRef = ref(db, "informasi_dokter");
-const hariList = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-const hariIni = hariList[new Date().getDay()];
+    // 🔹 Simpan data ke Firebase
+    btn.addEventListener("click", async () => {
+      if (!hari.value || !nama.value || !unit.value || !status.value) {
+        alert("⚠️ Lengkapi semua field!");
+        return;
+      }
+      try {
+        const infoRef = ref(db, "informasi_dokter");
+        const newData = {
+          hari: hari.value,
+          nama: nama.value,
+          unit: unit.value,
+          status: status.value,
+          tanggalInput: new Date().toISOString()
+        };
+        await set(push(infoRef), newData);
+        alert("✅ Data berhasil disimpan!");
+        window.location.reload(); // langsung refresh untuk memunculkan di hasil-informasi.html
+      } catch (err) {
+        console.error(err);
+        alert("❌ Gagal menyimpan: " + err.message);
+      }
+    });
 
-onValue(infoRef, (snap) => {
-  if (isSaving) return; // 🔹 cegah render saat sedang menyimpan data
-  tbody.innerHTML = '';
-  if (!snap.exists()) {
-    tbody.innerHTML = `<tr><td colspan="4"><i>Tidak ada data.</i></td></tr>`;
-    return;
-  }
-  const data = [];
-  snap.forEach(ch => {
-    const val = ch.val();
-    if (val.hari === hariIni) data.push(val);
-  });
-  if (data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4"><i>Belum ada data untuk hari ${hariIni}</i></td></tr>`;
-    return;
-  }
-  data.sort((a, b) => a.nama.localeCompare(b.nama));
-  data.forEach(d => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${d.hari}</td>
-      <td>${d.nama}</td>
-      <td>${d.unit}</td>
-      <td class="status-${d.status.toLowerCase().replace(' ','-')}">${d.status}</td>`;
-    tbody.appendChild(tr);
-  });
-});
-
-// 🔹 Reset otomatis 00:00
-function scheduleMidnightReset() {
-  const now = new Date();
-  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
-  setTimeout(async () => {
-    try {
-      await remove(ref(db, "informasi_dokter"));
-      console.log("Data direset otomatis:", new Date().toLocaleString());
-    } catch (err) {
-      console.error("Gagal reset:", err);
-    }
-    scheduleMidnightReset();
-  }, next - now);
-}
-scheduleMidnightReset();
-</script>
-
+    // 🔹 Reset otomatis 00:00
+    const resetAtMidnight = () => {
+      const now = new Date();
+      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+      setTimeout(async () => {
+        try {
+          await remove(ref(db, "informasi_dokter"));
+          console.log("🕛 Data reset otomatis:", new Date().toLocaleString());
+        } catch (err) {
+          console.error("Reset gagal:", err);
+        } finally {
+          resetAtMidnight();
+        }
+      }, next - now);
+    };
+    resetAtMidnight();
+  </script>
 </body>
 </html>
