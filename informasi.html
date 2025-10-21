@@ -13,7 +13,6 @@
       margin: 0;
       padding: 0;
     }
-
     .navbar {
       background: #1976d2;
       color: white;
@@ -35,7 +34,6 @@
     .navbar .menu a:hover {
       text-decoration: underline;
     }
-
     main {
       max-width: 900px;
       margin: 30px auto;
@@ -44,19 +42,16 @@
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-
     h2 {
       text-align: center;
       color: #1976d2;
       margin-bottom: 20px;
     }
-
     label {
       font-weight: 500;
       display: block;
       margin-bottom: 6px;
     }
-
     select, input[type="text"] {
       width: 100%;
       padding: 10px;
@@ -65,7 +60,6 @@
       border: 1px solid #ccc;
       font-size: 14px;
     }
-
     button {
       width: 100%;
       background: #1976d2;
@@ -76,11 +70,9 @@
       cursor: pointer;
       font-size: 15px;
     }
-
     button:hover {
       background: #125ca1;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -110,7 +102,6 @@
     .edit-btn:hover { background: #ff8f00; }
     .delete-btn { background: #d32f2f; }
     .delete-btn:hover { background: #b71c1c; }
-
     .footer {
       text-align: center;
       margin-top: 20px;
@@ -120,7 +111,6 @@
   </style>
 </head>
 <body>
-
   <div class="navbar">
     <h1>🏥 Input Jadwal Dokter - Puskesmas Padasuka</h1>
     <div class="menu">
@@ -135,18 +125,13 @@
     <label for="hari">Hari</label>
     <select id="hari">
       <option value="">-- Pilih Hari --</option>
-      <option>Senin</option>
-      <option>Selasa</option>
-      <option>Rabu</option>
-      <option>Kamis</option>
-      <option>Jumat</option>
-      <option>Sabtu</option>
+      <option>Senin</option><option>Selasa</option>
+      <option>Rabu</option><option>Kamis</option>
+      <option>Jumat</option><option>Sabtu</option>
     </select>
 
     <label for="nama">Nama Petugas</label>
-    <select id="nama">
-      <option value="">Memuat daftar pegawai...</option>
-    </select>
+    <select id="nama"><option>Memuat daftar pegawai...</option></select>
 
     <label for="unit">Unit Pelayanan</label>
     <input type="text" id="unit" placeholder="Contoh: Umum, Gigi, Lansia, KIA, dll">
@@ -165,17 +150,13 @@
     <table id="tabelInformasi">
       <thead>
         <tr>
-          <th>Hari</th>
-          <th>Nama</th>
-          <th>Unit</th>
-          <th>Status</th>
-          <th>Aksi</th>
+          <th>Hari</th><th>Nama</th><th>Unit</th><th>Status</th><th>Aksi</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
 
-    <div class="footer">🔄 Data otomatis direset setiap jam 00:00 dan realtime ke hasil-informasi.html</div>
+    <div class="footer">🔄 Realtime & Reset otomatis jam 00:00</div>
   </main>
 
   <script type="module">
@@ -190,147 +171,111 @@
     const tbody = document.querySelector("#tabelInformasi tbody");
 
     let choicesNama;
-    let editMode = false;
     let editKey = null;
 
-    // 🔹 Ambil daftar pegawai
+    // 🔹 Load nama pegawai (sekali, tidak memicu ulang)
     const pegawaiRef = ref(db, "Pegawai");
     onValue(pegawaiRef, (snapshot) => {
-      const daftarPegawai = [];
-      snapshot.forEach(child => {
-        const data = child.val();
-        const namaLengkap = data.gelar ? `${data.nama} ${data.gelar}` : data.nama;
-        daftarPegawai.push(namaLengkap);
-      });
-
       namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
-      daftarPegawai.forEach(nama => {
+      snapshot.forEach(child => {
+        const d = child.val();
+        const namaLengkap = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
         const opt = document.createElement("option");
-        opt.value = nama;
-        opt.textContent = nama;
+        opt.value = namaLengkap;
+        opt.textContent = namaLengkap;
         namaSelect.appendChild(opt);
       });
-
       if (choicesNama) choicesNama.destroy();
       choicesNama = new Choices(namaSelect, {
         searchEnabled: true,
         shouldSort: false,
         itemSelectText: '',
-        searchPlaceholderValue: 'Cari nama pegawai...',
-        noResultsText: 'Tidak ditemukan',
+        searchPlaceholderValue: 'Cari nama pegawai...'
       });
-    });
+    }, { onlyOnce: true });
 
-    // 🔹 Simpan data
-    btnSimpan.addEventListener("click", async () => {
-      const hari = hariSelect.value;
-      const nama = namaSelect.value;
-      const unit = unitInput.value.trim();
-      const status = statusSelect.value;
-
-      if (!hari || !nama || !unit || !status) {
-        alert("⚠️ Lengkapi semua field sebelum menyimpan!");
-        return;
-      }
+    // 🔹 Simpan data baru / edit
+    btnSimpan.onclick = async () => {
+      const hari = hariSelect.value, nama = namaSelect.value,
+            unit = unitInput.value.trim(), status = statusSelect.value;
+      if (!hari || !nama || !unit || !status) return alert("⚠️ Lengkapi semua data!");
 
       try {
-        if (editMode && editKey) {
-          await update(ref(db, "informasi_dokter/" + editKey), { hari, nama, unit, status });
-          alert("✅ Data berhasil diperbarui!");
-          editMode = false;
+        const infoRef = ref(db, "informasi_dokter");
+        if (editKey) {
+          await update(ref(db, `informasi_dokter/${editKey}`), { hari, nama, unit, status });
+          alert("✅ Data diperbarui!");
           editKey = null;
           btnSimpan.textContent = "💾 Simpan Informasi";
         } else {
-          const infoRef = ref(db, "informasi_dokter");
           const newRef = push(infoRef);
-          await set(newRef, {
-            hari, nama, unit, status,
-            tanggalInput: new Date().toISOString()
-          });
-          alert("✅ Data berhasil disimpan!");
+          await set(newRef, { hari, nama, unit, status, tanggalInput: new Date().toISOString() });
+          alert("✅ Data disimpan!");
         }
-
-        // Reset form
         hariSelect.value = "";
         unitInput.value = "";
         statusSelect.value = "";
         choicesNama.setChoiceByValue("");
       } catch (err) {
         console.error(err);
-        alert("❌ Gagal menyimpan data: " + err.message);
+        alert("❌ Gagal menyimpan: " + err.message);
       }
-    });
+    };
 
-    // 🔹 Realtime daftar informasi (tanpa loop)
+    // 🔹 Listener realtime daftar
     const infoRef = ref(db, "informasi_dokter");
-    onValue(infoRef, (snapshot) => {
+    onValue(infoRef, (snap) => {
       tbody.innerHTML = "";
-      const dataList = [];
-
-      snapshot.forEach(child => {
-        const key = child.key;
-        const data = child.val();
-        dataList.push({ key, ...data });
-      });
-
-      dataList.sort((a, b) => new Date(b.tanggalInput) - new Date(a.tanggalInput));
-
-      dataList.forEach(item => {
+      const list = [];
+      snap.forEach(ch => list.push({ key: ch.key, ...ch.val() }));
+      list.sort((a,b)=> new Date(b.tanggalInput) - new Date(a.tanggalInput));
+      list.forEach(d => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${item.hari}</td>
-          <td>${item.nama}</td>
-          <td>${item.unit}</td>
-          <td>${item.status}</td>
+          <td>${d.hari}</td><td>${d.nama}</td><td>${d.unit}</td><td>${d.status}</td>
           <td>
-            <button class="action-btn edit-btn" data-id="${item.key}">✏️</button>
-            <button class="action-btn delete-btn" data-id="${item.key}">🗑️</button>
-          </td>
-        `;
+            <button class="action-btn edit-btn" data-id="${d.key}">✏️</button>
+            <button class="action-btn delete-btn" data-id="${d.key}">🗑️</button>
+          </td>`;
         tbody.appendChild(tr);
       });
     });
 
-    // 🔹 Edit & Hapus
-    tbody.addEventListener("click", async (e) => {
+    // 🔹 Edit / Hapus event
+    tbody.onclick = async e => {
       const id = e.target.dataset.id;
       if (!id) return;
-
       if (e.target.classList.contains("edit-btn")) {
-        const snap = await get(ref(db, "informasi_dokter/" + id));
-        if (snap.exists()) {
-          const data = snap.val();
-          hariSelect.value = data.hari;
-          unitInput.value = data.unit;
-          statusSelect.value = data.status;
-          choicesNama.setChoiceByValue(data.nama);
-          editMode = true;
-          editKey = id;
-          btnSimpan.textContent = "🔄 Perbarui Data";
-        }
-      } else if (e.target.classList.contains("delete-btn")) {
+        const snap = await get(ref(db, `informasi_dokter/${id}`));
+        if (!snap.exists()) return;
+        const d = snap.val();
+        hariSelect.value = d.hari;
+        unitInput.value = d.unit;
+        statusSelect.value = d.status;
+        choicesNama.setChoiceByValue(d.nama);
+        editKey = id;
+        btnSimpan.textContent = "🔄 Perbarui Data";
+      }
+      if (e.target.classList.contains("delete-btn")) {
         if (confirm("Hapus data ini?")) {
-          await remove(ref(db, "informasi_dokter/" + id));
-          alert("🗑️ Data berhasil dihapus!");
+          await remove(ref(db, `informasi_dokter/${id}`));
+          alert("🗑️ Dihapus!");
         }
       }
-    });
+    };
 
-    // 🔹 Reset otomatis jam 00:00
-    function scheduleMidnightReset() {
+    // 🔹 Reset otomatis setiap jam 00:00
+    const resetDaily = () => {
       const now = new Date();
-      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
-      const millisUntilMidnight = nextMidnight - now;
-
+      const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+      const wait = next - now;
       setTimeout(async () => {
         await remove(ref(db, "informasi_dokter"));
-        console.log("🕛 Data direset otomatis jam 00:00");
-        scheduleMidnightReset(); // jadwalkan lagi
-      }, millisUntilMidnight);
-    }
-    scheduleMidnightReset();
-
+        console.log("🕛 Reset otomatis 00:00");
+        resetDaily();
+      }, wait);
+    };
+    resetDaily();
   </script>
-
 </body>
 </html>
