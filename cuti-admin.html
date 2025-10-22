@@ -3,187 +3,231 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📋 Persetujuan Pengajuan Cuti</title>
+  <title>📋 Persetujuan Pengajuan Cuti - UPTD Puskesmas Padasuka</title>
 
-<style>
-  body {
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    background: #f4f6f9;
-    margin: 0;
-  }
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
 
-  .navbar {
-    background: #1976d2;
-    color: white;
-    padding: 12px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+    /* 🔹 Navbar */
+    .navbar {
+      background: #1976d2;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+    }
 
-  .navbar .menu a {
-    color: white;
-    margin-left: 15px;
-    text-decoration: none;
-  }
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
 
-  main {
-    max-width: 1000px;
-    background: white;
-    padding: 20px;
-    margin: 30px auto;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
+    .navbar .menu {
+      display: flex;
+      gap: 15px;
+    }
 
-  h2 {
-    color: #1976d2;
-    border-bottom: 2px solid #1976d2;
-    padding-bottom: 5px;
-  }
+    .navbar .menu a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-  }
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
 
-  th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
+    .navbar button {
+      background: #fff;
+      color: #1976d2;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
 
-  th { background: #f0f0f0; }
+    .navbar button:hover {
+      background: #e3f2fd;
+    }
 
-  .btn {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 4px;
-    color: white;
-    cursor: pointer;
-    font-size: 14px;
-  }
+    /* 🔹 Container utama */
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 25px 30px;
+    }
 
-  .btn-approve { background: #28a745; }
-  .btn-reject { background: #dc3545; }
-  .btn-approve:hover { background: #218838; }
-  .btn-reject:hover { background: #c82333; }
+    h2 {
+      color: #1976d2;
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
 
-  .status-menunggu {
-    background: #fff3cd;
-    color: #856404;
-    padding: 4px 6px;
-    border-radius: 4px;
-  }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
 
-  .status-disetujui {
-    background: #d4edda;
-    color: #155724;
-    padding: 4px 6px;
-    border-radius: 4px;
-  }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
 
-  .status-ditolak {
-    background: #f8d7da;
-    color: #721c24;
-    padding: 4px 6px;
-    border-radius: 4px;
-  }
+    th {
+      background: #f0f0f0;
+      color: #333;
+    }
 
-  /* ===== POPUP STYLE ===== */
-  .popup-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-    transition: all 0.3s ease;
-  }
+    tr:hover {
+      background: #f9f9f9;
+    }
 
-  .popup {
-    background: white;
-    padding: 25px 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 420px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-    animation: popupShow 0.25s ease;
-  }
+    /* 🔹 Status badge */
+    .status-menunggu {
+      background: #fff3cd;
+      color: #856404;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
 
-  @keyframes popupShow {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
+    .status-disetujui {
+      background: #d4edda;
+      color: #155724;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
 
-  .popup h3 {
-    margin-top: 0;
-    color: #1976d2;
-    font-size: 18px;
-  }
+    .status-ditolak {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
 
-  .popup textarea {
-    width: 100%;
-    height: 90px;
-    resize: vertical;
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    box-sizing: border-box;
-    margin-top: 8px;
-  }
+    /* 🔹 Tombol aksi */
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
 
-  .popup-buttons {
-    margin-top: 15px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-  }
+    .btn-approve { background: #28a745; }
+    .btn-reject { background: #dc3545; }
+    .btn-approve:hover { background: #218838; }
+    .btn-reject:hover { background: #c82333; }
 
-  .popup-buttons button {
-    padding: 6px 12px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.2s ease;
-  }
+    /* 🔹 Popup */
+    .popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      transition: all 0.3s ease;
+    }
 
-  #popupConfirm {
-    background: #1976d2;
-    color: white;
-  }
+    .popup {
+      background: white;
+      padding: 25px 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      animation: popupShow 0.25s ease;
+    }
 
-  #popupConfirm:hover {
-    background: #125aa1;
-  }
+    @keyframes popupShow {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
 
-  #popupCancel {
-    background: #e0e0e0;
-  }
+    .popup h3 {
+      margin-top: 0;
+      color: #1976d2;
+      font-size: 18px;
+    }
 
-  #popupCancel:hover {
-    background: #bdbdbd;
-  }
-</style>
+    .popup textarea {
+      width: 100%;
+      height: 90px;
+      resize: vertical;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      margin-top: 8px;
+    }
+
+    .popup-buttons {
+      margin-top: 15px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .popup-buttons button {
+      padding: 6px 12px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s ease;
+    }
+
+    #popupConfirm {
+      background: #1976d2;
+      color: white;
+    }
+
+    #popupConfirm:hover { background: #125aa1; }
+    #popupCancel { background: #e0e0e0; }
+    #popupCancel:hover { background: #bdbdbd; }
+
+    footer {
+      text-align: center;
+      color: #777;
+      font-size: 13px;
+      margin-top: 30px;
+      padding-bottom: 20px;
+    }
+  </style>
 </head>
 
 <body>
 
+  <!-- 🔹 Navbar -->
   <div class="navbar">
-    <div>🏛️ UPTD Puskesmas Padasuka</div>
+    <h1>📋 Persetujuan Pengajuan Cuti</h1>
     <div class="menu">
       <a href="dashboard.html">Dashboard</a>
       <a href="cuti-user.html">Ajukan</a>
       <a href="cuti-list.html">Daftar</a>
     </div>
+    <button onclick="window.location.href='admin-dashboard.html'">Kembali</button>
   </div>
 
-  <main>
-    <h2>📋 Persetujuan Pengajuan Cuti</h2>
+  <!-- 🔹 Data Table -->
+  <div class="container">
+    <h2>Daftar Pengajuan Cuti</h2>
     <table>
       <thead>
         <tr>
@@ -197,9 +241,11 @@
       </thead>
       <tbody id="tabelAdmin"></tbody>
     </table>
-  </main>
+  </div>
 
-  <!-- Popup konfirmasi -->
+  <footer>© 2025 UPTD Puskesmas Padasuka - Semua Hak Dilindungi</footer>
+
+  <!-- 🔹 Popup konfirmasi -->
   <div class="popup-overlay" id="popupOverlay">
     <div class="popup">
       <h3 id="popupTitle">Konfirmasi Pengajuan</h3>
@@ -211,137 +257,105 @@
     </div>
   </div>
 
-<script type="module">
-import { db } from './app.js';
-import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+  <!-- 🔥 Firebase Script -->
+  <script type="module">
+    import { db } from './js/app.js';
+    import { ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
-const tabel = document.getElementById('tabelAdmin');
-const popupOverlay = document.getElementById('popupOverlay');
-const popupTitle = document.getElementById('popupTitle');
-const popupCatatan = document.getElementById('popupCatatan');
-const popupConfirm = document.getElementById('popupConfirm');
-const popupCancel = document.getElementById('popupCancel');
+    const tabel = document.getElementById('tabelAdmin');
+    const popupOverlay = document.getElementById('popupOverlay');
+    const popupTitle = document.getElementById('popupTitle');
+    const popupCatatan = document.getElementById('popupCatatan');
+    const popupConfirm = document.getElementById('popupConfirm');
+    const popupCancel = document.getElementById('popupCancel');
 
-let selectedId = null;
-let selectedAction = null;
+    let selectedId = null;
+    let selectedAction = null;
 
-// === Ambil data realtime dari Firebase ===
-function loadData() {
-  onValue(ref(db, 'pengajuan_cuti'), (snap) => {
-    tabel.innerHTML = '';
+    // === Ambil data realtime dari Firebase ===
+    function loadData() {
+      onValue(ref(db, 'pengajuan_cuti'), (snap) => {
+        tabel.innerHTML = '';
 
-    if (!snap.exists()) {
-      tabel.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada data pengajuan</td></tr>`;
-      return;
-    }
+        if (!snap.exists()) {
+          tabel.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada data pengajuan</td></tr>`;
+          return;
+        }
 
-    const data = [];
-    snap.forEach(c => {
-      const val = c.val();
-      data.push({
-        id: c.key,
-        ...val,
-        dibuatPada: val.dibuatPada || '2000-01-01T00:00:00Z'
+        const data = [];
+        snap.forEach(c => {
+          const val = c.val();
+          data.push({
+            id: c.key,
+            ...val,
+            dibuatPada: val.dibuatPada || '2000-01-01T00:00:00Z'
+          });
+        });
+
+        // Urutkan data (terbaru di atas)
+        data.sort((a, b) => new Date(b.dibuatPada) - new Date(a.dibuatPada));
+
+        data.forEach(item => {
+          const tr = document.createElement('tr');
+          const statusClass =
+            item.status === 'Disetujui' ? 'status-disetujui' :
+            item.status === 'Ditolak' ? 'status-ditolak' :
+            'status-menunggu';
+
+          const isMenunggu = /menunggu/i.test(item.status) || /pending/i.test(item.status);
+
+          const aksiCell = isMenunggu
+            ? `<button class="btn btn-approve" data-id="${item.id}" data-action="Disetujui">Setujui</button>
+               <button class="btn btn-reject" data-id="${item.id}" data-action="Ditolak">Tolak</button>`
+            : `<span>${item.status}</span>`;
+
+          tr.innerHTML = `
+            <td>${item.nama || '-'}</td>
+            <td>${item.jenisCuti || '-'}</td>
+            <td>${item.tanggalMulai || '-'} s/d ${item.tanggalSelesai || '-'}</td>
+            <td>${item.keterangan || '-'}</td>
+            <td><span class="${statusClass}">${item.status}</span></td>
+            <td>${aksiCell}</td>
+          `;
+          tabel.appendChild(tr);
+        });
+
+        // Event tombol
+        document.querySelectorAll('.btn-approve, .btn-reject').forEach(btn => {
+          btn.addEventListener('click', () => {
+            selectedId = btn.dataset.id;
+            selectedAction = btn.dataset.action;
+            popupTitle.textContent = `${selectedAction} Pengajuan Cuti`;
+            popupCatatan.value = '';
+            popupOverlay.style.display = 'flex';
+          });
+        });
       });
-    });
-
-    // Urutkan data (terbaru di atas)
-    data.sort((a, b) => new Date(b.dibuatPada) - new Date(a.dibuatPada));
-
-    data.forEach(item => {
-      const tr = document.createElement('tr');
-      const statusClass =
-        item.status === 'Disetujui' ? 'status-disetujui' :
-        item.status === 'Ditolak' ? 'status-ditolak' :
-        'status-menunggu';
-
-      const isMenunggu = /menunggu/i.test(item.status) || /pending/i.test(item.status);
-
-      const aksiCell = isMenunggu
-        ? `<button class="btn btn-approve" data-id="${item.id}" data-action="Disetujui">Setujui</button>
-           <button class="btn btn-reject" data-id="${item.id}" data-action="Ditolak">Tolak</button>`
-        : `<span>${item.status}</span>`;
-
-      tr.innerHTML = `
-        <td>${item.nama || '-'}</td>
-        <td>${item.jenisCuti || '-'}</td>
-        <td>${item.tanggalMulai || '-'} s/d ${item.tanggalSelesai || '-'}</td>
-        <td>${item.keterangan || '-'}</td>
-        <td><span class="${statusClass}">${item.status}</span></td>
-        <td>${aksiCell}</td>
-      `;
-      tabel.appendChild(tr);
-    });
-
-    // Tambahkan event ke tombol approve/reject
-    document.querySelectorAll('.btn-approve, .btn-reject').forEach(btn => {
-      btn.addEventListener('click', () => {
-        selectedId = btn.dataset.id;
-        selectedAction = btn.dataset.action;
-        popupTitle.textContent = `${selectedAction} Pengajuan Cuti`;
-        popupCatatan.value = '';
-        popupOverlay.style.display = 'flex';
-      });
-    });
-  });
-}
-
-// Tutup popup manual
-popupCancel.onclick = () => popupOverlay.style.display = 'none';
-
-// Simpan perubahan status
-popupConfirm.onclick = async () => {
-  if (!selectedId || !selectedAction) return;
-
-  // 🔹 Tutup popup dulu biar langsung hilang dari layar
-  popupOverlay.style.display = 'none';
-
-  // 🔹 Sedikit delay agar CSS repaint dulu sebelum update Firebase
-  setTimeout(async () => {
-    try {
-      await update(ref(db, 'pengajuan_cuti/' + selectedId), {
-        status: selectedAction,
-        catatanAdmin: popupCatatan.value.trim(),
-        disetujuiPada: new Date().toISOString()
-      });
-
-      // Reset variabel
-      selectedId = null;
-      selectedAction = null;
-    } catch (err) {
-      console.error('Gagal memperbarui data:', err);
-      alert('Terjadi kesalahan saat menyimpan perubahan.');
     }
-  }, 150); // 150ms cukup untuk transisi visual
-};
 
-// Jalankan realtime listener
-loadData();
+    popupCancel.onclick = () => popupOverlay.style.display = 'none';
 
-  <!-- Cek Auth Login -->
-  // Fungsi cek login
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      // Jika belum login, arahkan ke halaman login
-      alert("⚠️ Anda harus login terlebih dahulu untuk mengakses halaman ini!");
-      window.location.href = "login.html";
-    } else {
-      console.log("✅ Pengguna terautentikasi:", user.email);
-    }
-  });
+    popupConfirm.onclick = async () => {
+      if (!selectedId || !selectedAction) return;
+      popupOverlay.style.display = 'none';
 
-  // Fungsi logout
-  window.logout = async () => {
-    try {
-      await signOut(auth);
-      alert("Anda telah logout!");
-      window.location.href = "login.html";
-    } catch (err) {
-      console.error("Gagal logout:", err);
-      alert("❌ Terjadi kesalahan saat logout.");
-    }
-  };
-</script>
+      setTimeout(async () => {
+        try {
+          await update(ref(db, 'pengajuan_cuti/' + selectedId), {
+            status: selectedAction,
+            catatanAdmin: popupCatatan.value.trim(),
+            disetujuiPada: new Date().toISOString()
+          });
+          selectedId = null;
+          selectedAction = null;
+        } catch (err) {
+          console.error('Gagal memperbarui data:', err);
+          alert('Terjadi kesalahan saat menyimpan perubahan.');
+        }
+      }, 150);
+    };
 
+    loadData();
+  </script>
 </body>
 </html>
