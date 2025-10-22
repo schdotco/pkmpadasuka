@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <title>Registrasi - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <link rel="stylesheet" href="style.css"/>
   <style>
-    /* 🌐 Styling Umum */
+    /* 🌐 Tambahan styling agar sama seperti login */
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      background: #f4f6f9;
     }
 
     header {
@@ -120,133 +120,42 @@
     .link a {
       color: #1976d2;
       text-decoration: none;
-      cursor: pointer;
     }
 
     .link a:hover {
       text-decoration: underline;
     }
 
-    #registerCard { display: none; }
+    #adminCode {
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
-  <header>Portal Login - Data & Informasi UPTD Puskesmas Padasuka</header>
+  <header>Login Akun - Data & Informasi UPTD Puskesmas Padasuka</header>
 
   <main>
-    <!-- Panel Kiri -->
-    <div class="left-panel">
-      <h1>SATU AKSES UNTUK SEMUA</h1>
-      <p>Portal internal untuk pengelolaan <b>Data & Informasi UPTD Puskesmas Padasuka</b></p>
-      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Login">
-    </div>
+  <!-- Panel Kiri -->
+  <div class="left-panel">
+    <h1>SATU AKSES UNTUK SEMUA</h1>
+    <p>Portal internal untuk pengelolaan <b>Data & Informasi UPTD Puskesmas Padasuka</b></p>.  
+    <img
+      src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png"
+      alt="Ilustrasi Login">
+  </div>
 
-    <!-- Panel Kanan -->
-    <div class="right-panel">
-      <!-- Form Login -->
-      <form id="loginForm" class="card">
-        <h3>Login</h3>
-        <input type="email" id="email" placeholder="Email" required />
-        <input type="password" id="password" placeholder="Password" required />
-        <button type="submit">Masuk</button>
-        <div class="link">Belum punya akun? <a id="toRegister">Daftar</a></div>
-      </form>
-
-      <!-- Form Registrasi -->
-      <form id="registerCard" class="card">
-        <h3>Registrasi</h3>
-        <input type="text" id="regName" placeholder="Nama Lengkap" required />
-        <input type="email" id="regEmail" placeholder="Email" required />
-        <input type="password" id="regPassword" placeholder="Password" required />
-        <select id="regRole">
-          <option value="false">Pegawai</option>
-          <option value="true">Admin</option>
-        </select>
-        <button type="submit">Daftar</button>
-        <div class="link">Sudah punya akun? <a id="toLogin">Login</a></div>
-      </form>
-    </div>
+  <!-- Panel Kanan -->
+  <div class="right-panel">
+    <form id="loginForm" class="login-card">
+      <h3>Login</h3>
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Masuk</button>
+      <div class="link">Belum punya akun? <a href="register.html">Daftar</a></div>
+    </form>
+  </div>
   </main>
 
-  <!-- 🔥 Script Firebase -->
-  <script type="module">
-    import { loginUser, registerUser, auth } from "./js/app.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
-
-    const db = getDatabase();
-
-    // 🔄 Toggle antara Login & Registrasi
-    const loginForm = document.getElementById("loginForm");
-    const registerCard = document.getElementById("registerCard");
-    document.getElementById("toRegister").onclick = () => {
-      loginForm.style.display = "none";
-      registerCard.style.display = "flex";
-    };
-    document.getElementById("toLogin").onclick = () => {
-      registerCard.style.display = "none";
-      loginForm.style.display = "flex";
-    };
-
-    // ✅ LOGIN
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-
-      try {
-        const user = await loginUser(email, password);
-        const snapshot = await get(child(ref(db), "users/" + user.uid));
-
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          if (data.isAdmin) {
-            alert("✅ Login berhasil sebagai Admin!");
-            window.location.href = "admin-dashboard.html";
-          } else {
-            alert("✅ Login berhasil sebagai Pegawai!");
-            window.location.href = "dashboard.html";
-          }
-        } else {
-          alert("⚠️ Data pengguna tidak ditemukan.");
-        }
-      } catch (err) {
-        alert("❌ Gagal login: " + err.message);
-      }
-    });
-
-    // 🧾 REGISTER
-    registerCard.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("regName").value.trim();
-      const email = document.getElementById("regEmail").value.trim();
-      const password = document.getElementById("regPassword").value.trim();
-      const isAdmin = document.getElementById("regRole").value === "true";
-
-      try {
-        await registerUser(name, email, password, isAdmin);
-        alert("✅ Registrasi berhasil! Silakan login.");
-        registerCard.style.display = "none";
-        loginForm.style.display = "flex";
-      } catch (err) {
-        alert("❌ Gagal registrasi: " + err.message);
-      }
-    });
-
-    // 🔍 Auto redirect jika sudah login
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const snapshot = await get(child(ref(db), "users/" + user.uid));
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          if (data.isAdmin) {
-            window.location.href = "admin-dashboard.html";
-          } else {
-            window.location.href = "dashboard.html";
-          }
-        }
-      }
-    });
-  </script>
+  <script type="module" src="./auth.js"></script>
 </body>
 </html>
