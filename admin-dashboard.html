@@ -1,48 +1,238 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-  import { 
-    getAuth, 
-    onAuthStateChanged, 
-    signOut, 
-    setPersistence, 
-    browserLocalPersistence 
-  } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-
-  // 🔹 Ganti konfigurasi ini dengan konfigurasi Firebase aslimu
-  const firebaseConfig = {
-    apiKey: "API_KEY_MU",
-    authDomain: "PROJECT_ID.firebaseapp.com",
-    projectId: "PROJECT_ID",
-    storageBucket: "PROJECT_ID.appspot.com",
-    messagingSenderId: "SENDER_ID",
-    appId: "APP_ID"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  // 🔹 Pastikan sesi login disimpan secara lokal
-  await setPersistence(auth, browserLocalPersistence);
-
-  // 🔹 Cek status login
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      console.warn("🚫 Tidak ada sesi login. Arahkan ke login.html...");
-      window.location.href = "login.html";
-    } else {
-      console.log("✅ Pengguna login:", user.email);
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard - UPTD Puskesmas Padasuka</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
     }
-  });
 
-  // 🔹 Fungsi logout
-  window.logout = async () => {
-    try {
-      await signOut(auth);
-      alert("Anda telah logout!");
-      window.location.href = "login.html";
-    } catch (err) {
-      console.error("Gagal logout:", err);
-      alert("❌ Terjadi kesalahan saat logout.");
+    /* NAVBAR */
+    .navbar {
+      background: #1976d2;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
     }
-  };
-</script>
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .navbar .menu {
+      display: flex;
+      gap: 15px;
+    }
+    .navbar .menu a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
+    .navbar button {
+      background: #fff;
+      color: #1976d2;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    /* DASHBOARD */
+    .dashboard {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 15px;
+    }
+    .dashboard h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    /* CARD GRID */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+    }
+    .card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+    .card-content {
+      padding: 15px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: #1976d2;
+      margin: 0 0 8px 0;
+    }
+    .card p {
+      font-size: 13px;
+      color: #555;
+      margin: 0;
+    }
+    .card button {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: auto;
+    }
+    .card button:hover {
+      background: #125ca1;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+      padding: 15px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1>🏛️ Admin - Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div class="menu">
+      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="pegawai.html">Pegawai</a>  
+      <a href="kalender.html">Kalender</a>
+      <a href="laporan.html">Laporan</a>
+    </div>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <h2>Menu Utama Admin</h2>
+    <div class="card-grid">
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=Manajemen+Jadwal" alt="Jadwal">
+        <div class="card-content">
+          <h3>Manajemen Jadwal</h3>
+          <p>Kelola jadwal harian pegawai puskesmas.</p>
+        </div>
+        <button onclick="location.href='jadwal.html'">Masuk</button>
+      </div>
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=Review+Cuti" alt="Review Cuti">
+        <div class="card-content">
+          <h3>Review Cuti Pegawai</h3>
+          <p>Kelola dan setujui pengajuan cuti pegawai.</p>
+        </div>
+        <button onclick="location.href='cuti-admin.html'">Masuk</button>
+      </div>
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=List+Cuti" alt="List Cuti">
+        <div class="card-content">
+          <h3>Daftar Pengajuan Cuti</h3>
+          <p>Lihat seluruh data pengajuan cuti pegawai.</p>
+        </div>
+        <button onclick="location.href='cuti-list.html'">Masuk</button>
+      </div>
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=Input+Informasi" alt="Input Informasi">
+        <div class="card-content">
+          <h3>Input Informasi TV</h3>
+          <p>Tambahkan jadwal atau pesan untuk layar TV Informasi.</p>
+        </div>
+        <button onclick="location.href='informasi.html'">Masuk</button>
+      </div>
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=Layar+TV" alt="Layar TV">
+        <div class="card-content">
+          <h3>Layar TV Informasi</h3>
+          <p>Lihat tampilan hasil jadwal informasi TV.</p>
+        </div>
+        <button onclick="location.href='hasil-informasi.html'">Masuk</button>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>© 2025 UPTD Puskesmas Padasuka - Semua Hak Dilindungi</footer>
+
+  <!-- Firebase Auth Protection & Logout -->
+  <script type="module">
+    import { auth, logoutUser } from "./js/app.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+    const db = getDatabase();
+
+    // 🔐 Cek login & role
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("⚠️ Anda harus login terlebih dahulu!");
+        window.location.href = "login.html";
+        return;
+      }
+
+      try {
+        const snapshot = await get(child(ref(db), "users/" + user.uid));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          if (!data.isAdmin) {
+            alert("🚫 Akses ditolak! Hanya admin yang bisa membuka halaman ini.");
+            window.location.href = "dashboard.html";
+          } else {
+            console.log("✅ Login sebagai admin:", user.email);
+          }
+        } else {
+          alert("❌ Data pengguna tidak ditemukan.");
+          window.location.href = "login.html";
+        }
+      } catch (error) {
+        console.error("Error saat memeriksa role:", error);
+        window.location.href = "login.html";
+      }
+    });
+
+    // 🚪 Logout
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        await logoutUser();
+        alert("Anda telah logout!");
+        window.location.href = "login.html";
+      } catch (err) {
+        alert("❌ Gagal logout: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
