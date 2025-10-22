@@ -144,7 +144,7 @@
       <a href="cuti-admin.html">Persetujuan</a>
       <a href="kalender.html">Kalender</a>
     </div>
-    <button onclick="window.location.href='admin-dashboard.html'">Kembali</button>
+    <button id="btnKembali" class="back-btn">Kembali</button>
   </div>
 
   <!-- 🔹 Tabel Data -->
@@ -168,13 +168,46 @@
   </div>
 
   <footer>© 2025 UPTD Puskesmas Padasuka - Semua Hak Dilindungi</footer>
-<script type="module">
-import { db } from './app.js';
-import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
+<script type="module">
+import { auth, db } from './app.js';
+import { ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+// =============================
+// 🔹 TOMBOL KEMBALI DENGAN ROLE
+// =============================
+const btnKembali = document.getElementById('btnKembali');
+btnKembali.addEventListener('click', async () => {
+  const user = auth.currentUser;
+
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  try {
+    const snapshot = await get(child(ref(db), 'users/' + user.uid));
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      if (data.isAdmin) {
+        window.location.href = 'admin-dashboard.html';
+      } else {
+        window.location.href = 'dashboard.html';
+      }
+    } else {
+      alert('⚠️ Data pengguna tidak ditemukan.');
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Terjadi kesalahan saat memeriksa role pengguna.');
+  }
+});
+
+// =============================
+// 🔹 TABEL DAFTAR CUTI REALTIME
+// =============================
 const tbody = document.querySelector('#tabelCuti tbody');
 
-// Realtime listener
 onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
   if (!snapshot.exists()) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada data</td></tr>`;
