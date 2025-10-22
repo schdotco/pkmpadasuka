@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📝 Pengajuan Cuti Pegawai</title>
+  <title>📝 Pengajuan Cuti Pegawai - UPTD Puskesmas Padasuka</title>
 
-  <!-- Choices.js untuk dropdown searchable -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <!-- Choices.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
   <style>
@@ -14,89 +14,148 @@
       font-family: 'Segoe UI', Tahoma, sans-serif;
       background: #f4f6f9;
       margin: 0;
+      padding: 0;
     }
+
+    /* 🔹 Navbar */
     .navbar {
       background: #1976d2;
       color: white;
-      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 12px 20px;
     }
-    .navbar a {
-      color: white;
+
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .navbar .menu {
+      display: flex;
+      gap: 15px;
+    }
+
+    .navbar .menu a {
+      color: #fff;
       text-decoration: none;
-      margin-right: 15px;
+      font-size: 14px;
     }
-    .navbar a:hover {
+
+    .navbar .menu a:hover {
       text-decoration: underline;
     }
-    main {
-      max-width: 500px;
-      background: white;
-      padding: 20px;
-      margin: 30px auto;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+    .navbar button {
+      background: #fff;
+      color: #1976d2;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
     }
+
+    .navbar button:hover {
+      background: #e3f2fd;
+    }
+
+    /* 🔹 Main Container */
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 25px 30px;
+    }
+
     h2 {
       color: #1976d2;
+      text-align: center;
       margin-top: 0;
+      margin-bottom: 20px;
     }
+
     label {
-      display: block;
-      margin-top: 12px;
       font-weight: 600;
+      display: block;
+      margin-top: 15px;
+      color: #333;
     }
+
     input, select, textarea {
       width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      border-radius: 4px;
+      padding: 10px;
+      margin-top: 6px;
       border: 1px solid #ccc;
+      border-radius: 6px;
       font-size: 14px;
       box-sizing: border-box;
+      transition: border 0.2s;
     }
-    button {
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #1976d2;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+    button.submit-btn {
+      width: 100%;
       background: #1976d2;
       color: white;
       border: none;
-      padding: 10px 15px;
-      margin-top: 15px;
+      padding: 12px;
+      margin-top: 20px;
       cursor: pointer;
-      border-radius: 4px;
-      font-size: 14px;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      transition: background 0.2s;
     }
-    button:hover {
+
+    button.submit-btn:hover {
       background: #125ca1;
+    }
+
+    footer {
+      text-align: center;
+      color: #777;
+      font-size: 13px;
+      margin-top: 30px;
+      padding-bottom: 20px;
     }
   </style>
 </head>
+
 <body>
 
-  <!-- Navbar -->
+  <!-- 🔹 Navbar -->
   <div class="navbar">
-    <div>🏛️ UPTD Puskesmas Padasuka</div>
-    <div>
+    <h1>🏛️ Pengajuan Cuti Pegawai</h1>
+    <div class="menu">
       <a href="dashboard.html">Dashboard</a>
       <a href="cuti-list.html">Daftar Cuti</a>
     </div>
-
-    <div>
-      <button onclick="window.location.href='admin-dashboard.html'">Kembali</button>
-    </div>
+    <button onclick="window.location.href='dashboard.html'">Kembali</button>
   </div>
 
-  <!-- Form Pengajuan -->
-  <main>
-    <h2>📝 Pengajuan Cuti Pegawai</h2>
+  <!-- 🔹 Form Pengajuan -->
+  <div class="container">
+    <h2>📝 Formulir Pengajuan Cuti</h2>
+
     <form id="formCuti">
-      <label>Nama Pegawai</label>
+      <label for="namaPegawai">Nama Pegawai</label>
       <select id="namaPegawai" required>
         <option value="">-- Pilih Pegawai --</option>
       </select>
 
-      <label>Jenis Cuti</label>
+      <label for="jenisCuti">Jenis Cuti</label>
       <select id="jenisCuti" required>
         <option value="">-- Pilih Jenis Cuti --</option>
         <option value="Cuti Tahunan">Cuti Tahunan</option>
@@ -105,74 +164,78 @@
         <option value="Cuti Lainnya">Cuti Lainnya</option>
       </select>
 
-      <label>Tanggal Mulai</label>
+      <label for="tanggalMulai">Tanggal Mulai</label>
       <input type="date" id="tanggalMulai" required>
 
-      <label>Tanggal Selesai</label>
+      <label for="tanggalSelesai">Tanggal Selesai</label>
       <input type="date" id="tanggalSelesai" required>
 
-      <label>Keterangan</label>
+      <label for="keterangan">Keterangan</label>
       <textarea id="keterangan" placeholder="Contoh: keperluan keluarga..." rows="3"></textarea>
 
-      <button type="submit">Kirim Pengajuan</button>
+      <button type="submit" class="submit-btn">Kirim Pengajuan</button>
     </form>
-  </main>
+  </div>
 
-<script type="module">
-import { db } from './app.js';
-import { ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+  <footer>© 2025 UPTD Puskesmas Padasuka - Semua Hak Dilindungi</footer>
 
-// Ambil daftar pegawai dari Firebase
-const namaSelect = document.getElementById('namaPegawai');
-onValue(ref(db, 'Pegawai'), (snapshot) => {
-  namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
-  snapshot.forEach(child => {
-    const data = child.val();
-    const nama = data.gelar ? `${data.nama} ${data.gelar}` : data.nama;
-    const opt = document.createElement('option');
-    opt.value = nama;
-    opt.textContent = nama;
-    namaSelect.appendChild(opt);
-  });
-  // Aktifkan dropdown dengan search
-  new Choices(namaSelect, {
-    searchEnabled: true,
-    shouldSort: false,
-    itemSelectText: '',
-    searchPlaceholderValue: 'Cari nama pegawai...',
-  });
-});
+  <!-- 🔥 Firebase Script -->
+  <script type="module">
+    import { db } from './js/app.js';
+    import { ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
-// Simpan pengajuan ke database
-document.getElementById('formCuti').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const nama = namaSelect.value;
-  const jenisCuti = document.getElementById('jenisCuti').value;
-  const tanggalMulai = document.getElementById('tanggalMulai').value;
-  const tanggalSelesai = document.getElementById('tanggalSelesai').value;
-  const keterangan = document.getElementById('keterangan').value;
+    // Ambil daftar pegawai dari Firebase
+    const namaSelect = document.getElementById('namaPegawai');
+    onValue(ref(db, 'Pegawai'), (snapshot) => {
+      namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+      snapshot.forEach(child => {
+        const data = child.val();
+        const nama = data.gelar ? `${data.nama} ${data.gelar}` : data.nama;
+        const opt = document.createElement('option');
+        opt.value = nama;
+        opt.textContent = nama;
+        namaSelect.appendChild(opt);
+      });
 
-  if (!nama || !jenisCuti || !tanggalMulai || !tanggalSelesai) {
-    alert('⚠️ Lengkapi semua data!');
-    return;
-  }
+      // Aktifkan dropdown searchable
+      new Choices(namaSelect, {
+        searchEnabled: true,
+        shouldSort: false,
+        itemSelectText: '',
+        searchPlaceholderValue: 'Cari nama pegawai...',
+      });
+    });
 
-  const cutiRef = push(ref(db, 'pengajuan_cuti'));
-  await set(cutiRef, {
-    id: cutiRef.key,
-    nama,
-    jenisCuti,
-    tanggalMulai,
-    tanggalSelesai,
-    keterangan,
-    status: 'Menunggu Persetujuan',
-    dibuatPada: new Date().toISOString()
-  });
+    // Simpan pengajuan ke database
+    document.getElementById('formCuti').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nama = namaSelect.value;
+      const jenisCuti = document.getElementById('jenisCuti').value;
+      const tanggalMulai = document.getElementById('tanggalMulai').value;
+      const tanggalSelesai = document.getElementById('tanggalSelesai').value;
+      const keterangan = document.getElementById('keterangan').value;
 
-  alert('✅ Pengajuan cuti berhasil dikirim!');
-  e.target.reset();
-});
-</script>
+      if (!nama || !jenisCuti || !tanggalMulai || !tanggalSelesai) {
+        alert('⚠️ Lengkapi semua data!');
+        return;
+      }
+
+      const cutiRef = push(ref(db, 'pengajuan_cuti'));
+      await set(cutiRef, {
+        id: cutiRef.key,
+        nama,
+        jenisCuti,
+        tanggalMulai,
+        tanggalSelesai,
+        keterangan,
+        status: 'Menunggu Persetujuan',
+        dibuatPada: new Date().toISOString()
+      });
+
+      alert('✅ Pengajuan cuti berhasil dikirim!');
+      e.target.reset();
+    });
+  </script>
 
 </body>
 </html>
