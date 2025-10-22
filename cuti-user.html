@@ -168,7 +168,30 @@ document.getElementById('formCuti').addEventListener('submit', async (e) => {
   alert('✅ Pengajuan cuti berhasil dikirim!');
   e.target.reset();
 });
-</script>
 
+<!-- Cek Auth Login -->
+  // Fungsi cek login
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      // Jika belum login, arahkan ke halaman login
+      alert("⚠️ Anda harus login terlebih dahulu untuk mengakses halaman ini!");
+      window.location.href = "login.html";
+    } else {
+      console.log("✅ Pengguna terautentikasi:", user.email);
+    }
+  });
+
+  // Fungsi logout
+  window.logout = async () => {
+    try {
+      await signOut(auth);
+      alert("Anda telah logout!");
+      window.location.href = "login.html";
+    } catch (err) {
+      console.error("Gagal logout:", err);
+      alert("❌ Terjadi kesalahan saat logout.");
+    }
+  };
+</script>
 </body>
 </html>
