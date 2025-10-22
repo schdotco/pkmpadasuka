@@ -331,11 +331,6 @@ background: #333;
       </div>
 
       <div class="dropdown-group">
-        <label>PONED</label>
-        <div class="dropdown-row" id="poned"></div>
-      </div>
-
-      <div class="dropdown-group">
         <label>Kelas Bumi</label>
         <div class="dropdown-row" id="bumil"></div>
       </div>
@@ -437,6 +432,21 @@ background: #333;
         <label>Cek Kesehatan Gratis</label>
         <div class="dropdown-row" id="ckg"></div>
       </div>
+
+      <div class="dropdown-group">
+        <label>PONED PAGI</label>
+        <div class="dropdown-row" id="poned1"></div>
+      </div>
+
+        <div class="dropdown-group">
+        <label>PONED SIANG</label>
+        <div class="dropdown-row" id="poned2"></div>
+      </div>
+
+        <div class="dropdown-group">
+        <label>PONED MALAM</label>
+        <div class="dropdown-row" id="poned3"></div>
+      </div>
       <!-- Kluster berikutnya tetap sama... -->
 </div>
 
@@ -445,8 +455,23 @@ background: #333;
 <h2>II. Kegiatan Luar Gedung</h2>
 
 <div class="dropdown-group">
-<label>Posyandu, PKG Sekolah, BIAS</label>
+<label>Posyandu</label>
 <div class="dropdown-row" id="posyandu"></div>
+</div>
+    
+<div class="dropdown-group">
+<label>PKG Sekolah</label>
+<div class="dropdown-row" id="pkg"></div>
+</div>
+
+<div class="dropdown-group">
+<label>BIAS</label>
+<div class="dropdown-row" id="bias"></div>
+</div>
+
+<div class="dropdown-group">
+<label>UKM Terpadu/Pusling</label>
+<div class="dropdown-row" id="pusling"></div>
 </div>
 
 <div class="dropdown-group">
@@ -509,11 +534,11 @@ function generateDropdowns() {
   const config = {
     screeningCKG: 5, bpjs: 5, rekamMedis: 5, pusatInformasi: 1,
     kasir: 3, kepegawaian: 3, mutu: 3, aset: 3, bok: 3, blud: 3,
-    satpam: 3, supir: 3, cs: 3, koki: 3, kia: 3, mtbs: 3, poned: 3,
+    satpam: 3, supir: 3, cs: 3, koki: 3, kia: 3, mtbs: 3,
     bumil: 3, usg: 3, imunisasi: 3, asik: 3, penapisan: 3, umum: 3,
     lansia: 3, kb: 3, tb: 3, surveilans: 3, kesling: 2, gigi1: 2, gigi2: 2,
-    nc: 5, farmasi: 3, lab: 3, konseling: 3, igd: 3, psikolog: 3, ckg: 3,
-    posyandu: 30, rapat: 30, sakit: 30, cuti: 30
+    nc: 5, farmasi: 3, lab: 3, konseling: 3, igd: 3, psikolog: 3, ckg: 3, poned1: 3, poned2: 3, poned3: 3,
+    posyandu: 20, pkg: 20, bias:20, pusling: 20, rapat: 20, sakit: 20, cuti: 20
   };
 
   Object.entries(config).forEach(([id, jumlah]) => createDropdown(jumlah, id));
