@@ -177,21 +177,36 @@
     </div>
   </div>
 
-  <script>
-        // 🔒 Cek status login
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // jika belum login arahkan ke login.html
-        window.location.href = "login.html";
-      } else {
-        console.log("✅ Login sebagai:", user.email);
-      }
-    });
-    
-    function logout() {
-      // Arahkan ke halaman Login
+<!-- Cek Auth Login -->
+<script type="module">
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+  import { app } from "./app.js"; // pastikan file app.js sudah inisialisasi Firebase
+
+  const auth = getAuth(app);
+
+  // Fungsi cek login
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      // Jika belum login, arahkan ke halaman login
+      alert("⚠️ Anda harus login terlebih dahulu untuk mengakses halaman ini!");
       window.location.href = "login.html";
+    } else {
+      console.log("✅ Pengguna terautentikasi:", user.email);
     }
-  </script>
+  });
+
+  // Fungsi logout
+  window.logout = async () => {
+    try {
+      await signOut(auth);
+      alert("Anda telah logout!");
+      window.location.href = "login.html";
+    } catch (err) {
+      console.error("Gagal logout:", err);
+      alert("❌ Terjadi kesalahan saat logout.");
+    }
+  };
+</script>
+
 </body>
 </html>
