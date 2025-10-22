@@ -1,151 +1,252 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login - Data & Informasi UPTD Puskesmas Padasuka</title>
   <style>
+    /* 🌐 Styling Umum */
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
       background: #f4f6f9;
+    }
+
+    header {
+      background: #1976d2;
+      color: #fff;
+      text-align: center;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    main {
+      display: flex;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .left-panel {
+      background: #1976d2;
+      color: #fff;
+      flex: 1;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .left-panel h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .left-panel p {
+      font-size: 15px;
+      line-height: 1.5;
+      max-width: 300px;
+    }
+
+    .left-panel img {
+      width: 180px;
+      margin-top: 20px;
+    }
+
+    .right-panel {
+      flex: 1;
+      min-width: 280px;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      padding: 30px;
+      background: #f4f6f9;
     }
-    .auth-box {
+
+    .card {
       background: #fff;
-      padding: 20px;
-      width: 100%;
-      max-width: 350px;
+      padding: 25px;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-    .auth-box h2 {
+
+    .card h3 {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       color: #1976d2;
     }
-    input {
-      width: 100%;
+
+    .card input {
       padding: 10px;
-      margin: 8px 0;
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 14px;
-    }
-    button {
       width: 100%;
-      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    .card button {
       background: #1976d2;
       color: #fff;
       border: none;
+      padding: 10px;
+      font-size: 15px;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 14px;
       margin-top: 10px;
     }
-    button:hover {
+
+    .card button:hover {
       background: #125ca1;
     }
-    .switch {
+
+    .link {
       text-align: center;
-      margin-top: 10px;
       font-size: 14px;
+      margin-top: 5px;
     }
-    .switch a {
+
+    .link a {
       color: #1976d2;
+      text-decoration: none;
       cursor: pointer;
     }
+
+    .link a:hover {
+      text-decoration: underline;
+    }
+
+    #registerCard { display: none; }
   </style>
 </head>
 <body>
+  <header>Portal Login - Data & Informasi UPTD Puskesmas Padasuka</header>
 
-  <!-- Login Form -->
-  <div id="login-section" class="auth-box">
-    <h2>Login</h2>
-    <input type="email" id="loginEmail" placeholder="Email">
-    <input type="password" id="loginPassword" placeholder="Password">
-    <button onclick="loginUser()">Login</button>
-    <div class="switch">
-      Belum punya akun? <a onclick="showRegister()">Register</a>
+  <main>
+    <!-- Panel Kiri -->
+    <div class="left-panel">
+      <h1>SATU AKSES UNTUK SEMUA</h1>
+      <p>Portal internal untuk pengelolaan <b>Data & Informasi UPTD Puskesmas Padasuka</b></p>
+      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Login">
     </div>
-  </div>
 
-  <!-- Register Form -->
-  <div id="register-section" class="auth-box" style="display: none;">
-    <h2>Register</h2>
-    <input type="email" id="regEmail" placeholder="Email">
-    <input type="password" id="regPassword" placeholder="Password">
-    <button onclick="registerUser()">Register</button>
-    <div class="switch">
-      Sudah punya akun? <a onclick="showLogin()">Login</a>
+    <!-- Panel Kanan -->
+    <div class="right-panel">
+      <!-- Form Login -->
+      <form id="loginForm" class="card">
+        <h3>Login</h3>
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <button type="submit">Masuk</button>
+        <div class="link">Belum punya akun? <a id="toRegister">Daftar</a></div>
+      </form>
+
+      <!-- Form Registrasi -->
+      <form id="registerCard" class="card">
+        <h3>Registrasi</h3>
+        <input type="text" id="regName" placeholder="Nama Lengkap" required />
+        <input type="email" id="regEmail" placeholder="Email" required />
+        <input type="password" id="regPassword" placeholder="Password" required />
+        <select id="regRole">
+          <option value="false">Pegawai</option>
+          <option value="true">Admin</option>
+        </select>
+        <button type="submit">Daftar</button>
+        <div class="link">Sudah punya akun? <a id="toLogin">Login</a></div>
+      </form>
     </div>
-  </div>
+  </main>
 
-  <!-- Firebase Auth -->
+  <!-- 🔥 Script Firebase -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { loginUser, registerUser, auth } from "./js/app.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
-      authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
-      projectId: "aplikasi-jadwal-1d54d",
-      storageBucket: "aplikasi-jadwal-1d54d.firebasestorage.app",
-      messagingSenderId: "860941812271",
-      appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
+    const db = getDatabase();
+
+    // 🔄 Toggle antara Login & Registrasi
+    const loginForm = document.getElementById("loginForm");
+    const registerCard = document.getElementById("registerCard");
+    document.getElementById("toRegister").onclick = () => {
+      loginForm.style.display = "none";
+      registerCard.style.display = "flex";
+    };
+    document.getElementById("toLogin").onclick = () => {
+      registerCard.style.display = "none";
+      loginForm.style.display = "flex";
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    // ✅ LOGIN
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-    const loginSection = document.getElementById('login-section');
-    const registerSection = document.getElementById('register-section');
+      try {
+        const user = await loginUser(email, password);
+        const snapshot = await get(child(ref(db), "users/" + user.uid));
 
-    // 🧠 Cek apakah sudah login → langsung ke dashboard
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        window.location.href = "dashboard.html";
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          if (data.isAdmin) {
+            alert("✅ Login berhasil sebagai Admin!");
+            window.location.href = "admin-dashboard.html";
+          } else {
+            alert("✅ Login berhasil sebagai Pegawai!");
+            window.location.href = "dashboard.html";
+          }
+        } else {
+          alert("⚠️ Data pengguna tidak ditemukan.");
+        }
+      } catch (err) {
+        alert("❌ Gagal login: " + err.message);
       }
     });
 
-    // 🔑 Login
-    window.loginUser = async () => {
-      const email = document.getElementById('loginEmail').value;
-      const pass = document.getElementById('loginPassword').value;
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-        // Redirect otomatis oleh onAuthStateChanged
-      } catch (err) {
-        alert("Login gagal: " + err.message);
-      }
-    };
+    // 🧾 REGISTER
+    registerCard.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("regName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const password = document.getElementById("regPassword").value.trim();
+      const isAdmin = document.getElementById("regRole").value === "true";
 
-    // 📝 Register
-    window.registerUser = async () => {
-      const email = document.getElementById('regEmail').value;
-      const pass = document.getElementById('regPassword').value;
       try {
-        await createUserWithEmailAndPassword(auth, email, pass);
-        alert("Registrasi berhasil! Silakan login.");
-        showLogin();
+        await registerUser(name, email, password, isAdmin);
+        alert("✅ Registrasi berhasil! Silakan login.");
+        registerCard.style.display = "none";
+        loginForm.style.display = "flex";
       } catch (err) {
-        alert("Registrasi gagal: " + err.message);
+        alert("❌ Gagal registrasi: " + err.message);
       }
-    };
+    });
 
-    // Switch UI
-    window.showRegister = () => {
-      loginSection.style.display = "none";
-      registerSection.style.display = "block";
-    };
-    window.showLogin = () => {
-      registerSection.style.display = "none";
-      loginSection.style.display = "block";
-    };
+    // 🔍 Auto redirect jika sudah login
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const snapshot = await get(child(ref(db), "users/" + user.uid));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          if (data.isAdmin) {
+            window.location.href = "admin-dashboard.html";
+          } else {
+            window.location.href = "dashboard.html";
+          }
+        }
+      }
+    });
   </script>
-
 </body>
 </html>
