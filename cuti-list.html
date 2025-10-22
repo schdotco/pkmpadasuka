@@ -3,48 +3,171 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📅 Daftar Pengajuan Cuti Pegawai</title>
+  <title>📋 Daftar Pengajuan Cuti Pegawai - UPTD Puskesmas Padasuka</title>
+
   <style>
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f9; margin: 0; }
-    .navbar { background: #1976d2; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-    .navbar .menu a { color: white; text-decoration: none; margin-left: 15px; }
-    main { max-width: 1000px; background: white; padding: 20px; margin: 30px auto; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    h2 { color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background: #f0f0f0; }
-    .status-menunggu { color: #ff9800; font-weight: bold; }
-    .status-disetujui { color: #2e7d32; font-weight: bold; }
-    .status-ditolak { color: #c62828; font-weight: bold; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* 🔹 Navbar */
+    .navbar {
+      background: #1976d2;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+    }
+
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .navbar .menu {
+      display: flex;
+      gap: 15px;
+    }
+
+    .navbar .menu a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
+
+    .navbar button {
+      background: #fff;
+      color: #1976d2;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .navbar button:hover {
+      background: #e3f2fd;
+    }
+
+    /* 🔹 Container utama */
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 25px 30px;
+    }
+
+    h2 {
+      color: #1976d2;
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #e3f2fd;
+      color: #333;
+    }
+
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .status-menunggu {
+      background: #fff3cd;
+      color: #856404;
+      font-weight: 600;
+      padding: 4px 6px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .status-disetujui {
+      background: #d4edda;
+      color: #155724;
+      font-weight: 600;
+      padding: 4px 6px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .status-ditolak {
+      background: #f8d7da;
+      color: #721c24;
+      font-weight: 600;
+      padding: 4px 6px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    footer {
+      text-align: center;
+      color: #777;
+      font-size: 13px;
+      margin-top: 30px;
+      padding-bottom: 20px;
+    }
   </style>
 </head>
+
 <body>
 
+  <!-- 🔹 Navbar -->
   <div class="navbar">
-    <div>🏛️ UPTD Puskesmas Padasuka</div>
+    <h1>📋 Daftar Pengajuan Cuti Pegawai</h1>
     <div class="menu">
       <a href="dashboard.html">Dashboard</a>
       <a href="cuti-user.html">Ajukan</a>
-      <a href="cuti-admin.html">Admin</a>
+      <a href="cuti-admin.html">Persetujuan</a>
+      <a href="kalender.html">Kalender</a>
     </div>
+    <button onclick="window.location.href='admin-dashboard.html'">Kembali</button>
   </div>
 
-  <main>
-    <h2>📋 Daftar Pengajuan Cuti Pegawai</h2>
+  <!-- 🔹 Tabel Data -->
+  <div class="container">
+    <h2>📑 Data Pengajuan Cuti Pegawai</h2>
+
     <table id="tabelCuti">
       <thead>
         <tr>
-          <th>Nama</th>
+          <th>Nama Pegawai</th>
           <th>Jenis Cuti</th>
           <th>Tanggal</th>
           <th>Status</th>
           <th>Catatan Admin</th>
         </tr>
       </thead>
-      <tbody><tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr></tbody>
+      <tbody>
+        <tr><td colspan="5" style="text-align:center;">Memuat data...</td></tr>
+      </tbody>
     </table>
-  </main>
+  </div>
 
+  <footer>© 2025 UPTD Puskesmas Padasuka - Semua Hak Dilindungi</footer>
 <script type="module">
 import { db } from './app.js';
 import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
@@ -77,30 +200,6 @@ onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
     tbody.appendChild(tr);
   });
 });
-
-  <!-- Cek Auth Login -->
-  // Fungsi cek login
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      // Jika belum login, arahkan ke halaman login
-      alert("⚠️ Anda harus login terlebih dahulu untuk mengakses halaman ini!");
-      window.location.href = "login.html";
-    } else {
-      console.log("✅ Pengguna terautentikasi:", user.email);
-    }
-  });
-
-  // Fungsi logout
-  window.logout = async () => {
-    try {
-      await signOut(auth);
-      alert("Anda telah logout!");
-      window.location.href = "login.html";
-    } catch (err) {
-      console.error("Gagal logout:", err);
-      alert("❌ Terjadi kesalahan saat logout.");
-    }
-  };
 </script>
 </body>
 </html>
