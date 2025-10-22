@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login & Registrasi - Data & Informasi UPTD Puskesmas Padasuka</title>
   <style>
-    /* 🌐 Styling Umum */
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -155,6 +154,7 @@
       <!-- Form Registrasi -->
       <form id="registerCard" class="card">
         <h3>Registrasi</h3>
+        <input type="text" id="regName" placeholder="Nama Lengkap" required />
         <input type="email" id="regEmail" placeholder="Email" required />
         <input type="password" id="regPassword" placeholder="Password" required />
         <button type="submit">Daftar</button>
@@ -164,37 +164,17 @@
   </main>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-    import { 
-      getAuth, 
-      signInWithEmailAndPassword, 
-      createUserWithEmailAndPassword, 
-      onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+    import { auth, loginUser, registerUser } from "./js/app.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
-    // 🔹 Konfigurasi Firebase kamu
-    const firebaseConfig = {
-      apiKey: "ISI_API_KEY_MU",
-      authDomain: "ISI_AUTH_DOMAIN_MU",
-      projectId: "ISI_PROJECT_ID_MU",
-      storageBucket: "ISI_STORAGE_BUCKET_MU",
-      messagingSenderId: "ISI_MSG_ID_MU",
-      appId: "ISI_APP_ID_MU"
-    };
-
-    // 🔹 Inisialisasi Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    // 🔹 Cek status login otomatis
+    // 🔹 Jika sudah login, langsung arahkan ke dashboard
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        console.log("✅ Login sebagai:", user.email);
         window.location.href = "dashboard.html";
       }
     });
 
-    // 🌐 Toggle antar form login dan register
+    // 🌐 Toggle antar form
     const loginCard = document.getElementById("loginCard");
     const registerCard = document.getElementById("registerCard");
     document.getElementById("toRegister").onclick = () => {
@@ -212,7 +192,7 @@
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPassword").value;
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        await loginUser(email, password);
         alert("✅ Login berhasil!");
         window.location.href = "dashboard.html";
       } catch (err) {
@@ -223,10 +203,12 @@
     // 🧾 REGISTER
     document.getElementById("registerCard").addEventListener("submit", async (e) => {
       e.preventDefault();
+      const name = document.getElementById("regName").value;
       const email = document.getElementById("regEmail").value;
       const password = document.getElementById("regPassword").value;
+
       try {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await registerUser(name, email, password, false);
         alert("✅ Registrasi berhasil! Silakan login.");
         registerCard.style.display = "none";
         loginCard.style.display = "flex";
