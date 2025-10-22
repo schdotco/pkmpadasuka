@@ -12,7 +12,7 @@ const firebaseConfig = {
   authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
   databaseURL: "https://aplikasi-jadwal-1d54d-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "aplikasi-jadwal-1d54d",
-  storageBucket: "aplikasi-jadwal-1d54d.firebasestorage.app",
+  storageBucket: "aplikasi-jadwal-1d54d.appspot.com", // ✅ perbaiki di sini
   messagingSenderId: "860941812271",
   appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
 };
