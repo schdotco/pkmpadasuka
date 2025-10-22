@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Dashboard - UPTD Puskesmas Padasuka</title>
+  <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
   <style>
     body {
       margin: 0;
@@ -109,130 +109,79 @@
     .card button:hover {
       background: #125ca1;
     }
-
-    footer {
-      text-align: center;
-      font-size: 13px;
-      color: #666;
-      padding: 15px;
-      margin-top: 30px;
-    }
   </style>
 </head>
 <body>
   <!-- Navbar -->
   <div class="navbar">
-    <h1>🏛️ Admin - Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
     <div class="menu">
-      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profil.html">Profil</a>
       <a href="pegawai.html">Pegawai</a>  
       <a href="kalender.html">Kalender</a>
-      <a href="laporan.html">Laporan</a>
     </div>
-    <button id="logoutBtn">Logout</button>
+     <button onclick="logout()">Logout</button>
   </div>
 
   <!-- Dashboard -->
   <div class="dashboard">
-    <h2>Menu Utama Admin</h2>
-    <div class="card-grid">
-
+    <h2>Admin Menu</h2>
+        <div class="card-grid">
       <div class="card">
-        <img src="https://via.placeholder.com/300x120?text=Manajemen+Jadwal" alt="Jadwal">
+        <img src="https://via.placeholder.com/300x120?text=JADWAL" alt="JADWAL">
         <div class="card-content">
-          <h3>Manajemen Jadwal</h3>
-          <p>Kelola jadwal harian pegawai puskesmas.</p>
+          <h3>Jadwal</h3>
+          <p>Jadwal Harian Pegawai UPTD Puskesmas Padasuka</p>
         </div>
-        <button onclick="location.href='jadwal.html'">Masuk</button>
+        <button onclick="window.location.href='jadwal.html'">Masuk</button>
       </div>
-
+    
+    <div class="card-grid">
       <div class="card">
-        <img src="https://via.placeholder.com/300x120?text=Review+Cuti" alt="Review Cuti">
+        <img src="https://via.placeholder.com/300x120?text=REVIEW CUTI" alt="REVIEW CUTI">
         <div class="card-content">
           <h3>Review Cuti Pegawai</h3>
-          <p>Kelola dan setujui pengajuan cuti pegawai.</p>
+          <p>Manajemen Kepegawaian UPTD Puskesmas Padasuka</p>
         </div>
-        <button onclick="location.href='cuti-admin.html'">Masuk</button>
+        <button onclick="window.location.href='cuti-admin.html'">Masuk</button>
       </div>
 
       <div class="card">
-        <img src="https://via.placeholder.com/300x120?text=List+Cuti" alt="List Cuti">
+        <img src="https://via.placeholder.com/300x120?text=LIST CUTI" alt="LIST CUTI">
         <div class="card-content">
-          <h3>Daftar Pengajuan Cuti</h3>
-          <p>Lihat seluruh data pengajuan cuti pegawai.</p>
+          <h3>List Pengajuan Cuti Pegawai</h3>
+          <p>Manajemen Kepegawaian UPTD Puskesmas Padasuka</p>
         </div>
         <button onclick="location.href='cuti-list.html'">Masuk</button>
       </div>
 
       <div class="card">
-        <img src="https://via.placeholder.com/300x120?text=Input+Informasi" alt="Input Informasi">
+        <img src="https://via.placeholder.com/300x120?text=Input Informasi TV" alt="Input Informasi TV">
         <div class="card-content">
-          <h3>Input Informasi TV</h3>
-          <p>Tambahkan jadwal atau pesan untuk layar TV Informasi.</p>
+          <h3>Input Jadwal TV Informasi</h3>
+          <p>Manajemen Informasi UPTD Puskesmas Padasuka</p>
         </div>
         <button onclick="location.href='informasi.html'">Masuk</button>
       </div>
 
       <div class="card">
-        <img src="https://via.placeholder.com/300x120?text=Layar+TV" alt="Layar TV">
+        <img src="https://via.placeholder.com/300x120?text=Layar Informasi TV" alt="Layar Informasi TV">
         <div class="card-content">
-          <h3>Layar TV Informasi</h3>
-          <p>Lihat tampilan hasil jadwal informasi TV.</p>
+          <h3>Input Jadwal TV Informasi</h3>
+          <p>Manajemen Informasi UPTD Puskesmas Padasuka</p>
         </div>
         <button onclick="location.href='hasil-informasi.html'">Masuk</button>
       </div>
-
+      
     </div>
   </div>
 
-  <footer>© 2025 UPTD Puskesmas Padasuka - Semua Hak Dilindungi</footer>
-
-  <!-- Firebase Auth Protection & Logout -->
-  <script type="module">
-    import { auth, logoutUser } from "./js/app.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
-
-    const db = getDatabase();
-
-    // 🔐 Cek login & role
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        alert("⚠️ Anda harus login terlebih dahulu!");
-        window.location.href = "login.html";
-        return;
-      }
-
-      try {
-        const snapshot = await get(child(ref(db), "users/" + user.uid));
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          if (!data.isAdmin) {
-            alert("🚫 Akses ditolak! Hanya admin yang bisa membuka halaman ini.");
-            window.location.href = "dashboard.html";
-          } else {
-            console.log("✅ Login sebagai admin:", user.email);
-          }
-        } else {
-          alert("❌ Data pengguna tidak ditemukan.");
-          window.location.href = "login.html";
-        }
-      } catch (error) {
-        console.error("Error saat memeriksa role:", error);
-        window.location.href = "login.html";
-      }
-    });
-
-    // 🚪 Logout
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      try {
-        await logoutUser();
-        alert("Anda telah logout!");
-        window.location.href = "login.html";
-      } catch (err) {
-        alert("❌ Gagal logout: " + err.message);
-      }
-    });
+  <script>
+    function logout() {
+      // Arahkan ke halaman Login
+      window.location.href = "login.html";
+    }
   </script>
 </body>
 </html>
