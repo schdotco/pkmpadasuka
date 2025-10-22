@@ -1,250 +1,215 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <title>Dashboard Pegawai - UPTD Puskesmas Padasuka</title>
   <style>
-    /* 🌐 Styling Umum */
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
       background: #f4f6f9;
     }
 
-    header {
+    /* NAVBAR */
+    .navbar {
       background: #1976d2;
       color: #fff;
-      text-align: center;
-      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+    }
+    .navbar h1 {
       font-size: 18px;
-      font-weight: 500;
+      margin: 0;
     }
-
-    main {
+    .navbar .menu {
       display: flex;
-      flex: 1;
-      flex-wrap: wrap;
+      gap: 15px;
     }
-
-    .left-panel {
-      background: #1976d2;
+    .navbar .menu a {
       color: #fff;
-      flex: 1;
-      min-width: 280px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 30px;
-      text-align: center;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .navbar .menu a:hover {
+      text-decoration: underline;
+    }
+    .navbar button {
+      background: #fff;
+      color: #1976d2;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
     }
 
-    .left-panel h1 {
-      font-size: 24px;
-      margin-bottom: 10px;
+    /* DASHBOARD */
+    .dashboard {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 15px;
+    }
+    .dashboard h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 20px;
     }
 
-    .left-panel p {
-      font-size: 15px;
-      line-height: 1.5;
-      max-width: 300px;
-    }
-
-    .left-panel img {
-      width: 180px;
-      margin-top: 20px;
-    }
-
-    .right-panel {
-      flex: 1;
-      min-width: 280px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 30px;
-      background: #f4f6f9;
+    /* CARD GRID */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
     }
 
     .card {
       background: #fff;
-      padding: 25px;
       border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 320px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      justify-content: space-between;
+      overflow: hidden;
+      transition: transform 0.2s ease;
     }
-
-    .card h3 {
-      text-align: center;
-      margin-bottom: 10px;
-      color: #1976d2;
+    .card:hover {
+      transform: translateY(-4px);
     }
-
-    .card input {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
+    .card img {
       width: 100%;
-      box-sizing: border-box;
+      height: 120px;
+      object-fit: cover;
     }
-
+    .card-content {
+      padding: 15px;
+    }
+    .card h3 {
+      font-size: 16px;
+      color: #1976d2;
+      margin: 0 0 8px 0;
+    }
+    .card p {
+      font-size: 13px;
+      color: #555;
+      margin: 0;
+    }
     .card button {
       background: #1976d2;
       color: #fff;
       border: none;
       padding: 10px;
-      font-size: 15px;
-      border-radius: 4px;
+      font-size: 13px;
       cursor: pointer;
-      margin-top: 10px;
+      width: 100%;
+      margin-top: auto;
     }
-
     .card button:hover {
       background: #125ca1;
     }
 
-    .link {
+    footer {
       text-align: center;
-      font-size: 14px;
-      margin-top: 5px;
+      font-size: 13px;
+      color: #666;
+      padding: 15px;
+      margin-top: 30px;
     }
-
-    .link a {
-      color: #1976d2;
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .link a:hover {
-      text-decoration: underline;
-    }
-
-    #registerCard { display: none; }
   </style>
 </head>
 <body>
-  <header>Portal Login - Data & Informasi UPTD Puskesmas Padasuka</header>
-
-  <main>
-    <!-- Panel Kiri -->
-    <div class="left-panel">
-      <h1>SATU AKSES UNTUK SEMUA</h1>
-      <p>Portal internal untuk pengelolaan <b>Data & Informasi UPTD Puskesmas Padasuka</b></p>
-      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Login">
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1>👩‍⚕️ Dashboard Pegawai - UPTD Puskesmas Padasuka</h1>
+    <div class="menu">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profil.html">Profil</a>
+      <a href="kalender.html">Kalender</a>
     </div>
+    <button id="logoutBtn">Logout</button>
+  </div>
 
-    <!-- Panel Kanan -->
-    <div class="right-panel">
-      <!-- Form Login -->
-      <form id="loginForm" class="card">
-        <h3>Login</h3>
-        <input type="email" id="email" placeholder="Email" required />
-        <input type="password" id="password" placeholder="Password" required />
-        <button type="submit">Masuk</button>
-        <div class="link">Belum punya akun? <a id="toRegister">Daftar</a></div>
-      </form>
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <h2>Menu Utama Pegawai</h2>
+    <div class="card-grid">
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=Lihat+Jadwal" alt="Jadwal">
+        <div class="card-content">
+          <h3>Jadwal Harian</h3>
+          <p>Lihat jadwal harian pegawai dan kegiatan pelayanan.</p>
+        </div>
+        <button onclick="location.href='jadwal.html'">Lihat Jadwal</button>
+      </div>
 
-      <!-- Form Registrasi -->
-      <form id="registerCard" class="card">
-        <h3>Registrasi</h3>
-        <input type="text" id="regName" placeholder="Nama Lengkap" required />
-        <input type="email" id="regEmail" placeholder="Email" required />
-        <input type="password" id="regPassword" placeholder="Password" required />
-        <select id="regRole">
-          <option value="false">Pegawai</option>
-          <option value="true">Admin</option>
-        </select>
-        <button type="submit">Daftar</button>
-        <div class="link">Sudah punya akun? <a id="toLogin">Login</a></div>
-      </form>
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=Ajukan+Cuti" alt="Cuti">
+        <div class="card-content">
+          <h3>Ajukan Cuti</h3>
+          <p>Formulir pengajuan cuti pegawai secara online.</p>
+        </div>
+        <button onclick="location.href='cuti.html'">Ajukan Sekarang</button>
+      </div>
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x120?text=Lihat+Informasi" alt="Informasi">
+        <div class="card-content">
+          <h3>Informasi Internal</h3>
+          <p>Lihat pengumuman dan jadwal di layar TV informasi.</p>
+        </div>
+        <button onclick="location.href='hasil-informasi.html'">Lihat Informasi</button>
+      </div>
     </div>
-  </main>
+  </div>
 
-  <!-- 🔥 Script Firebase -->
+  <footer>© 2025 UPTD Puskesmas Padasuka - Semua Hak Dilindungi</footer>
+
+  <!-- 🔐 Cek Login + Logout -->
   <script type="module">
-    import { loginUser, registerUser, auth } from "./js/app.js";
+    import { auth, logoutUser } from "./js/app.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
     import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
     const db = getDatabase();
 
-    // 🔄 Toggle antara Login & Registrasi
-    const loginForm = document.getElementById("loginForm");
-    const registerCard = document.getElementById("registerCard");
-    document.getElementById("toRegister").onclick = () => {
-      loginForm.style.display = "none";
-      registerCard.style.display = "flex";
-    };
-    document.getElementById("toLogin").onclick = () => {
-      registerCard.style.display = "none";
-      loginForm.style.display = "flex";
-    };
-
-    // ✅ LOGIN
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
+    // 🔒 Cek Login
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("⚠️ Anda harus login terlebih dahulu!");
+        window.location.href = "login.html";
+        return;
+      }
 
       try {
-        const user = await loginUser(email, password);
         const snapshot = await get(child(ref(db), "users/" + user.uid));
-
         if (snapshot.exists()) {
           const data = snapshot.val();
           if (data.isAdmin) {
-            alert("✅ Login berhasil sebagai Admin!");
+            alert("🚫 Akses ditolak! Halaman ini hanya untuk pegawai.");
             window.location.href = "admin-dashboard.html";
           } else {
-            alert("✅ Login berhasil sebagai Pegawai!");
-            window.location.href = "dashboard.html";
+            console.log("✅ Login sebagai pegawai:", user.email);
           }
         } else {
-          alert("⚠️ Data pengguna tidak ditemukan.");
+          alert("❌ Data pengguna tidak ditemukan.");
+          window.location.href = "login.html";
         }
-      } catch (err) {
-        alert("❌ Gagal login: " + err.message);
+      } catch (error) {
+        console.error("Error saat memeriksa role:", error);
+        window.location.href = "login.html";
       }
     });
 
-    // 🧾 REGISTER
-    registerCard.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("regName").value.trim();
-      const email = document.getElementById("regEmail").value.trim();
-      const password = document.getElementById("regPassword").value.trim();
-      const isAdmin = document.getElementById("regRole").value === "true";
-
+    // 🚪 Logout
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
       try {
-        await registerUser(name, email, password, isAdmin);
-        alert("✅ Registrasi berhasil! Silakan login.");
-        registerCard.style.display = "none";
-        loginForm.style.display = "flex";
+        await logoutUser();
+        alert("Anda telah logout!");
+        window.location.href = "login.html";
       } catch (err) {
-        alert("❌ Gagal registrasi: " + err.message);
-      }
-    });
-
-    // 🔍 Auto redirect jika sudah login
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const snapshot = await get(child(ref(db), "users/" + user.uid));
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          if (data.isAdmin) {
-            window.location.href = "admin-dashboard.html";
-          } else {
-            window.location.href = "dashboard.html";
-          }
-        }
+        alert("❌ Gagal logout: " + err.message);
       }
     });
   </script>
