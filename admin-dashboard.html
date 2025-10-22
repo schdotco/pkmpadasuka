@@ -178,6 +178,16 @@
   </div>
 
   <script>
+        // 🔒 Cek status login
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // jika belum login arahkan ke login.html
+        window.location.href = "login.html";
+      } else {
+        console.log("✅ Login sebagai:", user.email);
+      }
+    });
+    
     function logout() {
       // Arahkan ke halaman Login
       window.location.href = "login.html";
