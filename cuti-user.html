@@ -134,7 +134,6 @@
 </head>
 
 <body>
-
   <!-- 🔹 Navbar -->
   <div class="navbar">
     <h1>🏛️ Pengajuan Cuti Pegawai</h1>
@@ -181,62 +180,59 @@
 
   <!-- 🔥 Firebase Script -->
 <script type="module">
-  import { db } from './js/app.js';
-  import { ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+import { db } from './app.js';
+import { ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-  const namaSelect = document.getElementById('namaPegawai');
-  let choicesInstance;
+// Ambil daftar pegawai dari Firebase
+const namaSelect = document.getElementById('namaPegawai');
+onValue(ref(db, 'Pegawai'), (snapshot) => {
+  namaSelect.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+  snapshot.forEach(child => {
+    const data = child.val();
+    const nama = data.gelar ? `${data.nama} ${data.gelar}` : data.nama;
+    const opt = document.createElement('option');
+    opt.value = nama;
+    opt.textContent = nama;
+    namaSelect.appendChild(opt);
+  });
+  // Aktifkan dropdown dengan search
+  new Choices(namaSelect, {
+    searchEnabled: true,
+    shouldSort: false,
+    itemSelectText: '',
+    searchPlaceholderValue: 'Cari nama pegawai...',
+  });
+});
 
-  // Ambil daftar pegawai dari Firebase
-  onValue(ref(db, 'pegawai'), (snapshot) => {
-    const listNama = [];
-    snapshot.forEach(child => {
-      const data = child.val();
-      const nama = data.namaLengkap || data.nama || "Tanpa Nama";
-      listNama.push({ value: nama, label: nama });
-    });
+// Simpan pengajuan ke database
+document.getElementById('formCuti').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nama = namaSelect.value;
+  const jenisCuti = document.getElementById('jenisCuti').value;
+  const tanggalMulai = document.getElementById('tanggalMulai').value;
+  const tanggalSelesai = document.getElementById('tanggalSelesai').value;
+  const keterangan = document.getElementById('keterangan').value;
 
-    // Reset Choices.js kalau sudah pernah diinisialisasi
-    if (choicesInstance) choicesInstance.destroy();
+  if (!nama || !jenisCuti || !tanggalMulai || !tanggalSelesai) {
+    alert('⚠️ Lengkapi semua data!');
+    return;
+  }
 
-    choicesInstance = new Choices(namaSelect, {
-      choices: [{ value: '', label: '-- Pilih Pegawai --', selected: true, disabled: true }, ...listNama],
-      searchEnabled: true,
-      shouldSort: false,
-      itemSelectText: '',
-      searchPlaceholderValue: 'Cari nama pegawai...',
-    });
+  const cutiRef = push(ref(db, 'pengajuan_cuti'));
+  await set(cutiRef, {
+    id: cutiRef.key,
+    nama,
+    jenisCuti,
+    tanggalMulai,
+    tanggalSelesai,
+    keterangan,
+    status: 'Menunggu Persetujuan',
+    dibuatPada: new Date().toISOString()
   });
 
-  // Simpan pengajuan cuti ke database
-  document.getElementById('formCuti').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const nama = namaSelect.value;
-    const jenisCuti = document.getElementById('jenisCuti').value;
-    const tanggalMulai = document.getElementById('tanggalMulai').value;
-    const tanggalSelesai = document.getElementById('tanggalSelesai').value;
-    const keterangan = document.getElementById('keterangan').value;
-
-    if (!nama || !jenisCuti || !tanggalMulai || !tanggalSelesai) {
-      alert('⚠️ Lengkapi semua data!');
-      return;
-    }
-
-    const cutiRef = push(ref(db, 'pengajuan_cuti'));
-    await set(cutiRef, {
-      id: cutiRef.key,
-      nama,
-      jenisCuti,
-      tanggalMulai,
-      tanggalSelesai,
-      keterangan,
-      status: 'Menunggu Persetujuan',
-      dibuatPada: new Date().toISOString()
-    });
-
-    alert('✅ Pengajuan cuti berhasil dikirim!');
-    e.target.reset();
-  });
+  alert('✅ Pengajuan cuti berhasil dikirim!');
+  e.target.reset();
+});
 </script>
 
 </body>
