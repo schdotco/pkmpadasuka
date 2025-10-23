@@ -275,7 +275,7 @@ if (dataJadwal.kegiatan && Object.keys(dataJadwal.kegiatan).length > 0) {
 
 // Tombol Share WhatsApp
 btnShare.onclick = () => {
-  let pesan = `✨ *Jadwal Pegawai - UPTD Puskesmas Padasuka* ✨\n`;
+  let pesan = `✨ *Daily Update - UPTD Puskesmas Padasuka* ✨\n`;
   pesan += `───────────────────────\n`;
   pesan += `📅 *Tanggal:* ${dataJadwal.tanggal}\n`;
   pesan += `👔 *Dress Code:* ${dataJadwal.dressCode}\n`;
@@ -291,10 +291,13 @@ btnShare.onclick = () => {
           const key = namaAsli.replace(/[.#$/\[\]/]/g, '_');
           const pegawai = dataJadwal.kegiatan[key];
           if (pegawai && pegawai.length > 0) {
-            pesan += `• *${namaAsli}*\n  ${pegawai.join(', ')}\n`;
+            // 🔹 Tambahkan nomor urut di depan nama
+            const daftarNomor = pegawai
+              .map((p, i) => `${i + 1}. ${p}`)
+              .join('\n');
+            pesan += `• *${namaAsli}*\n${daftarNomor}\n\n`;
           }
         });
-        pesan += `\n`;
       });
     });
   }
