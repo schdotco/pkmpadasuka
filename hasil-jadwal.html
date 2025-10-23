@@ -133,7 +133,7 @@ const btnDelete = document.getElementById('btnDelete');
 let jadwalKey = null;
 let dataJadwal = null;
 
-// ✅ Struktur kluster & kegiatan (sudah diperbaiki)
+// Struktur lengkap sesuai jadwal.html
 const klusterData = [
   {
     judulUtama: "I. Kegiatan Dalam Gedung",
@@ -158,19 +158,18 @@ const klusterData = [
         ]
       },
       {
-        judul: "Kluster 2",
+        judul: "Klaster 2",
         kegiatan: [
           "KIA",
           "MTBS (Kesehatan Anak)",
-          "PONED",
-          "Kelas Bumil",
+          "Kelas Bumi",
           "USG",
           "Imunisasi",
           "Input ASIK"
         ]
       },
       {
-        judul: "Kluster 3",
+        judul: "Klaster 3",
         kegiatan: [
           "Penapisan",
           "Dewasa",
@@ -179,7 +178,7 @@ const klusterData = [
         ]
       },
       {
-        judul: "Kluster 4",
+        judul: "Klaster 4",
         kegiatan: [
           "TB",
           "Surveilans",
@@ -187,7 +186,7 @@ const klusterData = [
         ]
       },
       {
-        judul: "Kluster 5",
+        judul: "Klaster 5",
         kegiatan: [
           "Gigi & Mulut 1",
           "Gigi & Mulut 2",
@@ -197,7 +196,10 @@ const klusterData = [
           "Konseling Terpadu",
           "IGD Tindakan",
           "Psikolog",
-          "Cek Kesehatan Gratis"
+          "Cek Kesehatan Gratis",
+          "PONED PAGI",
+          "PONED SIANG",
+          "PONED MALAM"
         ]
       }
     ]
@@ -208,7 +210,10 @@ const klusterData = [
       {
         judul: "Kegiatan Luar",
         kegiatan: [
-          "Posyandu, PKG Sekolah, BIAS",
+          "Posyandu",
+          "PKG Sekolah",
+          "BIAS",
+          "UKM Terpadu/Pusling",
           "Rapat & Pelatihan",
           "Sakit",
           "Cuti Tahunan"
@@ -218,7 +223,7 @@ const klusterData = [
   }
 ];
 
-// 🔹 Ambil data terakhir dari Firebase
+// Ambil data terakhir dari Firebase
 const jadwalRef = query(ref(db, 'jadwal'), limitToLast(1));
 const snapshot = await get(jadwalRef);
 
@@ -232,25 +237,24 @@ snapshot.forEach(child => {
   dataJadwal = child.val();
 });
 
-// 🔹 Fungsi bantu untuk isi tabel
 function addRow(label, value) {
   const tr = document.createElement('tr');
   tr.innerHTML = `<th>${label}</th><td>${value}</td>`;
   tbody.appendChild(tr);
 }
-  
+
 function addHeaderRow(title) {
   const tr = document.createElement('tr');
   tr.innerHTML = `<th colspan="2" style="background:#e3f2fd; color:#1976d2;">${title}</th>`;
   tbody.appendChild(tr);
 }
 
-// 🔹 Info utama
+// Informasi utama
 addRow('Tanggal', dataJadwal.tanggal || '-');
 addRow('Dress Code', dataJadwal.dressCode || '-');
 addRow('Pembina', dataJadwal.pembina || '-');
 
-// 🔹 Tampilkan kegiatan per kluster
+// Tampilkan kegiatan per kluster
 if (dataJadwal.kegiatan && Object.keys(dataJadwal.kegiatan).length > 0) {
   klusterData.forEach(utama => {
     addHeaderRow(utama.judulUtama);
@@ -269,7 +273,7 @@ if (dataJadwal.kegiatan && Object.keys(dataJadwal.kegiatan).length > 0) {
   addRow('Kegiatan', '<i>Tidak ada data kegiatan.</i>');
 }
 
-// ✨ Tombol Share WhatsApp
+// Tombol Share WhatsApp
 btnShare.onclick = () => {
   let pesan = `✨ *Jadwal Pegawai - UPTD Puskesmas Padasuka* ✨\n`;
   pesan += `───────────────────────\n`;
@@ -302,7 +306,7 @@ btnShare.onclick = () => {
   window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
 };
 
-// 🗑 Tombol Hapus Jadwal
+// Tombol Hapus Jadwal
 btnDelete.onclick = async () => {
   if (!jadwalKey) {
     alert('❌ Data jadwal tidak ditemukan.');
