@@ -204,22 +204,6 @@
     let currentDate = new Date();
     let approvedCuti = [];
 
-      // 👤 Load data user saat login
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      window.location.href = "login.html";
-      return;
-    }
-    document.getElementById('profileName').value = user.displayName || "";
-    document.getElementById('profileEmail').value = user.email;
-
-    // Ambil foto profil dari database jika ada (optional)
-    const snap = await get(ref(db, 'users/' + user.uid));
-    if (snap.exists() && snap.val().photoURL) {
-      document.getElementById('profilePicPreview').src = snap.val().photoURL;
-    }
-  });
-
     // 🔹 Ambil data cuti yang sudah Disetujui
     onValue(ref(db, 'pengajuan_cuti'), (snapshot) => {
       approvedCuti = [];
