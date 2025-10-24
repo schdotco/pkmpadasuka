@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Upload Absensi - Rekap per Nama</title>
+  <style>
+    :root{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;}
+    body{margin:0;padding:24px;background:#f7fafc;color:#111}
+    .card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(20,20,40,0.06);max-width:1100px;margin:auto}
+    h1{margin:0 0 12px;font-size:20px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    label{display:block;font-size:13px;margin-bottom:6px}
+    input,select,button{padding:8px 10px;border:1px solid #dde6ef;border-radius:8px}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;border:1px solid #eef3f8;text-align:left;font-size:13px}
+    .small{font-size:12px;color:#5b6b7a}
+    pre{background:#0f1724;color:#e6f1ff;padding:12px;border-radius:8px;overflow:auto}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Upload file Excel absensi (per bulan) — output rekap per nama</h1>
+    <p class="small">Unggah file .xlsx. Script akan coba mendeteksi kolom umum: <code>Nama</code>, <code>Tanggal</code>, <code>AbsenMasuk</code>, <code>AbsenPulang</code>, <code>Shift</code>, <code>Keterangan</code>. Jika berbeda, sesuaikan di pengaturan.</p>
+
+    <div class="row" style="margin-bottom:12px">
+      <div style="flex:1 1 220px">
+        <label>File Excel (.xlsx)</label>
+        <input id="file" type="file" accept=".xlsx,.xls" />
+      </div>
+      <div style="flex:1 1 220px">
+        <label>Sheet (nama atau index mulai 0)</label>
+        <input id="sheetName" placeholder="kosong = sheet pertama" />
+      </div>
+      <div style="flex:1 1 220px">
+        <label>Kolom Nama</label>
+        <input id="colName" value="Nama" />
+      </div>
+      <div style="flex:1 1 220px">
+        <label>Kolom Tanggal</label>
+        <input id="colDate" value="Tanggal" />
+      </div>
+    </div>
+
+    <div class="row" style="margin-bottom:12px">
+      <div style="flex:1 1 180px">
+        <label>Kolom Absen Masuk</label>
+        <input id="colIn" value="AbsenMasuk" />
+      </div>
+      <div style="flex:1 1 180px">
+        <label>Kolom Absen Pulang</label>
+        <input id="colOut" value="AbsenPulang" />
+      </div>
+      <div style="flex:1 1 180px">
+        <label>Kolom Shift</label>
+        <input id="colShift" value="Shift" />
+      </div>
+      <div style="flex:1 1 180px">
+        <label>Kolom Keterangan / Code</label>
+        <input id="colCode" value="Keterangan" />
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label>Waktu shift (jika berbeda, sesuaikan) — format HH:MM</label>
+      <div class="row">
+        <div><label>Shift pagi mulai</label><input id="startMorning" value="07:30" /></div>
+        <div><label>Shift pagi selesai</label><input id="endMorning" value="14:30" /></div>
+        <div><label>Shift siang mulai</label><input id="startAfternoon" value="14:30" /></div>
+        <div><label>Shift siang selesai</label><input id="endAfternoon" value="20:30" /></div>
+        <div><label>Hitung tanggal untuk bulan (YYYY-MM)</label><input id="month" placeholder="2025-09" /></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <button id="process">Proses & Tampilkan Rekap</button>
+      <button id="downloadCsv">Download CSV hasil</button>
+      <div class="small">Kosongkan filter bulan untuk memproses semua</div>
+    </div>
+
+    <div id="output"></div>
+  </div>
+
+  <!-- SheetJS -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script>
+    // Helpers
+    function parseTime(t){ // accepts strings like '07:35', '7:35', JS Date or Excel time number
+      if(t == null || t === '') return null;
+      if(typeof t === 'number'){
+        // Excel time serial? If large, maybe datetime serial
+        // Try to convert excel serial to JS date
+        // If > 59xxx treat as Excel datetime (days since 1899-12-31)
+        try{
+          const epoch = new Date(Date.UTC(1899,11,30));
+          const jsDate = new Date(epoch.getTime() + t*24*60*60*1000);
+          return jsDate;
+        }catch(e){return null}
+      }
+      if(typeof t === 'object' && t instanceof Date) return t;
+      // try HH:MM or HH:MM:SS
+      const m = t.toString().trim().match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      if(m){
+        const d = new Date(); d.setHours(parseInt(m[1],10), parseInt(m[2],10), m[3]?parseInt(m[3],10):0,0);
+        return d;
+      }
+      // try ISO date/time
+      const dd = new Date(t);
+      if(!isNaN(dd)) return dd;
+      return null;
+    }
+
+    function minutesBetween(a,b){
+      if(!a||!b) return 0;
+      return Math.round((b.getTime()-a.getTime())/60000);
+    }
+
+    function toHM(minutes){
+      const sign = minutes<0?'-':'';
+      minutes = Math.abs(minutes);
+      const h = Math.floor(minutes/60);
+      const m = minutes%60;
+      return sign + h + 'j ' + m + 'm';
+    }
+
+    document.getElementById('process').addEventListener('click', async ()=>{
+      const f = document.getElementById('file').files[0];
+      if(!f){alert('Pilih file .xlsx terlebih dahulu');return}
+      const sheetNameInput = document.getElementById('sheetName').value.trim();
+      const colName = document.getElementById('colName').value.trim();
+      const colDate = document.getElementById('colDate').value.trim();
+      const colIn = document.getElementById('colIn').value.trim();
+      const colOut = document.getElementById('colOut').value.trim();
+      const colShift = document.getElementById('colShift').value.trim();
+      const colCode = document.getElementById('colCode').value.trim();
+      const monthFilter = document.getElementById('month').value.trim();
+
+      const startMorning = document.getElementById('startMorning').value||'07:30';
+      const endMorning = document.getElementById('endMorning').value||'14:30';
+      const startAfternoon = document.getElementById('startAfternoon').value||'14:30';
+      const endAfternoon = document.getElementById('endAfternoon').value||'20:30';
+
+      const data = await f.arrayBuffer();
+      const wb = XLSX.read(data,{type:'array'});
+      const sheetNames = wb.SheetNames;
+      const sheet = sheetNameInput? (wb.Sheets[sheetNameInput] || wb.Sheets[sheetNames[Number(sheetNameInput)]]) : wb.Sheets[sheetNames[0]];
+      if(!sheet){alert('Sheet tidak ditemukan');return}
+      const raw = XLSX.utils.sheet_to_json(sheet,{defval:''});
+      if(raw.length===0){alert('Sheet kosong');return}
+
+      // Aggregate per nama
+      const per = {}; // name -> records array
+      for(const r of raw){
+        const name = r[colName] || r['Nama'] || r['nama'] || r['Employee'] || r['Karyawan'];
+        if(!name) continue;
+        const dateRaw = r[colDate] || r['Tanggal'] || r['tanggal'] || r['Date'];
+        const dateObj = (function(){
+          if(dateRaw instanceof Date) return dateRaw;
+          if(typeof dateRaw === 'number'){
+            // excel serial
+            const epoch = new Date(Date.UTC(1899,11,30));
+            return new Date(epoch.getTime() + dateRaw*24*60*60*1000);
+          }
+          const dd = new Date(dateRaw);
+          if(!isNaN(dd)) return dd;
+          // try parsing dd/mm/yyyy
+          const m = (''+dateRaw).match(/(\d{1,2})\W(\d{1,2})\W(\d{2,4})/);
+          if(m){ return new Date(Number(m[3]),Number(m[2])-1,Number(m[1])); }
+          return null;
+        })();
+
+        if(monthFilter && dateObj){
+          const mm = dateObj.getFullYear()+'-'+String(dateObj.getMonth()+1).padStart(2,'0');
+          if(mm !== monthFilter) continue;
+        }
+
+        const inRaw = r[colIn] || r['AbsenMasuk'] || r['Masuk'] || r['CheckIn'];
+        const outRaw = r[colOut] || r['AbsenPulang'] || r['Pulang'] || r['CheckOut'];
+        const shift = r[colShift] || r['Shift'] || r['shift'] || '';
+        const code = (r[colCode] || r['Keterangan'] || r['Ket'] || r['Code'] || '').toString().trim();
+
+        const inT = parseTime(inRaw);
+        const outT = parseTime(outRaw);
+
+        if(!per[name]) per[name]=[];
+        per[name].push({date: dateObj, in: inT, out: outT, shift: shift, code: code, raw: r});
+      }
+
+      // Process metrics
+      const results = [];
+      for(const [name, recs] of Object.entries(per)){
+        // sort by date
+        recs.sort((a,b)=>{ if(!a.date||!b.date) return 0; return a.date - b.date});
+
+        let akLateMin=0, akEarlyMin=0; // minutes
+        let sickCount=0, sickMore3=0;
+        let daysWork=0; let lateDays=0; let lateTimes=0;
+        let dlLess3=0, dlMore3=0; // DL = cuti? treat code 'DL' or 'DL ' occurrences
+        let cap=0, ct=0, cm=0, gl=0, ctb=0;
+        const shiftCounts = {LM:0,M:0,S:0,P:0,OFF:0,OTHER:0};
+        let presentDays=0;
+
+        // To detect sick sequences
+        let currentSickSeq=0;
+
+        for(const r of recs){
+          const code = (r.code||'').toString().toUpperCase();
+          // codes mapping - common codes: 'S' or 'SAKIT', 'DL' (cuti), 'CAP','CT','CM','GL','CTB'
+          if(code.includes('S') || code.includes('SAKIT')){
+            sickCount +=1; currentSickSeq +=1;
+          } else { if(currentSickSeq>0){ if(currentSickSeq>3) sickMore3 += currentSickSeq; currentSickSeq=0 } }
+
+          if(code.includes('DL')){
+            // try get duration if there's number in code like DL(2)
+            const m = code.match(/DL[^0-9]*(\d+)/);
+            if(m){ const d = Number(m[1]); if(d>3) dlMore3+=1; else dlLess3+=1; }
+            else {
+              // unknown: count as DL less 3 by default
+              dlLess3+=1;
+            }
+          }
+
+          if(code.includes('CAP')) cap+=1;
+          if(code.includes('CT')) ct+=1;
+          if(code.includes('CM')) cm+=1;
+          if(code.includes('GL')) gl+=1;
+          if(code.includes('CTB')) ctb+=1;
+
+          // shifts
+          const sh = (r.shift||'').toString().toUpperCase();
+          if(sh in shiftCounts) shiftCounts[sh]+=1; else if(sh) shiftCounts.OTHER+=1;
+
+          // presence: define present if has in and out times
+          const present = !!(r.in && r.out);
+          if(present) { daysWork+=1; presentDays+=1 }
+
+          // Late: compare in time to shift expected
+          // determine expected start
+          let expectedStart = null, expectedEnd=null;
+          // Basic heuristic: if shift contains 'M' or 'P' or 'LM' etc
+          if(sh.includes('LM') || sh.includes('L')){ expectedStart = parseTime(document.getElementById('startMorning').value||'07:30'); expectedEnd = parseTime(document.getElementById('endMorning').value||'14:30'); }
+          else if(sh.includes('M') && !sh.includes('LM')){ expectedStart = parseTime(document.getElementById('startMorning').value||'07:30'); expectedEnd = parseTime(document.getElementById('endMorning').value||'14:30'); }
+          else if(sh.includes('S') || sh.includes('SIANG')){ expectedStart = parseTime(document.getElementById('startAfternoon').value||'14:30'); expectedEnd = parseTime(document.getElementById('endAfternoon').value||'20:30'); }
+          else if(sh.includes('P') || sh.includes('PM') || sh.includes('PETANG')){ expectedStart = parseTime(document.getElementById('startAfternoon').value||'14:30'); expectedEnd = parseTime(document.getElementById('endAfternoon').value||'20:30'); }
+          else {
+            // fallback: treat expected start as morning
+            expectedStart = parseTime(document.getElementById('startMorning').value||'07:30'); expectedEnd = parseTime(document.getElementById('endMorning').value||'14:30');
+          }
+
+          if(r.in && expectedStart){
+            // align date hours: set expectedStart date to record date
+            if(r.date){ expectedStart.setFullYear(r.date.getFullYear(), r.date.getMonth(), r.date.getDate()); expectedEnd.setFullYear(r.date.getFullYear(), r.date.getMonth(), r.date.getDate()); }
+            // if in > expectedStart => late
+            const lateMin = minutesBetween(expectedStart, r.in);
+            if(lateMin>0){ akLateMin += lateMin; lateDays +=1; lateTimes +=1 }
+            // early leave: expectedEnd > out
+            if(r.out){ const earlyMin = minutesBetween(r.out, expectedEnd); if(earlyMin>0){ akEarlyMin += earlyMin } }
+          }
+        }
+        // check end of sick sequence
+        if(currentSickSeq>0 && currentSickSeq>3) sickMore3 += currentSickSeq;
+
+        // compute percent attendance: presentDays / total working days in dataset for this employee
+        // total working days = records length excluding OFF codes
+        const totalDays = recs.filter(r=>{ const c=(r.code||'').toString().toUpperCase(); return !c.includes('OFF') }).length || recs.length;
+        const percent = totalDays? Math.round((presentDays/totalDays)*10000)/100 : 0;
+
+        results.push({
+          Nama: name,
+          'AkumulasiTerlambat_jam_min': toHM(akLateMin),
+          'AkumulasiTerlambat_menit': akLateMin,
+          'AkumulasiPulangCepat_jam_min': toHM(akEarlyMin),
+          'AkumulasiSakit_hari': sickCount,
+          'AkumulasiSakitLebih3_hari_total': sickMore3,
+          'AkumulasiHariKerja': daysWork,
+          'JumlahTelat_sebulan_hari': lateDays,
+          'JumlahTelat_sebulan_jam_min': toHM(akLateMin),
+          'AkumulasiDLLess3': dlLess3,
+          'AkumulasiDLMore3': dlMore3,
+          'AkumulasiCAP': cap,
+          'AkumulasiCT': ct,
+          'AkumulasiCM': cm,
+          'AkumulasiGL': gl,
+          'AkumulasiCTB': ctb,
+          'ShiftCounts': JSON.stringify(shiftCounts),
+          'TotalHariRecords': totalDays,
+          'PercentKehadiran': percent + '%',
+          'LateOccurences': lateTimes
+        })
+      }
+
+      // render table
+      const out = document.getElementById('output'); out.innerHTML='';
+      const table = document.createElement('table');
+      const hdr = document.createElement('tr');
+      const keys = ['Nama','AkumulasiTerlambat_jam_min','AkumulasiPulangCepat_jam_min','AkumulasiSakit_hari','AkumulasiSakitLebih3_hari_total','AkumulasiHariKerja','JumlahTelat_sebulan_hari','JumlahTelat_sebulan_jam_min','AkumulasiDLLess3','AkumulasiDLMore3','AkumulasiCAP','AkumulasiCT','AkumulasiCM','AkumulasiGL','AkumulasiCTB','ShiftCounts','TotalHariRecords','PercentKehadiran','LateOccurences'];
+      for(const k of keys){ const th=document.createElement('th'); th.textContent=k; hdr.appendChild(th);} table.appendChild(hdr);
+      for(const r of results){ const tr=document.createElement('tr'); for(const k of keys){ const td=document.createElement('td'); td.textContent = r[k]!==undefined? r[k] : ''; tr.appendChild(td);} table.appendChild(tr); }
+      out.appendChild(table);
+
+      // make CSV downloadable
+      window._lastCsv = results;
+      alert('Selesai memproses. Tabel tampil di bawah. Klik Download CSV jika mau simpan.');
+    });
+
+    document.getElementById('downloadCsv').addEventListener('click', ()=>{
+      const arr = window._lastCsv || [];
+      if(!arr.length){ alert('Tidak ada hasil. Proses file terlebih dahulu.'); return }
+      const keys = Object.keys(arr[0]);
+      const lines = [keys.join(',')];
+      for(const r of arr){ lines.push(keys.map(k=>('"'+(r[k]===null||r[k]===undefined?'':(''+r[k]).replace(/"/g,'""'))+'"')).join(',')); }
+      const blob = new Blob([lines.join('\n')],{type:'text/csv'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rekap_absensi.csv'; a.click();
+    });
+  </script>
+
+</body>
+</html>
