@@ -84,10 +84,10 @@
     <div id="statusMsg" class="text-center text-gray-600 mt-4"></div>
   </div>
 
-  <!-- 🔥 Firebase + Dropdown Logic -->
+  <!-- 🔥 Firebase + Dropdown + Simpan Rekap -->
   <script type="module">
     import { db } from './app.js';
-    import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+    import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
     const jenisPegawai = document.getElementById('jenisPegawai');
     const comboInput = document.getElementById('comboInput');
@@ -100,7 +100,7 @@
     let filteredPegawai = [];
     let selectedPegawai = null;
 
-    // ✅ Ambil data pegawai dari Firebase (versi aman)
+    // ✅ Ambil data pegawai dari Firebase
     const pegawaiRef = ref(db, 'Pegawai');
     onValue(pegawaiRef, snapshot => {
       semuaPegawai = [];
@@ -115,7 +115,6 @@
         }
       });
 
-      console.log("📦 Data pegawai dari Firebase:", semuaPegawai); // Debug di console browser
       filteredPegawai = semuaPegawai;
       renderDropdown();
     });
@@ -161,14 +160,54 @@
       if (!e.target.closest('.combo-box')) comboList.style.display = 'none';
     });
 
-    // 📤 Upload file
-    uploadBtn.addEventListener('click', () => {
+    // 📤 Upload file + Simpan hasil ke Firebase
+    uploadBtn.addEventListener('click', async () => {
       const jenis = jenisPegawai.value;
       const file = fileUpload.files[0];
+
       if (!jenis) return statusMsg.textContent = "⚠️ Pilih jenis pegawai!";
       if (!selectedPegawai) return statusMsg.textContent = "⚠️ Pilih nama pegawai!";
       if (!file) return statusMsg.textContent = "⚠️ Pilih file rekap absensi!";
+
       statusMsg.textContent = `📤 File "${file.name}" sedang diproses untuk ${selectedPegawai} (${jenis})...`;
+
+      try {
+        // 🔹 Simulasi hasil olahan absensi
+        const hasilRekap = {
+          namaPegawai: selectedPegawai,
+          jenisPegawai: jenis,
+          ak_terlambat: 5,
+          ak_pulangCepat: 2,
+          ak_sakit: 1,
+          ak_sakit3hari: 0,
+          ak_hariKerja: 22,
+          telat_hari_jam: "2 hari 3 jam",
+          dl_kurang3: 1,
+          dl_lebih3: 0,
+          ak_CAP: 1,
+          ak_CT: 0,
+          ak_CM: 0,
+          ak_GL: 0,
+          ak_CTB: 0,
+          shift: "M:8, S:6, P:4, OFF:2",
+          persenKehadiran: "96%"
+        };
+
+        // 🔥 Simpan ke Firebase
+        const rekapRef = ref(db, 'RekapAbsensi');
+        await set(push(rekapRef), hasilRekap);
+
+        statusMsg.textContent = "✅ Data absensi berhasil disimpan ke database!";
+        statusMsg.classList.add("text-green-600");
+
+        // Opsional: arahkan ke hasil-absensi.html
+        // window.location.href = "hasil-absensi.html";
+
+      } catch (error) {
+        console.error("❌ Gagal menyimpan ke Firebase:", error);
+        statusMsg.textContent = "❌ Terjadi kesalahan saat menyimpan data.";
+        statusMsg.classList.add("text-red-600");
+      }
     });
   </script>
 </body>
