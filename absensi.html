@@ -84,7 +84,7 @@
     <div id="statusMsg" class="text-center text-gray-600 mt-4"></div>
   </div>
 
-  <!-- 🔥 Firebase + Pegawai Dropdown -->
+  <!-- 🔥 Firebase + Dropdown Logic -->
   <script type="module">
     import { db } from './app.js';
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
@@ -100,11 +100,22 @@
     let filteredPegawai = [];
     let selectedPegawai = null;
 
-    // ✅ Ambil data pegawai dari Firebase
+    // ✅ Ambil data pegawai dari Firebase (versi aman)
     const pegawaiRef = ref(db, 'Pegawai');
     onValue(pegawaiRef, snapshot => {
       semuaPegawai = [];
-      snapshot.forEach(child => semuaPegawai.push({ id: child.key, ...child.val() }));
+      snapshot.forEach(child => {
+        const data = child.val();
+        if (data && data.nama) {
+          semuaPegawai.push({
+            id: child.key,
+            nama: data.nama,
+            gelar: data.gelar || ''
+          });
+        }
+      });
+
+      console.log("📦 Data pegawai dari Firebase:", semuaPegawai); // Debug di console browser
       filteredPegawai = semuaPegawai;
       renderDropdown();
     });
@@ -113,7 +124,7 @@
     comboInput.addEventListener('input', () => {
       const keyword = comboInput.value.toLowerCase();
       filteredPegawai = semuaPegawai.filter(p =>
-        p.nama.toLowerCase().includes(keyword) ||
+        (p.nama && p.nama.toLowerCase().includes(keyword)) ||
         (p.gelar && p.gelar.toLowerCase().includes(keyword))
       );
       renderDropdown();
