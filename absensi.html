@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dropdown Searchable Pegawai</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Rekapan Absensi Pegawai</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* styling custom dropdown combobox */
+    /* 🌟 Gaya Dropdown seperti di jadwal.html */
     .combo-box {
       position: relative;
       width: 100%;
@@ -15,64 +15,104 @@
       width: 100%;
       padding: 0.75rem 1rem;
       border: 1px solid #ccc;
-      border-radius: 0.375rem;
+      border-radius: 0.5rem;
+      outline: none;
       cursor: pointer;
+      transition: all 0.2s;
+    }
+    .combo-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
     }
     .combo-list {
       position: absolute;
       top: 100%;
       left: 0;
       right: 0;
-      background-color: white;
-      border: 1px solid #ccc;
+      background: white;
+      border: 1px solid #ddd;
       border-top: none;
-      max-height: 200px;
+      border-radius: 0 0 0.5rem 0.5rem;
+      max-height: 240px;
       overflow-y: auto;
-      z-index: 10;
+      z-index: 50;
       display: none;
+      animation: fadeIn 0.15s ease-in-out;
     }
     .combo-item {
       padding: 0.5rem 1rem;
       cursor: pointer;
+      transition: background 0.15s;
     }
     .combo-item:hover {
-      background-color: #f3f4f6;
+      background: #f3f4f6;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
-  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-    <h2 class="text-xl font-semibold mb-4">Pilih Nama Pegawai</h2>
+  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-3xl">
+    <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">
+      Upload Rekapan Absensi Pegawai
+    </h1>
 
-    <div class="combo-box">
-      <input type="text" id="comboInput" class="combo-input" placeholder="Cari atau pilih nama pegawai…">
+    <!-- Jenis Pegawai -->
+    <div class="mb-5">
+      <label class="block text-gray-700 font-medium mb-2">Jenis Pegawai</label>
+      <select id="jenisPegawai" class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
+        <option value="">-- Pilih Jenis Pegawai --</option>
+        <option value="BLUD">BLUD</option>
+        <option value="ASN">ASN</option>
+      </select>
+    </div>
+
+    <!-- Dropdown Nama Pegawai -->
+    <div class="mb-5 combo-box">
+      <label class="block text-gray-700 font-medium mb-2">Nama Pegawai</label>
+      <input id="comboInput" type="text" placeholder="Cari atau pilih pegawai..." class="combo-input">
       <div id="comboList" class="combo-list"></div>
     </div>
 
-    <div class="mt-4">
-      <button id="btnSelect" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Pilih</button>
+    <!-- Upload File -->
+    <div class="mb-6">
+      <label class="block text-gray-700 font-medium mb-2">Upload File Rekap Absensi (PDF/Excel)</label>
+      <input id="fileUpload" type="file" accept=".pdf,.xls,.xlsx"
+             class="w-full p-3 border rounded-lg cursor-pointer focus:ring focus:ring-blue-300">
     </div>
 
-    <div id="selectedPegawai" class="mt-4 text-gray-700"></div>
+    <!-- Tombol Upload -->
+    <button id="uploadBtn"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
+      Upload & Proses Data
+    </button>
+
+    <!-- Status -->
+    <div id="statusMsg" class="text-center text-gray-600 mt-4"></div>
   </div>
 
+  <!-- 🔥 Script Firebase + Dropdown Logic -->
   <script type="module">
     import { db } from './app.js';
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
+    const jenisPegawai = document.getElementById('jenisPegawai');
     const comboInput = document.getElementById('comboInput');
     const comboList = document.getElementById('comboList');
-    const btnSelect = document.getElementById('btnSelect');
-    const selectedPegawaiDiv = document.getElementById('selectedPegawai');
+    const fileUpload = document.getElementById('fileUpload');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusMsg = document.getElementById('statusMsg');
 
     let semuaPegawai = [];
     let filteredPegawai = [];
     let selectedPegawai = null;
 
-    // Ambil data pegawai
-    const pegawaiRef = ref(db, 'Pegawai');
-    onValue(pegawaiRef, snapshot => {
+    // 🔹 Ambil data pegawai dari Firebase
+    const dataRef = ref(db, 'Pegawai');
+    onValue(dataRef, (snapshot) => {
       semuaPegawai = [];
       snapshot.forEach(child => {
         semuaPegawai.push({ id: child.key, ...child.val() });
@@ -81,50 +121,60 @@
       renderList();
     });
 
-    // Render daftar dropdown
+    // 🔍 Ketik untuk mencari
+    comboInput.addEventListener('input', () => {
+      const kw = comboInput.value.toLowerCase();
+      filteredPegawai = semuaPegawai.filter(p =>
+        p.nama.toLowerCase().includes(kw) ||
+        (p.gelar && p.gelar.toLowerCase().includes(kw))
+      );
+      renderList();
+      comboList.style.display = kw ? 'block' : 'none';
+    });
+
+    // 🧾 Render dropdown
     function renderList() {
       comboList.innerHTML = '';
+      if (filteredPegawai.length === 0) {
+        comboList.innerHTML = `<p class="text-gray-500 text-center py-2">Tidak ada pegawai ditemukan</p>`;
+        return;
+      }
       filteredPegawai.forEach(p => {
         const div = document.createElement('div');
         div.className = 'combo-item';
-        div.textContent = p.nama + (p.gelar ? ` ${p.gelar}` : '');
-        div.dataset.id = p.id;
+        div.textContent = `${p.nama}${p.gelar ? ' ' + p.gelar : ''}`;
         div.dataset.nama = p.nama;
-        comboList.append(div);
-
-        div.addEventListener('click', () => {
-          selectedPegawai = p;
-          comboInput.value = p.nama + (p.gelar ? ` ${p.gelar}` : '');
-          comboList.style.display = 'none';
-        });
+        comboList.appendChild(div);
       });
     }
 
-    // Event input search
-    comboInput.addEventListener('input', () => {
-      const kw = comboInput.value.toLowerCase();
-      filteredPegawai = semuaPegawai.filter(p => {
-        const full = p.nama.toLowerCase() + (p.gelar ? ` ${p.gelar.toLowerCase()}` : '');
-        return full.includes(kw);
-      });
-      renderList();
-      comboList.style.display = 'block';
+    // ⬇️ Pilih pegawai
+    comboList.addEventListener('click', (e) => {
+      if (e.target.classList.contains('combo-item')) {
+        const nama = e.target.dataset.nama;
+        selectedPegawai = nama;
+        comboInput.value = nama;
+        comboList.style.display = 'none';
+      }
     });
 
-    // Klik di luar untuk menutup
+    // ⬆️ Tutup dropdown jika klik di luar
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.combo-box')) {
         comboList.style.display = 'none';
       }
     });
 
-    // Tombol “Pilih”
-    btnSelect.addEventListener('click', () => {
-      if (selectedPegawai) {
-        selectedPegawaiDiv.textContent = `Pegawai terpilih: ${selectedPegawai.nama}` + (selectedPegawai.gelar ? ` ${selectedPegawai.gelar}` : '');
-      } else {
-        selectedPegawaiDiv.textContent = `⚠️ Belum memilih pegawai`;
-      }
+    // 📤 Upload file
+    uploadBtn.addEventListener('click', () => {
+      const jenis = jenisPegawai.value;
+      const file = fileUpload.files[0];
+      if (!jenis) return statusMsg.textContent = "⚠️ Pilih jenis pegawai!";
+      if (!selectedPegawai) return statusMsg.textContent = "⚠️ Pilih nama pegawai!";
+      if (!file) return statusMsg.textContent = "⚠️ Pilih file rekap absensi!";
+
+      statusMsg.textContent = `📤 File "${file.name}" sedang diproses untuk ${selectedPegawai} (${jenis})...`;
+      // TODO: proses upload ke backend
     });
   </script>
 
