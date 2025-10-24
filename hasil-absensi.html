@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil Rekapan Absensi Pegawai</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-8">
+    <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">
+      Hasil Rekapan Absensi Pegawai
+    </h1>
+
+    <!-- Tombol kembali -->
+    <div class="mb-4">
+      <a href="absensi.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+        ← Kembali ke Upload Absensi
+      </a>
+    </div>
+
+    <!-- Tabel hasil -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-300 text-sm text-center">
+        <thead class="bg-blue-600 text-white">
+          <tr>
+            <th class="border p-2">No</th>
+            <th class="border p-2">Nama Pegawai</th>
+            <th class="border p-2">1. Akumulasi Terlambat<br>per Bulan</th>
+            <th class="border p-2">2. Akumulasi Pulang Cepat</th>
+            <th class="border p-2">3. Akumulasi Sakit</th>
+            <th class="border p-2">4. Akumulasi Sakit<br>Lebih dari 3 Hari</th>
+            <th class="border p-2">5. Akumulasi Hari Kerja</th>
+            <th class="border p-2">6. Jumlah Telat Sebulan<br>(hari & jam)</th>
+            <th class="border p-2">7. Akumulasi DL<br>< 3 Hari</th>
+            <th class="border p-2">8. Akumulasi DL<br>> 3 Hari</th>
+            <th class="border p-2">9. Akumulasi CAP</th>
+            <th class="border p-2">10. Akumulasi CT</th>
+            <th class="border p-2">11. Akumulasi CM</th>
+            <th class="border p-2">12. Akumulasi GL</th>
+            <th class="border p-2">13. Akumulasi CTB</th>
+            <th class="border p-2">14. Untuk 3 Shift<br>(LM, M, S, P, OFF, Total)</th>
+            <th class="border p-2">15. Persen Kehadiran</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="17" class="p-4 text-gray-500">Memuat data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 🔥 Firebase -->
+  <script type="module">
+    import { db } from './app.js';
+    import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+    const tableBody = document.getElementById('tableBody');
+
+    // 📦 Ambil data hasil rekap dari Firebase
+    const rekapRef = ref(db, 'RekapAbsensi');
+    onValue(rekapRef, snapshot => {
+      const data = [];
+      snapshot.forEach(child => data.push({ id: child.key, ...child.val() }));
+      renderTable(data);
+    });
+
+    // 🧾 Tampilkan tabel
+    function renderTable(data) {
+      tableBody.innerHTML = '';
+      if (data.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="17" class="p-4 text-gray-500">Belum ada data hasil absensi.</td></tr>`;
+        return;
+      }
+
+      let no = 1;
+      data.forEach(d => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="border p-2">${no++}</td>
+          <td class="border p-2">${d.namaPegawai || '-'}</td>
+          <td class="border p-2">${d.ak_terlambat || '-'}</td>
+          <td class="border p-2">${d.ak_pulangCepat || '-'}</td>
+          <td class="border p-2">${d.ak_sakit || '-'}</td>
+          <td class="border p-2">${d.ak_sakit3hari || '-'}</td>
+          <td class="border p-2">${d.ak_hariKerja || '-'}</td>
+          <td class="border p-2">${d.telat_hari_jam || '-'}</td>
+          <td class="border p-2">${d.dl_kurang3 || '-'}</td>
+          <td class="border p-2">${d.dl_lebih3 || '-'}</td>
+          <td class="border p-2">${d.ak_CAP || '-'}</td>
+          <td class="border p-2">${d.ak_CT || '-'}</td>
+          <td class="border p-2">${d.ak_CM || '-'}</td>
+          <td class="border p-2">${d.ak_GL || '-'}</td>
+          <td class="border p-2">${d.ak_CTB || '-'}</td>
+          <td class="border p-2">${d.shift || '-'}</td>
+          <td class="border p-2">${d.persenKehadiran || '-'}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>
