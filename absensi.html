@@ -171,28 +171,6 @@
 
       statusMsg.textContent = `📤 File "${file.name}" sedang diproses untuk ${selectedPegawai} (${jenis})...`;
 
-      try {
-        // 🔹 Simulasi hasil olahan absensi
-        const hasilRekap = {
-          namaPegawai: selectedPegawai,
-          jenisPegawai: jenis,
-          ak_terlambat: 5,
-          ak_pulangCepat: 2,
-          ak_sakit: 1,
-          ak_sakit3hari: 0,
-          ak_hariKerja: 22,
-          telat_hari_jam: "2 hari 3 jam",
-          dl_kurang3: 1,
-          dl_lebih3: 0,
-          ak_CAP: 1,
-          ak_CT: 0,
-          ak_CM: 0,
-          ak_GL: 0,
-          ak_CTB: 0,
-          shift: "M:8, S:6, P:4, OFF:2",
-          persenKehadiran: "96%"
-        };
-
         // 🔥 Simpan ke Firebase
         const rekapRef = ref(db, 'RekapAbsensi');
         await set(push(rekapRef), hasilRekap);
