@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload Rekapan Absensi Pegawai</title>
+  <title>Upload Rekapan Absensi</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
-  <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg">
+  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-3xl">
     <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">
       Upload Rekapan Absensi Pegawai
     </h1>
 
-    <!-- Jenis Pegawai -->
-    <div class="mb-4">
-      <label for="jenisPegawai" class="block text-gray-700 font-medium mb-2">Jenis Pegawai</label>
+    <!-- Pilihan Jenis Pegawai -->
+    <div class="mb-5">
+      <label class="block text-gray-700 font-medium mb-2">Jenis Pegawai</label>
       <select id="jenisPegawai" class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
         <option value="">-- Pilih Jenis Pegawai --</option>
         <option value="BLUD">BLUD</option>
@@ -23,16 +23,21 @@
       </select>
     </div>
 
-    <!-- Nama Pegawai -->
-    <div class="mb-4">
-      <label for="namaPegawai" class="block text-gray-700 font-medium mb-2">Nama Pegawai</label>
-      <input id="namaPegawai" type="text" placeholder="Masukkan Nama Pegawai"
-             class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
+    <!-- Pencarian & Daftar Pegawai -->
+    <div class="mb-5">
+      <label class="block text-gray-700 font-medium mb-2">Pilih Pegawai</label>
+      <input id="searchPegawai" type="text" placeholder="Cari nama pegawai..."
+             class="w-full p-3 mb-3 border rounded-lg focus:ring focus:ring-blue-300">
+
+      <div id="listPegawai"
+           class="max-h-56 overflow-y-auto border rounded-lg p-3 bg-gray-50">
+        <p class="text-gray-500 text-center">Memuat data pegawai...</p>
+      </div>
     </div>
 
     <!-- Upload File -->
     <div class="mb-6">
-      <label for="fileUpload" class="block text-gray-700 font-medium mb-2">Upload File Rekap Absensi (PDF/Excel)</label>
+      <label class="block text-gray-700 font-medium mb-2">Upload File Rekap Absensi (PDF/Excel)</label>
       <input id="fileUpload" type="file" accept=".pdf,.xls,.xlsx"
              class="w-full p-3 border rounded-lg cursor-pointer focus:ring focus:ring-blue-300">
     </div>
@@ -47,19 +52,78 @@
     <div id="statusMsg" class="text-center text-gray-600 mt-4"></div>
   </div>
 
-  <script>
-    document.getElementById("uploadBtn").addEventListener("click", function () {
-      const jenis = document.getElementById("jenisPegawai").value;
-      const nama = document.getElementById("namaPegawai").value;
-      const file = document.getElementById("fileUpload").files[0];
+  <!-- Script Firebase & Pegawai.js -->
+  <script type="module">
+    import { db } from './app.js';
+    import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
-      if (!jenis || !nama || !file) {
-        document.getElementById("statusMsg").textContent = "⚠️ Lengkapi semua field terlebih dahulu!";
+    const listPegawai = document.getElementById('listPegawai');
+    const searchPegawai = document.getElementById('searchPegawai');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusMsg = document.getElementById('statusMsg');
+    const fileUpload = document.getElementById('fileUpload');
+    const jenisPegawai = document.getElementById('jenisPegawai');
+
+    let semuaPegawai = [];
+    let filteredPegawai = [];
+
+    // 🔹 Ambil Data Pegawai Realtime dari Firebase
+    const dataRef = ref(db, 'Pegawai');
+    onValue(dataRef, (snapshot) => {
+      semuaPegawai = [];
+      snapshot.forEach(child => {
+        semuaPegawai.push({
+          id: child.key,
+          ...child.val()
+        });
+      });
+      filteredPegawai = semuaPegawai;
+      renderPegawai();
+    });
+
+    // 🔍 Fitur Pencarian
+    searchPegawai.addEventListener('input', () => {
+      const keyword = searchPegawai.value.toLowerCase();
+      filteredPegawai = semuaPegawai.filter(p =>
+        p.nama.toLowerCase().includes(keyword) ||
+        (p.gelar && p.gelar.toLowerCase().includes(keyword))
+      );
+      renderPegawai();
+    });
+
+    // 🧾 Render Daftar Pegawai dengan Checkbox
+    function renderPegawai() {
+      listPegawai.innerHTML = '';
+      if (filteredPegawai.length === 0) {
+        listPegawai.innerHTML = '<p class="text-gray-500 text-center py-2">Tidak ada pegawai ditemukan.</p>';
         return;
       }
 
-      document.getElementById("statusMsg").textContent = `📤 File "${file.name}" sedang diproses untuk ${nama} (${jenis})...`;
-      // Tahap selanjutnya: kirim file ke backend untuk parsing & analisis
+      filteredPegawai.forEach(p => {
+        const item = document.createElement('label');
+        item.className = "flex items-center space-x-3 py-2 px-3 hover:bg-gray-100 rounded-lg cursor-pointer";
+        item.innerHTML = `
+          <input type="checkbox" class="pegawaiCheckbox" value="${p.id}" data-nama="${p.nama}">
+          <span>${p.nama} ${p.gelar ? p.gelar : ''}</span>
+        `;
+        listPegawai.appendChild(item);
+      });
+    }
+
+    // 📤 Tombol Upload
+    uploadBtn.addEventListener('click', () => {
+      const jenis = jenisPegawai.value;
+      const file = fileUpload.files[0];
+      const selected = Array.from(document.querySelectorAll('.pegawaiCheckbox:checked'));
+
+      if (!jenis) return statusMsg.textContent = "⚠️ Pilih jenis pegawai!";
+      if (selected.length === 0) return statusMsg.textContent = "⚠️ Pilih minimal satu pegawai!";
+      if (!file) return statusMsg.textContent = "⚠️ Pilih file rekap absensi!";
+
+      const namaList = selected.map(cb => cb.dataset.nama).join(', ');
+      statusMsg.textContent = `📤 File "${file.name}" sedang diproses untuk ${namaList} (${jenis})...`;
+
+      // TODO: kirim file & data pegawai ke backend untuk analisis absensi
     });
   </script>
 
