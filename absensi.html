@@ -131,18 +131,26 @@
     let filteredPegawai = [];
     let selectedPegawai = null;
 
-    // Ambil data pegawai
+    // 🔹 Ambil data pegawai langsung dari node "Pegawai"
     jenisPegawai.addEventListener('change', () => {
       const jenis = jenisPegawai.value;
-      if (!jenis) return;
       comboInput.value = "";
       comboList.innerHTML = `<p class='text-gray-500 text-center py-2'>Memuat data pegawai...</p>`;
-      const pegawaiRef = ref(db, `Pegawai/${jenis}`);
+      const pegawaiRef = ref(db, 'Pegawai');
       onValue(pegawaiRef, snapshot => {
         semuaPegawai = [];
         snapshot.forEach(child => {
           const data = child.val();
-          if (data && data.nama) semuaPegawai.push({ id: child.key, nama: data.nama, jabatan: data.jabatan || '' });
+          if (data && data.nama) {
+            // Jika ada field jenisPegawai, filter sesuai dropdown
+            if (!jenis || data.jenisPegawai === jenis) {
+              semuaPegawai.push({
+                id: child.key,
+                nama: data.nama,
+                jabatan: data.jabatan || ''
+              });
+            }
+          }
         });
         semuaPegawai.sort((a,b)=>a.nama.localeCompare(b.nama));
         filteredPegawai = semuaPegawai;
@@ -150,6 +158,7 @@
       });
     });
 
+    // 🔍 Live search nama pegawai
     comboInput.addEventListener('input', () => {
       const keyword = comboInput.value.toLowerCase();
       filteredPegawai = semuaPegawai.filter(p => p.nama.toLowerCase().includes(keyword));
@@ -222,7 +231,6 @@
         await set(push(ref(db, 'RekapAbsensi')), hasil);
         statusMsg.textContent = "✅ Data berhasil disimpan!";
         statusMsg.classList.add("text-green-600");
-        // reset form
         document.querySelectorAll('input').forEach(i => i.value = '');
         jenisPegawai.value = '';
         selectedPegawai = null;
