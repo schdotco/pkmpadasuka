@@ -52,16 +52,6 @@
       Input Hasil Rekapan Absensi Pegawai
     </h1>
 
-    <!-- Jenis Pegawai -->
-    <div class="mb-5">
-      <label class="block text-gray-700 font-medium mb-2">Jenis Pegawai</label>
-      <select id="jenisPegawai" class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
-        <option value="">-- Pilih Jenis Pegawai --</option>
-        <option value="BLUD">BLUD</option>
-        <option value="ASN">ASN</option>
-      </select>
-    </div>
-
     <!-- Nama Pegawai -->
     <div class="mb-5 combo-box">
       <label class="block text-gray-700 font-medium mb-2">Nama Pegawai</label>
@@ -101,7 +91,6 @@
     <div id="statusMsg" class="text-center text-gray-600 mt-4"></div>
   </div>
 
-  <!-- 🔥 Firebase -->
   <script type="module">
     import { db } from './js/app.js';
     import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
@@ -115,93 +104,86 @@
       }
     });
 
-    const jenisPegawai = document.getElementById('jenisPegawai');
     const comboInput = document.getElementById('comboInput');
     const comboList = document.getElementById('comboList');
     const statusMsg = document.getElementById('statusMsg');
     const saveBtn = document.getElementById('saveBtn');
-
+    const bulanRekap = document.getElementById('bulanRekap');
     const ak_sakit = document.getElementById('ak_sakit');
     const ak_sakit3hari = document.getElementById('ak_sakit3hari');
     const dl_kurang3 = document.getElementById('dl_kurang3');
     const dl_lebih3 = document.getElementById('dl_lebih3');
-    const bulanRekap = document.getElementById('bulanRekap');
 
     let semuaPegawai = [];
     let filteredPegawai = [];
     let selectedPegawai = null;
 
-    // 🔹 Ambil data pegawai langsung dari node "Pegawai"
-    jenisPegawai.addEventListener('change', () => {
-      const jenis = jenisPegawai.value;
-      comboInput.value = "";
-      comboList.innerHTML = `<p class='text-gray-500 text-center py-2'>Memuat data pegawai...</p>`;
-      const pegawaiRef = ref(db, 'Pegawai');
-      onValue(pegawaiRef, snapshot => {
-        semuaPegawai = [];
-        snapshot.forEach(child => {
-          const data = child.val();
-          if (data && data.nama) {
-            // Jika ada field jenisPegawai, filter sesuai dropdown
-            if (!jenis || data.jenisPegawai === jenis) {
-              semuaPegawai.push({
-                id: child.key,
-                nama: data.nama,
-                jabatan: data.jabatan || ''
-              });
-            }
-          }
-        });
-        semuaPegawai.sort((a,b)=>a.nama.localeCompare(b.nama));
-        filteredPegawai = semuaPegawai;
-        renderDropdown();
+    // 🔹 Ambil semua pegawai langsung dari node "Pegawai"
+    const pegawaiRef = ref(db, 'Pegawai');
+    onValue(pegawaiRef, snapshot => {
+      semuaPegawai = [];
+      snapshot.forEach(child => {
+        const data = child.val();
+        if (data && data.nama) {
+          semuaPegawai.push({
+            id: child.key,
+            nama: data.nama,
+            gelar: data.gelar || ''
+          });
+        }
       });
+      semuaPegawai.sort((a, b) => a.nama.localeCompare(b.nama));
+      filteredPegawai = semuaPegawai;
+      renderDropdown();
     });
 
-    // 🔍 Live search nama pegawai
     comboInput.addEventListener('input', () => {
       const keyword = comboInput.value.toLowerCase();
-      filteredPegawai = semuaPegawai.filter(p => p.nama.toLowerCase().includes(keyword));
+      filteredPegawai = semuaPegawai.filter(p =>
+        p.nama.toLowerCase().includes(keyword) ||
+        (p.gelar && p.gelar.toLowerCase().includes(keyword))
+      );
       renderDropdown();
       comboList.style.display = keyword ? 'block' : 'none';
     });
 
-    function renderDropdown(){
+    function renderDropdown() {
       comboList.innerHTML = '';
-      if (filteredPegawai.length === 0){
-        comboList.innerHTML = `<p class='text-gray-500 text-center py-2'>Tidak ada pegawai ditemukan</p>`;
+      if (filteredPegawai.length === 0) {
+        comboList.innerHTML = `<p class="text-gray-500 text-center py-2">Tidak ada pegawai ditemukan</p>`;
         return;
       }
-      filteredPegawai.forEach(p=>{
-        const item=document.createElement('div');
-        item.className='combo-item';
-        item.innerHTML=`<div><span class='font-medium'>${p.nama}</span><br><span class='text-sm text-gray-500'>${p.jabatan}</span></div>`;
-        item.dataset.nama=p.nama;
+      filteredPegawai.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'combo-item';
+        item.innerHTML = `
+          <div>
+            <span class="font-medium">${p.nama}${p.gelar ? ' ' + p.gelar : ''}</span>
+          </div>`;
+        item.dataset.nama = p.nama;
         comboList.appendChild(item);
       });
     }
 
-    comboList.addEventListener('click', e=>{
-      if (e.target.closest('.combo-item')){
-        const item=e.target.closest('.combo-item');
-        selectedPegawai=item.dataset.nama;
-        comboInput.value=selectedPegawai;
-        comboList.style.display='none';
+    comboList.addEventListener('click', e => {
+      if (e.target.closest('.combo-item')) {
+        const item = e.target.closest('.combo-item');
+        selectedPegawai = item.dataset.nama;
+        comboInput.value = selectedPegawai;
+        comboList.style.display = 'none';
       }
     });
 
-    document.addEventListener('click', e=>{
-      if (!e.target.closest('.combo-box')) comboList.style.display='none';
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.combo-box')) comboList.style.display = 'none';
     });
 
     // Otomatis isi kolom sakit & DL
-    ak_sakit.addEventListener('input', ()=> ak_sakit3hari.value = ak_sakit.value);
-    dl_kurang3.addEventListener('input', ()=> dl_lebih3.value = dl_kurang3.value);
+    ak_sakit.addEventListener('input', () => ak_sakit3hari.value = ak_sakit.value);
+    dl_kurang3.addEventListener('input', () => dl_lebih3.value = dl_kurang3.value);
 
     // Simpan hasil ke Firebase
-    saveBtn.addEventListener('click', async ()=>{
-      const jenis = jenisPegawai.value;
-      if (!jenis) return statusMsg.textContent = "⚠️ Pilih jenis pegawai!";
+    saveBtn.addEventListener('click', async () => {
       if (!selectedPegawai) return statusMsg.textContent = "⚠️ Pilih nama pegawai!";
       if (!bulanRekap.value) return statusMsg.textContent = "⚠️ Pilih bulan rekap!";
 
@@ -223,7 +205,6 @@
         ak_CTB: ak_CTB.value || '0',
         shift: shift.value || '-',
         persenKehadiran: persenKehadiran.value || '-',
-        jenisPegawai: jenis,
         timestamp: new Date().toISOString()
       };
 
@@ -232,7 +213,6 @@
         statusMsg.textContent = "✅ Data berhasil disimpan!";
         statusMsg.classList.add("text-green-600");
         document.querySelectorAll('input').forEach(i => i.value = '');
-        jenisPegawai.value = '';
         selectedPegawai = null;
       } catch (err) {
         console.error(err);
