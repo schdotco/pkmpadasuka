@@ -6,7 +6,7 @@
   <title>Input Hasil Absensi Pegawai</title>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Choices.js (searchable select) -->
+  <!-- Choices.js (dropdown searchable) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
@@ -22,17 +22,7 @@
   <div class="card">
     <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">Input Hasil Rekapan Absensi Pegawai</h1>
 
-    <!-- Jenis Pegawai -->
-    <div class="mb-4">
-      <label for="jenisPegawai">Jenis Pegawai</label>
-      <select id="jenisPegawai" class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
-        <option value="">-- Semua Jenis / Pilih Jenis (opsional) --</option>
-        <option value="BLUD">BLUD</option>
-        <option value="ASN">ASN</option>
-      </select>
-    </div>
-
-    <!-- Nama Pegawai (Choices.js searchable select) -->
+    <!-- Nama Pegawai -->
     <div class="mb-4">
       <label for="namaPegawai">Nama Pegawai</label>
       <select id="namaPegawai">
@@ -46,7 +36,7 @@
       <input id="bulanRekap" type="month" class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
     </div>
 
-    <!-- Inputan hasil absensi (grid) -->
+    <!-- Input hasil absensi -->
     <div class="grid grid-cols-2 gap-4 mb-4">
       <div>
         <label>1. Akumulasi Terlambat</label>
@@ -126,11 +116,11 @@
 
   <!-- Firebase + logic -->
   <script type="module">
-    import { db } from './js/app.js';
+    import { db, auth } from './js/app.js';
     import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
-    import { auth } from './js/app.js';
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
+    // Pastikan login
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         alert('⚠️ Silakan login terlebih dahulu!');
@@ -138,13 +128,12 @@
       }
     });
 
-    const jenisPegawai = document.getElementById('jenisPegawai');
     const namaSelect = document.getElementById('namaPegawai');
     const bulanRekap = document.getElementById('bulanRekap');
     const saveBtn = document.getElementById('saveBtn');
     const statusMsg = document.getElementById('statusMsg');
 
-    // inputs
+    // input elemen
     const ak_terlambat = document.getElementById('ak_terlambat');
     const ak_pulangCepat = document.getElementById('ak_pulangCepat');
     const ak_sakit = document.getElementById('ak_sakit');
@@ -161,52 +150,36 @@
     const shift = document.getElementById('shift');
     const persenKehadiran = document.getElementById('persenKehadiran');
 
-    // Choices instance
     let choicesInstance = null;
-    let pegawaiCache = []; // simpan semua pegawai dari Firebase
+    let pegawaiCache = [];
 
-    // Ambil data pegawai (satu kali, realtime)
+    // Ambil data pegawai dari Firebase
     const pegawaiRef = ref(db, 'Pegawai');
     onValue(pegawaiRef, snapshot => {
       pegawaiCache = [];
       snapshot.forEach(child => {
         const data = child.val();
-        // data mungkin hanya { nama, gelar, jenisPegawai, jabatan, ... }
         pegawaiCache.push({
           id: child.key,
           nama: data.nama || '',
-          gelar: data.gelar || '',
-          jenisPegawai: data.jenisPegawai || '',
-          jabatan: data.jabatan || ''
+          gelar: data.gelar || ''
         });
       });
-      // set opsi awal (semua)
       renderNamaOptions();
     });
 
-    // render nama ke select (dengan optional filter jenis)
+    // Tampilkan nama ke dropdown
     function renderNamaOptions() {
-      const jenis = jenisPegawai.value; // bisa '' (semua) atau BLUD/ASN
-      // filter
-      const arr = pegawaiCache.filter(p => {
-        if (!jenis) return true;
-        // jika record punya jenisPegawai, cocokkan; jika tidak punya, tampilkan saja
-        return (p.jenisPegawai ? p.jenisPegawai === jenis : true);
-      });
-
-      // kosongkan select
       namaSelect.innerHTML = '<option value="">-- Pilih Pegawai --</option>';
-      arr.forEach(p => {
-        const namaWithGelar = p.gelar ? `${p.nama} ${p.gelar}` : p.nama;
+      pegawaiCache.forEach(p => {
+        const namaGelar = p.gelar ? `${p.nama} ${p.gelar}` : p.nama;
         const opt = document.createElement('option');
-        opt.value = namaWithGelar;
-        opt.textContent = namaWithGelar;
-        // simpan id sebagai data-id (tidak diperlukan tapi berguna)
-        opt.dataset.id = p.id;
+        opt.value = namaGelar;
+        opt.textContent = namaGelar;
         namaSelect.appendChild(opt);
       });
 
-      // init / refresh Choices
+      // aktifkan searchable dropdown
       if (choicesInstance) {
         choicesInstance.destroy();
         choicesInstance = null;
@@ -220,14 +193,11 @@
       });
     }
 
-    // saat pilih jenis, update opsi
-    jenisPegawai.addEventListener('change', () => renderNamaOptions());
-
-    // otomatis isi pasangan sakit & DL
+    // otomatis isi field pasangan
     ak_sakit.addEventListener('input', () => ak_sakit3hari.value = ak_sakit.value);
     dl_kurang3.addEventListener('input', () => dl_lebih3.value = dl_kurang3.value);
 
-    // Simpan hasil ke Firebase
+    // Simpan ke Firebase
     saveBtn.addEventListener('click', async () => {
       const nama = namaSelect.value;
       if (!nama) { statusMsg.textContent = '⚠️ Pilih nama pegawai!'; return; }
@@ -251,7 +221,6 @@
         ak_CTB: ak_CTB.value || '0',
         shift: shift.value || '-',
         persenKehadiran: persenKehadiran.value || '-',
-        jenisPegawai: jenisPegawai.value || '',
         timestamp: new Date().toISOString()
       };
 
@@ -260,10 +229,9 @@
         statusMsg.textContent = '✅ Data berhasil disimpan!';
         statusMsg.classList.add('text-green-600');
 
-        // reset form (kecuali pilihan jenis tetap agar user bisa input banyak untuk jenis yang sama)
+        // reset form
         document.querySelectorAll('input').forEach(i => i.value = '');
-        if (choicesInstance) choicesInstance.clearStore(); // kosongkan selection visual
-        // rebuild options (agar value option kosong kembali)
+        if (choicesInstance) choicesInstance.clearStore();
         renderNamaOptions();
       } catch (err) {
         console.error(err);
