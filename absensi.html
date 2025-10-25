@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload Rekapan Absensi Pegawai</title>
+  <title>Input Rekapan Absensi Pegawai</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .combo-box { position: relative; width: 100%; }
@@ -47,14 +47,14 @@
 </head>
 
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-3xl">
+  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-4xl">
     <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">
-      Upload Rekapan Absensi Pegawai
+      Input Rekapan Absensi Pegawai
     </h1>
 
     <!-- Jenis Pegawai -->
     <div class="mb-5">
-      <label class="block text-gray-700 font-medium mb-2">Jenis Pegawai</label>
+      <label class="block text-gray-700 font-medium mb-2">1. Jenis Pegawai</label>
       <select id="jenisPegawai" class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
         <option value="">-- Pilih Jenis Pegawai --</option>
         <option value="BLUD">BLUD</option>
@@ -62,29 +62,54 @@
       </select>
     </div>
 
-    <!-- Nama Pegawai (Dropdown Searchable) -->
+    <!-- Nama Pegawai (Dropdown Searchable - versi final) -->
     <div class="mb-5 combo-box">
-      <label class="block text-gray-700 font-medium mb-2">Nama Pegawai</label>
+      <label class="block text-gray-700 font-medium mb-2">2. Nama Pegawai</label>
       <input id="comboInput" type="text" placeholder="Cari atau pilih pegawai..." class="combo-input">
       <div id="comboList" class="combo-list"></div>
     </div>
 
-    <!-- Upload File -->
-    <div class="mb-6">
-      <label class="block text-gray-700 font-medium mb-2">Upload File Rekap Absensi (PDF/Excel)</label>
-      <input id="fileUpload" type="file" accept=".pdf,.xls,.xlsx"
-             class="w-full p-3 border rounded-lg cursor-pointer focus:ring focus:ring-blue-300">
+    <!-- Form Input Rekap -->
+    <div class="grid grid-cols-2 gap-4">
+      <div><label>3. Akumulasi Terlambat</label><input id="ak_terlambat" class="w-full p-2 border rounded"></div>
+      <div><label>4. Akumulasi Pulang Cepat</label><input id="ak_pulangCepat" class="w-full p-2 border rounded"></div>
+
+      <div><label>5. Akumulasi Sakit</label><input id="ak_sakit" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>6. Akumulasi Total Hari Kerja dalam 1 Bulan</label><input id="ak_hariKerja" type="number" class="w-full p-2 border rounded"></div>
+
+      <div><label>7. Jumlah Keterlambatan (Hari)</label><input id="telat_hari" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>8. Jumlah Keterlambatan (Jam)</label><input id="telat_jam" type="number" class="w-full p-2 border rounded"></div>
+
+      <div><label>9. Jumlah DL (Dinas Luar)</label><input id="dl_total" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>10. Jumlah CAP</label><input id="ak_CAP" type="number" class="w-full p-2 border rounded"></div>
+
+      <div><label>11. Jumlah CT</label><input id="ak_CT" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>12. Jumlah CM</label><input id="ak_CM" type="number" class="w-full p-2 border rounded"></div>
+
+      <div><label>13. Jumlah GL</label><input id="ak_GL" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>14. Jumlah CTB</label><input id="ak_CTB" type="number" class="w-full p-2 border rounded"></div>
+
+      <div><label>15. Jumlah LM (Shift)</label><input id="shift_LM" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>16. Jumlah Pagi (Shift)</label><input id="shift_P" type="number" class="w-full p-2 border rounded"></div>
+
+      <div><label>17. Jumlah Siang (Shift)</label><input id="shift_S" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>18. Jumlah Malam (Shift)</label><input id="shift_M" type="number" class="w-full p-2 border rounded"></div>
+
+      <div><label>19. Jumlah Off/Libur (Shift)</label><input id="shift_OFF" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>20. Total Hari Kerja (Shift)</label><input id="shift_total" type="number" class="w-full p-2 border rounded"></div>
+
+      <div class="col-span-2"><label>21. Total % Kehadiran</label><input id="persenKehadiran" class="w-full p-2 border rounded" placeholder="contoh: 95%"></div>
     </div>
 
     <button id="uploadBtn"
-      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
-      Upload & Proses Data
+      class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
+      💾 Simpan Rekapan
     </button>
 
     <div id="statusMsg" class="text-center text-gray-600 mt-4"></div>
   </div>
 
-  <!-- 🔥 Firebase + Dropdown + Simpan Rekap -->
+  <!-- 🔥 Firebase + Dropdown Search Pegawai (versi final) + Simpan Rekap -->
   <script type="module">
     import { db } from './app.js';
     import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
@@ -92,7 +117,6 @@
     const jenisPegawai = document.getElementById('jenisPegawai');
     const comboInput = document.getElementById('comboInput');
     const comboList = document.getElementById('comboList');
-    const fileUpload = document.getElementById('fileUpload');
     const uploadBtn = document.getElementById('uploadBtn');
     const statusMsg = document.getElementById('statusMsg');
 
@@ -160,49 +184,42 @@
       if (!e.target.closest('.combo-box')) comboList.style.display = 'none';
     });
 
-    // 📤 Upload file + Simpan hasil ke Firebase
+    // 💾 Simpan data ke Firebase
     uploadBtn.addEventListener('click', async () => {
       const jenis = jenisPegawai.value;
-      const file = fileUpload.files[0];
-
       if (!jenis) return statusMsg.textContent = "⚠️ Pilih jenis pegawai!";
       if (!selectedPegawai) return statusMsg.textContent = "⚠️ Pilih nama pegawai!";
-      if (!file) return statusMsg.textContent = "⚠️ Pilih file rekap absensi!";
 
-      statusMsg.textContent = `📤 File "${file.name}" sedang diproses untuk ${selectedPegawai} (${jenis})...`;
+      const hasilRekap = {
+        jenisPegawai: jenis,
+        namaPegawai: selectedPegawai,
+        ak_terlambat: ak_terlambat.value || 0,
+        ak_pulangCepat: ak_pulangCepat.value || 0,
+        ak_sakit: ak_sakit.value || 0,
+        ak_hariKerja: ak_hariKerja.value || 0,
+        telat_hari: telat_hari.value || 0,
+        telat_jam: telat_jam.value || 0,
+        dl_total: dl_total.value || 0,
+        ak_CAP: ak_CAP.value || 0,
+        ak_CT: ak_CT.value || 0,
+        ak_CM: ak_CM.value || 0,
+        ak_GL: ak_GL.value || 0,
+        ak_CTB: ak_CTB.value || 0,
+        shift_LM: shift_LM.value || 0,
+        shift_P: shift_P.value || 0,
+        shift_S: shift_S.value || 0,
+        shift_M: shift_M.value || 0,
+        shift_OFF: shift_OFF.value || 0,
+        shift_total: shift_total.value || 0,
+        persenKehadiran: persenKehadiran.value || '-',
+        timestamp: new Date().toISOString()
+      };
 
       try {
-        // 🔹 Simulasi hasil olahan absensi
-        const hasilRekap = {
-          namaPegawai: selectedPegawai,
-          jenisPegawai: jenis,
-          ak_terlambat: 5,
-          ak_pulangCepat: 2,
-          ak_sakit: 1,
-          ak_sakit3hari: 0,
-          ak_hariKerja: 22,
-          telat_hari_jam: "2 hari 3 jam",
-          dl_kurang3: 1,
-          dl_lebih3: 0,
-          ak_CAP: 1,
-          ak_CT: 0,
-          ak_CM: 0,
-          ak_GL: 0,
-          ak_CTB: 0,
-          shift: "M:8, S:6, P:4, OFF:2",
-          persenKehadiran: "96%"
-        };
-
-        // 🔥 Simpan ke Firebase
-        const rekapRef = ref(db, 'RekapAbsensi');
-        await set(push(rekapRef), hasilRekap);
-
+        await set(push(ref(db, 'RekapAbsensi')), hasilRekap);
         statusMsg.textContent = "✅ Data absensi berhasil disimpan ke database!";
         statusMsg.classList.add("text-green-600");
-
-        // Opsional: arahkan ke hasil-absensi.html
-        // window.location.href = "hasil-absensi.html";
-
+        document.querySelectorAll('input').forEach(i => i.value = '');
       } catch (error) {
         console.error("❌ Gagal menyimpan ke Firebase:", error);
         statusMsg.textContent = "❌ Terjadi kesalahan saat menyimpan data.";
