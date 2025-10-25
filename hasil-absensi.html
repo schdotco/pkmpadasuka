@@ -75,6 +75,7 @@
     const filterBulan = document.getElementById('filterBulan');
     const downloadBtn = document.getElementById('downloadExcel');
     let allData = [];
+    let displayedData = [];
 
     // Ambil data hasil rekap dari Firebase
     const rekapRef = ref(db, 'RekapAbsensi');
@@ -86,6 +87,7 @@
       allData.sort((a, b) => (b.bulan || '').localeCompare(a.bulan || ''));
 
       isiDropdownBulan(allData);
+      displayedData = allData;
       renderTable(allData);
     });
 
@@ -107,7 +109,7 @@
     function renderTable(data) {
       tableBody.innerHTML = '';
       if (data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan=\"18\" class=\"p-4 text-gray-500\">Belum ada data hasil absensi.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan=\"18\" class=\"p-4 text-gray-500\">Tidak ada data untuk bulan ini.</td></tr>`;
         return;
       }
 
@@ -141,13 +143,13 @@
     // Filter berdasarkan bulan
     filterBulan.addEventListener('change', () => {
       const selected = filterBulan.value;
-      const filtered = selected ? allData.filter(d => d.bulan === selected) : allData;
-      renderTable(filtered);
+      displayedData = selected ? allData.filter(d => d.bulan === selected) : allData;
+      renderTable(displayedData);
     });
 
-    // Download Excel
+    // Download Excel (hanya data yang ditampilkan)
     downloadBtn.addEventListener('click', () => {
-      if (allData.length === 0) return alert('Tidak ada data untuk diunduh.');
+      if (displayedData.length === 0) return alert('Tidak ada data untuk diunduh.');
 
       const header = [
         'No','Bulan Rekapan','Nama Pegawai','Akumulasi Terlambat','Akumulasi Pulang Cepat',
@@ -156,7 +158,7 @@
         'Shift (LM,M,S,P,OFF,Total)','Persen Kehadiran'
       ];
 
-      const rows = allData.map((d, i) => [
+      const rows = displayedData.map((d, i) => [
         i + 1,
         d.bulan || '',
         d.namaPegawai || '',
@@ -180,7 +182,12 @@
       const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Rekap Absensi');
-      XLSX.writeFile(wb, 'Rekap_Absensi_Pegawai.xlsx');
+
+      const namaFile = filterBulan.value
+        ? `Rekap_Absensi_${filterBulan.value}.xlsx`
+        : 'Rekap_Absensi_Semua_Bulan.xlsx';
+
+      XLSX.writeFile(wb, namaFile);
     });
   </script>
 </body>
