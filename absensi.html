@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload Rekapan Absensi Pegawai</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Input Hasil Absensi Pegawai</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .combo-box { position: relative; width: 100%; }
@@ -47,9 +47,9 @@
 </head>
 
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-3xl">
+  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-4xl">
     <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">
-      Upload Rekapan Absensi Pegawai
+      Input Hasil Rekapan Absensi Pegawai
     </h1>
 
     <!-- Jenis Pegawai -->
@@ -62,168 +62,176 @@
       </select>
     </div>
 
-    <!-- Nama Pegawai (Dropdown Searchable) -->
+    <!-- Nama Pegawai -->
     <div class="mb-5 combo-box">
       <label class="block text-gray-700 font-medium mb-2">Nama Pegawai</label>
       <input id="comboInput" type="text" placeholder="Cari atau pilih pegawai..." class="combo-input">
       <div id="comboList" class="combo-list"></div>
     </div>
 
-    <!-- Upload File -->
+    <!-- Bulan Rekapan -->
     <div class="mb-6">
-      <label class="block text-gray-700 font-medium mb-2">Upload File Rekap Absensi (PDF/Excel)</label>
-      <input id="fileUpload" type="file" accept=".pdf,.xls,.xlsx"
-             class="w-full p-3 border rounded-lg cursor-pointer focus:ring focus:ring-blue-300">
+      <label class="block text-gray-700 font-medium mb-2">Bulan Rekapan (Format: YYYY-MM)</label>
+      <input id="bulanRekap" type="month" class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
     </div>
 
-    <button id="uploadBtn"
-      class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
-      Upload & Proses Data
+    <!-- Inputan hasil absensi -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div><label>1. Akumulasi Terlambat</label><input id="ak_terlambat" class="w-full p-2 border rounded"></div>
+      <div><label>2. Akumulasi Pulang Cepat</label><input id="ak_pulangCepat" class="w-full p-2 border rounded"></div>
+      <div><label>3. Akumulasi Sakit</label><input id="ak_sakit" class="w-full p-2 border rounded" type="number"></div>
+      <div><label>4. Akumulasi Sakit > 3 Hari</label><input id="ak_sakit3hari" class="w-full p-2 border rounded" type="number" readonly></div>
+      <div><label>5. Akumulasi Hari Kerja</label><input id="ak_hariKerja" class="w-full p-2 border rounded" type="number"></div>
+      <div><label>6. Jumlah Telat (hari & jam)</label><input id="telat_hari_jam" class="w-full p-2 border rounded"></div>
+      <div><label>7. Akumulasi DL < 3 Hari</label><input id="dl_kurang3" class="w-full p-2 border rounded" type="number"></div>
+      <div><label>8. Akumulasi DL > 3 Hari</label><input id="dl_lebih3" class="w-full p-2 border rounded" type="number" readonly></div>
+      <div><label>9. Akumulasi CAP</label><input id="ak_CAP" class="w-full p-2 border rounded" type="number"></div>
+      <div><label>10. Akumulasi CT</label><input id="ak_CT" class="w-full p-2 border rounded" type="number"></div>
+      <div><label>11. Akumulasi CM</label><input id="ak_CM" class="w-full p-2 border rounded" type="number"></div>
+      <div><label>12. Akumulasi GL</label><input id="ak_GL" class="w-full p-2 border rounded" type="number"></div>
+      <div><label>13. Akumulasi CTB</label><input id="ak_CTB" class="w-full p-2 border rounded" type="number"></div>
+      <div class="col-span-2"><label>14. Untuk 3 Shift (LM, M, S, P, OFF, Total)</label><input id="shift" class="w-full p-2 border rounded"></div>
+      <div class="col-span-2"><label>15. Persen Kehadiran</label><input id="persenKehadiran" class="w-full p-2 border rounded" placeholder="contoh: 95%"></div>
+    </div>
+
+    <button id="saveBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
+      💾 Simpan Hasil
     </button>
 
     <div id="statusMsg" class="text-center text-gray-600 mt-4"></div>
   </div>
 
-  <!-- 🔥 Firebase + Dropdown + Simpan Rekap -->
-<script type="module">
-import { db } from './js/app.js';
-import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
-import { auth } from './js/app.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  <!-- 🔥 Firebase -->
+  <script type="module">
+    import { db } from './js/app.js';
+    import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+    import { auth } from './js/app.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
-// 🔒 Cek login
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    alert("⚠️ Silakan login terlebih dahulu!");
-    window.location.href = "login.html";
-  }
-});
-
-const jenisPegawai = document.getElementById('jenisPegawai');
-const comboInput = document.getElementById('comboInput');
-const comboList = document.getElementById('comboList');
-const fileUpload = document.getElementById('fileUpload');
-const uploadBtn = document.getElementById('uploadBtn');
-const statusMsg = document.getElementById('statusMsg');
-
-let semuaPegawai = [];
-let filteredPegawai = [];
-let selectedPegawai = null;
-
-// 🔹 Ambil data pegawai saat jenis dipilih
-jenisPegawai.addEventListener('change', () => {
-  const jenis = jenisPegawai.value;
-  if (!jenis) return;
-
-  comboInput.value = "";
-  comboList.innerHTML = `<p class="text-gray-500 text-center py-2">Memuat data pegawai...</p>`;
-
-  const pegawaiRef = ref(db, `Pegawai/${jenis}`);
-  onValue(pegawaiRef, snapshot => {
-    semuaPegawai = [];
-    snapshot.forEach(child => {
-      const data = child.val();
-      if (data && data.nama) {
-        semuaPegawai.push({
-          id: child.key,
-          nama: data.nama,
-          gelar: data.gelar || '',
-          jabatan: data.jabatan || ''
-        });
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        alert("⚠️ Silakan login terlebih dahulu!");
+        window.location.href = "login.html";
       }
     });
 
-    // Urutkan nama A-Z
-    semuaPegawai.sort((a, b) => a.nama.localeCompare(b.nama));
+    const jenisPegawai = document.getElementById('jenisPegawai');
+    const comboInput = document.getElementById('comboInput');
+    const comboList = document.getElementById('comboList');
+    const statusMsg = document.getElementById('statusMsg');
+    const saveBtn = document.getElementById('saveBtn');
 
-    filteredPegawai = semuaPegawai;
-    renderDropdown();
-  });
-});
+    const ak_sakit = document.getElementById('ak_sakit');
+    const ak_sakit3hari = document.getElementById('ak_sakit3hari');
+    const dl_kurang3 = document.getElementById('dl_kurang3');
+    const dl_lebih3 = document.getElementById('dl_lebih3');
+    const bulanRekap = document.getElementById('bulanRekap');
 
-// 🔍 Pencarian nama
-comboInput.addEventListener('input', () => {
-  const keyword = comboInput.value.toLowerCase();
-  filteredPegawai = semuaPegawai.filter(p =>
-    (p.nama && p.nama.toLowerCase().includes(keyword)) ||
-    (p.gelar && p.gelar.toLowerCase().includes(keyword))
-  );
-  renderDropdown();
-  comboList.style.display = keyword ? 'block' : 'none';
-});
+    let semuaPegawai = [];
+    let filteredPegawai = [];
+    let selectedPegawai = null;
 
-// 🔽 Render dropdown nama pegawai
-function renderDropdown() {
-  comboList.innerHTML = '';
-  if (filteredPegawai.length === 0) {
-    comboList.innerHTML = `<p class="text-gray-500 text-center py-2">Tidak ada pegawai ditemukan</p>`;
-    return;
-  }
-  filteredPegawai.forEach(p => {
-    const item = document.createElement('div');
-    item.className = 'combo-item';
-    item.innerHTML = `
-      <div class="flex flex-col">
-        <span class="font-medium">${p.nama}${p.gelar ? ' ' + p.gelar : ''}</span>
-        ${p.jabatan ? `<span class="text-sm text-gray-500">${p.jabatan}</span>` : ''}
-      </div>
-    `;
-    item.dataset.nama = p.nama;
-    comboList.appendChild(item);
-  });
-}
+    // Ambil data pegawai
+    jenisPegawai.addEventListener('change', () => {
+      const jenis = jenisPegawai.value;
+      if (!jenis) return;
+      comboInput.value = "";
+      comboList.innerHTML = `<p class='text-gray-500 text-center py-2'>Memuat data pegawai...</p>`;
+      const pegawaiRef = ref(db, `Pegawai/${jenis}`);
+      onValue(pegawaiRef, snapshot => {
+        semuaPegawai = [];
+        snapshot.forEach(child => {
+          const data = child.val();
+          if (data && data.nama) semuaPegawai.push({ id: child.key, nama: data.nama, jabatan: data.jabatan || '' });
+        });
+        semuaPegawai.sort((a,b)=>a.nama.localeCompare(b.nama));
+        filteredPegawai = semuaPegawai;
+        renderDropdown();
+      });
+    });
 
-// 🖱️ Klik pilihan pegawai
-comboList.addEventListener('click', e => {
-  if (e.target.closest('.combo-item')) {
-    const item = e.target.closest('.combo-item');
-    selectedPegawai = item.dataset.nama;
-    comboInput.value = selectedPegawai;
-    comboList.style.display = 'none';
-  }
-});
+    comboInput.addEventListener('input', () => {
+      const keyword = comboInput.value.toLowerCase();
+      filteredPegawai = semuaPegawai.filter(p => p.nama.toLowerCase().includes(keyword));
+      renderDropdown();
+      comboList.style.display = keyword ? 'block' : 'none';
+    });
 
-// Klik di luar -> tutup dropdown
-document.addEventListener('click', e => {
-  if (!e.target.closest('.combo-box')) comboList.style.display = 'none';
-});
+    function renderDropdown(){
+      comboList.innerHTML = '';
+      if (filteredPegawai.length === 0){
+        comboList.innerHTML = `<p class='text-gray-500 text-center py-2'>Tidak ada pegawai ditemukan</p>`;
+        return;
+      }
+      filteredPegawai.forEach(p=>{
+        const item=document.createElement('div');
+        item.className='combo-item';
+        item.innerHTML=`<div><span class='font-medium'>${p.nama}</span><br><span class='text-sm text-gray-500'>${p.jabatan}</span></div>`;
+        item.dataset.nama=p.nama;
+        comboList.appendChild(item);
+      });
+    }
 
-// 📤 Upload file + simpan ke Firebase
-uploadBtn.addEventListener('click', async () => {
-  const jenis = jenisPegawai.value;
-  const file = fileUpload.files[0];
+    comboList.addEventListener('click', e=>{
+      if (e.target.closest('.combo-item')){
+        const item=e.target.closest('.combo-item');
+        selectedPegawai=item.dataset.nama;
+        comboInput.value=selectedPegawai;
+        comboList.style.display='none';
+      }
+    });
 
-  if (!jenis) return statusMsg.textContent = "⚠️ Pilih jenis pegawai!";
-  if (!selectedPegawai) return statusMsg.textContent = "⚠️ Pilih nama pegawai!";
-  if (!file) return statusMsg.textContent = "⚠️ Pilih file rekap absensi!";
+    document.addEventListener('click', e=>{
+      if (!e.target.closest('.combo-box')) comboList.style.display='none';
+    });
 
-  statusMsg.textContent = `📤 Mengunggah "${file.name}" untuk ${selectedPegawai} (${jenis})...`;
-  statusMsg.classList.remove("text-green-600", "text-red-600");
+    // Otomatis isi kolom sakit & DL
+    ak_sakit.addEventListener('input', ()=> ak_sakit3hari.value = ak_sakit.value);
+    dl_kurang3.addEventListener('input', ()=> dl_lebih3.value = dl_kurang3.value);
 
-  try {
-    const hasilRekap = {
-      nama: selectedPegawai,
-      jenisPegawai: jenis,
-      fileName: file.name,
-      uploadTime: new Date().toISOString()
-    };
+    // Simpan hasil ke Firebase
+    saveBtn.addEventListener('click', async ()=>{
+      const jenis = jenisPegawai.value;
+      if (!jenis) return statusMsg.textContent = "⚠️ Pilih jenis pegawai!";
+      if (!selectedPegawai) return statusMsg.textContent = "⚠️ Pilih nama pegawai!";
+      if (!bulanRekap.value) return statusMsg.textContent = "⚠️ Pilih bulan rekap!";
 
-    await set(push(ref(db, 'RekapAbsensi')), hasilRekap);
+      const hasil = {
+        namaPegawai: selectedPegawai,
+        bulan: bulanRekap.value,
+        ak_terlambat: ak_terlambat.value || '-',
+        ak_pulangCepat: ak_pulangCepat.value || '-',
+        ak_sakit: ak_sakit.value || '0',
+        ak_sakit3hari: ak_sakit3hari.value || '0',
+        ak_hariKerja: ak_hariKerja.value || '0',
+        telat_hari_jam: telat_hari_jam.value || '-',
+        dl_kurang3: dl_kurang3.value || '0',
+        dl_lebih3: dl_lebih3.value || '0',
+        ak_CAP: ak_CAP.value || '0',
+        ak_CT: ak_CT.value || '0',
+        ak_CM: ak_CM.value || '0',
+        ak_GL: ak_GL.value || '0',
+        ak_CTB: ak_CTB.value || '0',
+        shift: shift.value || '-',
+        persenKehadiran: persenKehadiran.value || '-',
+        jenisPegawai: jenis,
+        timestamp: new Date().toISOString()
+      };
 
-    statusMsg.textContent = "✅ Data absensi berhasil disimpan ke database!";
-    statusMsg.classList.add("text-green-600");
-
-    fileUpload.value = "";
-    comboInput.value = "";
-    selectedPegawai = null;
-
-  } catch (error) {
-    console.error("❌ Gagal menyimpan:", error);
-    statusMsg.textContent = "❌ Terjadi kesalahan saat menyimpan data.";
-    statusMsg.classList.add("text-red-600");
-  }
-});
-</script>
-
+      try {
+        await set(push(ref(db, 'RekapAbsensi')), hasil);
+        statusMsg.textContent = "✅ Data berhasil disimpan!";
+        statusMsg.classList.add("text-green-600");
+        // reset form
+        document.querySelectorAll('input').forEach(i => i.value = '');
+        jenisPegawai.value = '';
+        selectedPegawai = null;
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = "❌ Gagal menyimpan data.";
+        statusMsg.classList.add("text-red-600");
+      }
+    });
+  </script>
 </body>
 </html>
