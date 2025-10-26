@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📊 Hasil Rekapan Absensi Pegawai</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- ✅ Library jsPDF + autoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <style>
     body { background: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     th { background: #1e40af; color: white; position: sticky; top: 0; z-index: 20; font-weight: 600; }
-    td, th { border: 1px solid #e5e7eb; text-align: center; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+    td, th { border: 1px solid #e5e7eb; text-align: center; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
     tr:nth-child(even) { background: #f9fafb; }
     tr:hover { background: #e0f2fe; transition: 0.2s; }
     .toast { position: fixed; right: 1rem; bottom: 1rem; background: rgba(0,0,0,0.75); color: white; padding: 0.6rem 1rem; border-radius: 0.5rem; z-index: 60; }
@@ -29,10 +32,12 @@
           <option value="">-- Semua Bulan --</option>
         </select>
       </div>
-      <button id="btnExport"
-        class="bg-green-600 hover:bg-green-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition">
-        📄 Cetak / Export Excel
-      </button>
+      <div class="flex gap-3">
+        <button id="btnPDF"
+          class="bg-red-600 hover:bg-red-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition">
+          🧾 Cetak / Export PDF
+        </button>
+      </div>
     </div>
 
     <!-- 🧾 Tabel Data -->
@@ -46,12 +51,12 @@
             <th>Ak. Terlambat</th>
             <th>Ak. Pulang Cepat</th>
             <th>Ak. Sakit</th>
-            <th>Ak. Sakit &gt;3 Hari</th>
+            <th>Ak. Sakit >3 Hari</th>
             <th>Ak. Hari Kerja</th>
             <th>Telat (Hari)</th>
             <th>Telat (Jam)</th>
-            <th>DL &lt;3 Hari</th>
-            <th>DL &gt;3 Hari</th>
+            <th>DL <3 Hari</th>
+            <th>DL >3 Hari</th>
             <th>CAP</th>
             <th>CT</th>
             <th>CM</th>
@@ -77,17 +82,13 @@
   <!-- 🔔 Toast -->
   <div id="toast" class="toast" style="display:none;"></div>
 
-  <!-- ✅ Library XLSX (HARUS sebelum script module) -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
-
-  <!-- 🔥 Script utama -->
   <script type="module">
     import { db } from './app.js';
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
     const isiTabel = document.getElementById('isiTabel');
     const filterBulan = document.getElementById('filterBulan');
-    const btnExport = document.getElementById('btnExport');
+    const btnPDF = document.getElementById('btnPDF');
     const toast = document.getElementById('toast');
     let semuaData = [];
 
@@ -97,8 +98,6 @@
       clearTimeout(toast._t);
       toast._t = setTimeout(() => toast.style.display = 'none', timeout);
     }
-
-    console.log("✅ XLSX status:", !!window.XLSX);
 
     // 🔄 Ambil data realtime dari Firebase
     onValue(ref(db, 'RekapAbsensi'), snapshot => {
@@ -146,24 +145,6 @@
         const dlKurang3 = d.dl_kurang3 ?? (Number(d.dl_total) > 0 && Number(d.dl_total) < 3 ? d.dl_total : 0);
         const dlLebih3 = d.dl_lebih3 ?? (Number(d.dl_total) >= 3 ? d.dl_total : 0);
 
-        // Shift parsing
-        let LM=0,P=0,S=0,M=0,OFF=0,Total=0;
-        if (d.shift) {
-          const s = d.shift.split(',');
-          s.forEach(pair => {
-            const [k,v] = pair.split(':');
-            if (!k || v===undefined) return;
-            switch(k.trim()){
-              case'LM':LM=v;break;
-              case'P':P=v;break;
-              case'S':S=v;break;
-              case'M':M=v;break;
-              case'OFF':OFF=v;break;
-              case'Total':Total=v;break;
-            }
-          });
-        }
-
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${no++}</td>
@@ -183,12 +164,12 @@
           <td>${d.ak_CM || 0}</td>
           <td>${d.ak_GL || 0}</td>
           <td>${d.ak_CTB || 0}</td>
-          <td>${LM}</td>
-          <td>${P}</td>
-          <td>${S}</td>
-          <td>${M}</td>
-          <td>${OFF}</td>
-          <td>${Total}</td>
+          <td>${d.LM || 0}</td>
+          <td>${d.Pagi || 0}</td>
+          <td>${d.Siang || 0}</td>
+          <td>${d.Malam || 0}</td>
+          <td>${d.Off || 0}</td>
+          <td>${d.Total || 0}</td>
           <td>${d.persenKehadiran || '-'}</td>
           <td>${d.bulan || '-'}</td>
         `;
@@ -200,32 +181,24 @@
     // 🔁 Ganti bulan
     filterBulan.addEventListener('change', renderTabel);
 
-    // 📄 Export ke Excel
-    btnExport.addEventListener('click', () => {
-      const XLSX = window.XLSX;
-      if (!XLSX) {
-        showToast('❌ Library XLSX belum termuat. Coba refresh halaman.', 4000);
-        return;
-      }
+    // 📄 Export ke PDF
+    btnPDF.addEventListener('click', () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      const bulan = (filterBulan.value || 'Semua Bulan').replace(/\s+/g, '_');
 
-      try {
-        btnExport.disabled = true;
-        btnExport.textContent = '⏳ Mengekspor...';
+      doc.setFontSize(14);
+      doc.text(`Rekap Absensi Pegawai - ${bulan}`, 40, 40);
+      doc.autoTable({
+        html: '#tabelAbsensi',
+        startY: 60,
+        theme: 'grid',
+        styles: { fontSize: 7, cellPadding: 3 },
+        headStyles: { fillColor: [30, 64, 175] },
+      });
 
-        const bulan = (filterBulan.value || 'Semua_Bulan').replace(/\s+/g, '_');
-        const table = document.getElementById('tabelAbsensi');
-        const clone = table.cloneNode(true);
-        const wb = XLSX.utils.table_to_book(clone, { sheet: `Rekap_${bulan}` });
-        XLSX.writeFile(wb, `Rekap_Absensi_${bulan}.xlsx`);
-
-        showToast('✅ Export selesai.', 2000);
-      } catch (err) {
-        console.error('Export error:', err);
-        showToast('❌ Gagal export: ' + (err.message || err), 4000);
-      } finally {
-        btnExport.disabled = false;
-        btnExport.textContent = '📄 Cetak / Export Excel';
-      }
+      doc.save(`Rekap_Absensi_${bulan}.pdf`);
+      showToast('✅ Export PDF berhasil disimpan.');
     });
   </script>
 </body>
