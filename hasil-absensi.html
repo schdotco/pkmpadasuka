@@ -36,7 +36,7 @@
     </div>
 
     <!-- 🧾 Tabel Data -->
-    <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-inner">
+    <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-inner max-h-[75vh] overflow-y-auto">
       <table id="tabelAbsensi" class="min-w-full text-sm">
         <thead>
           <tr>
@@ -85,34 +85,36 @@
 
     // 🔄 Ambil data realtime dari Firebase
     onValue(ref(db, 'RekapAbsensi'), snapshot => {
-      semuaData = [];
-      isiTabel.innerHTML = '';
       if (!snapshot.exists()) {
         isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-6 text-gray-500">Belum ada data absensi</td></tr>`;
         return;
       }
 
-      snapshot.forEach(child => semuaData.push(child.val()));
+      // 💾 Ambil semua data sebagai array
+      semuaData = Object.values(snapshot.val());
       renderBulanOptions();
       renderTabel();
     });
 
-    // 🔽 Daftar bulan untuk filter
+    // 🔽 Buat daftar bulan unik
     function renderBulanOptions() {
       const bulanUnik = [...new Set(semuaData.map(d => d.bulan))].filter(Boolean);
       filterBulan.innerHTML = `<option value="">-- Semua Bulan --</option>`;
       bulanUnik.forEach(b => {
         const opt = document.createElement('option');
-        opt.value = b; opt.textContent = b;
+        opt.value = b;
+        opt.textContent = b;
         filterBulan.appendChild(opt);
       });
     }
 
-    // 🧾 Render tabel
+    // 🧾 Render tabel semua pegawai
     function renderTabel() {
       isiTabel.innerHTML = '';
       const bulanFilter = filterBulan.value;
-      const dataTampil = bulanFilter ? semuaData.filter(d => d.bulan === bulanFilter) : semuaData;
+      const dataTampil = bulanFilter
+        ? semuaData.filter(d => d.bulan === bulanFilter)
+        : semuaData;
 
       if (dataTampil.length === 0) {
         isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-6 text-gray-500">Tidak ada data untuk bulan ini</td></tr>`;
@@ -126,18 +128,25 @@
         const dlKurang3 = d.dl_kurang3 ?? (Number(d.dl_total) > 0 && Number(d.dl_total) < 3 ? d.dl_total : 0);
         const dlLebih3 = d.dl_lebih3 ?? (Number(d.dl_total) >= 3 ? d.dl_total : 0);
 
-        // Shift parsing
+        // 🔢 Pisahkan shift
         let LM=0,P=0,S=0,M=0,OFF=0,Total=0;
         if (d.shift) {
           const s = d.shift.split(',');
           s.forEach(pair => {
             const [k,v] = pair.split(':');
             if (!k || !v) return;
-            switch(k.trim()){case'LM':LM=v;break;case'P':P=v;break;case'S':S=v;break;case'M':M=v;break;case'OFF':OFF=v;break;case'Total':Total=v;break;}
+            switch(k.trim()){
+              case'LM':LM=v;break;
+              case'P':P=v;break;
+              case'S':S=v;break;
+              case'M':M=v;break;
+              case'OFF':OFF=v;break;
+              case'Total':Total=v;break;
+            }
           });
         }
 
-        const row = `
+        isiTabel.insertAdjacentHTML('beforeend', `
           <tr>
             <td>${no++}</td>
             <td>${d.jenisPegawai || '-'}</td>
@@ -165,15 +174,14 @@
             <td>${d.persenKehadiran || '-'}</td>
             <td>${d.bulan || '-'}</td>
           </tr>
-        `;
-        isiTabel.insertAdjacentHTML('beforeend', row);
+        `);
       });
     }
 
-    // 🔁 Filter bulan
+    // 🔁 Ganti bulan
     filterBulan.addEventListener('change', renderTabel);
 
-    // 📊 Export Excel
+    // 📄 Export ke Excel
     btnExport.addEventListener('click', () => {
       const bulan = filterBulan.value || 'Semua_Bulan';
       const wb = XLSX.utils.table_to_book(document.getElementById('tabelAbsensi'), { sheet: `Rekap ${bulan}` });
