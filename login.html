@@ -3,157 +3,214 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Registrasi - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <title>Login - Data & Informasi UPTD Puskesmas Padasuka</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
-    /* 🌐 Tambahan styling agar sama seperti login */
+    /* 🌐 Desain profesional modern */
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      background: linear-gradient(135deg, #e3f2fd 0%, #f9f9f9 100%);
     }
 
     header {
-      background: #1976d2;
+      background: linear-gradient(90deg, #1565c0, #1976d2);
       color: #fff;
       text-align: center;
-      padding: 15px;
+      padding: 16px;
       font-size: 18px;
-      font-weight: 500;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
 
     main {
       display: flex;
       flex: 1;
       flex-wrap: wrap;
+      align-items: stretch;
     }
 
+    /* 🔹 Panel kiri */
     .left-panel {
-      background: #1976d2;
+      background: linear-gradient(180deg, #1976d2, #1565c0);
       color: #fff;
       flex: 1;
-      min-width: 280px;
+      min-width: 320px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 30px;
+      padding: 40px 20px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.2), transparent 60%);
+      z-index: 0;
     }
 
     .left-panel h1 {
-      font-size: 24px;
+      font-size: 26px;
+      font-weight: 700;
       margin-bottom: 10px;
+      z-index: 1;
+      position: relative;
     }
 
     .left-panel p {
       font-size: 15px;
-      line-height: 1.5;
-      max-width: 300px;
+      line-height: 1.6;
+      max-width: 340px;
+      z-index: 1;
+      position: relative;
     }
 
     .left-panel img {
       width: 180px;
-      margin-top: 20px;
+      margin-top: 25px;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+      z-index: 1;
+      position: relative;
+      transition: transform 0.4s ease;
     }
 
+    .left-panel img:hover {
+      transform: scale(1.05);
+    }
+
+    /* 🔹 Panel kanan */
     .right-panel {
       flex: 1;
-      min-width: 280px;
+      min-width: 320px;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 30px;
+      padding: 40px;
       background: #f4f6f9;
+      position: relative;
     }
 
     .card {
       background: #fff;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
       width: 100%;
-      max-width: 320px;
+      max-width: 340px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.12);
     }
 
     .card h3 {
       text-align: center;
       margin-bottom: 10px;
       color: #1976d2;
+      font-size: 22px;
+      font-weight: 600;
     }
 
     .card input {
       padding: 10px;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 14px;
       width: 100%;
       box-sizing: border-box;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .card input:focus {
+      border-color: #1976d2;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(25,118,210,0.2);
     }
 
     .card button {
-      background: #1976d2;
+      background: linear-gradient(90deg, #1976d2, #1e88e5);
       color: #fff;
       border: none;
       padding: 10px;
       font-size: 15px;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 12px;
+      transition: background 0.3s, transform 0.1s ease;
     }
 
     .card button:hover {
-      background: #125ca1;
+      background: linear-gradient(90deg, #125ca1, #1976d2);
+      transform: translateY(-1px);
     }
 
     .link {
       text-align: center;
       font-size: 14px;
-      margin-top: 5px;
+      margin-top: 8px;
     }
 
     .link a {
       color: #1976d2;
       text-decoration: none;
+      font-weight: 500;
     }
 
     .link a:hover {
       text-decoration: underline;
     }
 
-    #adminCode {
-      margin-top: 5px;
+    @media (max-width: 768px) {
+      .left-panel {
+        padding: 30px 15px;
+      }
+      .left-panel h1 {
+        font-size: 22px;
+      }
+      .left-panel img {
+        width: 150px;
+      }
+      .card {
+        padding: 25px;
+      }
     }
   </style>
 </head>
 <body>
-  <header>Login Akun - Data & Informasi UPTD Puskesmas Padasuka</header>
+  <header>Portal Login - Data & Informasi UPTD Puskesmas Padasuka</header>
 
   <main>
-  <!-- Panel Kiri -->
-  <div class="left-panel">
-    <h1>SATU AKSES UNTUK SEMUA</h1>
-    <p>Portal internal untuk pengelolaan <b>Data & Informasi UPTD Puskesmas Padasuka</b></p>.  
-    <img
-      src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png"
-      alt="Ilustrasi Login">
-  </div>
+    <!-- Panel Kiri -->
+    <div class="left-panel">
+      <h1>SATU AKSES UNTUK SEMUA</h1>
+      <p>Portal internal untuk pengelolaan <b>Data & Informasi UPTD Puskesmas Padasuka</b>.</p>
+      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Login">
+    </div>
 
-  <!-- Panel Kanan -->
-  <div class="right-panel">
-    <form id="loginForm" class="login-card">
-      <h3>Login</h3>
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
-      <button type="submit">Masuk</button>
-      <div class="link">Belum punya akun? <a href="register.html">Daftar</a></div>
-    </form>
-  </div>
+    <!-- Panel Kanan -->
+    <div class="right-panel">
+      <form id="loginForm" class="card">
+        <h3>Login</h3>
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <button type="submit">Masuk</button>
+        <div class="link">Belum punya akun? <a href="register.html">Daftar</a></div>
+      </form>
+    </div>
   </main>
 
   <script type="module" src="./auth.js"></script>
