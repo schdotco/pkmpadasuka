@@ -5,189 +5,127 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hasil Rekapan Absensi Pegawai</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS untuk export Excel -->
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <style>
+    body { background: #f3f4f6; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.6rem 1rem; border: 1px solid #ddd; text-align: center; font-size: 0.9rem; }
+    th { background: #2563eb; color: white; }
+    tr:nth-child(even) { background: #f9fafb; }
+  </style>
 </head>
-
-<body class="bg-gray-100 min-h-screen p-6">
-  <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-8">
-    <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">
-      📋 Hasil Rekapan Absensi Pegawai
-    </h1>
-
-    <!-- Tombol kembali & kontrol -->
-    <div class="flex flex-wrap items-center justify-between mb-6 gap-3">
-      <a href="absensi.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">
-        ← Kembali ke Input Absensi
-      </a>
-
-      <div class="flex items-center gap-3">
-        <select id="filterBulan" class="border rounded-lg p-2 text-sm focus:ring focus:ring-blue-300">
-          <option value="">📅 Tampilkan Semua Bulan</option>
-        </select>
-
-        <button id="downloadExcel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">
-          ⬇️ Download Excel
-        </button>
-      </div>
-    </div>
-
-    <!-- Tabel hasil -->
+<body class="p-6">
+  <div class="max-w-7xl mx-auto bg-white p-6 rounded-xl shadow">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">📊 Hasil Rekapan Absensi Pegawai</h1>
     <div class="overflow-x-auto">
-      <table class="min-w-full border border-gray-300 text-sm text-center" id="tabelHasil">
-        <thead class="bg-blue-600 text-white">
+      <table id="tabelAbsensi">
+        <thead>
           <tr>
-            <th class="border p-2">No</th>
-            <th class="border p-2">Bulan Rekapan</th>
-            <th class="border p-2">Nama Pegawai</th>
-            <th class="border p-2">1. Akumulasi Terlambat<br>per Bulan</th>
-            <th class="border p-2">2. Akumulasi Pulang Cepat</th>
-            <th class="border p-2">3. Akumulasi Sakit</th>
-            <th class="border p-2">4. Akumulasi Sakit<br>Lebih dari 3 Hari</th>
-            <th class="border p-2">5. Akumulasi Hari Kerja</th>
-            <th class="border p-2">6. Jumlah Telat Sebulan<br>(hari & jam)</th>
-            <th class="border p-2">7. Akumulasi DL<br>< 3 Hari</th>
-            <th class="border p-2">8. Akumulasi DL<br>> 3 Hari</th>
-            <th class="border p-2">9. Akumulasi CAP</th>
-            <th class="border p-2">10. Akumulasi CT</th>
-            <th class="border p-2">11. Akumulasi CM</th>
-            <th class="border p-2">12. Akumulasi GL</th>
-            <th class="border p-2">13. Akumulasi CTB</th>
-            <th class="border p-2">14. Untuk 3 Shift<br>(LM, M, S, P, OFF, Total)</th>
-            <th class="border p-2">15. Persen Kehadiran</th>
+            <th>No</th>
+            <th>Jenis Pegawai</th>
+            <th>Nama Pegawai</th>
+            <th>Akumulasi Terlambat</th>
+            <th>Akumulasi Pulang Cepat</th>
+            <th>Akumulasi Sakit</th>
+            <th>Akumulasi Sakit >3 Hari</th>
+            <th>Akumulasi Total Hari Kerja</th>
+            <th>Jumlah Keterlambatan (Hari & Jam)</th>
+            <th>Jumlah DL &lt;3 Hari</th>
+            <th>Jumlah DL &gt;3 Hari</th>
+            <th>Jumlah CAP</th>
+            <th>Jumlah CT</th>
+            <th>Jumlah CM</th>
+            <th>Jumlah GL</th>
+            <th>Jumlah CTB</th>
+            <th>Shift (LM)</th>
+            <th>Shift (Pagi)</th>
+            <th>Shift (Siang)</th>
+            <th>Shift (Malam)</th>
+            <th>Shift (Off/Libur)</th>
+            <th>Total Hari (Shift)</th>
+            <th>% Kehadiran</th>
+            <th>Bulan</th>
           </tr>
         </thead>
-        <tbody id="tableBody">
-          <tr>
-            <td colspan="18" class="p-4 text-gray-500">Memuat data...</td>
-          </tr>
+        <tbody id="isiTabel">
+          <tr><td colspan="24" class="text-center py-4 text-gray-500">Memuat data...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- 🔥 Firebase -->
   <script type="module">
-    import { db } from './js/app.js';
+    import { db } from './app.js';
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
-    const tableBody = document.getElementById('tableBody');
-    const filterBulan = document.getElementById('filterBulan');
-    const downloadBtn = document.getElementById('downloadExcel');
-    let allData = [];
-    let displayedData = [];
+    const isiTabel = document.getElementById('isiTabel');
 
-    // Ambil data hasil rekap dari Firebase
-    const rekapRef = ref(db, 'RekapAbsensi');
-    onValue(rekapRef, snapshot => {
-      allData = [];
-      snapshot.forEach(child => allData.push({ id: child.key, ...child.val() }));
-
-      // Urutkan berdasarkan bulan terbaru
-      allData.sort((a, b) => (b.bulan || '').localeCompare(a.bulan || ''));
-
-      isiDropdownBulan(allData);
-      displayedData = allData;
-      renderTable(allData);
-    });
-
-    // Isi dropdown bulan unik
-    function isiDropdownBulan(data) {
-      const bulanSet = new Set();
-      data.forEach(d => { if (d.bulan) bulanSet.add(d.bulan); });
-
-      filterBulan.innerHTML = '<option value=\"\">📅 Tampilkan Semua Bulan</option>';
-      [...bulanSet].sort().forEach(b => {
-        const opt = document.createElement('option');
-        opt.value = b;
-        opt.textContent = b;
-        filterBulan.appendChild(opt);
-      });
-    }
-
-    // Render tabel
-    function renderTable(data) {
-      tableBody.innerHTML = '';
-      if (data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan=\"18\" class=\"p-4 text-gray-500\">Tidak ada data untuk bulan ini.</td></tr>`;
+    // Ambil data realtime dari node RekapAbsensi
+    onValue(ref(db, 'RekapAbsensi'), snapshot => {
+      isiTabel.innerHTML = '';
+      if (!snapshot.exists()) {
+        isiTabel.innerHTML = `<tr><td colspan="24" class="text-center py-4 text-gray-500">Belum ada data absensi</td></tr>`;
         return;
       }
 
       let no = 1;
-      data.forEach(d => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class=\"border p-2\">${no++}</td>
-          <td class=\"border p-2\">${d.bulan || '-'}</td>
-          <td class=\"border p-2\">${d.namaPegawai || '-'}</td>
-          <td class=\"border p-2\">${d.ak_terlambat || '-'}</td>
-          <td class=\"border p-2\">${d.ak_pulangCepat || '-'}</td>
-          <td class=\"border p-2\">${d.ak_sakit || '-'}</td>
-          <td class=\"border p-2\">${d.ak_sakit3hari || '-'}</td>
-          <td class=\"border p-2\">${d.ak_hariKerja || '-'}</td>
-          <td class=\"border p-2\">${d.telat_hari_jam || '-'}</td>
-          <td class=\"border p-2\">${d.dl_kurang3 || '-'}</td>
-          <td class=\"border p-2\">${d.dl_lebih3 || '-'}</td>
-          <td class=\"border p-2\">${d.ak_CAP || '-'}</td>
-          <td class=\"border p-2\">${d.ak_CT || '-'}</td>
-          <td class=\"border p-2\">${d.ak_CM || '-'}</td>
-          <td class=\"border p-2\">${d.ak_GL || '-'}</td>
-          <td class=\"border p-2\">${d.ak_CTB || '-'}</td>
-          <td class=\"border p-2\">${d.shift || '-'}</td>
-          <td class=\"border p-2\">${d.persenKehadiran || '-'}</td>
+      snapshot.forEach(child => {
+        const d = child.val();
+
+        // validasi dan perhitungan ulang sesuai logika absensi.html
+        const sakit = Number(d.ak_sakit) || 0;
+        const sakit3hari = sakit > 3 ? sakit : 0;
+
+        const dlKurang3 = d.dl_kurang3 ?? (Number(d.dl_total) > 0 && Number(d.dl_total) < 3 ? d.dl_total : 0);
+        const dlLebih3 = d.dl_lebih3 ?? (Number(d.dl_total) >= 3 ? d.dl_total : 0);
+
+        // ambil shift breakdown
+        let LM = 0, P = 0, S = 0, M = 0, OFF = 0, Total = 0;
+        if (d.shift) {
+          const shiftData = d.shift.split(',');
+          shiftData.forEach(pair => {
+            const [key, val] = pair.split(':');
+            if (!key || !val) return;
+            switch (key.trim()) {
+              case 'LM': LM = val; break;
+              case 'P': P = val; break;
+              case 'S': S = val; break;
+              case 'M': M = val; break;
+              case 'OFF': OFF = val; break;
+              case 'Total': Total = val; break;
+            }
+          });
+        }
+
+        const row = `
+          <tr>
+            <td>${no++}</td>
+            <td>${d.jenisPegawai || '-'}</td>
+            <td>${d.namaPegawai || '-'}</td>
+            <td>${d.ak_terlambat || 0}</td>
+            <td>${d.ak_pulangCepat || 0}</td>
+            <td>${sakit}</td>
+            <td>${sakit3hari}</td>
+            <td>${d.ak_hariKerja || 0}</td>
+            <td>${d.telat_hari_jam || '-'}</td>
+            <td>${dlKurang3}</td>
+            <td>${dlLebih3}</td>
+            <td>${d.ak_CAP || 0}</td>
+            <td>${d.ak_CT || 0}</td>
+            <td>${d.ak_CM || 0}</td>
+            <td>${d.ak_GL || 0}</td>
+            <td>${d.ak_CTB || 0}</td>
+            <td>${LM}</td>
+            <td>${P}</td>
+            <td>${S}</td>
+            <td>${M}</td>
+            <td>${OFF}</td>
+            <td>${Total}</td>
+            <td>${d.persenKehadiran || '-'}</td>
+            <td>${d.bulan || '-'}</td>
+          </tr>
         `;
-        tableBody.appendChild(row);
+        isiTabel.innerHTML += row;
       });
-    }
-
-    // Filter berdasarkan bulan
-    filterBulan.addEventListener('change', () => {
-      const selected = filterBulan.value;
-      displayedData = selected ? allData.filter(d => d.bulan === selected) : allData;
-      renderTable(displayedData);
-    });
-
-    // Download Excel (hanya data yang ditampilkan)
-    downloadBtn.addEventListener('click', () => {
-      if (displayedData.length === 0) return alert('Tidak ada data untuk diunduh.');
-
-      const header = [
-        'No','Bulan Rekapan','Nama Pegawai','Akumulasi Terlambat','Akumulasi Pulang Cepat',
-        'Akumulasi Sakit','Akumulasi Sakit >3 Hari','Akumulasi Hari Kerja','Jumlah Telat (hari & jam)',
-        'DL <3 Hari','DL >3 Hari','Akumulasi CAP','Akumulasi CT','Akumulasi CM','Akumulasi GL','Akumulasi CTB',
-        'Shift (LM,M,S,P,OFF,Total)','Persen Kehadiran'
-      ];
-
-      const rows = displayedData.map((d, i) => [
-        i + 1,
-        d.bulan || '',
-        d.namaPegawai || '',
-        d.ak_terlambat || '',
-        d.ak_pulangCepat || '',
-        d.ak_sakit || '',
-        d.ak_sakit3hari || '',
-        d.ak_hariKerja || '',
-        d.telat_hari_jam || '',
-        d.dl_kurang3 || '',
-        d.dl_lebih3 || '',
-        d.ak_CAP || '',
-        d.ak_CT || '',
-        d.ak_CM || '',
-        d.ak_GL || '',
-        d.ak_CTB || '',
-        d.shift || '',
-        d.persenKehadiran || ''
-      ]);
-
-      const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Rekap Absensi');
-
-      const namaFile = filterBulan.value
-        ? `Rekap_Absensi_${filterBulan.value}.xlsx`
-        : 'Rekap_Absensi_Semua_Bulan.xlsx';
-
-      XLSX.writeFile(wb, namaFile);
     });
   </script>
 </body>
