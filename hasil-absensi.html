@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📊 Hasil Rekapan Absensi Pegawai</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
@@ -12,6 +12,7 @@
     td, th { border: 1px solid #e5e7eb; text-align: center; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
     tr:nth-child(even) { background: #f9fafb; }
     tr:hover { background: #e0f2fe; transition: 0.2s; }
+    .toast { position: fixed; right: 1rem; bottom: 1rem; background: rgba(0,0,0,0.75); color: white; padding: 0.6rem 1rem; border-radius: 0.5rem; z-index: 60; }
   </style>
 </head>
 
@@ -21,7 +22,7 @@
       📊 Hasil Rekapan Absensi Pegawai
     </h1>
 
-    <!-- 🔽 Filter Bulan + Tombol Export -->
+    <!-- Filter Bulan + Tombol Export -->
     <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
       <div class="flex items-center gap-3">
         <label for="filterBulan" class="font-semibold text-gray-700">Pilih Bulan:</label>
@@ -29,13 +30,15 @@
           <option value="">-- Semua Bulan --</option>
         </select>
       </div>
-      <button id="btnExport"
-        class="bg-green-600 hover:bg-green-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition">
-        📄 Cetak / Export Excel
-      </button>
+      <div class="flex items-center gap-3">
+        <button id="btnExport"
+          class="bg-green-600 hover:bg-green-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition">
+          📄 Cetak / Export Excel
+        </button>
+      </div>
     </div>
 
-    <!-- 🧾 Tabel Data -->
+    <!-- Tabel Data -->
     <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-inner max-h-[75vh] overflow-y-auto">
       <table id="tabelAbsensi" class="min-w-full text-sm">
         <thead>
@@ -46,12 +49,12 @@
             <th>Ak. Terlambat</th>
             <th>Ak. Pulang Cepat</th>
             <th>Ak. Sakit</th>
-            <th>Ak. Sakit >3 Hari</th>
+            <th>Ak. Sakit &gt;3 Hari</th>
             <th>Ak. Hari Kerja</th>
             <th>Telat (Hari)</th>
             <th>Telat (Jam)</th>
-            <th>DL <3 Hari</th>
-            <th>DL >3 Hari</th>
+            <th>DL &lt;3 Hari</th>
+            <th>DL &gt;3 Hari</th>
             <th>CAP</th>
             <th>CT</th>
             <th>CM</th>
@@ -74,6 +77,9 @@
     </div>
   </div>
 
+  <!-- Toast sederhana -->
+  <div id="toast" class="toast" style="display:none;"></div>
+
   <script type="module">
     import { db } from './app.js';
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
@@ -81,40 +87,53 @@
     const isiTabel = document.getElementById('isiTabel');
     const filterBulan = document.getElementById('filterBulan');
     const btnExport = document.getElementById('btnExport');
+    const toast = document.getElementById('toast');
     let semuaData = [];
 
-    // 🔄 Ambil data realtime dari Firebase
+    function showToast(msg, timeout = 3000) {
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => toast.style.display = 'none', timeout);
+    }
+
+    // Ambil data realtime dari Firebase
     onValue(ref(db, 'RekapAbsensi'), snapshot => {
       if (!snapshot.exists()) {
+        semuaData = [];
         isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-6 text-gray-500">Belum ada data absensi</td></tr>`;
+        filterBulan.innerHTML = `<option value="">-- Semua Bulan --</option>`;
         return;
       }
 
-      // 💾 Ambil semua data sebagai array
-      semuaData = Object.values(snapshot.val());
+      // Ambil semua data sebagai array (Object.values memastikan semua entri terbaca)
+      const val = snapshot.val();
+      if (Array.isArray(val)) {
+        semuaData = val.filter(Boolean); // jika array, bersihkan holes
+      } else {
+        semuaData = Object.values(val);
+      }
+
       renderBulanOptions();
       renderTabel();
     });
 
-    // 🔽 Buat daftar bulan unik
+    // Buat daftar bulan unik
     function renderBulanOptions() {
       const bulanUnik = [...new Set(semuaData.map(d => d.bulan))].filter(Boolean);
       filterBulan.innerHTML = `<option value="">-- Semua Bulan --</option>`;
       bulanUnik.forEach(b => {
         const opt = document.createElement('option');
-        opt.value = b;
-        opt.textContent = b;
+        opt.value = b; opt.textContent = b;
         filterBulan.appendChild(opt);
       });
     }
 
-    // 🧾 Render tabel semua pegawai
+    // Render tabel
     function renderTabel() {
       isiTabel.innerHTML = '';
       const bulanFilter = filterBulan.value;
-      const dataTampil = bulanFilter
-        ? semuaData.filter(d => d.bulan === bulanFilter)
-        : semuaData;
+      const dataTampil = bulanFilter ? semuaData.filter(d => d.bulan === bulanFilter) : semuaData;
 
       if (dataTampil.length === 0) {
         isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-6 text-gray-500">Tidak ada data untuk bulan ini</td></tr>`;
@@ -122,19 +141,20 @@
       }
 
       let no = 1;
+      const frag = document.createDocumentFragment();
       dataTampil.forEach(d => {
         const sakit = Number(d.ak_sakit) || 0;
         const sakit3hari = sakit > 3 ? sakit : 0;
         const dlKurang3 = d.dl_kurang3 ?? (Number(d.dl_total) > 0 && Number(d.dl_total) < 3 ? d.dl_total : 0);
         const dlLebih3 = d.dl_lebih3 ?? (Number(d.dl_total) >= 3 ? d.dl_total : 0);
 
-        // 🔢 Pisahkan shift
+        // Shift parsing
         let LM=0,P=0,S=0,M=0,OFF=0,Total=0;
         if (d.shift) {
           const s = d.shift.split(',');
           s.forEach(pair => {
             const [k,v] = pair.split(':');
-            if (!k || !v) return;
+            if (!k || v===undefined) return;
             switch(k.trim()){
               case'LM':LM=v;break;
               case'P':P=v;break;
@@ -146,47 +166,75 @@
           });
         }
 
-        isiTabel.insertAdjacentHTML('beforeend', `
-          <tr>
-            <td>${no++}</td>
-            <td>${d.jenisPegawai || '-'}</td>
-            <td class="text-left pl-2">${d.namaPegawai || '-'}</td>
-            <td>${d.ak_terlambat || 0}</td>
-            <td>${d.ak_pulangCepat || 0}</td>
-            <td>${sakit}</td>
-            <td>${sakit3hari}</td>
-            <td>${d.ak_hariKerja || 0}</td>
-            <td>${d.telat_hari || 0}</td>
-            <td>${d.telat_jam || 0}</td>
-            <td>${dlKurang3}</td>
-            <td>${dlLebih3}</td>
-            <td>${d.ak_CAP || 0}</td>
-            <td>${d.ak_CT || 0}</td>
-            <td>${d.ak_CM || 0}</td>
-            <td>${d.ak_GL || 0}</td>
-            <td>${d.ak_CTB || 0}</td>
-            <td>${LM}</td>
-            <td>${P}</td>
-            <td>${S}</td>
-            <td>${M}</td>
-            <td>${OFF}</td>
-            <td>${Total}</td>
-            <td>${d.persenKehadiran || '-'}</td>
-            <td>${d.bulan || '-'}</td>
-          </tr>
-        `);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${no++}</td>
+          <td>${d.jenisPegawai || '-'}</td>
+          <td class="text-left pl-2">${d.namaPegawai || '-'}</td>
+          <td>${d.ak_terlambat || 0}</td>
+          <td>${d.ak_pulangCepat || 0}</td>
+          <td>${sakit}</td>
+          <td>${sakit3hari}</td>
+          <td>${d.ak_hariKerja || 0}</td>
+          <td>${d.telat_hari || 0}</td>
+          <td>${d.telat_jam || 0}</td>
+          <td>${dlKurang3}</td>
+          <td>${dlLebih3}</td>
+          <td>${d.ak_CAP || 0}</td>
+          <td>${d.ak_CT || 0}</td>
+          <td>${d.ak_CM || 0}</td>
+          <td>${d.ak_GL || 0}</td>
+          <td>${d.ak_CTB || 0}</td>
+          <td>${LM}</td>
+          <td>${P}</td>
+          <td>${S}</td>
+          <td>${M}</td>
+          <td>${OFF}</td>
+          <td>${Total}</td>
+          <td>${d.persenKehadiran || '-'}</td>
+          <td>${d.bulan || '-'}</td>
+        `;
+        frag.appendChild(tr);
       });
+      isiTabel.appendChild(frag);
     }
 
-    // 🔁 Ganti bulan
+    // Filter change
     filterBulan.addEventListener('change', renderTabel);
 
-    // 📄 Export ke Excel
+    // Export handler — gunakan window.XLSX agar pasti ambil library global
     btnExport.addEventListener('click', () => {
-      const bulan = filterBulan.value || 'Semua_Bulan';
-      const wb = XLSX.utils.table_to_book(document.getElementById('tabelAbsensi'), { sheet: `Rekap ${bulan}` });
-      XLSX.writeFile(wb, `Rekap_Absensi_${bulan}.xlsx`);
+      const XLSX = window.XLSX;
+      if (!XLSX) {
+        showToast('Library XLSX belum tersedia. Coba refresh halaman.', 4000);
+        return;
+      }
+
+      try {
+        btnExport.disabled = true;
+        btnExport.textContent = 'Mengekspor...';
+
+        // Jika ada filter bulan, export hanya baris yang tampil (document.getElementById tabel sudah memuat semua baris)
+        const bulan = (filterBulan.value || 'Semua_Bulan').replace(/\s+/g, '_');
+
+        // clone table to avoid issues with sticky headers / scrollers
+        const table = document.getElementById('tabelAbsensi');
+        const clone = table.cloneNode(true);
+
+        // Convert to workbook and save
+        const wb = XLSX.utils.table_to_book(clone, { sheet: `Rekap_${bulan}` });
+        XLSX.writeFile(wb, `Rekap_Absensi_${bulan}.xlsx`);
+
+        showToast('✅ Export selesai.', 2000);
+      } catch (err) {
+        console.error('Export error:', err);
+        showToast('❌ Gagal export: ' + (err.message || err), 4000);
+      } finally {
+        btnExport.disabled = false;
+        btnExport.textContent = '📄 Cetak / Export Excel';
+      }
     });
+
   </script>
 </body>
 </html>
