@@ -7,50 +7,75 @@
 
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f4f6f9;
       margin: 0;
       padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      color: #333;
     }
 
-    /* 🔹 Navbar */
+    /* 🔷 Navbar */
     .navbar {
       background: #1976d2;
-      color: white;
+      color: #fff;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 20px;
+      padding: 12px 24px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
-    .navbar h1 {
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .navbar-left img {
+      height: 36px;
+      width: 36px;
+      border-radius: 50%;
+      background: #fff;
+      padding: 2px;
+    }
+
+    .navbar-left h1 {
       font-size: 18px;
+      font-weight: 500;
       margin: 0;
     }
 
-    .navbar .menu {
+    .menu {
       display: flex;
-      gap: 15px;
+      gap: 18px;
+      align-items: center;
     }
 
-    .navbar .menu a {
+    .menu a {
       color: #fff;
       text-decoration: none;
       font-size: 14px;
+      font-weight: 500;
+      transition: opacity 0.2s ease;
     }
 
-    .navbar .menu a:hover {
-      text-decoration: underline;
+    .menu a:hover {
+      opacity: 0.85;
     }
 
     .navbar button {
       background: #fff;
       color: #1976d2;
       border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
+      padding: 8px 14px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s;
     }
 
     .navbar button:hover {
@@ -59,19 +84,28 @@
 
     /* 🔹 Container utama */
     .container {
-      max-width: 1100px;
+      flex: 1;
+      max-width: 1150px;
       margin: 40px auto;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 25px 30px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 30px;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     h2 {
       color: #1976d2;
       text-align: center;
       margin-top: 0;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      font-size: 22px;
+      font-weight: 600;
     }
 
     /* 🔹 Header kalender */
@@ -79,54 +113,68 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
+      margin-bottom: 18px;
     }
 
     .calendar-header button {
       background: #1976d2;
       color: white;
       border: none;
-      padding: 6px 12px;
+      padding: 8px 14px;
       font-size: 14px;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 6px;
+      transition: background 0.2s;
     }
 
     .calendar-header button:hover {
       background: #125ca1;
     }
 
+    #monthYear {
+      font-weight: 600;
+      font-size: 18px;
+      color: #333;
+    }
+
     /* 🔹 Grid kalender */
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
+      gap: 6px;
     }
 
     .day-header {
       font-weight: bold;
       text-align: center;
       background: #e3f2fd;
-      padding: 6px;
-      border-radius: 4px;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 13px;
     }
 
     .day-cell {
       min-height: 110px;
       background: #fafafa;
       border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 6px;
+      border-radius: 6px;
+      padding: 8px;
       font-size: 13px;
       position: relative;
       overflow-y: auto;
       max-height: 160px;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .day-cell:hover {
+      box-shadow: 0 2px 6px rgba(25, 118, 210, 0.2);
     }
 
     .day-number {
       font-weight: bold;
-      margin-bottom: 3px;
+      margin-bottom: 5px;
       color: #1976d2;
+      font-size: 14px;
     }
 
     .cuti-list {
@@ -138,10 +186,11 @@
     .cuti-list li {
       background: #e1f5fe;
       color: #1976d2;
-      padding: 3px 5px;
-      margin-bottom: 3px;
-      border-radius: 3px;
+      padding: 4px 6px;
+      margin-bottom: 4px;
+      border-radius: 4px;
       font-size: 12px;
+      font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -152,21 +201,69 @@
       border: none;
     }
 
+    /* 🔹 Scroll styling */
+    .day-cell::-webkit-scrollbar {
+      width: 6px;
+    }
+    .day-cell::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 4px;
+    }
+
+    /* 🔹 Footer */
     footer {
+      background: #1976d2;
+      color: #fff;
       text-align: center;
-      color: #777;
+      padding: 12px 10px;
       font-size: 13px;
-      margin-top: 30px;
-      padding-bottom: 20px;
+      font-weight: 400;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    }
+
+    footer span {
+      font-weight: 600;
+    }
+
+    /* Responsif */
+    @media (max-width: 768px) {
+      .navbar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        text-align: center;
+      }
+
+      .menu {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .container {
+        margin: 20px;
+        padding: 20px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      .calendar-grid {
+        gap: 4px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- 🔹 Navbar -->
+  <!-- 🔷 Navbar -->
   <div class="navbar">
-    <h1>📅 Kalender Cuti Pegawai</h1>
+    <div class="navbar-left">
+      <img src="https://thumbs2.imgbox.com/a3/af/0ptQ0Rmm_t.png" alt="Logo Puskesmas">
+      <h1>📅 Kalender Cuti Pegawai</h1>
+    </div>
+
     <div class="menu">
       <a href="dashboard.html">Dashboard</a>
       <a href="cuti-user.html">Pengajuan</a>
@@ -174,6 +271,7 @@
       <a href="cuti-list.html">Daftar</a>
       <a href="kalender.html"><b>Kalender</b></a>
     </div>
+
     <button onclick="window.location.href='admin-dashboard.html'">Kembali</button>
   </div>
   
@@ -188,9 +286,11 @@
     <div class="calendar-grid" id="calendarGrid"></div>
   </div>
 
-  <footer>© 2025 UPTD Puskesmas Padasuka - Semua Hak Dilindungi</footer>
+  <footer>
+    © 2025 <span>UPTD Puskesmas Padasuka</span> – Dinas Kesehatan Kota Bandung
+  </footer>
 
-  <!-- 🔹 Script Kalender -->
+  <!-- 🔹 Script Kalender (tidak diubah) -->
   <script type="module">
     import { db } from './app.js';
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
@@ -266,7 +366,6 @@
         const ul = document.createElement('ul');
         ul.className = 'cuti-list';
 
-        // 🔹 Tambahkan semua pegawai yang cuti di tanggal ini
         approvedCuti.forEach(cuti => {
           if (cellDate >= cuti.start && cellDate <= cuti.end) {
             const li = document.createElement('li');
