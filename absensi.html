@@ -110,122 +110,128 @@
   </div>
 
   <!-- 🔥 Firebase + Dropdown Search Pegawai (versi final) + Simpan Rekap -->
-  <script type="module">
-    import { db } from './app.js';
-    import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+<script type="module">
+import { db } from './app.js';
+import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
-    const jenisPegawai = document.getElementById('jenisPegawai');
-    const comboInput = document.getElementById('comboInput');
-    const comboList = document.getElementById('comboList');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const statusMsg = document.getElementById('statusMsg');
+const jenisPegawai = document.getElementById('jenisPegawai');
+const comboInput = document.getElementById('comboInput');
+const comboList = document.getElementById('comboList');
+const uploadBtn = document.getElementById('uploadBtn');
+const statusMsg = document.getElementById('statusMsg');
 
-    let semuaPegawai = [];
-    let filteredPegawai = [];
-    let selectedPegawai = null;
+let semuaPegawai = [];
+let filteredPegawai = [];
+let selectedPegawai = null;
 
-    // ✅ Ambil data pegawai dari Firebase
-    const pegawaiRef = ref(db, 'Pegawai');
-    onValue(pegawaiRef, snapshot => {
-      semuaPegawai = [];
-      snapshot.forEach(child => {
-        const data = child.val();
-        if (data && data.nama) {
-          semuaPegawai.push({
-            id: child.key,
-            nama: data.nama,
-            gelar: data.gelar || ''
-          });
-        }
-      });
-
-      filteredPegawai = semuaPegawai;
-      renderDropdown();
-    });
-
-    // 🔍 Cari nama pegawai
-    comboInput.addEventListener('input', () => {
-      const keyword = comboInput.value.toLowerCase();
-      filteredPegawai = semuaPegawai.filter(p =>
-        (p.nama && p.nama.toLowerCase().includes(keyword)) ||
-        (p.gelar && p.gelar.toLowerCase().includes(keyword))
-      );
-      renderDropdown();
-      comboList.style.display = keyword ? 'block' : 'none';
-    });
-
-    // 🧾 Render dropdown
-    function renderDropdown() {
-      comboList.innerHTML = '';
-      if (filteredPegawai.length === 0) {
-        comboList.innerHTML = `<p class="text-gray-500 text-center py-2">Tidak ada pegawai ditemukan</p>`;
-        return;
-      }
-      filteredPegawai.forEach(p => {
-        const item = document.createElement('div');
-        item.className = 'combo-item';
-        item.textContent = `${p.nama}${p.gelar ? ' ' + p.gelar : ''}`;
-        item.dataset.nama = p.nama;
-        comboList.appendChild(item);
+// ✅ Ambil data pegawai dari Firebase
+const pegawaiRef = ref(db, 'Pegawai');
+onValue(pegawaiRef, snapshot => {
+  semuaPegawai = [];
+  snapshot.forEach(child => {
+    const data = child.val();
+    if (data && data.nama) {
+      semuaPegawai.push({
+        id: child.key,
+        nama: data.nama,
+        gelar: data.gelar || ''
       });
     }
+  });
 
-    // 🧠 Pilih pegawai
-    comboList.addEventListener('click', e => {
-      if (e.target.classList.contains('combo-item')) {
-        selectedPegawai = e.target.dataset.nama;
-        comboInput.value = selectedPegawai;
-        comboList.style.display = 'none';
-      }
-    });
+  filteredPegawai = semuaPegawai;
+  renderDropdown();
+});
 
-    // ⬆️ Tutup dropdown kalau klik di luar
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.combo-box')) comboList.style.display = 'none';
-    });
+// 🔍 Cari nama pegawai
+comboInput.addEventListener('input', () => {
+  const keyword = comboInput.value.toLowerCase();
+  filteredPegawai = semuaPegawai.filter(p =>
+    (p.nama && p.nama.toLowerCase().includes(keyword)) ||
+    (p.gelar && p.gelar.toLowerCase().includes(keyword))
+  );
+  renderDropdown();
+  comboList.style.display = keyword ? 'block' : 'none';
+});
 
-    // 💾 Simpan data ke Firebase
-    uploadBtn.addEventListener('click', async () => {
-      const jenis = jenisPegawai.value;
-      if (!jenis) return statusMsg.textContent = "⚠️ Pilih jenis pegawai!";
-      if (!selectedPegawai) return statusMsg.textContent = "⚠️ Pilih nama pegawai!";
+// 🧾 Render dropdown
+function renderDropdown() {
+  comboList.innerHTML = '';
+  if (filteredPegawai.length === 0) {
+    comboList.innerHTML = `<p class="text-gray-500 text-center py-2">Tidak ada pegawai ditemukan</p>`;
+    return;
+  }
+  filteredPegawai.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'combo-item';
+    item.textContent = `${p.nama}${p.gelar ? ' ' + p.gelar : ''}`;
+    item.dataset.nama = p.nama;
+    comboList.appendChild(item);
+  });
+}
 
-      const hasilRekap = {
-        jenisPegawai: jenis,
-        namaPegawai: selectedPegawai,
-        ak_terlambat: ak_terlambat.value || 0,
-        ak_pulangCepat: ak_pulangCepat.value || 0,
-        ak_sakit: ak_sakit.value || 0,
-        ak_hariKerja: ak_hariKerja.value || 0,
-        telat_hari: telat_hari.value || 0,
-        telat_jam: telat_jam.value || 0,
-        dl_total: dl_total.value || 0,
-        ak_CAP: ak_CAP.value || 0,
-        ak_CT: ak_CT.value || 0,
-        ak_CM: ak_CM.value || 0,
-        ak_GL: ak_GL.value || 0,
-        ak_CTB: ak_CTB.value || 0,
-        shift_LM: shift_LM.value || 0,
-        shift_P: shift_P.value || 0,
-        shift_S: shift_S.value || 0,
-        shift_M: shift_M.value || 0,
-        shift_OFF: shift_OFF.value || 0,
-        shift_total: shift_total.value || 0,
-        persenKehadiran: persenKehadiran.value || '-',
-        timestamp: new Date().toISOString()
-      };
+// 🧠 Pilih pegawai
+comboList.addEventListener('click', e => {
+  if (e.target.classList.contains('combo-item')) {
+    selectedPegawai = e.target.dataset.nama;
+    comboInput.value = selectedPegawai;
+    comboList.style.display = 'none';
+  }
+});
 
-      try {
-        await set(push(ref(db, 'RekapAbsensi')), hasilRekap);
-        statusMsg.textContent = "✅ Data absensi berhasil disimpan ke database!";
-        statusMsg.classList.add("text-green-600");
-        document.querySelectorAll('input').forEach(i => i.value = '');
-      } catch (error) {
-        console.error("❌ Gagal menyimpan ke Firebase:", error);
-        statusMsg.textContent = "❌ Terjadi kesalahan saat menyimpan data.";
-        statusMsg.classList.add("text-red-600");
-      }
-    });
-  </script>
+// ⬆️ Tutup dropdown kalau klik di luar
+document.addEventListener('click', e => {
+  if (!e.target.closest('.combo-box')) comboList.style.display = 'none';
+});
+
+// 💾 Simpan data ke Firebase
+uploadBtn.addEventListener('click', async () => {
+  const jenis = jenisPegawai.value;
+  if (!jenis) return statusMsg.textContent = "⚠️ Pilih jenis pegawai!";
+  if (!selectedPegawai) return statusMsg.textContent = "⚠️ Pilih nama pegawai!";
+
+  const sakit = Number(ak_sakit.value) || 0;
+  const dl = Number(dl_total.value) || 0;
+
+  // otomatis hitung sakit >3 hari dan pembagian DL
+  const hasilRekap = {
+    jenisPegawai: jenis,
+    namaPegawai: selectedPegawai,
+    ak_terlambat: ak_terlambat.value || 0,
+    ak_pulangCepat: ak_pulangCepat.value || 0,
+    ak_sakit: sakit,
+    ak_sakit3hari: sakit > 3 ? sakit : 0,
+    ak_hariKerja: ak_hariKerja.value || 0,
+    telat_hari_jam: `${telat_hari.value || 0} hari ${telat_jam.value || 0} jam`,
+    dl_total: dl,
+    dl_kurang3: dl > 0 && dl < 3 ? dl : 0,
+    dl_lebih3: dl >= 3 ? dl : 0,
+    ak_CAP: ak_CAP.value || 0,
+    ak_CT: ak_CT.value || 0,
+    ak_CM: ak_CM.value || 0,
+    ak_GL: ak_GL.value || 0,
+    ak_CTB: ak_CTB.value || 0,
+    shift: `LM:${shift_LM.value || 0}, P:${shift_P.value || 0}, S:${shift_S.value || 0}, M:${shift_M.value || 0}, OFF:${shift_OFF.value || 0}, Total:${shift_total.value || 0}`,
+    persenKehadiran: persenKehadiran.value || '-',
+    bulan: new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' }),
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    await set(push(ref(db, 'RekapAbsensi')), hasilRekap);
+    statusMsg.textContent = "✅ Data absensi berhasil disimpan ke database!";
+    statusMsg.classList.add("text-green-600");
+
+    // Jika mau langsung tampilkan hasil:
+    // window.location.href = "hasil-absensi.html";
+
+    document.querySelectorAll('input').forEach(i => i.value = '');
+  } catch (error) {
+    console.error("❌ Gagal menyimpan ke Firebase:", error);
+    statusMsg.textContent = "❌ Terjadi kesalahan saat menyimpan data.";
+    statusMsg.classList.add("text-red-600");
+  }
+});
+</script>
 </body>
 </html>
