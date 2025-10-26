@@ -4,24 +4,26 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registrasi - Data & Informasi UPTD Puskesmas Padasuka</title>
-  <link rel="stylesheet" href="style.css"/>
   <style>
-    /* 🌐 Tambahan styling agar sama seperti login */
+    /* 🌐 Gaya umum */
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      background: #f4f6f9;
     }
 
     header {
-      background: #1976d2;
+      background: linear-gradient(90deg, #1565c0, #1976d2);
       color: #fff;
       text-align: center;
-      padding: 15px;
+      padding: 16px;
       font-size: 18px;
-      font-weight: 500;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      letter-spacing: 0.3px;
     }
 
     main {
@@ -30,70 +32,90 @@
       flex-wrap: wrap;
     }
 
+    /* 🔹 Panel kiri */
     .left-panel {
-      background: #1976d2;
+      background: linear-gradient(180deg, #1976d2, #1565c0);
       color: #fff;
       flex: 1;
-      min-width: 280px;
+      min-width: 320px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 30px;
+      padding: 40px 20px;
       text-align: center;
     }
 
+    .left-panel img {
+      width: 160px;
+      margin-bottom: 25px;
+      filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2));
+    }
+
     .left-panel h1 {
-      font-size: 24px;
+      font-size: 26px;
+      font-weight: 700;
       margin-bottom: 10px;
     }
 
     .left-panel p {
       font-size: 15px;
-      line-height: 1.5;
-      max-width: 300px;
+      line-height: 1.6;
+      max-width: 340px;
+      opacity: 0.9;
     }
 
-    .left-panel img {
-      width: 180px;
-      margin-top: 20px;
-    }
-
+    /* 🔹 Panel kanan */
     .right-panel {
       flex: 1;
-      min-width: 280px;
+      min-width: 320px;
+      background: #f9fafc;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 30px;
-      background: #f4f6f9;
+      padding: 40px 20px;
     }
 
     .card {
       background: #fff;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 30px 28px;
+      border-radius: 12px;
+      box-shadow: 0 5px 12px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 320px;
+      max-width: 360px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
+      border: 1px solid #e3e8ef;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 18px rgba(25,118,210,0.15);
     }
 
     .card h3 {
       text-align: center;
-      margin-bottom: 10px;
       color: #1976d2;
+      margin-bottom: 6px;
+      font-size: 20px;
+      font-weight: 600;
     }
 
     .card input {
       padding: 10px;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      border-radius: 6px;
       font-size: 14px;
       width: 100%;
       box-sizing: border-box;
+      transition: border 0.2s ease;
+    }
+
+    .card input:focus {
+      outline: none;
+      border-color: #1976d2;
+      box-shadow: 0 0 0 2px rgba(25,118,210,0.2);
     }
 
     .card button {
@@ -102,9 +124,11 @@
       border: none;
       padding: 10px;
       font-size: 15px;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
       margin-top: 10px;
+      font-weight: 500;
+      transition: background 0.2s ease;
     }
 
     .card button:hover {
@@ -120,6 +144,7 @@
     .link a {
       color: #1976d2;
       text-decoration: none;
+      font-weight: 500;
     }
 
     .link a:hover {
@@ -128,6 +153,34 @@
 
     #adminCode {
       margin-top: 5px;
+      display: none;
+    }
+
+    footer {
+      background: #1976d2;
+      color: #e3f2fd;
+      text-align: center;
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    footer b {
+      color: #fff;
+    }
+
+    @media (max-width: 768px) {
+      .left-panel {
+        padding: 30px 20px;
+      }
+      .left-panel img {
+        width: 120px;
+      }
+      .left-panel h1 {
+        font-size: 22px;
+      }
+      .card {
+        padding: 25px;
+      }
     }
   </style>
 </head>
@@ -137,9 +190,9 @@
   <main>
     <!-- Panel kiri -->
     <div class="left-panel">
+      <img src="https://i.ibb.co/QC2D4hB/logo-puskesmas.png" alt="Logo Puskesmas" />
       <h1>Gabung Sekarang</h1>
-      <p>Buat akun untuk mengakses portal Data & Informasi UPTD Puskesmas Padasuka.</p>
-      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Register">
+      <p>Buat akun untuk mengakses portal <b>Data & Informasi UPTD Puskesmas Padasuka</b>.</p>
     </div>
 
     <!-- Panel kanan -->
@@ -151,7 +204,7 @@
         <input type="password" id="regPassword" placeholder="Password" />
 
         <!-- Kolom kode rahasia admin -->
-        <input type="text" id="adminCode" placeholder="Masukkan kode admin (optional)" style="display:none;" />
+        <input type="text" id="adminCode" placeholder="Masukkan kode admin (optional)" />
 
         <!-- Tombol untuk menampilkan kolom kode -->
         <div class="link">
@@ -164,13 +217,14 @@
     </div>
   </main>
 
+  <footer>© 2025 <b>UPTD Puskesmas Padasuka</b> - Kota Bandung</footer>
+
   <!-- Script Registrasi -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    // Konfigurasi Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
       authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
@@ -185,14 +239,12 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Toggle kolom kode admin
     window.toggleAdminCode = (e) => {
       e.preventDefault();
       const codeField = document.getElementById('adminCode');
       codeField.style.display = codeField.style.display === 'none' ? 'block' : 'none';
     };
 
-    // Registrasi
     document.getElementById('btnRegister').addEventListener('click', async () => {
       const name = document.getElementById('regName').value.trim();
       const email = document.getElementById('regEmail').value.trim();
