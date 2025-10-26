@@ -1,121 +1,3 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Input Rekapan Absensi Pegawai</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .combo-box { position: relative; width: 100%; }
-    .combo-input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid #ccc;
-      border-radius: 0.5rem;
-      outline: none;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .combo-input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
-    }
-    .combo-list {
-      position: absolute;
-      top: 100%; left: 0; right: 0;
-      background: white;
-      border: 1px solid #ddd;
-      border-top: none;
-      border-radius: 0 0 0.5rem 0.5rem;
-      max-height: 240px;
-      overflow-y: auto;
-      z-index: 50;
-      display: none;
-      animation: fadeIn 0.15s ease-in-out;
-    }
-    .combo-item {
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .combo-item:hover { background: #f3f4f6; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
-</head>
-
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-4xl">
-    <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">
-      Input Rekapan Absensi Pegawai
-    </h1>
-
-    <!-- Jenis Pegawai -->
-    <div class="mb-5">
-      <label class="block text-gray-700 font-medium mb-2">1. Jenis Pegawai</label>
-      <select id="jenisPegawai" class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
-        <option value="">-- Pilih Jenis Pegawai --</option>
-        <option value="BLUD">BLUD</option>
-        <option value="ASN">ASN</option>
-      </select>
-    </div>
-
-    <!-- Nama Pegawai (Dropdown Searchable - versi final) -->
-    <div class="mb-5 combo-box">
-      <label class="block text-gray-700 font-medium mb-2">2. Nama Pegawai</label>
-      <input id="comboInput" type="text" placeholder="Cari atau pilih pegawai..." class="combo-input">
-      <div id="comboList" class="combo-list"></div>
-    </div>
-
-    <!-- 🗓️ Input Bulan -->
-    <div class="mb-5">
-      <label class="block text-gray-700 font-medium mb-2">3. Bulan Rekapan</label>
-      <input id="bulanInput" type="month" class="w-full p-3 border rounded-lg focus:ring focus:ring-blue-300">
-    </div>
-
-    <!-- Form Input Rekap -->
-    <div class="grid grid-cols-2 gap-4">
-      <div><label>4. Akumulasi Terlambat</label><input id="ak_terlambat" class="w-full p-2 border rounded"></div>
-      <div><label>5. Akumulasi Pulang Cepat</label><input id="ak_pulangCepat" class="w-full p-2 border rounded"></div>
-
-      <div><label>6. Akumulasi Sakit</label><input id="ak_sakit" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>7. Akumulasi Total Hari Kerja dalam 1 Bulan</label><input id="ak_hariKerja" type="number" class="w-full p-2 border rounded"></div>
-
-      <div><label>8. Jumlah Keterlambatan (Hari)</label><input id="telat_hari" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>9. Jumlah Keterlambatan (Jam)</label><input id="telat_jam" type="number" class="w-full p-2 border rounded"></div>
-
-      <div><label>10. Jumlah DL (Dinas Luar)</label><input id="dl_total" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>11. Jumlah CAP</label><input id="ak_CAP" type="number" class="w-full p-2 border rounded"></div>
-
-      <div><label>12. Jumlah CT</label><input id="ak_CT" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>13. Jumlah CM</label><input id="ak_CM" type="number" class="w-full p-2 border rounded"></div>
-
-      <div><label>14. Jumlah GL</label><input id="ak_GL" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>15. Jumlah CTB</label><input id="ak_CTB" type="number" class="w-full p-2 border rounded"></div>
-
-      <div><label>16. Jumlah LM (Shift)</label><input id="shift_LM" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>17. Jumlah Pagi (Shift)</label><input id="shift_P" type="number" class="w-full p-2 border rounded"></div>
-
-      <div><label>18. Jumlah Siang (Shift)</label><input id="shift_S" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>19. Jumlah Malam (Shift)</label><input id="shift_M" type="number" class="w-full p-2 border rounded"></div>
-
-      <div><label>20. Jumlah Off/Libur (Shift)</label><input id="shift_OFF" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>21. Total Hari Kerja (Shift)</label><input id="shift_total" type="number" class="w-full p-2 border rounded"></div>
-
-      <div class="col-span-2"><label>22. Total % Kehadiran</label><input id="persenKehadiran" class="w-full p-2 border rounded" placeholder="contoh: 95%"></div>
-    </div>
-
-    <button id="uploadBtn"
-      class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
-      💾 Simpan Rekapan
-    </button>
-
-    <div id="statusMsg" class="text-center text-gray-600 mt-4"></div>
-  </div>
-
-  <!-- 🔥 Firebase + Dropdown Search Pegawai (versi final) + Simpan Rekap -->
 <script type="module">
 import { db } from './app.js';
 import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
@@ -145,7 +27,6 @@ onValue(pegawaiRef, snapshot => {
       });
     }
   });
-
   filteredPegawai = semuaPegawai;
   renderDropdown();
 });
@@ -210,6 +91,7 @@ uploadBtn.addEventListener('click', async () => {
     year: "numeric"
   });
 
+  // 💾 Data final disimpan ke Firebase
   const hasilRekap = {
     jenisPegawai: jenis,
     namaPegawai: selectedPegawai,
@@ -218,7 +100,8 @@ uploadBtn.addEventListener('click', async () => {
     ak_sakit: sakit,
     ak_sakit3hari: sakit > 3 ? sakit : 0,
     ak_hariKerja: ak_hariKerja.value || 0,
-    telat_hari_jam: `${telat_hari.value || 0} hari ${telat_jam.value || 0} jam`,
+    telat_hari: telat_hari.value || 0,   // ⬅️ terpisah
+    telat_jam: telat_jam.value || 0,     // ⬅️ terpisah
     dl_total: dl,
     dl_kurang3: dl > 0 && dl < 3 ? dl : 0,
     dl_lebih3: dl >= 3 ? dl : 0,
@@ -245,5 +128,3 @@ uploadBtn.addEventListener('click', async () => {
   }
 });
 </script>
-</body>
-</html>
