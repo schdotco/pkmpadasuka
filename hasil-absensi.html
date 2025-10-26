@@ -3,40 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hasil Rekapan Absensi Pegawai</title>
+  <title>📊 Hasil Rekapan Absensi Pegawai</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
   <style>
-    body { background: #f3f4f6; font-family: 'Segoe UI', Tahoma, sans-serif; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: center; }
-    th { background: #2563eb; color: white; position: sticky; top: 0; z-index: 10; }
+    body { background: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    th { background: #1e40af; color: white; position: sticky; top: 0; z-index: 20; font-weight: 600; }
+    td, th { border: 1px solid #e5e7eb; text-align: center; padding: 0.5rem 0.75rem; font-size: 0.875rem; }
     tr:nth-child(even) { background: #f9fafb; }
-    tbody { max-height: 600px; overflow-y: auto; display: block; }
-    table thead, table tbody tr { display: table; width: 100%; table-layout: fixed; }
+    tr:hover { background: #e0f2fe; transition: 0.2s; }
   </style>
 </head>
-<body class="p-6">
-  <div class="max-w-7xl mx-auto bg-white p-6 rounded-xl shadow">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">📊 Hasil Rekapan Absensi Pegawai</h1>
 
-    <!-- 🔽 Filter Bulan + Tombol Cetak -->
-    <div class="flex flex-wrap justify-between items-center mb-5 gap-3">
+<body class="min-h-screen flex flex-col p-4 sm:p-8">
+  <div class="flex-1 bg-white shadow-lg rounded-2xl p-6 sm:p-10 w-full max-w-full overflow-hidden">
+    <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-8">
+      📊 Hasil Rekapan Absensi Pegawai
+    </h1>
+
+    <!-- 🔽 Filter Bulan + Tombol Export -->
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
       <div class="flex items-center gap-3">
         <label for="filterBulan" class="font-semibold text-gray-700">Pilih Bulan:</label>
-        <select id="filterBulan" class="border rounded-lg p-2 focus:ring focus:ring-blue-300">
+        <select id="filterBulan" class="border border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300">
           <option value="">-- Semua Bulan --</option>
         </select>
       </div>
       <button id="btnExport"
-        class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg transition">
+        class="bg-green-600 hover:bg-green-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition">
         📄 Cetak / Export Excel
       </button>
     </div>
 
-    <!-- 🧾 Tabel Hasil -->
-    <div class="overflow-x-auto border rounded-lg">
-      <table id="tabelAbsensi">
+    <!-- 🧾 Tabel Data -->
+    <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-inner">
+      <table id="tabelAbsensi" class="min-w-full text-sm">
         <thead>
           <tr>
             <th>No</th>
@@ -67,7 +68,7 @@
           </tr>
         </thead>
         <tbody id="isiTabel">
-          <tr><td colspan="25" class="text-center py-4 text-gray-500">Memuat data...</td></tr>
+          <tr><td colspan="25" class="text-center py-6 text-gray-500">Memuat data...</td></tr>
         </tbody>
       </table>
     </div>
@@ -87,38 +88,34 @@
       semuaData = [];
       isiTabel.innerHTML = '';
       if (!snapshot.exists()) {
-        isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-4 text-gray-500">Belum ada data absensi</td></tr>`;
+        isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-6 text-gray-500">Belum ada data absensi</td></tr>`;
         return;
       }
 
-      snapshot.forEach(child => {
-        semuaData.push(child.val());
-      });
-
+      snapshot.forEach(child => semuaData.push(child.val()));
       renderBulanOptions();
       renderTabel();
     });
 
-    // 🔽 Buat daftar bulan unik untuk filter
+    // 🔽 Daftar bulan untuk filter
     function renderBulanOptions() {
       const bulanUnik = [...new Set(semuaData.map(d => d.bulan))].filter(Boolean);
       filterBulan.innerHTML = `<option value="">-- Semua Bulan --</option>`;
       bulanUnik.forEach(b => {
         const opt = document.createElement('option');
-        opt.value = b;
-        opt.textContent = b;
+        opt.value = b; opt.textContent = b;
         filterBulan.appendChild(opt);
       });
     }
 
-    // 🧾 Render tabel utama
+    // 🧾 Render tabel
     function renderTabel() {
       isiTabel.innerHTML = '';
       const bulanFilter = filterBulan.value;
       const dataTampil = bulanFilter ? semuaData.filter(d => d.bulan === bulanFilter) : semuaData;
 
       if (dataTampil.length === 0) {
-        isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-4 text-gray-500">Tidak ada data untuk bulan ini</td></tr>`;
+        isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-6 text-gray-500">Tidak ada data untuk bulan ini</td></tr>`;
         return;
       }
 
@@ -129,21 +126,14 @@
         const dlKurang3 = d.dl_kurang3 ?? (Number(d.dl_total) > 0 && Number(d.dl_total) < 3 ? d.dl_total : 0);
         const dlLebih3 = d.dl_lebih3 ?? (Number(d.dl_total) >= 3 ? d.dl_total : 0);
 
-        // 🔢 Pisahkan data shift
-        let LM = 0, P = 0, S = 0, M = 0, OFF = 0, Total = 0;
+        // Shift parsing
+        let LM=0,P=0,S=0,M=0,OFF=0,Total=0;
         if (d.shift) {
-          const shiftData = d.shift.split(',');
-          shiftData.forEach(pair => {
-            const [key, val] = pair.split(':');
-            if (!key || !val) return;
-            switch (key.trim()) {
-              case 'LM': LM = val; break;
-              case 'P': P = val; break;
-              case 'S': S = val; break;
-              case 'M': M = val; break;
-              case 'OFF': OFF = val; break;
-              case 'Total': Total = val; break;
-            }
+          const s = d.shift.split(',');
+          s.forEach(pair => {
+            const [k,v] = pair.split(':');
+            if (!k || !v) return;
+            switch(k.trim()){case'LM':LM=v;break;case'P':P=v;break;case'S':S=v;break;case'M':M=v;break;case'OFF':OFF=v;break;case'Total':Total=v;break;}
           });
         }
 
@@ -151,7 +141,7 @@
           <tr>
             <td>${no++}</td>
             <td>${d.jenisPegawai || '-'}</td>
-            <td>${d.namaPegawai || '-'}</td>
+            <td class="text-left pl-2">${d.namaPegawai || '-'}</td>
             <td>${d.ak_terlambat || 0}</td>
             <td>${d.ak_pulangCepat || 0}</td>
             <td>${sakit}</td>
@@ -180,15 +170,14 @@
       });
     }
 
-    // 🔁 Update tabel ketika filter bulan diganti
+    // 🔁 Filter bulan
     filterBulan.addEventListener('change', renderTabel);
 
-    // 📄 Export ke Excel
+    // 📊 Export Excel
     btnExport.addEventListener('click', () => {
-      const bulanFilter = filterBulan.value || 'Semua Bulan';
-      const table = document.getElementById('tabelAbsensi');
-      const wb = XLSX.utils.table_to_book(table, { sheet: `Rekap ${bulanFilter}` });
-      XLSX.writeFile(wb, `Rekap_Absensi_${bulanFilter}.xlsx`);
+      const bulan = filterBulan.value || 'Semua_Bulan';
+      const wb = XLSX.utils.table_to_book(document.getElementById('tabelAbsensi'), { sheet: `Rekap ${bulan}` });
+      XLSX.writeFile(wb, `Rekap_Absensi_${bulan}.xlsx`);
     });
   </script>
 </body>
