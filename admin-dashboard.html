@@ -5,114 +5,181 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
   <style>
+    /* 🌈 Style Modern dan Ringan */
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f6f9;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9fafc;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
-    /* NAVBAR */
+    /* 🔹 Navbar */
     .navbar {
-      background: #1976d2;
+      background: linear-gradient(90deg, #1565c0, #1976d2);
       color: #fff;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 20px;
+      padding: 14px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
+
     .navbar h1 {
       font-size: 18px;
       margin: 0;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
+
     .navbar .menu {
       display: flex;
-      gap: 15px;
+      gap: 18px;
+      flex-wrap: wrap;
     }
+
     .navbar .menu a {
-      color: #fff;
+      color: #e3f2fd;
       text-decoration: none;
       font-size: 14px;
+      transition: color 0.2s ease;
     }
+
     .navbar .menu a:hover {
-      text-decoration: underline;
+      color: #fff;
     }
+
     .navbar button {
       background: #fff;
       color: #1976d2;
       border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
+      padding: 6px 12px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s ease, transform 0.1s ease;
     }
 
-    /* DASHBOARD */
+    .navbar button:hover {
+      background: #e3f2fd;
+      transform: translateY(-1px);
+    }
+
+    /* 🔹 Dashboard Layout */
     .dashboard {
-      max-width: 1100px;
+      flex: 1;
+      max-width: 1200px;
       margin: 30px auto;
-      padding: 0 15px;
-    }
-    .dashboard h2 {
-      font-size: 20px;
-      color: #333;
-      margin-bottom: 20px;
+      padding: 0 20px 50px;
     }
 
-    /* CARD GRID */
+    .dashboard h2 {
+      font-size: 22px;
+      color: #1565c0;
+      margin-bottom: 25px;
+      text-align: center;
+      font-weight: 700;
+      border-bottom: 2px solid #1976d2;
+      display: inline-block;
+      padding-bottom: 5px;
+    }
+
+    /* 🔹 Card Grid */
     .card-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
+      gap: 24px;
     }
 
+    /* 🔹 Card */
     .card {
       background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       overflow: hidden;
-      transition: transform 0.2s ease;
+      transition: all 0.25s ease;
+      border: 1px solid #eef2f7;
     }
+
     .card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-6px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     }
+
     .card img {
       width: 100%;
-      height: 120px;
+      height: 140px;
       object-fit: cover;
+      transition: transform 0.3s ease;
     }
+
+    .card:hover img {
+      transform: scale(1.04);
+    }
+
     .card-content {
-      padding: 15px;
+      padding: 16px 18px;
+      flex: 1;
     }
+
     .card h3 {
       font-size: 16px;
       color: #1976d2;
-      margin: 0 0 8px 0;
+      margin: 0 0 6px 0;
+      font-weight: 600;
     }
+
     .card p {
-      font-size: 13px;
+      font-size: 13.5px;
       color: #555;
       margin: 0;
+      line-height: 1.5;
     }
+
     .card button {
       background: #1976d2;
       color: #fff;
       border: none;
       padding: 10px;
-      font-size: 13px;
+      font-size: 14px;
       cursor: pointer;
-      width: 100%;
-      margin-top: auto;
+      border-radius: 0 0 12px 12px;
+      font-weight: 500;
+      transition: background 0.2s ease, transform 0.1s ease;
     }
+
     .card button:hover {
       background: #125ca1;
+      transform: translateY(-1px);
+    }
+
+    /* 🔹 Responsive */
+    @media (max-width: 600px) {
+      .navbar h1 {
+        font-size: 16px;
+      }
+      .navbar .menu {
+        gap: 10px;
+      }
+      .dashboard h2 {
+        font-size: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
+
+  <!-- 🔸 Navbar -->
   <div class="navbar">
     <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
     <div class="menu">
@@ -121,13 +188,15 @@
       <a href="pegawai.html">Pegawai</a>  
       <a href="kalender.html">Kalender</a>
     </div>
-     <button onclick="logout()">Logout</button>
+    <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- Dashboard -->
+  <!-- 🔸 Dashboard -->
   <div class="dashboard">
     <h2>Admin Menu</h2>
-        <div class="card-grid">
+
+    <div class="card-grid">
+
       <div class="card">
         <img src="https://via.placeholder.com/300x120?text=JADWAL" alt="JADWAL">
         <div class="card-content">
@@ -136,8 +205,7 @@
         </div>
         <button onclick="window.location.href='jadwal.html'">Masuk</button>
       </div>
-    
-    <div class="card-grid">
+
       <div class="card">
         <img src="https://via.placeholder.com/300x120?text=REVIEW CUTI" alt="REVIEW CUTI">
         <div class="card-content">
@@ -151,7 +219,7 @@
         <img src="https://via.placeholder.com/300x120?text=LIST CUTI" alt="LIST CUTI">
         <div class="card-content">
           <h3>List Pengajuan Cuti Pegawai</h3>
-          <p>Manajemen Kepegawaian UPTD Puskesmas Padasuka</p>
+          <p>Daftar pengajuan cuti semua pegawai aktif</p>
         </div>
         <button onclick="location.href='cuti-list.html'">Masuk</button>
       </div>
@@ -160,7 +228,7 @@
         <img src="https://via.placeholder.com/300x120?text=Input Informasi TV" alt="Input Informasi TV">
         <div class="card-content">
           <h3>Input Jadwal TV Informasi</h3>
-          <p>Manajemen Informasi UPTD Puskesmas Padasuka</p>
+          <p>Kelola jadwal informasi untuk layar TV Puskesmas</p>
         </div>
         <button onclick="location.href='informasi.html'">Masuk</button>
       </div>
@@ -168,18 +236,17 @@
       <div class="card">
         <img src="https://via.placeholder.com/300x120?text=Layar Informasi TV" alt="Layar Informasi TV">
         <div class="card-content">
-          <h3>Input Jadwal TV Informasi</h3>
-          <p>Manajemen Informasi UPTD Puskesmas Padasuka</p>
+          <h3>Layar Informasi TV</h3>
+          <p>Tampilan informasi terkini di ruang tunggu pasien</p>
         </div>
         <button onclick="location.href='hasil-informasi.html'">Masuk</button>
       </div>
-      
+
     </div>
   </div>
 
   <script>
     function logout() {
-      // Arahkan ke halaman Login
       window.location.href = "login.html";
     }
   </script>
