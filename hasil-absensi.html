@@ -7,11 +7,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
   <style>
-    body { background: #f3f4f6; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 0.6rem 1rem; border: 1px solid #ddd; text-align: center; font-size: 0.9rem; }
-    th { background: #2563eb; color: white; }
+    body { background: #f3f4f6; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: center; }
+    th { background: #2563eb; color: white; position: sticky; top: 0; z-index: 10; }
     tr:nth-child(even) { background: #f9fafb; }
+    tbody { max-height: 600px; overflow-y: auto; display: block; }
+    table thead, table tbody tr { display: table; width: 100%; table-layout: fixed; }
   </style>
 </head>
 <body class="p-6">
@@ -33,7 +35,7 @@
     </div>
 
     <!-- 🧾 Tabel Hasil -->
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto border rounded-lg">
       <table id="tabelAbsensi">
         <thead>
           <tr>
@@ -45,8 +47,8 @@
             <th>Ak. Sakit</th>
             <th>Ak. Sakit >3 Hari</th>
             <th>Ak. Hari Kerja</th>
-            <th>Keterlambatan (Hari)</th>
-            <th>Keterlambatan (Jam)</th>
+            <th>Telat (Hari)</th>
+            <th>Telat (Jam)</th>
             <th>DL <3 Hari</th>
             <th>DL >3 Hari</th>
             <th>CAP</th>
@@ -58,7 +60,7 @@
             <th>Pagi</th>
             <th>Siang</th>
             <th>Malam</th>
-            <th>Off/Libur</th>
+            <th>Off</th>
             <th>Total Shift</th>
             <th>% Kehadiran</th>
             <th>Bulan</th>
@@ -80,7 +82,7 @@
     const btnExport = document.getElementById('btnExport');
     let semuaData = [];
 
-    // 🔹 Ambil data realtime dari Firebase
+    // 🔄 Ambil data realtime dari Firebase
     onValue(ref(db, 'RekapAbsensi'), snapshot => {
       semuaData = [];
       isiTabel.innerHTML = '';
@@ -89,12 +91,15 @@
         return;
       }
 
-      snapshot.forEach(child => semuaData.push(child.val()));
+      snapshot.forEach(child => {
+        semuaData.push(child.val());
+      });
+
       renderBulanOptions();
       renderTabel();
     });
 
-    // 🔹 Buat daftar bulan unik untuk filter
+    // 🔽 Buat daftar bulan unik untuk filter
     function renderBulanOptions() {
       const bulanUnik = [...new Set(semuaData.map(d => d.bulan))].filter(Boolean);
       filterBulan.innerHTML = `<option value="">-- Semua Bulan --</option>`;
@@ -106,7 +111,7 @@
       });
     }
 
-    // 🔹 Render tabel berdasarkan bulan
+    // 🧾 Render tabel utama
     function renderTabel() {
       isiTabel.innerHTML = '';
       const bulanFilter = filterBulan.value;
@@ -121,23 +126,14 @@
       dataTampil.forEach(d => {
         const sakit = Number(d.ak_sakit) || 0;
         const sakit3hari = sakit > 3 ? sakit : 0;
-
         const dlKurang3 = d.dl_kurang3 ?? (Number(d.dl_total) > 0 && Number(d.dl_total) < 3 ? d.dl_total : 0);
         const dlLebih3 = d.dl_lebih3 ?? (Number(d.dl_total) >= 3 ? d.dl_total : 0);
 
-        // 🔸 Pisahkan telat_hari_jam jadi hari dan jam
-        let telatHari = 0, telatJam = 0;
-        if (d.telat_hari_jam) {
-          const matchHari = d.telat_hari_jam.match(/(\d+)\s*hari/);
-          const matchJam = d.telat_hari_jam.match(/(\d+)\s*jam/);
-          telatHari = matchHari ? matchHari[1] : 0;
-          telatJam = matchJam ? matchJam[1] : 0;
-        }
-
-        // 🔸 Parsing shift
+        // 🔢 Pisahkan data shift
         let LM = 0, P = 0, S = 0, M = 0, OFF = 0, Total = 0;
         if (d.shift) {
-          d.shift.split(',').forEach(pair => {
+          const shiftData = d.shift.split(',');
+          shiftData.forEach(pair => {
             const [key, val] = pair.split(':');
             if (!key || !val) return;
             switch (key.trim()) {
@@ -161,8 +157,8 @@
             <td>${sakit}</td>
             <td>${sakit3hari}</td>
             <td>${d.ak_hariKerja || 0}</td>
-            <td>${telatHari}</td>
-            <td>${telatJam}</td>
+            <td>${d.telat_hari || 0}</td>
+            <td>${d.telat_jam || 0}</td>
             <td>${dlKurang3}</td>
             <td>${dlLebih3}</td>
             <td>${d.ak_CAP || 0}</td>
@@ -180,14 +176,14 @@
             <td>${d.bulan || '-'}</td>
           </tr>
         `;
-        isiTabel.innerHTML += row;
+        isiTabel.insertAdjacentHTML('beforeend', row);
       });
     }
 
-    // 🔹 Update tabel saat filter bulan diubah
+    // 🔁 Update tabel ketika filter bulan diganti
     filterBulan.addEventListener('change', renderTabel);
 
-    // 🔹 Export ke Excel
+    // 📄 Export ke Excel
     btnExport.addEventListener('click', () => {
       const bulanFilter = filterBulan.value || 'Semua Bulan';
       const table = document.getElementById('tabelAbsensi');
