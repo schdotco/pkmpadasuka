@@ -5,117 +5,218 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
   <style>
+    /* 🌐 GLOBAL STYLE */
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f6f9;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9fafc;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
-    /* NAVBAR */
+    /* 🔷 NAVBAR */
     .navbar {
-      background: #1976d2;
+      background: linear-gradient(90deg, #1565c0, #1976d2);
       color: #fff;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 20px;
+      padding: 12px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
+
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .navbar-left img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: white;
+      padding: 3px;
+      object-fit: cover;
+    }
+
     .navbar h1 {
       font-size: 18px;
+      font-weight: 600;
       margin: 0;
+      letter-spacing: 0.3px;
     }
+
     .navbar .menu {
       display: flex;
-      gap: 15px;
+      gap: 20px;
+      flex-wrap: wrap;
     }
+
     .navbar .menu a {
-      color: #fff;
+      color: #e3f2fd;
       text-decoration: none;
       font-size: 14px;
+      transition: color 0.2s ease;
     }
+
     .navbar .menu a:hover {
-      text-decoration: underline;
+      color: #fff;
     }
+
     .navbar button {
       background: #fff;
       color: #1976d2;
       border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
+      padding: 7px 14px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s ease;
     }
 
-    /* DASHBOARD */
+    .navbar button:hover {
+      background: #e3f2fd;
+    }
+
+    /* 🔷 DASHBOARD CONTENT */
     .dashboard {
-      max-width: 1100px;
-      margin: 30px auto;
-      padding: 0 15px;
-    }
-    .dashboard h2 {
-      font-size: 20px;
-      color: #333;
-      margin-bottom: 20px;
+      flex: 1;
+      max-width: 1300px;
+      margin: 40px auto;
+      padding: 0 30px 60px;
+      text-align: center;
     }
 
-    /* CARD GRID */
+    .dashboard h2 {
+      font-size: 24px;
+      color: #1565c0;
+      font-weight: 700;
+      border-bottom: 3px solid #1976d2;
+      display: inline-block;
+      margin-bottom: 40px;
+      padding-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    /* 🔷 CARD GRID */
     .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
     }
 
     .card {
       background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 16px;
+      box-shadow: 0 5px 12px rgba(0,0,0,0.08);
+      width: 240px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      align-items: center;
       overflow: hidden;
+      transition: all 0.25s ease;
+      border: 1px solid #e6ebf2;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 10px 20px rgba(25,118,210,0.18);
+    }
+
+    .card img {
+      width: 90px;
+      height: 90px;
+      margin-top: 20px;
+      border-radius: 50%;
+      background: #e3f2fd;
+      object-fit: cover;
+      padding: 10px;
       transition: transform 0.2s ease;
     }
-    .card:hover {
-      transform: translateY(-4px);
+
+    .card:hover img {
+      transform: scale(1.05);
     }
-    .card img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-    }
+
     .card-content {
-      padding: 15px;
+      padding: 16px;
+      flex: 1;
     }
+
     .card h3 {
       font-size: 16px;
       color: #1976d2;
-      margin: 0 0 8px 0;
+      margin: 10px 0 6px 0;
+      font-weight: 600;
     }
+
     .card p {
-      font-size: 13px;
+      font-size: 13.5px;
       color: #555;
       margin: 0;
+      line-height: 1.5;
     }
+
     .card button {
       background: #1976d2;
       color: #fff;
       border: none;
       padding: 10px;
-      font-size: 13px;
+      font-size: 14px;
       cursor: pointer;
+      border-radius: 0 0 16px 16px;
+      font-weight: 500;
       width: 100%;
-      margin-top: auto;
+      transition: background 0.2s ease;
     }
+
     .card button:hover {
       background: #125ca1;
+    }
+
+    /* 🔷 FOOTER */
+    footer {
+      background: #1976d2;
+      color: #e3f2fd;
+      text-align: center;
+      padding: 14px;
+      font-size: 13px;
+      font-weight: 400;
+      margin-top: auto;
+    }
+
+    footer b {
+      color: #fff;
+    }
+
+    /* 🔷 RESPONSIVE */
+    @media (max-width: 768px) {
+      .navbar h1 {
+        font-size: 15px;
+      }
+      .navbar-left img {
+        width: 34px;
+        height: 34px;
+      }
+      .card {
+        width: 180px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Navbar -->
+  <!-- 🔹 NAVBAR -->
   <div class="navbar">
-    <h1>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h1>
+    <div class="navbar-left">
+      <img src="https://i.ibb.co/QC2D4hB/logo-puskesmas.png" alt="Logo Puskesmas"/>
+      <h1>Data & Informasi UPTD Puskesmas Padasuka</h1>
+    </div>
     <div class="menu">
       <a href="dashboard.html">Dashboard</a>
       <a href="profil.html">Profil</a>
@@ -124,22 +225,22 @@
      <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- Dashboard -->
+  <!-- 🔹 DASHBOARD -->
   <div class="dashboard">
     <h2>Jadwal Pegawai</h2>
     <div class="card-grid">
 
       <div class="card">
-        <img src="https://via.placeholder.com/300x120?text=PENGAJUAN CUTI" alt="PENGAJUAN CUTI">
+        <img src="https://cdn-icons-png.flaticon.com/512/3566/3566345.png" alt="Pengajuan Cuti">
         <div class="card-content">
-          <h3>Peganjuan Cuti Pegawai</h3>
+          <h3>Pengajuan Cuti Pegawai</h3>
           <p>Manajemen Kepegawaian UPTD Puskesmas Padasuka</p>
         </div>
         <button onclick="window.location.href='cuti-user.html'">Masuk</button>
       </div>
 
       <div class="card">
-        <img src="https://via.placeholder.com/300x120?text=LIST CUTI" alt="LIST CUTI">
+        <img src="https://cdn-icons-png.flaticon.com/512/2170/2170159.png" alt="List Cuti">
         <div class="card-content">
           <h3>List Cuti Pegawai</h3>
           <p>Manajemen Kepegawaian UPTD Puskesmas Padasuka</p>
@@ -150,9 +251,13 @@
     </div>
   </div>
 
+  <!-- 🔹 FOOTER -->
+  <footer>
+    © 2025 <b>UPTD Puskesmas Padasuka</b> - Kota Bandung. All Rights Reserved.
+  </footer>
+
   <script>
     function logout() {
-      // Arahkan ke halaman Login
       window.location.href = "login.html";
     }
   </script>
