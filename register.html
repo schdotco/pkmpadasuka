@@ -4,26 +4,32 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registrasi - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <link rel="stylesheet" href="style.css"/>
   <style>
-    /* 🌐 Gaya umum */
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      background: #f4f6f9;
     }
 
     header {
-      background: linear-gradient(90deg, #1565c0, #1976d2);
+      background: #1976d2;
       color: #fff;
       text-align: center;
-      padding: 16px;
+      padding: 15px;
       font-size: 18px;
-      font-weight: 600;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      letter-spacing: 0.3px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    header img {
+      height: 40px;
+      width: auto;
     }
 
     main {
@@ -32,90 +38,70 @@
       flex-wrap: wrap;
     }
 
-    /* 🔹 Panel kiri */
     .left-panel {
-      background: linear-gradient(180deg, #1976d2, #1565c0);
+      background: #1976d2;
       color: #fff;
       flex: 1;
-      min-width: 320px;
+      min-width: 280px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 40px 20px;
+      padding: 30px;
       text-align: center;
     }
 
-    .left-panel img {
-      width: 160px;
-      margin-bottom: 25px;
-      filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2));
-    }
-
     .left-panel h1 {
-      font-size: 26px;
-      font-weight: 700;
+      font-size: 24px;
       margin-bottom: 10px;
     }
 
     .left-panel p {
       font-size: 15px;
-      line-height: 1.6;
-      max-width: 340px;
-      opacity: 0.9;
+      line-height: 1.5;
+      max-width: 300px;
     }
 
-    /* 🔹 Panel kanan */
+    .left-panel img {
+      width: 180px;
+      margin-top: 20px;
+    }
+
     .right-panel {
       flex: 1;
-      min-width: 320px;
-      background: #f9fafc;
+      min-width: 280px;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 40px 20px;
+      padding: 30px;
+      background: #f4f6f9;
     }
 
     .card {
       background: #fff;
-      padding: 30px 28px;
-      border-radius: 12px;
-      box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 360px;
+      max-width: 320px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      border: 1px solid #e3e8ef;
-      transition: box-shadow 0.3s ease;
-    }
-
-    .card:hover {
-      box-shadow: 0 8px 18px rgba(25,118,210,0.15);
+      gap: 10px;
     }
 
     .card h3 {
       text-align: center;
+      margin-bottom: 10px;
       color: #1976d2;
-      margin-bottom: 6px;
-      font-size: 20px;
-      font-weight: 600;
     }
 
     .card input {
       padding: 10px;
       border: 1px solid #ccc;
-      border-radius: 6px;
+      border-radius: 4px;
       font-size: 14px;
       width: 100%;
       box-sizing: border-box;
-      transition: border 0.2s ease;
-    }
-
-    .card input:focus {
-      outline: none;
-      border-color: #1976d2;
-      box-shadow: 0 0 0 2px rgba(25,118,210,0.2);
     }
 
     .card button {
@@ -124,11 +110,9 @@
       border: none;
       padding: 10px;
       font-size: 15px;
-      border-radius: 6px;
+      border-radius: 4px;
       cursor: pointer;
       margin-top: 10px;
-      font-weight: 500;
-      transition: background 0.2s ease;
     }
 
     .card button:hover {
@@ -144,7 +128,6 @@
     .link a {
       color: #1976d2;
       text-decoration: none;
-      font-weight: 500;
     }
 
     .link a:hover {
@@ -153,46 +136,21 @@
 
     #adminCode {
       margin-top: 5px;
-      display: none;
-    }
-
-    footer {
-      background: #1976d2;
-      color: #e3f2fd;
-      text-align: center;
-      padding: 12px;
-      font-size: 13px;
-    }
-
-    footer b {
-      color: #fff;
-    }
-
-    @media (max-width: 768px) {
-      .left-panel {
-        padding: 30px 20px;
-      }
-      .left-panel img {
-        width: 120px;
-      }
-      .left-panel h1 {
-        font-size: 22px;
-      }
-      .card {
-        padding: 25px;
-      }
     }
   </style>
 </head>
 <body>
-  <header>Registrasi Akun - Data & Informasi UPTD Puskesmas Padasuka</header>
+  <header>
+    <img src="https://thumbs2.imgbox.com/a3/af/0ptQ0Rmm_t.png" alt="Logo UPTD Puskesmas Padasuka">
+    Registrasi Akun - Data & Informasi UPTD Puskesmas Padasuka
+  </header>
 
   <main>
     <!-- Panel kiri -->
     <div class="left-panel">
-      <img src="https://thumbs2.imgbox.com/a3/af/0ptQ0Rmm_t.png" alt="Logo Puskesmas" />
       <h1>Gabung Sekarang</h1>
-      <p>Buat akun untuk mengakses portal <b>Data & Informasi UPTD Puskesmas Padasuka</b>.</p>
+      <p>Buat akun untuk mengakses portal Data & Informasi UPTD Puskesmas Padasuka.</p>
+      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png" alt="Ilustrasi Register">
     </div>
 
     <!-- Panel kanan -->
@@ -204,7 +162,7 @@
         <input type="password" id="regPassword" placeholder="Password" />
 
         <!-- Kolom kode rahasia admin -->
-        <input type="text" id="adminCode" placeholder="Masukkan kode admin (optional)" />
+        <input type="text" id="adminCode" placeholder="Masukkan kode admin (optional)" style="display:none;" />
 
         <!-- Tombol untuk menampilkan kolom kode -->
         <div class="link">
@@ -216,8 +174,6 @@
       </div>
     </div>
   </main>
-
-  <footer>© 2025 <b>UPTD Puskesmas Padasuka</b> - Kota Bandung</footer>
 
   <!-- Script Registrasi -->
   <script type="module">
@@ -257,8 +213,8 @@
       }
 
       const SECRET_ADMIN_CODE = "jayajayajayakayaraya";
-
       let role = "user";
+
       if (adminCode && adminCode === SECRET_ADMIN_CODE) {
         role = "admin";
       } else if (adminCode && adminCode !== SECRET_ADMIN_CODE) {
@@ -271,7 +227,6 @@
         const user = userCredential.user;
 
         await updateProfile(user, { displayName: name });
-
         await set(ref(db, 'users/' + user.uid), {
           name: name,
           email: email,
