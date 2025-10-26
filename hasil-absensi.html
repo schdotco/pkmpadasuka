@@ -45,7 +45,8 @@
             <th>Ak. Sakit</th>
             <th>Ak. Sakit >3 Hari</th>
             <th>Ak. Hari Kerja</th>
-            <th>Keterlambatan (Hari & Jam)</th>
+            <th>Keterlambatan (Hari)</th>
+            <th>Keterlambatan (Jam)</th>
             <th>DL <3 Hari</th>
             <th>DL >3 Hari</th>
             <th>CAP</th>
@@ -64,7 +65,7 @@
           </tr>
         </thead>
         <tbody id="isiTabel">
-          <tr><td colspan="24" class="text-center py-4 text-gray-500">Memuat data...</td></tr>
+          <tr><td colspan="25" class="text-center py-4 text-gray-500">Memuat data...</td></tr>
         </tbody>
       </table>
     </div>
@@ -79,24 +80,21 @@
     const btnExport = document.getElementById('btnExport');
     let semuaData = [];
 
-    // Ambil data realtime dari Firebase
+    // 🔹 Ambil data realtime dari Firebase
     onValue(ref(db, 'RekapAbsensi'), snapshot => {
       semuaData = [];
       isiTabel.innerHTML = '';
       if (!snapshot.exists()) {
-        isiTabel.innerHTML = `<tr><td colspan="24" class="text-center py-4 text-gray-500">Belum ada data absensi</td></tr>`;
+        isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-4 text-gray-500">Belum ada data absensi</td></tr>`;
         return;
       }
 
-      snapshot.forEach(child => {
-        semuaData.push(child.val());
-      });
-
+      snapshot.forEach(child => semuaData.push(child.val()));
       renderBulanOptions();
       renderTabel();
     });
 
-    // Buat daftar bulan unik
+    // 🔹 Buat daftar bulan unik untuk filter
     function renderBulanOptions() {
       const bulanUnik = [...new Set(semuaData.map(d => d.bulan))].filter(Boolean);
       filterBulan.innerHTML = `<option value="">-- Semua Bulan --</option>`;
@@ -108,14 +106,14 @@
       });
     }
 
-    // Render tabel sesuai filter
+    // 🔹 Render tabel berdasarkan bulan
     function renderTabel() {
       isiTabel.innerHTML = '';
       const bulanFilter = filterBulan.value;
       const dataTampil = bulanFilter ? semuaData.filter(d => d.bulan === bulanFilter) : semuaData;
 
       if (dataTampil.length === 0) {
-        isiTabel.innerHTML = `<tr><td colspan="24" class="text-center py-4 text-gray-500">Tidak ada data untuk bulan ini</td></tr>`;
+        isiTabel.innerHTML = `<tr><td colspan="25" class="text-center py-4 text-gray-500">Tidak ada data untuk bulan ini</td></tr>`;
         return;
       }
 
@@ -127,10 +125,19 @@
         const dlKurang3 = d.dl_kurang3 ?? (Number(d.dl_total) > 0 && Number(d.dl_total) < 3 ? d.dl_total : 0);
         const dlLebih3 = d.dl_lebih3 ?? (Number(d.dl_total) >= 3 ? d.dl_total : 0);
 
+        // 🔸 Pisahkan telat_hari_jam jadi hari dan jam
+        let telatHari = 0, telatJam = 0;
+        if (d.telat_hari_jam) {
+          const matchHari = d.telat_hari_jam.match(/(\d+)\s*hari/);
+          const matchJam = d.telat_hari_jam.match(/(\d+)\s*jam/);
+          telatHari = matchHari ? matchHari[1] : 0;
+          telatJam = matchJam ? matchJam[1] : 0;
+        }
+
+        // 🔸 Parsing shift
         let LM = 0, P = 0, S = 0, M = 0, OFF = 0, Total = 0;
         if (d.shift) {
-          const shiftData = d.shift.split(',');
-          shiftData.forEach(pair => {
+          d.shift.split(',').forEach(pair => {
             const [key, val] = pair.split(':');
             if (!key || !val) return;
             switch (key.trim()) {
@@ -154,7 +161,8 @@
             <td>${sakit}</td>
             <td>${sakit3hari}</td>
             <td>${d.ak_hariKerja || 0}</td>
-            <td>${d.telat_hari_jam || '-'}</td>
+            <td>${telatHari}</td>
+            <td>${telatJam}</td>
             <td>${dlKurang3}</td>
             <td>${dlLebih3}</td>
             <td>${d.ak_CAP || 0}</td>
@@ -176,10 +184,10 @@
       });
     }
 
-    // Re-render tabel saat bulan dipilih
+    // 🔹 Update tabel saat filter bulan diubah
     filterBulan.addEventListener('change', renderTabel);
 
-    // 📄 Export ke Excel
+    // 🔹 Export ke Excel
     btnExport.addEventListener('click', () => {
       const bulanFilter = filterBulan.value || 'Semua Bulan';
       const table = document.getElementById('tabelAbsensi');
