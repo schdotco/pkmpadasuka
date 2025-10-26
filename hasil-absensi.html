@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📊 Hasil Rekapan Absensi Pegawai</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
   <style>
     body { background: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     th { background: #1e40af; color: white; position: sticky; top: 0; z-index: 20; font-weight: 600; }
@@ -22,7 +21,7 @@
       📊 Hasil Rekapan Absensi Pegawai
     </h1>
 
-    <!-- Filter Bulan + Tombol Export -->
+    <!-- 🔽 Filter Bulan + Tombol Export -->
     <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
       <div class="flex items-center gap-3">
         <label for="filterBulan" class="font-semibold text-gray-700">Pilih Bulan:</label>
@@ -30,15 +29,13 @@
           <option value="">-- Semua Bulan --</option>
         </select>
       </div>
-      <div class="flex items-center gap-3">
-        <button id="btnExport"
-          class="bg-green-600 hover:bg-green-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition">
-          📄 Cetak / Export Excel
-        </button>
-      </div>
+      <button id="btnExport"
+        class="bg-green-600 hover:bg-green-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition">
+        📄 Cetak / Export Excel
+      </button>
     </div>
 
-    <!-- Tabel Data -->
+    <!-- 🧾 Tabel Data -->
     <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-inner max-h-[75vh] overflow-y-auto">
       <table id="tabelAbsensi" class="min-w-full text-sm">
         <thead>
@@ -77,9 +74,13 @@
     </div>
   </div>
 
-  <!-- Toast sederhana -->
+  <!-- 🔔 Toast -->
   <div id="toast" class="toast" style="display:none;"></div>
 
+  <!-- ✅ Library XLSX (HARUS sebelum script module) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
+
+  <!-- 🔥 Script utama -->
   <script type="module">
     import { db } from './app.js';
     import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
@@ -97,7 +98,9 @@
       toast._t = setTimeout(() => toast.style.display = 'none', timeout);
     }
 
-    // Ambil data realtime dari Firebase
+    console.log("✅ XLSX status:", !!window.XLSX);
+
+    // 🔄 Ambil data realtime dari Firebase
     onValue(ref(db, 'RekapAbsensi'), snapshot => {
       if (!snapshot.exists()) {
         semuaData = [];
@@ -106,19 +109,13 @@
         return;
       }
 
-      // Ambil semua data sebagai array (Object.values memastikan semua entri terbaca)
       const val = snapshot.val();
-      if (Array.isArray(val)) {
-        semuaData = val.filter(Boolean); // jika array, bersihkan holes
-      } else {
-        semuaData = Object.values(val);
-      }
-
+      semuaData = Array.isArray(val) ? val.filter(Boolean) : Object.values(val);
       renderBulanOptions();
       renderTabel();
     });
 
-    // Buat daftar bulan unik
+    // 🔽 Buat daftar bulan unik
     function renderBulanOptions() {
       const bulanUnik = [...new Set(semuaData.map(d => d.bulan))].filter(Boolean);
       filterBulan.innerHTML = `<option value="">-- Semua Bulan --</option>`;
@@ -129,7 +126,7 @@
       });
     }
 
-    // Render tabel
+    // 🧾 Render tabel
     function renderTabel() {
       isiTabel.innerHTML = '';
       const bulanFilter = filterBulan.value;
@@ -142,6 +139,7 @@
 
       let no = 1;
       const frag = document.createDocumentFragment();
+
       dataTampil.forEach(d => {
         const sakit = Number(d.ak_sakit) || 0;
         const sakit3hari = sakit > 3 ? sakit : 0;
@@ -199,29 +197,24 @@
       isiTabel.appendChild(frag);
     }
 
-    // Filter change
+    // 🔁 Ganti bulan
     filterBulan.addEventListener('change', renderTabel);
 
-    // Export handler — gunakan window.XLSX agar pasti ambil library global
+    // 📄 Export ke Excel
     btnExport.addEventListener('click', () => {
       const XLSX = window.XLSX;
       if (!XLSX) {
-        showToast('Library XLSX belum tersedia. Coba refresh halaman.', 4000);
+        showToast('❌ Library XLSX belum termuat. Coba refresh halaman.', 4000);
         return;
       }
 
       try {
         btnExport.disabled = true;
-        btnExport.textContent = 'Mengekspor...';
+        btnExport.textContent = '⏳ Mengekspor...';
 
-        // Jika ada filter bulan, export hanya baris yang tampil (document.getElementById tabel sudah memuat semua baris)
         const bulan = (filterBulan.value || 'Semua_Bulan').replace(/\s+/g, '_');
-
-        // clone table to avoid issues with sticky headers / scrollers
         const table = document.getElementById('tabelAbsensi');
         const clone = table.cloneNode(true);
-
-        // Convert to workbook and save
         const wb = XLSX.utils.table_to_book(clone, { sheet: `Rekap_${bulan}` });
         XLSX.writeFile(wb, `Rekap_Absensi_${bulan}.xlsx`);
 
@@ -234,7 +227,6 @@
         btnExport.textContent = '📄 Cetak / Export Excel';
       }
     });
-
   </script>
 </body>
 </html>
