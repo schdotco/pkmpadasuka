@@ -80,31 +80,38 @@
       <div><label>4. Akumulasi Terlambat</label><input id="ak_terlambat" class="w-full p-2 border rounded"></div>
       <div><label>5. Akumulasi Pulang Cepat</label><input id="ak_pulangCepat" class="w-full p-2 border rounded"></div>
 
-      <div><label>6. Akumulasi Sakit</label><input id="ak_sakit" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>7. Akumulasi Total Hari Kerja dalam 1 Bulan</label><input id="ak_hariKerja" type="number" class="w-full p-2 border rounded"></div>
+      <!-- Sakit < 3 Hari -->
+      <div><label>6. Sakit &lt; 3 Hari</label><input id="ak_sakit_kurang3" type="number" class="w-full p-2 border rounded"></div>
+      <!-- Sakit ≥ 3 Hari -->
+      <div><label>7. Sakit ≥ 3 Hari</label><input id="ak_sakit_lebih3" type="number" class="w-full p-2 border rounded"></div>
 
-      <div><label>8. Jumlah Keterlambatan (Hari)</label><input id="telat_hari" class="w-full p-2 border rounded"></div>
-      <div><label>9. Jumlah Keterlambatan (Jam)</label><input id="telat_jam" class="w-full p-2 border rounded"></div>
+      <div><label>8. Akumulasi Total Hari Kerja dalam 1 Bulan</label><input id="ak_hariKerja" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>9. Jumlah Keterlambatan (Hari)</label><input id="telat_hari" class="w-full p-2 border rounded"></div>
 
-      <div><label>10. Jumlah DL (Dinas Luar)</label><input id="dl_total" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>11. Jumlah CAP</label><input id="ak_CAP" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>10. Jumlah Keterlambatan (Jam)</label><input id="telat_jam" class="w-full p-2 border rounded"></div>
 
-      <div><label>12. Jumlah CT</label><input id="ak_CT" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>13. Jumlah CM</label><input id="ak_CM" type="number" class="w-full p-2 border rounded"></div>
+      <!-- DL < 3 Hari -->
+      <div><label>11. DL &lt; 3 Hari</label><input id="dl_kurang3" type="number" class="w-full p-2 border rounded"></div>
+      <!-- DL ≥ 3 Hari -->
+      <div><label>12. DL ≥ 3 Hari</label><input id="dl_lebih3" type="number" class="w-full p-2 border rounded"></div>
 
-      <div><label>14. Jumlah GL</label><input id="ak_GL" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>15. Jumlah CTB</label><input id="ak_CTB" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>13. Jumlah CAP</label><input id="ak_CAP" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>14. Jumlah CT</label><input id="ak_CT" type="number" class="w-full p-2 border rounded"></div>
 
-      <div><label>16. Jumlah LM (Shift)</label><input id="shift_LM" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>17. Jumlah Pagi (Shift)</label><input id="shift_P" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>15. Jumlah CM</label><input id="ak_CM" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>16. Jumlah GL</label><input id="ak_GL" type="number" class="w-full p-2 border rounded"></div>
 
-      <div><label>18. Jumlah Siang (Shift)</label><input id="shift_S" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>19. Jumlah Malam (Shift)</label><input id="shift_M" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>17. Jumlah CTB</label><input id="ak_CTB" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>18. Jumlah LM (Shift)</label><input id="shift_LM" type="number" class="w-full p-2 border rounded"></div>
 
-      <div><label>20. Jumlah Off/Libur (Shift)</label><input id="shift_OFF" type="number" class="w-full p-2 border rounded"></div>
-      <div><label>21. Total Hari Kerja (Shift)</label><input id="shift_total" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>19. Jumlah Pagi (Shift)</label><input id="shift_P" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>20. Jumlah Siang (Shift)</label><input id="shift_S" type="number" class="w-full p-2 border rounded"></div>
 
-      <div class="col-span-2"><label>22. Total % Kehadiran</label><input id="persenKehadiran" class="w-full p-2 border rounded" placeholder="contoh: 95%"></div>
+      <div><label>21. Jumlah Malam (Shift)</label><input id="shift_M" type="number" class="w-full p-2 border rounded"></div>
+      <div><label>22. Jumlah Off/Libur (Shift)</label><input id="shift_OFF" type="number" class="w-full p-2 border rounded"></div>
+
+      <div><label>23. Total Hari Kerja (Shift)</label><input id="shift_total" type="number" class="w-full p-2 border rounded"></div>
+      <div class="col-span-2"><label>24. Total % Kehadiran</label><input id="persenKehadiran" class="w-full p-2 border rounded" placeholder="contoh: 95%"></div>
     </div>
 
     <button id="uploadBtn"
@@ -198,8 +205,11 @@ uploadBtn.addEventListener('click', async () => {
   if (!selectedPegawai) return statusMsg.textContent = "⚠️ Pilih nama pegawai!";
   if (!bulanValue) return statusMsg.textContent = "⚠️ Pilih bulan rekap!";
 
-  const sakit = Number(ak_sakit.value) || 0;
-  const dl = Number(dl_total.value) || 0;
+  const sakitKurang3 = Number(ak_sakit_kurang3.value) || 0;
+  const sakitLebih3 = Number(ak_sakit_lebih3.value) || 0;
+  const dlKurang3 = Number(dl_kurang3.value) || 0;
+  const dlLebih3 = Number(dl_lebih3.value) || 0;
+
   const [year, month] = bulanValue.split("-");
   const bulanFormatted = new Date(`${month}/01/${year}`).toLocaleString("id-ID", { month: "long", year: "numeric" });
 
@@ -208,14 +218,13 @@ uploadBtn.addEventListener('click', async () => {
     namaPegawai: selectedPegawai,
     ak_terlambat: ak_terlambat.value || 0,
     ak_pulangCepat: ak_pulangCepat.value || 0,
-    ak_sakit: sakit,
-    ak_sakit3hari: sakit > 3 ? sakit : 0,
+    ak_sakit_kurang3: sakitKurang3,
+    ak_sakit_lebih3: sakitLebih3,
     ak_hariKerja: ak_hariKerja.value || 0,
-    telat_hari: telat_hari.value || 0,  // ⬅️ terpisah
-    telat_jam: telat_jam.value || 0,    // ⬅️ terpisah
-    dl_total: dl,
-    dl_kurang3: dl > 0 && dl < 3 ? dl : 0,
-    dl_lebih3: dl >= 3 ? dl : 0,
+    telat_hari: telat_hari.value || 0,
+    telat_jam: telat_jam.value || 0,
+    dl_kurang3: dlKurang3,
+    dl_lebih3: dlLebih3,
     ak_CAP: ak_CAP.value || 0,
     ak_CT: ak_CT.value || 0,
     ak_CM: ak_CM.value || 0,
