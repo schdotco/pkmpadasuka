@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📊 Hasil Rekapan Absensi Pegawai UPTD Puskesmas Padasuka</title>
+  <title>📊 Hasil Rekapan Absensi Pegawai - UPTD Puskesmas Padasuka</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- ✅ Library jsPDF + autoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -21,7 +21,7 @@
 <body class="min-h-screen flex flex-col p-4 sm:p-8">
   <div class="flex-1 bg-white shadow-lg rounded-2xl p-6 sm:p-10 w-full max-w-full overflow-hidden">
     <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-8">
-      📊 Hasil Rekapan Absensi Pegawai UPTD Puskesmas Padasuka
+      📊 Hasil Rekapan Absensi Pegawai <br>UPTD Puskesmas Padasuka
     </h1>
 
     <!-- 🔽 Filter Bulan + Tombol Export -->
@@ -50,13 +50,13 @@
             <th>Nama Pegawai</th>
             <th>Ak. Terlambat</th>
             <th>Ak. Pulang Cepat</th>
-            <th>Ak. Sakit</th>
-            <th>Ak. Sakit >3 Hari</th>
+            <th>Sakit <3 Hari</th>
+            <th>Sakit ≥3 Hari</th>
             <th>Ak. Hari Kerja</th>
             <th>Telat (Hari)</th>
             <th>Telat (Jam)</th>
             <th>DL <3 Hari</th>
-            <th>DL >3 Hari</th>
+            <th>DL ≥3 Hari</th>
             <th>CAP</th>
             <th>CT</th>
             <th>CM</th>
@@ -140,10 +140,10 @@
       const frag = document.createDocumentFragment();
 
       dataTampil.forEach(d => {
-        const sakit = Number(d.ak_sakit) || 0;
-        const sakit3hari = sakit > 3 ? sakit : 0;
-        const dlKurang3 = d.dl_kurang3 ?? (Number(d.dl_total) > 0 && Number(d.dl_total) < 3 ? d.dl_total : 0);
-        const dlLebih3 = d.dl_lebih3 ?? (Number(d.dl_total) >= 3 ? d.dl_total : 0);
+        const sakitKurang3 = Number(d.ak_sakit_kurang3) || 0;
+        const sakitLebih3 = Number(d.ak_sakit_lebih3) || 0;
+        const dlKurang3 = Number(d.dl_kurang3) || 0;
+        const dlLebih3 = Number(d.dl_lebih3) || 0;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -152,8 +152,8 @@
           <td class="text-left pl-2">${d.namaPegawai || '-'}</td>
           <td>${d.ak_terlambat || 0}</td>
           <td>${d.ak_pulangCepat || 0}</td>
-          <td>${sakit}</td>
-          <td>${sakit3hari}</td>
+          <td>${sakitKurang3}</td>
+          <td>${sakitLebih3}</td>
           <td>${d.ak_hariKerja || 0}</td>
           <td>${d.telat_hari || 0}</td>
           <td>${d.telat_jam || 0}</td>
@@ -164,12 +164,12 @@
           <td>${d.ak_CM || 0}</td>
           <td>${d.ak_GL || 0}</td>
           <td>${d.ak_CTB || 0}</td>
-          <td>${d.LM || 0}</td>
-          <td>${d.Pagi || 0}</td>
-          <td>${d.Siang || 0}</td>
-          <td>${d.Malam || 0}</td>
-          <td>${d.Off || 0}</td>
-          <td>${d.Total || 0}</td>
+          <td>${d.shift_LM || 0}</td>
+          <td>${d.shift_P || 0}</td>
+          <td>${d.shift_S || 0}</td>
+          <td>${d.shift_M || 0}</td>
+          <td>${d.shift_OFF || 0}</td>
+          <td>${d.shift_total || 0}</td>
           <td>${d.persenKehadiran || '-'}</td>
           <td>${d.bulan || '-'}</td>
         `;
@@ -188,7 +188,7 @@
       const bulan = (filterBulan.value || 'Semua Bulan').replace(/\s+/g, '_');
 
       doc.setFontSize(14);
-      doc.text(`Rekap Absensi Pegawai UPTD Puskesmas Padasuka- ${bulan}`, 40, 40);
+      doc.text(`Rekap Absensi Pegawai UPTD Puskesmas Padasuka - ${bulan}`, 40, 40);
       doc.autoTable({
         html: '#tabelAbsensi',
         startY: 60,
