@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📋 Antrian & Data BP - UPTD Puskesmas Padasuka</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f7fb;
+      color: #2c3e50;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #1976d2;
+      font-weight: bold;
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+    .form-card, .table-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 900px;
+    }
+    input, textarea, select {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+    }
+    button {
+      background: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #0d47a1;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background: #1976d2;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background: #f1f1f1;
+    }
+    .editable {
+      background: #fffbea;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🩺 Antrian & Data BP - Puskesmas Padasuka</h1>
+
+  <div class="form-card">
+    <h2 class="text-xl font-semibold mb-3">Form Pendaftaran Antrian</h2>
+    <label>Nama:</label>
+    <input type="text" id="nama" placeholder="Nama lengkap" required>
+
+    <label>NIK:</label>
+    <input type="text" id="nik" placeholder="Nomor Induk Kependudukan" required>
+
+    <label>Keterangan:</label>
+    <textarea id="keterangan" rows="3" placeholder="Keluhan / Tujuan berobat"></textarea>
+
+    <label>Status:</label>
+    <select id="status">
+      <option value="Menunggu">Menunggu</option>
+      <option value="Dipanggil">Dipanggil</option>
+      <option value="Selesai">Selesai</option>
+    </select>
+
+    <button onclick="submitForm()">Simpan</button>
+  </div>
+
+  <div class="table-card">
+    <h2 class="text-xl font-semibold mb-3">📑 Data Antrian Saat Ini</h2>
+    <table id="dataTable">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_URL = "PASTE_URL_WEB_APP_DI_SINI"; // Ganti dengan URL Apps Script kamu
+
+    async function loadData() {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+
+      const table = document.getElementById("dataTable");
+      const headers = Object.keys(data[0] || {});
+      table.querySelector("thead").innerHTML = `
+        <tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>
+      `;
+      table.querySelector("tbody").innerHTML = data.map((row, idx) => `
+        <tr>
+          ${headers.map(h => `
+            <td contenteditable="true" class="editable" onblur="editCell(${idx}, '${h}', this.innerText)">${row[h] || ""}</td>
+          `).join("")}
+        </tr>
+      `).join("");
+    }
+
+    async function submitForm() {
+      const data = {
+        nama: document.getElementById("nama").value,
+        nik: document.getElementById("nik").value,
+        keterangan: document.getElementById("keterangan").value,
+        status: document.getElementById("status").value
+      };
+      await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(data)
+      });
+      alert("✅ Data berhasil disimpan!");
+      loadData();
+    }
+
+    function editCell(rowIndex, header, value) {
+      console.log(`Update row ${rowIndex} kolom ${header} → ${value}`);
+      // Untuk versi lanjut: bisa tambah fetch ke Apps Script updateRow()
+    }
+
+    loadData();
+  </script>
+
+</body>
+</html>
