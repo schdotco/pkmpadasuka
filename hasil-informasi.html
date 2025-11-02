@@ -8,8 +8,6 @@
     :root {
       --primary: #1976d2;
       --accent: #bbdefb;
-      --success: #4caf50;
-      --danger: #f44336;
       --text: #2c3e50;
       --bg: #f4f7fb;
     }
@@ -60,15 +58,15 @@
       box-sizing: border-box;
     }
 
-    /* SLIDER JADWAL DOKTER */
+    /* SLIDER JADWAL */
     .slider {
       position: relative;
       width: 100%;
-      max-width: 1000px;
-      height: 220px;
+      max-width: 1100px;
+      height: 230px;
       background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      border-radius: 16px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.2);
       overflow: hidden;
       text-align: center;
     }
@@ -81,14 +79,11 @@
       height: 100%;
       animation: fadeIn 1s ease;
     }
-
-    .slide.active {
-      display: flex;
-    }
+    .slide.active { display: flex; }
 
     .slide h3 {
-      margin: 10px 0;
-      font-size: 28px;
+      margin: 8px 0;
+      font-size: 30px;
       color: var(--primary);
     }
 
@@ -108,28 +103,36 @@
 
     /* VIDEO SECTION */
     .video-section {
-      text-align: center;
+      width: 100%;
+      max-width: 1100px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+      overflow: hidden;
+      margin-top: 25px;
       animation: fadeIn 1.5s ease;
-      margin-top: 20px;
     }
-    .video-section h2 {
+
+    .video-header {
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      padding: 10px 0;
       font-size: 24px;
-      color: var(--primary);
-      margin-bottom: 10px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
     }
+
     .video-container {
       position: relative;
-      width: 90%;
-      max-width: 900px;
-      aspect-ratio: 16/9;
-      margin: 0 auto;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    iframe {
       width: 100%;
-      height: 100%;
+      padding-top: 56.25%; /* rasio 16:9 */
+    }
+
+    .video-container iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       border: none;
     }
 
@@ -152,25 +155,26 @@
 <body>
 
   <header>🩺 Jadwal Dokter UPTD Puskesmas Padasuka</header>
-  <div class="ticker"><span>Selamat datang di UPTD Puskesmas Padasuka Kota Bandung | Bersama kita wujudkan pelayanan kesehatan yang prima, cepat, dan ramah bagi masyarakat Kota Bandung</span></div>
+  <div class="ticker">
+    <span>Selamat datang di UPTD Puskesmas Padasuka Kota Bandung | Bersama kita wujudkan pelayanan kesehatan yang prima, cepat, dan ramah bagi masyarakat Kota Bandung</span>
+  </div>
 
   <div class="container">
     <!-- SLIDE JADWAL -->
     <div class="slider" id="slider"></div>
 
     <!-- VIDEO EDUKASI -->
-    <div class="video-section">
-      <h2>🎬 Informasi Edukasi Kesehatan</h2>
+    <section class="video-section">
+      <div class="video-header">🎬 Informasi & Edukasi Kesehatan</div>
       <div class="video-container">
-        <!-- ✅ Autoplay + loop + mute agar terus berjalan tanpa gangguan -->
         <iframe 
-          src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=1&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&rel=0"
-          title="Video Edukasi Kesehatan" 
-          allow="autoplay; encrypted-media; picture-in-picture" 
+          src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=1&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0"
+          title="Video Edukasi Kesehatan"
+          allow="autoplay; encrypted-media; picture-in-picture"
           allowfullscreen>
         </iframe>
       </div>
-    </div>
+    </section>
   </div>
 
   <div class="footer" id="footer">Terakhir diperbarui: -</div>
@@ -181,8 +185,8 @@
 
     const slider = document.getElementById("slider");
     const footer = document.getElementById("footer");
-
     const infoRef = ref(db, "informasi_dokter");
+
     const hariList = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
     const hariIni = hariList[new Date().getDay()];
 
@@ -209,7 +213,6 @@
       }
 
       slides.sort((a,b)=>a.nama.localeCompare(b.nama));
-
       slides.forEach((item,i)=>{
         const div = document.createElement("div");
         div.className = "slide" + (i===0 ? " active" : "");
@@ -236,7 +239,7 @@
       footer.textContent = `Terakhir diperbarui: ${waktu} | Jadwal hari ${hariIni}`;
     }
 
-    // Slide berganti tiap 5 detik
+    // Ganti slide setiap 6 detik
     setInterval(()=>{
       const all = document.querySelectorAll(".slide");
       if (all.length > 1) {
@@ -244,9 +247,9 @@
         index = (index + 1) % all.length;
         all[index].classList.add("active");
       }
-    }, 5000);
+    }, 6000);
 
-    // Refresh halaman setiap 30 menit
+    // Refresh otomatis tiap 30 menit
     setInterval(()=> window.location.reload(), 1800000);
   </script>
 </body>
