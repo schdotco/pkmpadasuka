@@ -58,37 +58,43 @@
       box-sizing: border-box;
     }
 
-    /* SLIDER JADWAL */
+    /* SLIDER HORIZONTAL */
     .slider {
-      position: relative;
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      gap: 16px;
       width: 100%;
       max-width: 1100px;
-      height: 230px;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 6px 14px rgba(0,0,0,0.2);
-      overflow: hidden;
-      text-align: center;
+      scroll-behavior: smooth;
+      padding: 10px;
+    }
+    .slider::-webkit-scrollbar {
+      height: 10px;
+    }
+    .slider::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 10px;
     }
 
     .slide {
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
+      flex: 0 0 300px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+      text-align: center;
+      padding: 20px;
       animation: fadeIn 1s ease;
     }
-    .slide.active { display: flex; }
 
     .slide h3 {
       margin: 8px 0;
-      font-size: 30px;
+      font-size: 26px;
       color: var(--primary);
     }
 
     .slide p {
-      font-size: 22px;
+      font-size: 18px;
       margin: 4px 0;
     }
 
@@ -109,8 +115,10 @@
       border-radius: 16px;
       box-shadow: 0 6px 14px rgba(0,0,0,0.2);
       overflow: hidden;
-      margin-top: 25px;
       animation: fadeIn 1.5s ease;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
     }
 
     .video-header {
@@ -125,8 +133,7 @@
 
     .video-container {
       position: relative;
-      width: 100%;
-      padding-top: 56.25%; /* rasio 16:9 */
+      flex-grow: 1;
     }
 
     .video-container iframe {
@@ -190,32 +197,29 @@
     const hariList = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
     const hariIni = hariList[new Date().getDay()];
 
-    let slides = [];
-    let index = 0;
-
     onValue(infoRef, (snapshot) => {
       slider.innerHTML = "";
-      slides = [];
 
       if (!snapshot.exists()) {
-        slider.innerHTML = `<div class='slide active'><p style="font-size:22px;color:#888;">Tidak ada data ditemukan.</p></div>`;
+        slider.innerHTML = `<div class='slide'><p style="font-size:20px;color:#888;">Tidak ada data ditemukan.</p></div>`;
         return;
       }
 
+      const slides = [];
       snapshot.forEach(child => {
         const val = child.val();
         if (val.hari === hariIni) slides.push(val);
       });
 
       if (slides.length === 0) {
-        slider.innerHTML = `<div class='slide active'><p style="font-size:22px;color:#888;">Belum ada data untuk hari ${hariIni}.</p></div>`;
+        slider.innerHTML = `<div class='slide'><p style="font-size:20px;color:#888;">Belum ada data untuk hari ${hariIni}.</p></div>`;
         return;
       }
 
       slides.sort((a,b)=>a.nama.localeCompare(b.nama));
-      slides.forEach((item,i)=>{
+      slides.forEach(item=>{
         const div = document.createElement("div");
-        div.className = "slide" + (i===0 ? " active" : "");
+        div.className = "slide";
         div.innerHTML = `
           <h3>${item.nama || "-"}</h3>
           <p><b>Hari:</b> ${item.hari || "-"}</p>
@@ -238,16 +242,6 @@
       });
       footer.textContent = `Terakhir diperbarui: ${waktu} | Jadwal hari ${hariIni}`;
     }
-
-    // Ganti slide setiap 6 detik
-    setInterval(()=>{
-      const all = document.querySelectorAll(".slide");
-      if (all.length > 1) {
-        all[index].classList.remove("active");
-        index = (index + 1) % all.length;
-        all[index].classList.add("active");
-      }
-    }, 6000);
 
     // Refresh otomatis tiap 30 menit
     setInterval(()=> window.location.reload(), 1800000);
