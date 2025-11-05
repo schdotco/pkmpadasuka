@@ -14,6 +14,7 @@
       --accent: #bbdefb;
       --text: #2c3e50;
       --bg-light: #e3f2fd;
+      --bg-dark: #0d47a1;
     }
 
     body {
@@ -29,7 +30,7 @@
       line-height: 1.6;
     }
 
-    /* HEADER */
+    /* Header */
     header {
       background: linear-gradient(90deg, var(--primary), #2196f3);
       color: white;
@@ -37,29 +38,32 @@
       padding: 18px 0 10px 0;
       box-shadow: 0 2px 15px rgba(0,0,0,0.15);
       font-family: "Poppins", sans-serif;
-      font-size: 30px;
+      font-size: 28px;
       font-weight: 700;
+      letter-spacing: 0.5px;
       width: 100%;
+      animation: fadeInDown 1s ease;
     }
 
     #clock {
       font-family: "Inter", sans-serif;
-      font-size: 18px;
+      font-size: 17px;
       margin-top: 5px;
       color: #e3f2fd;
     }
 
-    /* TICKER */
+    /* Running text */
     .ticker {
       background: linear-gradient(90deg, #0d47a1, #1976d2, #2196f3);
       background-size: 200% 100%;
       color: #e3f2fd;
-      font-size: 20px;
+      font-size: 18px;
       overflow: hidden;
       white-space: nowrap;
       width: 100%;
       animation: ticker-bg 10s linear infinite;
     }
+
     .ticker span {
       display: inline-block;
       padding-left: 100%;
@@ -67,27 +71,71 @@
       font-weight: 500;
     }
 
-    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-100%); } }
-    @keyframes ticker-bg { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-100%); }
+    }
 
-    /* CONTAINER */
-    .container {
+    @keyframes ticker-bg {
+      from { background-position: 0% 0; }
+      to { background-position: 100% 0; }
+    }
+
+    /* Layout utama dengan banner kiri kanan */
+    .content-layout {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 1600px;
+      gap: 15px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .main-content {
+      flex: 3;
       display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 15px;
+    }
+
+    .side-banner {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(255,255,255,0.9);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      padding: 8px;
+      overflow: hidden;
+      height: auto;
+      max-width: 250px;
+      min-width: 180px;
+    }
+
+    .side-banner img {
       width: 100%;
-      padding: 20px;
-      box-sizing: border-box;
-      flex-grow: 1;
-      gap: 20px;
+      height: auto;
+      border-radius: 10px;
+      object-fit: cover;
+      animation: float 8s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
     }
 
     /* SLIDER */
     .slider {
+      position: relative;
       width: 100%;
       max-width: 1100px;
-      height: 230px;
-      background: rgba(255,255,255,0.95);
+      height: 200px;
+      background: rgba(255, 255, 255, 0.95);
       border-radius: 18px;
       box-shadow: 0 8px 25px rgba(0,0,0,0.15);
       display: flex;
@@ -97,26 +145,21 @@
       transition: all 0.4s ease;
     }
 
-    .slider:hover {
-      transform: scale(1.01);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-
     .slide {
       display: none;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      text-align: center;
       width: 100%;
       height: 100%;
       animation: fadeInUp 1s ease;
     }
+
     .slide.active { display: flex; }
 
     .slide h3 {
       margin: 5px 0 10px 0;
-      font-size: 30px;
+      font-size: 28px;
       color: var(--primary);
       font-weight: 700;
       font-family: "Poppins", sans-serif;
@@ -132,16 +175,10 @@
       flex-wrap: wrap;
     }
 
-    .status-ada {
-      color: #1b5e20;
-      font-weight: 700;
-    }
-    .status-tidak {
-      color: #b71c1c;
-      font-weight: 700;
-    }
+    .status-ada { color: #1b5e20; font-weight: 700; }
+    .status-tidak { color: #b71c1c; font-weight: 700; }
 
-    /* VIDEO SECTION */
+    /* VIDEO */
     .video-section {
       width: 100%;
       max-width: 1100px;
@@ -149,17 +186,14 @@
       border-radius: 18px;
       box-shadow: 0 8px 25px rgba(0,0,0,0.2);
       overflow: hidden;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
     }
 
     .video-header {
       background: var(--primary);
       color: white;
       text-align: center;
-      padding: 12px 0;
-      font-size: 22px;
+      padding: 10px 0;
+      font-size: 20px;
       font-weight: 600;
       font-family: "Poppins", sans-serif;
     }
@@ -167,7 +201,7 @@
     .video-container {
       position: relative;
       width: 100%;
-      aspect-ratio: 16 / 9;
+      padding-top: 56.25%;
       background: #000;
     }
 
@@ -178,19 +212,31 @@
       border: none;
     }
 
-    /* FOOTER */
+    /* Footer */
     .footer {
       background: #e3f2fd;
       color: #333;
       text-align: center;
-      padding: 12px;
-      font-size: 18px;
+      padding: 10px;
+      font-size: 16px;
       border-top: 1px solid #bbdefb;
       width: 100%;
+      font-family: "Inter", sans-serif;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .content-layout { flex-direction: column; align-items: center; }
+      .side-banner { max-width: 90%; }
     }
 
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
@@ -206,20 +252,30 @@
     <span>Selamat datang di UPTD Puskesmas Padasuka Kota Bandung | Bersama kita wujudkan pelayanan kesehatan yang prima, cepat, dan ramah bagi masyarakat Kota Bandung</span>
   </div>
 
-  <div class="container">
-    <div class="slider" id="slider"></div>
+  <div class="content-layout">
+    <div class="side-banner left-banner">
+      <img src="images/iklan1.jpg" alt="Edukasi Kesehatan 1">
+    </div>
 
-    <section class="video-section">
-      <div class="video-header">🎬 Informasi & Edukasi Kesehatan</div>
-      <div class="video-container">
-        <iframe 
-          src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=1&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0"
-          title="Video Edukasi Kesehatan"
-          allow="autoplay; encrypted-media; picture-in-picture"
-          allowfullscreen>
-        </iframe>
-      </div>
-    </section>
+    <div class="main-content">
+      <div class="slider" id="slider"></div>
+
+      <section class="video-section">
+        <div class="video-header">🎬 Informasi & Edukasi Kesehatan</div>
+        <div class="video-container">
+          <iframe 
+            src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=1&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0"
+            title="Video Edukasi Kesehatan"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </section>
+    </div>
+
+    <div class="side-banner right-banner">
+      <img src="images/iklan2.jpg" alt="Edukasi Kesehatan 2">
+    </div>
   </div>
 
   <div class="footer" id="footer">Terakhir diperbarui: -</div>
@@ -238,7 +294,7 @@
     let slides = [];
     let index = 0;
 
-    // JAM REALTIME
+    // Jam realtime
     setInterval(() => {
       const now = new Date();
       clock.textContent = now.toLocaleString("id-ID", {
@@ -246,7 +302,7 @@
       });
     }, 1000);
 
-    // FIREBASE DATA
+    // Firebase listener
     onValue(infoRef, (snapshot) => {
       slider.innerHTML = "";
       slides = [];
@@ -275,7 +331,9 @@
           <p>
             📅 <b>${item.hari || "-"}</b> |
             🏥 <b>${item.unit || "-"}</b> |
-            🩺 <b class="${item.status?.toLowerCase() === 'ada' ? 'status-ada' : 'status-tidak'}">${item.status || "-"}</b>
+            🩺 <b class="${item.status?.toLowerCase() === 'ada' ? 'status-ada' : 'status-tidak'}">
+            ${item.status || "-"}
+            </b>
           </p>
         `;
         slider.appendChild(div);
@@ -293,7 +351,7 @@
       footer.textContent = `Terakhir diperbarui: ${waktu} | Jadwal hari ${hariIni}`;
     }
 
-    // SLIDE OTOMATIS
+    // Ganti slide tiap 6 detik
     setInterval(()=>{
       const all = document.querySelectorAll(".slide");
       if (all.length > 1) {
@@ -303,8 +361,19 @@
       }
     }, 6000);
 
-    // REFRESH OTOMATIS 30 MENIT
+    // Refresh otomatis tiap 30 menit
     setInterval(()=> window.location.reload(), 1800000);
+
+    // ✅ Banner auto-slide (tambahan ringan)
+    const leftImages = ["images/iklan1.jpg", "images/iklan3.jpg", "images/iklan5.jpg"];
+    const rightImages = ["images/iklan2.jpg", "images/iklan4.jpg", "images/iklan6.jpg"];
+    let bannerIndex = 0;
+
+    setInterval(() => {
+      bannerIndex = (bannerIndex + 1) % leftImages.length;
+      document.querySelector(".left-banner img").src = leftImages[bannerIndex];
+      document.querySelector(".right-banner img").src = rightImages[bannerIndex];
+    }, 10000);
   </script>
 </body>
 </html>
