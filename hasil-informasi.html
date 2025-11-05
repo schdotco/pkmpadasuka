@@ -81,24 +81,16 @@
       to { background-position: 100% 0; }
     }
 
-    /* Layout utama dengan banner kiri kanan */
+    /* ✅ Layout utama dengan banner kiri kanan (versi proporsional TV) */
     .content-layout {
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      justify-content: space-between;
+      align-items: stretch;
       width: 100%;
-      max-width: 1600px;
-      gap: 15px;
-      padding: 20px;
+      max-width: 100%;
+      gap: 25px;
+      padding: 20px 40px;
       box-sizing: border-box;
-    }
-
-    .main-content {
-      flex: 3;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
     }
 
     .side-banner {
@@ -107,26 +99,33 @@
       justify-content: center;
       align-items: center;
       background: rgba(255,255,255,0.9);
-      border-radius: 12px;
+      border-radius: 14px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      padding: 8px;
+      padding: 10px;
       overflow: hidden;
       height: auto;
-      max-width: 250px;
-      min-width: 180px;
+      max-width: 380px;
+      min-width: 250px;
     }
 
     .side-banner img {
       width: 100%;
-      height: auto;
-      border-radius: 10px;
+      height: 100%;
+      border-radius: 12px;
       object-fit: cover;
-      animation: float 8s ease-in-out infinite;
+      transition: transform 2s ease-in-out;
     }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
+    .side-banner img:hover {
+      transform: scale(1.02);
+    }
+
+    .main-content {
+      flex: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
     }
 
     /* SLIDER */
@@ -224,10 +223,20 @@
       font-family: "Inter", sans-serif;
     }
 
-    /* Responsive */
+    /* Responsif tablet dan bawah */
     @media (max-width: 1024px) {
       .content-layout { flex-direction: column; align-items: center; }
       .side-banner { max-width: 90%; }
+    }
+
+    /* ✅ Penyesuaian khusus TV besar (42" ke atas) */
+    @media (min-width: 1920px) {
+      .side-banner { max-width: 480px; }
+      .slider, .video-section { max-width: 1280px; }
+      .slide h3 { font-size: 36px; }
+      .slide p { font-size: 26px; }
+      .video-header { font-size: 24px; }
+      .footer { font-size: 20px; }
     }
 
     @keyframes fadeInUp {
@@ -241,8 +250,8 @@
     }
   </style>
 </head>
-<body>
 
+<body>
   <header>
     🩺 Jadwal Dokter UPTD Puskesmas Padasuka
     <div id="clock"></div>
@@ -263,12 +272,10 @@
       <section class="video-section">
         <div class="video-header">🎬 Informasi & Edukasi Kesehatan</div>
         <div class="video-container">
-          <iframe 
-            src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=1&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0"
+          <iframe src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=1&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0"
             title="Video Edukasi Kesehatan"
             allow="autoplay; encrypted-media; picture-in-picture"
-            allowfullscreen>
-          </iframe>
+            allowfullscreen></iframe>
         </div>
       </section>
     </div>
@@ -294,15 +301,11 @@
     let slides = [];
     let index = 0;
 
-    // Jam realtime
     setInterval(() => {
       const now = new Date();
-      clock.textContent = now.toLocaleString("id-ID", {
-        weekday: "long", hour: "2-digit", minute: "2-digit", second: "2-digit"
-      });
+      clock.textContent = now.toLocaleString("id-ID", { weekday: "long", hour: "2-digit", minute: "2-digit", second: "2-digit" });
     }, 1000);
 
-    // Firebase listener
     onValue(infoRef, (snapshot) => {
       slider.innerHTML = "";
       slides = [];
@@ -331,9 +334,7 @@
           <p>
             📅 <b>${item.hari || "-"}</b> |
             🏥 <b>${item.unit || "-"}</b> |
-            🩺 <b class="${item.status?.toLowerCase() === 'ada' ? 'status-ada' : 'status-tidak'}">
-            ${item.status || "-"}
-            </b>
+            🩺 <b class="${item.status?.toLowerCase() === 'ada' ? 'status-ada' : 'status-tidak'}">${item.status || "-"}</b>
           </p>
         `;
         slider.appendChild(div);
@@ -351,7 +352,6 @@
       footer.textContent = `Terakhir diperbarui: ${waktu} | Jadwal hari ${hariIni}`;
     }
 
-    // Ganti slide tiap 6 detik
     setInterval(()=>{
       const all = document.querySelectorAll(".slide");
       if (all.length > 1) {
@@ -361,10 +361,8 @@
       }
     }, 6000);
 
-    // Refresh otomatis tiap 30 menit
     setInterval(()=> window.location.reload(), 1800000);
 
-    // ✅ Banner auto-slide (tambahan ringan)
     const leftImages = ["https://schdotco.github.io/pkmpadasuka/banner1.jpg"];
     const rightImages = ["https://schdotco.github.io/pkmpadasuka/banner2.jpg"];
     let bannerIndex = 0;
