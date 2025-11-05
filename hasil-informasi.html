@@ -296,10 +296,11 @@
         div.className = "slide" + (i===0 ? " active" : "");
         div.innerHTML = `
           <h3>${item.nama || "-"}</h3>
-          <p><b>📅 Hari:</b> ${item.hari || "-"}</p>
-          <p><b>🏥 Unit:</b> ${item.unit || "-"}</p>
-          <p class="${item.status?.toLowerCase() === 'ada' ? 'status-ada' : 'status-tidak'}">
-            <b>🩺 Status:</b> ${item.status || "-"}
+          📅 <b>${item.hari || "-"}</b> |
+          🏥 <b>${item.unit || "-"}</b> |
+          🩺 <b class="${item.status?.toLowerCase() === 'ada' ? 'status-ada' : 'status-tidak'}">
+          ${item.status || "-"}
+          </b>
           </p>
         `;
         slider.appendChild(div);
