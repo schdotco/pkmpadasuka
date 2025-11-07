@@ -1,146 +1,79 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Fullscreen YouTube Loop Player</title>
-  <style>
-    html,body {
-      height:100%;
-      margin:0;
-      background:#000;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:#fff;
-      font-family:system-ui, sans-serif;
-    }
-    #container {
-      position:relative;
-      width:100%;
-      height:100%;
-      overflow:hidden;
-      background:#000;
-    }
-    #player {
-      position:absolute;
-      top:0; left:0;
-      width:100%;
-      height:100%;
-      border:0;
-    }
-    #controls {
-      position: absolute;
-      z-index: 25;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 24px;
-      display:flex;
-      gap:8px;
-    }
-    .btn {
-      background: rgba(255,255,255,0.12);
-      color: white;
-      padding: 10px 14px;
-      border-radius:8px;
-      border:none;
-      cursor:pointer;
-      backdrop-filter: blur(4px);
-    }
-    #overlayInstructions {
-      position:absolute;
-      z-index:24;
-      left:12px;
-      top:12px;
-      background:rgba(0,0,0,0.45);
-      padding:8px 10px;
-      border-radius:8px;
-      font-size:14px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fullscreen YouTube Loop</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: black;
+    height: 100%;
+    width: 100%;
+  }
+  #player {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* agar layar tidak bisa diklik */
+  }
+  /* Tombol pertama untuk enable suara */
+  #startBtn {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    padding: 20px 40px;
+    background: #ffffffcc;
+    border-radius: 8px;
+    font-size: 22px;
+    cursor: pointer;
+    border: none;
+  }
+</style>
 </head>
 <body>
-  <div id="container" role="main">
-    <div id="overlayInstructions">
-      Klik <strong>Start</strong> untuk memulai dan masuk fullscreen.
-    </div>
-    <div id="player"></div>
-    <div id="controls">
-      <button id="startBtn" class="btn">Start</button>
-      <button id="muteBtn" class="btn" style="display:none">Mute</button>
-      <button id="unmuteBtn" class="btn" style="display:none">Unmute</button>
-      <button id="exitBtn" class="btn" style="display:none">Exit Fullscreen</button>
-    </div>
-  </div>
 
-  <script>
-    const videoId = "O_VENeZ58yY"; // ganti ID video di sini
+<button id="startBtn">▶ Mulai</button>
+<div id="player"></div>
 
-    let player;
-    let isStarted = false;
+<script>
+const VIDEO_ID = "O_VENeZ58yY"; // ← GANTI DENGAN ID VIDEO KAMU
 
-    function loadYouTubeAPI() {
-      return new Promise((resolve) => {
-        if (window.YT && window.YT.Player) return resolve();
-        const tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api"; // ✅ FIX
-        document.head.appendChild(tag);
-        window.onYouTubeIframeAPIReady = () => resolve();
-      });
+let player;
+
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player('player', {
+    videoId: VIDEO_ID,
+    playerVars: {
+      autoplay: 1,
+      controls: 0,
+      loop: 1,
+      playlist: VIDEO_ID,
+      modestbranding: 1,
+      mute: 1, // awalnya mute, nanti kita unmute saat user klik
+      playsinline: 1
+    },
+    events: {
+      onReady: function() { player.playVideo(); }
     }
+  });
+}
 
-    function createPlayer() {
-      player = new YT.Player('player', {
-        videoId: videoId,
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          rel: 0,
-          modestbranding: 1,
-          iv_load_policy: 3,
-          playsinline: 1,
-          loop: 1,
-          playlist: videoId // ✅ agar loop berjalan
-        },
-        events: {
-          onReady: onPlayerReady,
-          onStateChange: onPlayerStateChange
-        }
-      });
-    }
+document.getElementById("startBtn").addEventListener("click", () => {
+  player.unMute();    // Hidupkan suara
+  player.setVolume(100);
+  player.playVideo();
+  document.getElementById("startBtn").style.display = "none"; // Sembunyikan tombol
+});
 
-    function onPlayerReady(e) {
-      try { e.target.unMute(); } catch(e){}
-      e.target.playVideo();
-      document.getElementById('muteBtn').style.display="inline-block";
-      document.getElementById('unmuteBtn').style.display="inline-block";
-      document.getElementById('exitBtn').style.display="inline-block";
-    }
-
-    function onPlayerStateChange(e) {
-      if (e.data === YT.PlayerState.ENDED) {
-        player.seekTo(0);
-        player.playVideo();
-      }
-    }
-
-    async function enterFullscreen() {
-      const el = document.getElementById('container');
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    }
-
-    document.getElementById('startBtn').addEventListener('click', async () => {
-      if (isStarted) return;
-      isStarted = true;
-      await loadYouTubeAPI();
-      await enterFullscreen();
-      createPlayer();
-    });
-
-    document.getElementById('muteBtn').onclick = () => player.mute();
-    document.getElementById('unmuteBtn').onclick = () => { player.unMute(); player.playVideo(); };
-    document.getElementById('exitBtn').onclick = () => document.exitFullscreen();
-  </script>
+// Load YouTube API
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+</script>
 </body>
 </html>
