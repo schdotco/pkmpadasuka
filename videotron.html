@@ -43,11 +43,10 @@
       color: white;
       padding: 10px 14px;
       border-radius:8px;
-      border: none;
-      cursor: pointer;
+      border:none;
+      cursor:pointer;
       backdrop-filter: blur(4px);
     }
-    .btn:active { transform: translateY(1px); }
     #overlayInstructions {
       position:absolute;
       z-index:24;
@@ -63,13 +62,9 @@
 <body>
   <div id="container" role="main">
     <div id="overlayInstructions">
-      Klik <strong>Start</strong> untuk masuk fullscreen dan memutar video dengan suara.
-      (Diperlukan klik karena kebijakan browser terhadap autoplay suara.)
+      Klik <strong>Start</strong> untuk memulai dan masuk fullscreen.
     </div>
-
-    <!-- This div will be replaced by the YouTube iframe player -->
     <div id="player"></div>
-
     <div id="controls">
       <button id="startBtn" class="btn">Start</button>
       <button id="muteBtn" class="btn" style="display:none">Mute</button>
@@ -78,142 +73,74 @@
     </div>
   </div>
 
-  <!-- Load YouTube IFrame API -->
   <script>
-    // Ganti VALUE_DI_SINI dengan ID video YouTube yang ingin diputar.
-    // Contoh: untuk https://www.youtube.com/watch?v=dQw4w9WgXcQ -> videoId = "dQw4w9WgXcQ"
-    const videoId = "O_VENeZ58yY";
+    const videoId = "O_VENeZ58yY"; // ganti ID video di sini
 
     let player;
     let isStarted = false;
 
-    // Muat API secara dinamis
     function loadYouTubeAPI() {
       return new Promise((resolve) => {
         if (window.YT && window.YT.Player) return resolve();
         const tag = document.createElement('script');
-        tag.src = "tag.src = "https://www.youtube.com/iframe_api";";
-        tag.onload = () => {
-          // The API will call onYouTubeIframeAPIReady when it's ready
-        };
+        tag.src = "https://www.youtube.com/iframe_api"; // ✅ FIX
         document.head.appendChild(tag);
-        // create a global callback used by the API
         window.onYouTubeIframeAPIReady = () => resolve();
       });
     }
 
-    // Buat player dengan konfigurasi agar fullscreen dapat dipakai dan loop bekerja
     function createPlayer() {
       player = new YT.Player('player', {
         videoId: videoId,
         playerVars: {
-          autoplay: 1,         // mulai otomatis ketika user mengklik Start
-          controls: 0,         // sembunyikan kontrol default
+          autoplay: 1,
+          controls: 0,
           rel: 0,
           modestbranding: 1,
           iv_load_policy: 3,
-          playsinline: 1,      // untuk mobile agar inline - kami akan paksa fullscreen via API
-          // loop di YouTube embed memerlukan playlist = videoId
+          playsinline: 1,
           loop: 1,
-          playlist: videoId
+          playlist: videoId // ✅ agar loop berjalan
         },
         events: {
-          'onReady': onPlayerReady,
-          'onStateChange': onPlayerStateChange,
-          'onError': onPlayerError
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange
         }
       });
     }
 
-    function onPlayerReady(event) {
-      // Pastikan tidak mute (browser mungkin tetap memblokir autoplay suara
-      // kecuali pengguna sudah berinteraksi).
-      try { event.target.unMute(); } catch(e){}
-      // playVideo dipanggil karena kita sudah mendapatkan click dari user
-      event.target.playVideo();
-      document.getElementById('muteBtn').style.display = 'inline-block';
-      document.getElementById('unmuteBtn').style.display = 'inline-block';
-      document.getElementById('exitBtn').style.display = 'inline-block';
+    function onPlayerReady(e) {
+      try { e.target.unMute(); } catch(e){}
+      e.target.playVideo();
+      document.getElementById('muteBtn').style.display="inline-block";
+      document.getElementById('unmuteBtn').style.display="inline-block";
+      document.getElementById('exitBtn').style.display="inline-block";
     }
 
     function onPlayerStateChange(e) {
-      // Jika ended, segera kembali ke 0 dan mainkan lagi — ini meminimalkan jeda.
       if (e.data === YT.PlayerState.ENDED) {
-        // seekTo dengan allowSeekAhead true (kedua argumen)
-        try {
-          player.seekTo(0, true);
-          player.playVideo();
-        } catch (err) {
-          console.warn("Gagal restart langsung:", err);
-          // fallback: gunakan loadVideoById
-          try { player.loadVideoById(videoId, 0, "default"); } catch(e){}
-        }
-      }
-      // Jika buffering panjang, coba play kembali
-      if (e.data === YT.PlayerState.BUFFERING) {
-        // nothing: YouTube buffering biasanya singkat; jika perlu, bisa implement retry
+        player.seekTo(0);
+        player.playVideo();
       }
     }
 
-    function onPlayerError(err) {
-      console.error("YouTube Player Error:", err);
-    }
-
-    // Fungsi meminta fullscreen pada container (atau iframe)
     async function enterFullscreen() {
-      const container = document.getElementById('container');
-      if (container.requestFullscreen) {
-        await container.requestFullscreen();
-      } else if (container.webkitRequestFullscreen) {
-        container.webkitRequestFullscreen();
-      } else if (container.msRequestFullscreen) {
-        container.msRequestFullscreen();
-      }
+      const el = document.getElementById('container');
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
     }
 
-    function exitFullscreen() {
-      if (document.exitFullscreen) document.exitFullscreen();
-      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-      else if (document.msExitFullscreen) document.msExitFullscreen();
-    }
-
-    // Hook tombol
     document.getElementById('startBtn').addEventListener('click', async () => {
       if (isStarted) return;
       isStarted = true;
-
-      // Pastikan pengguna melakukan gesture — ini memberi izin suara di banyak browser
-      try {
-        await loadYouTubeAPI();
-        await enterFullscreen();
-        createPlayer();
-      } catch (err) {
-        console.error(err);
-        alert("Gagal memuat pemutar. Periksa koneksi atau izin browser.");
-      }
+      await loadYouTubeAPI();
+      await enterFullscreen();
+      createPlayer();
     });
 
-    document.getElementById('muteBtn').addEventListener('click', () => {
-      if (player) { player.mute(); }
-    });
-    document.getElementById('unmuteBtn').addEventListener('click', () => {
-      if (player) { player.unMute(); player.playVideo(); }
-    });
-    document.getElementById('exitBtn').addEventListener('click', () => {
-      exitFullscreen();
-    });
-
-    // Jika pengguna menutup fullscreen, kita bisa berhenti atau terus mainkan tergantung preferensi.
-    document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) {
-        // pengguna keluar fullscreen
-        // pilihan: hentikan pemutaran atau biarkan berjalan. Di sini kita biarkan berjalan.
-        // Jika ingin menghentikan: player.pauseVideo();
-      }
-    });
-
-    // Catatan: beberapa browser (terutama mobile) memerlukan playsinline dan/atau
-    // interaksi dari user agar suara tidak diblokir. Tombol Start memberikan interaksi itu.
+    document.getElementById('muteBtn').onclick = () => player.mute();
+    document.getElementById('unmuteBtn').onclick = () => { player.unMute(); player.playVideo(); };
+    document.getElementById('exitBtn').onclick = () => document.exitFullscreen();
   </script>
 </body>
 </html>
