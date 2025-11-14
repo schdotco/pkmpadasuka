@@ -212,12 +212,16 @@
     <section class="video-section">
       <div class="video-header">🎬 Informasi & Edukasi Kesehatan</div>
       <div class="video-container">
+
+        <!-- ✅ VIDEO SUDAH DISESUAIKAN (bersuara + loop) -->
         <iframe 
-          src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=1&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0"
+          id="video"
+          src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=0&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0"
           title="Video Edukasi Kesehatan"
-          allow="autoplay; encrypted-media; picture-in-picture"
+          allow="autoplay; encrypted-media"
           allowfullscreen>
         </iframe>
+
       </div>
     </section>
   </div>
@@ -234,7 +238,7 @@
     const infoRef = ref(db, "informasi_dokter");
 
     const hariList = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-    const hariIni = hariList[new Date().getDay()];
+    const hariIni = hariList[new Date().getDay()()];
     let slides = [];
     let index = 0;
 
