@@ -18,7 +18,7 @@
         margin-bottom: 15px;
     }
     .form-container {
-        max-width: 700px;
+        max-width: 800px;
         margin: auto;
         background: #fff;
         padding: 20px 25px;
@@ -40,10 +40,52 @@
         font-size: 15px;
     }
     textarea {
-        height: 100px;
+        height: 80px;
     }
+
+    .section-title {
+        font-size: 17px;
+        margin-top: 20px;
+        border-left: 4px solid #2563eb;
+        padding-left: 8px;
+        color: #2563eb;
+        font-weight: bold;
+    }
+
+    .item-box {
+        background: #f0f4ff;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        border: 1px solid #c7d7ff;
+        position: relative;
+    }
+
+    .btn-add {
+        background: #059669;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .btn-delete {
+        background: #dc2626;
+        color: white;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .btn-add:hover { background: #047857; }
+    .btn-delete:hover { background: #b91c1c; }
+
     .btn-submit {
-        margin-top: 18px;
+        margin-top: 20px;
         width: 100%;
         padding: 12px;
         background: #2563eb;
@@ -53,17 +95,8 @@
         font-size: 16px;
         cursor: pointer;
     }
-    .btn-submit:hover {
-        background: #1e4fc8;
-    }
-    .section-title {
-        font-size: 17px;
-        margin-top: 20px;
-        border-left: 4px solid #2563eb;
-        padding-left: 8px;
-        color: #2563eb;
-        font-weight: bold;
-    }
+    .btn-submit:hover { background: #1e4fc8; }
+
     .success {
         text-align: center;
         background: #d1fae5;
@@ -81,9 +114,9 @@
 <h2>Form Pengajuan Permintaan Barang - User</h2>
 
 <div class="form-container">
+
     <div id="notif" class="success">Data berhasil dikirim!</div>
 
-    <!-- DATA PENGAJU -->
     <div class="section-title">Data Pengaju</div>
 
     <label>Nama yang Mengajukan</label>
@@ -95,37 +128,21 @@
     <label>Tanggal Pengajuan</label>
     <input id="tanggalPengajuan" type="date" required>
 
-    <!-- DATA BARANG -->
-    <div class="section-title">Data Barang yang Diajukan</div>
+    <div class="section-title">Daftar Barang yang Diajukan</div>
 
-    <label>Nama Barang</label>
-    <input id="namaBarang" type="text" required>
+    <div id="items"></div>
 
-    <label>Jumlah Permintaan</label>
-    <input id="jumlahPermintaan" type="number" required>
-
-    <label>Jumlah Sisa Stok</label>
-    <input id="sisaStok" type="number" required>
-
-    <label>Harga Barang</label>
-    <input id="hargaBarang" type="number" required>
-
-    <label>Keperluan Untuk</label>
-    <textarea id="keperluan"></textarea>
+    <button class="btn-add" onclick="tambahItem()">+ Tambah Barang</button>
 
     <button class="btn-submit" onclick="kirimData()">Kirim Pengajuan</button>
 </div>
 
 
-<!-- ================================ -->
-<!-- FIREBASE SDK -->
-<!-- ================================ -->
+<!-- FIREBASE -->
 <script type="module">
-    // Import Firebase modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 
-    // Firebase config dari Anda
     const firebaseConfig = {
         apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
         authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
@@ -136,41 +153,114 @@
         appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Fungsi simpan data
+    let index = 0;
+
+    // ================= TAMBAH ITEM =================
+    window.tambahItem = function () {
+        let container = document.getElementById("items");
+
+        let html = `
+        <div class="item-box" id="item-${index}">
+            <label>Nama Barang</label>
+            <input type="text" id="namaBarang-${index}" required>
+
+            <label>Jumlah Permintaan</label>
+            <input type="number" id="jumlahPermintaan-${index}" required>
+
+            <label>Jumlah Sisa Stok</label>
+            <input type="number" id="sisaStok-${index}" required>
+
+            <label>Harga Barang</label>
+            <input type="number" id="hargaBarang-${index}" required>
+
+            <label>Keperluan Untuk</label>
+            <textarea id="keperluan-${index}"></textarea>
+
+            <button class="btn-delete" onclick="hapusItem(${index})">Hapus Item</button>
+        </div>
+        `;
+
+        container.insertAdjacentHTML("beforeend", html);
+        index++;
+    };
+
+    // Tambahkan minimal 1 item
+    tambahItem();
+
+
+    // =============== HAPUS ITEM ===============
+    window.hapusItem = function (id) {
+        let item = document.getElementById(`item-${id}`);
+        if (item) item.remove();
+    };
+
+
+    // =============== KIRIM DATA KE FIREBASE + WA ===============
     window.kirimData = function () {
+
         let namaPengaju = document.getElementById("namaPengaju").value;
         let instalasiPengaju = document.getElementById("instalasiPengaju").value;
         let tanggalPengajuan = document.getElementById("tanggalPengajuan").value;
-        let namaBarang = document.getElementById("namaBarang").value;
-        let jumlahPermintaan = document.getElementById("jumlahPermintaan").value;
-        let sisaStok = document.getElementById("sisaStok").value;
-        let hargaBarang = document.getElementById("hargaBarang").value;
-        let keperluan = document.getElementById("keperluan").value;
 
-        // Generate auto key
+        let items = [];
+        let teksWA = "";
+
+        for (let i = 0; i < index; i++) {
+            let box = document.getElementById(`item-${i}`);
+            if (box) {
+                let item = {
+                    nama_barang: document.getElementById(`namaBarang-${i}`).value,
+                    jumlah_permintaan: document.getElementById(`jumlahPermintaan-${i}`).value,
+                    sisa_stok: document.getElementById(`sisaStok-${i}`).value,
+                    harga_barang: document.getElementById(`hargaBarang-${i}`).value,
+                    keperluan: document.getElementById(`keperluan-${i}`).value
+                };
+                items.push(item);
+
+                teksWA += 
+`• ${item.nama_barang} — Qty: ${item.jumlah_permintaan} — Harga: ${item.harga_barang}
+`;
+            }
+        }
+
+        // ====== SIMPAN KE FIREBASE ======
         const newRef = push(ref(db, "pengajuan_barang"));
 
         set(newRef, {
             nama_pengaju: namaPengaju,
             instalasi: instalasiPengaju,
             tanggal: tanggalPengajuan,
-            nama_barang: namaBarang,
-            jumlah_permintaan: jumlahPermintaan,
-            sisa_stok: sisaStok,
-            harga_barang: hargaBarang,
-            keperluan: keperluan,
+            items: items,
             timestamp: Date.now()
         }).then(() => {
+
             document.getElementById("notif").style.display = "block";
 
-            // Clear form
+            // Reset form
             document.querySelectorAll("input, textarea").forEach(el => el.value = "");
+            document.getElementById("items").innerHTML = "";
+            index = 0;
+            tambahItem();
+
+            // =============== KIRIM NOTIFIKASI WHATSAPP ===============
+            let nomorWA = "6281234567890";  // << GANTI DENGAN NOMOR TUJUAN
+
+            let pesan = 
+`PENGAJUAN BARANG BARU%0A%0A` +
+`Nama Pengaju: ${namaPengaju}%0A` +
+`Instalasi: ${instalasiPengaju}%0A` +
+`Tanggal: ${tanggalPengajuan}%0A%0A` +
+`Daftar Barang:%0A` +
+encodeURIComponent(teksWA);
+
+            let url = `https://wa.me/${nomorWA}?text=${pesan}`;
+            window.open(url, "_blank");
         });
-    }
+    };
+
 </script>
 
 </body>
