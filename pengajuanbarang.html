@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Form Pengajuan Permintaan Barang</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f6f8;
+        padding: 20px;
+        margin: 0;
+    }
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    .form-container {
+        max-width: 700px;
+        margin: auto;
+        background: #fff;
+        padding: 20px 25px;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    label {
+        font-weight: bold;
+        display: block;
+        margin-top: 12px;
+        color: #444;
+    }
+    input, select, textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 15px;
+    }
+    textarea {
+        height: 100px;
+    }
+    .btn-submit {
+        margin-top: 18px;
+        width: 100%;
+        padding: 12px;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    .btn-submit:hover {
+        background: #1e4fc8;
+    }
+
+    .section-title {
+        font-size: 17px;
+        margin-top: 20px;
+        border-left: 4px solid #2563eb;
+        padding-left: 8px;
+        color: #2563eb;
+        font-weight: bold;
+    }
+</style>
+</head>
+
+<body>
+    <h2>Form Pengajuan Permintaan Barang - User</h2>
+
+    <div class="form-container">
+        
+        <!-- DATA PENGAJU -->
+        <div class="section-title">Data Pengaju</div>
+
+        <label>Nama yang Mengajukan</label>
+        <input type="text" placeholder="Masukkan nama pegawai" required>
+
+        <label>Instalasi yang Mengajukan</label>
+        <input type="text" placeholder="Contoh: Instalasi Farmasi" required>
+
+        <label>Tanggal Pengajuan</label>
+        <input type="date" required>
+
+
+        <!-- DATA BARANG -->
+        <div class="section-title">Data Barang yang Diajukan</div>
+
+        <label>Nama Barang</label>
+        <input type="text" placeholder="Masukkan nama barang" required>
+
+        <label>Jumlah Permintaan</label>
+        <input type="number" placeholder="Masukkan jumlah permintaan" required>
+
+        <label>Jumlah Sisa Stok</label>
+        <input type="number" placeholder="Stok terakhir / sisa stok" required>
+
+        <label>Harga Barang</label>
+        <input type="number" placeholder="Harga per unit / perkiraan harga" required>
+
+        <label>Keperluan Untuk</label>
+        <textarea placeholder="Tuliskan keperluannya"></textarea>
+
+        <button class="btn-submit">Kirim Pengajuan</button>
+    </div>
+
+</body>
+</html>
