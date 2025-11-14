@@ -203,7 +203,6 @@
       <div class="video-header">🎬 Informasi & Edukasi Kesehatan</div>
 
       <div class="video-container">
-        <!-- IFRAME DINAMIS (video berganti otomatis) -->
         <iframe 
           id="video"
           src=""
@@ -231,7 +230,6 @@
     let slides = [];
     let index = 0;
 
-    // JAM
     setInterval(() => {
       const now = new Date();
       clock.textContent = now.toLocaleString("id-ID", {
@@ -239,7 +237,6 @@
       });
     }, 1000);
 
-    // FIREBASE
     onValue(infoRef, (snapshot) => {
       slider.innerHTML = "";
       slides = [];
@@ -285,7 +282,6 @@
       })} | Jadwal hari ${hariIni}`;
     }
 
-    // SLIDER OTOMATIS
     setInterval(()=>{
       const all = document.querySelectorAll(".slide");
       if (all.length > 1) {
@@ -295,16 +291,14 @@
       }
     }, 6000);
 
-    /* ===========================
-       SISTEM PLAYLIST 3 VIDEO
-       =========================== */
+    /* ===============================
+       SISTEM PLAYLIST VIDEO YOUTUBE
+       =============================== */
 
     const videoList = [
-      "https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=1&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0",
-
-      "https://www.youtube.com/embed/pQ1lGFzfIW0?autoplay=1&mute=1&loop=1&playlist=pQ1lGFzfIW0&controls=0&modestbranding=1&showinfo=0&rel=0",
-
-      "https://www.youtube.com/embed/dMpP4Q-IinU?autoplay=1&mute=1&loop=1&playlist=dMpP4Q-IinU&controls=0&modestbranding=1&showinfo=0&rel=0"
+      "https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=1&loop=1&playlist=w8q6KWrduA0&controls=0",
+      "https://www.youtube.com/embed/pQ1lGFzfIW0?autoplay=1&mute=1&loop=1&playlist=pQ1lGFzfIW0&controls=0",
+      "https://www.youtube.com/embed/dMpP4Q-IinU?autoplay=1&mute=1&loop=1&playlist=dMpP4Q-IinU&controls=0"
     ];
 
     let vidIndex = 0;
@@ -314,17 +308,25 @@
       vidIndex = (vidIndex + 1) % videoList.length;
     }
 
-    playVideo();                 // play video pertama
-    setInterval(playVideo, 60000); // ganti video tiap 60 detik
+    playVideo();
+    setInterval(playVideo, 60000);
 
-    // UNMUTE saat klik pertama (untuk TV)
+    /* =====================================================
+       UNMUTE SAAT KLIK PERTAMA (WAJIB UNTUK TV CHROME)
+       ===================================================== */
+    let sudahUnmute = false;
+
     document.addEventListener("click", () => {
+      if (sudahUnmute) return;
+      sudahUnmute = true;
+
       const iframe = document.getElementById("video");
       iframe.src = iframe.src.replace("mute=1", "mute=0");
     });
 
-    // AUTO REFRESH 30 menit
+    /* AUTO REFRESH 30 MENIT */
     setInterval(()=> window.location.reload(), 1800000);
+
   </script>
 </body>
 </html>
