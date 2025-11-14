@@ -1,3 +1,13 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Layar Informasi Dokter - UPTD Puskesmas Padasuka</title>
+
+  <!-- Font lama (TIDAK DIUBAH) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+
 <style>
   :root {
     --primary: #1976d2;
@@ -194,3 +204,129 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 </style>
+</head>
+<body>
+
+  <header>
+    🩺 Jadwal Dokter UPTD Puskesmas Padasuka
+    <div id="clock"></div>
+  </header>
+
+  <div class="ticker">
+    <span>Selamat datang di UPTD Puskesmas Padasuka Kota Bandung | Pelayanan kesehatan cepat, ramah dan prima</span>
+  </div>
+
+  <div class="container">
+    <div class="slider" id="slider"></div>
+
+    <section class="video-section">
+      <div class="video-header">🎬 Informasi & Edukasi Kesehatan</div>
+      <div class="video-container">
+
+        <!-- ========================== -->
+        <!--  BAGIAN VIDEO (HANYA INI YANG DIUBAH) -->
+        <!-- ========================== -->
+        <iframe 
+          id="video"
+          src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=0&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0"
+          title="Video Edukasi Kesehatan"
+          allow="autoplay; encrypted-media"
+          allowfullscreen>
+        </iframe>
+
+      </div>
+    </section>
+  </div>
+
+  <div class="footer" id="footer">Terakhir diperbarui: -</div>
+
+  <script type="module">
+    import { db } from "./app.js";
+    import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+    const slider = document.getElementById("slider");
+    const footer = document.getElementById("footer");
+    const clock = document.getElementById("clock");
+    const infoRef = ref(db, "informasi_dokter");
+
+    const hariList = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+    const hariIni = hariList[new Date().getDay()];
+    let slides = [];
+    let index = 0;
+
+    // JAM
+    setInterval(() => {
+      const now = new Date();
+      clock.textContent = now.toLocaleString("id-ID", {
+        weekday: "long", hour: "2-digit", minute: "2-digit", second: "2-digit"
+      });
+    }, 1000);
+
+    // FIREBASE
+    onValue(infoRef, (snapshot) => {
+      slider.innerHTML = "";
+      slides = [];
+
+      if (!snapshot.exists()) {
+        slider.innerHTML = "<div class='slide active'><p style='font-size:22px;color:#888;'>Tidak ada data ditemukan.</p></div>";
+        return;
+      }
+
+      snapshot.forEach(child => {
+        const val = child.val();
+        if (val.hari === hariIni) slides.push(val);
+      });
+
+      if (slides.length === 0) {
+        slider.innerHTML = `<div class='slide active'><p style="font-size:22px;color:#888;">Belum ada data untuk hari ${hariIni}.</p></div>`;
+        return;
+      }
+
+      slides.sort((a,b)=>a.nama.localeCompare(b.nama));
+      slides.forEach((item,i)=>{
+        const div = document.createElement("div");
+        div.className = "slide" + (i===0 ? " active" : "");
+        div.innerHTML = `
+          <h3>${item.nama || "-"}</h3>
+          <p>
+            📅 <b>${item.hari || "-"}</b> |
+            🏥 <b>${item.unit || "-"}</b> |
+            🩺 <b class="${item.status?.toLowerCase() === 'ada' ? 'status-ada' : 'status-tidak'}">${item.status || "-"}</b>
+          </p>
+        `;
+        slider.appendChild(div);
+      });
+
+      updateFooter();
+    });
+
+    function updateFooter() {
+      const now = new Date();
+      const waktu = now.toLocaleString("id-ID", {
+        day: "2-digit", month: "long", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+      });
+      footer.textContent = `Terakhir diperbarui: ${waktu} | Jadwal hari ${hariIni}`;
+    }
+
+    // SLIDER OTOMATIS
+    setInterval(()=>{
+      const all = document.querySelectorAll(".slide");
+      if (all.length > 1) {
+        all[index].classList.remove("active");
+        index = (index + 1) % all.length;
+        all[index].classList.add("active");
+      }
+    }, 6000);
+
+    // PAKSA UNMUTE SETELAH KLIK (UNTUK TV)
+    document.addEventListener("click", () => {
+      const iframe = document.getElementById("video");
+      iframe.src = iframe.src.replace("mute=1", "mute=0");
+    });
+
+    // REFRESH 30 MENIT
+    setInterval(()=> window.location.reload(), 1800000);
+  </script>
+</body>
+</html>
