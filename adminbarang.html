@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Admin - Pengajuan Barang</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    padding: 20px;
+}
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.filter-box {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.filter-box input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+.filter-box button {
+    padding: 8px 12px;
+    background: #2563eb;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+table, th, td {
+    border: 1px solid #ccc;
+}
+th {
+    background: #2563eb;
+    color: white;
+    padding: 8px;
+}
+td {
+    padding: 8px;
+}
+.btn-proses {
+    background:#059669;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    cursor:pointer;
+    border-radius:5px;
+}
+.btn-selesai {
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    cursor:pointer;
+    border-radius:5px;
+}
+.btn-hapus {
+    background:#dc2626;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    cursor:pointer;
+    border-radius:5px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Admin Pengajuan Barang</h2>
+
+<!-- ==================== FILTER ==================== -->
+<div class="filter-box">
+    <input type="date" id="filterTanggal">
+    <input type="text" id="filterNama" placeholder="Cari Nama Pengaju...">
+    <input type="month" id="filterBulan">
+    <button onclick="cetakRekapBulanan()">Cetak Rekap Bulanan</button>
+</div>
+
+<!-- ==================== TABEL DATA ==================== -->
+<table id="tabelData">
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Nama Pengaju</th>
+            <th>Instalasi</th>
+            <th>Tanggal</th>
+            <th>Nama Barang</th>
+            <th>Jumlah</th>
+            <th>Sisa Stok</th>
+            <th>Harga</th>
+            <th>Keperluan</th>
+            <th>KODREK</th>
+            <th>Proses</th>
+            <th>Selesai</th>
+            <th>Hapus</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<!-- ==================== FIREBASE ==================== -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDciAiNKFbh8aoM8joIywSeH9Boml1tK5s",
+    authDomain: "aplikasi-jadwal-1d54d.firebaseapp.com",
+    databaseURL: "https://aplikasi-jadwal-1d54d-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "aplikasi-jadwal-1d54d",
+    storageBucket: "aplikasi-jadwal-1d54d.firebasestorage.app",
+    messagingSenderId: "860941812271",
+    appId: "1:860941812271:web:458bd63c5b0d2514fcbcda"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let semuaData = {};  // buffer all data
+let tabelBody = document.querySelector("#tabelData tbody");
+
+
+// ===================================================
+// LOAD DATA SEKALI SAJA DAN SIMPAN KE BUFFER
+// ===================================================
+onValue(ref(db, "pengajuan_barang"), snapshot => {
+    semuaData = snapshot.val() || {};
+    renderTabel();
+});
+
+
+// ===================================================
+// RENDER TABEL + FILTER
+// ===================================================
+function renderTabel() {
+    tabelBody.innerHTML = "";
+    let no = 1;
+
+    let filterTanggal = document.getElementById("filterTanggal").value;
+    let filterNama = document.getElementById("filterNama").value.toLowerCase();
+
+    Object.keys(semuaData).forEach(id => {
+        let data = semuaData[id];
+
+        // Filter Tanggal
+        if (filterTanggal && data.tanggal !== filterTanggal) return;
+
+        data.items?.forEach((item, index) => {
+
+            // Filter Nama
+            if (filterNama && !data.nama_pengaju.toLowerCase().includes(filterNama)) return;
+
+            let row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${no++}</td>
+                <td>${data.nama_pengaju}</td>
+                <td>${data.instalasi}</td>
+                <td>${data.tanggal}</td>
+                <td>${item.nama_barang}</td>
+                <td>${item.jumlah_permintaan}</td>
+                <td>${item.sisa_stok}</td>
+                <td>${item.harga_barang}</td>
+                <td>${item.keperluan}</td>
+                <td><input type="text" id="kodrek-${id}-${index}" value="${item.kodrek || ""}"></td>
+                <td><button class="btn-proses" onclick="prosesPDF('${id}', ${index})">Proses</button></td>
+                <td><button class="btn-selesai" onclick="selesai('${id}', ${index})">Selesai</button></td>
+                <td><button class="btn-hapus" onclick="hapusItem('${id}', ${index})">Hapus</button></td>
+            `;
+            tabelBody.appendChild(row);
+        });
+    });
+}
+
+// filter realtime
+document.getElementById("filterTanggal").onchange = renderTabel;
+document.getElementById("filterNama").onkeyup = renderTabel;
+
+
+// ===================================================
+// HAPUS ITEM
+// ===================================================
+window.hapusItem = function(id, index) {
+    let arr = semuaData[id].items;
+    arr.splice(index, 1);
+
+    if (arr.length === 0) {
+        remove(ref(db, `pengajuan_barang/${id}`));
+    } else {
+        update(ref(db, `pengajuan_barang/${id}`), { items: arr });
+    }
+
+    alert("Data berhasil dihapus.");
+};
+
+
+// ===================================================
+// TANDAI SELESAI
+// ===================================================
+window.selesai = function(id, index) {
+    update(ref(db, `pengajuan_barang/${id}/items/${index}`), { selesai: true });
+    alert("Item ditandai selesai.");
+};
+
+
+// ===================================================
+// CETAK REKAP BULANAN
+// ===================================================
+window.cetakRekapBulanan = function() {
+    let bulan = document.getElementById("filterBulan").value;
+    if (!bulan) return alert("Pilih bulan terlebih dahulu!");
+
+    let [tahun, bln] = bulan.split("-");
+    let filter = `${tahun}-${bln.padStart(2,"0")}`;
+
+    let dataCetak = [];
+
+    Object.keys(semuaData).forEach(id => {
+        let data = semuaData[id];
+
+        if (!data.tanggal.startsWith(filter)) return;
+
+        data.items?.forEach(item => {
+            dataCetak.push([
+                data.nama_pengaju,
+                data.instalasi,
+                data.tanggal,
+                item.nama_barang,
+                item.jumlah_permintaan,
+                item.harga_barang,
+                item.jumlah_permintaan * item.harga_barang
+            ]);
+        });
+    });
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p","pt","a4");
+
+    doc.setFontSize(14);
+    doc.text(`REKAP BULANAN - ${bulan}`, 200, 40);
+
+    doc.autoTable({
+        startY: 70,
+        head: [["Pengaju", "Instalasi", "Tanggal", "Barang", "Qty", "Harga", "Total"]],
+        body: dataCetak
+    });
+
+    doc.save(`Rekap_Bulan_${bulan}.pdf`);
+};
+
+
+// ===================================================
+// PROSES PDF (SAMA SEPERTI SEBELUMNYA)
+// ===================================================
+window.prosesPDF = function(id, index) {
+
+    const kodrekInput = document.getElementById(`kodrek-${id}-${index}`).value;
+    if (!kodrekInput) return alert("Isi KODREK terlebih dahulu!");
+
+    let data = semuaData[id];
+    let items = data.items;
+
+    // kelompokkan berdasarkan KODREK
+    let grouped = {};
+
+    items.forEach((item, i) => {
+        let kode = (i === index) ? kodrekInput : (item.kodrek || "000000");
+        if (!grouped[kode]) grouped[kode] = [];
+        grouped[kode].push(item);
+    });
+
+    // simpan kodrek
+    update(ref(db, `pengajuan_barang/${id}/items/${index}`), {
+        kodrek: kodrekInput
+    });
+
+    // generate PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "pt", "a4");
+
+    doc.setFontSize(14);
+    doc.text("DAFTAR PENGAJUAN BELANJA", 200, 40);
+
+    doc.setFontSize(11);
+    doc.text(`Tanggal: ${data.tanggal}`, 40, 70);
+
+    let yPos = 90;
+
+    Object.keys(grouped).forEach((kode, idx) => {
+
+        let daftar = grouped[kode].map((item, i) => [
+            i + 1,
+            item.nama_barang,
+            "",
+            item.jumlah_permintaan,
+            item.sisa_stok,
+            item.harga_barang,
+            item.jumlah_permintaan * item.harga_barang,
+            kode,
+            item.keperluan
+        ]);
+
+        doc.autoTable({
+            startY: yPos,
+            head: [["NO", "NAMA BARANG", "SATUAN", "JUMLAH", "SISA", "HARGA", "TOTAL", "KODREK", "KEPERLUAN"]],
+            body: daftar,
+            theme: "grid"
+        });
+
+        let total = daftar.reduce((sum,r)=>sum + r[6], 0);
+        yPos = doc.lastAutoTable.finalY + 20;
+        doc.text(`Total Per-Kodrek (${kode}): Rp ${total}`, 40, yPos);
+
+        yPos += 30;
+    });
+
+    doc.save(`Pengajuan_${data.nama_pengaju}.pdf`);
+};
+</script>
+
+</body>
+</html>
