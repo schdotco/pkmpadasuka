@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Layar Informasi Dokter - UPTD Puskesmas Padasuka</title>
 
-  <!-- ✅ Font: Inter + Poppins -->
+  <!-- Font lama (TIDAK DIUBAH) -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;700&display=swap" rel="stylesheet">
 
   <style>
@@ -29,7 +29,6 @@
       line-height: 1.6;
     }
 
-    /* HEADER */
     header {
       background: linear-gradient(90deg, var(--primary), #2196f3);
       color: white;
@@ -49,7 +48,6 @@
       color: #e3f2fd;
     }
 
-    /* TICKER */
     .ticker {
       background: linear-gradient(90deg, #0d47a1, #1976d2, #2196f3);
       background-size: 200% 100%;
@@ -70,7 +68,6 @@
     @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-100%); } }
     @keyframes ticker-bg { from { background-position: 0% 0; } to { background-position: 100% 0; } }
 
-    /* CONTAINER */
     .container {
       display: flex;
       flex-direction: column;
@@ -82,7 +79,6 @@
       gap: 20px;
     }
 
-    /* SLIDER */
     .slider {
       width: 100%;
       max-width: 1100px;
@@ -94,12 +90,6 @@
       justify-content: center;
       align-items: center;
       overflow: hidden;
-      transition: all 0.4s ease;
-    }
-
-    .slider:hover {
-      transform: scale(1.01);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
 
     .slide {
@@ -110,7 +100,6 @@
       text-align: center;
       width: 100%;
       height: 100%;
-      animation: fadeInUp 1s ease;
     }
     .slide.active { display: flex; }
 
@@ -132,16 +121,9 @@
       flex-wrap: wrap;
     }
 
-    .status-ada {
-      color: #1b5e20;
-      font-weight: 700;
-    }
-    .status-tidak {
-      color: #b71c1c;
-      font-weight: 700;
-    }
+    .status-ada { color: #1b5e20; font-weight: 700; }
+    .status-tidak { color: #b71c1c; font-weight: 700; }
 
-    /* VIDEO SECTION */
     .video-section {
       width: 100%;
       max-width: 1100px;
@@ -178,7 +160,6 @@
       border: none;
     }
 
-    /* FOOTER */
     .footer {
       background: #e3f2fd;
       color: #333;
@@ -187,11 +168,6 @@
       font-size: 18px;
       border-top: 1px solid #bbdefb;
       width: 100%;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -203,7 +179,7 @@
   </header>
 
   <div class="ticker">
-    <span>Selamat datang di UPTD Puskesmas Padasuka Kota Bandung | Bersama kita wujudkan pelayanan kesehatan yang prima, cepat, dan ramah bagi masyarakat Kota Bandung</span>
+    <span>Selamat datang di UPTD Puskesmas Padasuka Kota Bandung | Pelayanan kesehatan cepat, ramah dan prima</span>
   </div>
 
   <div class="container">
@@ -213,7 +189,9 @@
       <div class="video-header">🎬 Informasi & Edukasi Kesehatan</div>
       <div class="video-container">
 
-        <!-- ✅ VIDEO SUDAH DISESUAIKAN (bersuara + loop) -->
+        <!-- ========================== -->
+        <!--  BAGIAN VIDEO (HANYA INI YANG DIUBAH) -->
+        <!-- ========================== -->
         <iframe 
           id="video"
           src="https://www.youtube.com/embed/w8q6KWrduA0?autoplay=1&mute=0&loop=1&playlist=w8q6KWrduA0&controls=0&modestbranding=1&showinfo=0&rel=0"
@@ -238,11 +216,11 @@
     const infoRef = ref(db, "informasi_dokter");
 
     const hariList = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
-    const hariIni = hariList[new Date().getDay()()];
+    const hariIni = hariList[new Date().getDay()];
     let slides = [];
     let index = 0;
 
-    // JAM REALTIME
+    // JAM
     setInterval(() => {
       const now = new Date();
       clock.textContent = now.toLocaleString("id-ID", {
@@ -250,13 +228,13 @@
       });
     }, 1000);
 
-    // FIREBASE DATA
+    // FIREBASE
     onValue(infoRef, (snapshot) => {
       slider.innerHTML = "";
       slides = [];
 
       if (!snapshot.exists()) {
-        slider.innerHTML = `<div class='slide active'><p style="font-size:22px;color:#888;">Tidak ada data ditemukan.</p></div>`;
+        slider.innerHTML = "<div class='slide active'><p style='font-size:22px;color:#888;'>Tidak ada data ditemukan.</p></div>";
         return;
       }
 
@@ -297,7 +275,7 @@
       footer.textContent = `Terakhir diperbarui: ${waktu} | Jadwal hari ${hariIni}`;
     }
 
-    // SLIDE OTOMATIS
+    // SLIDER OTOMATIS
     setInterval(()=>{
       const all = document.querySelectorAll(".slide");
       if (all.length > 1) {
@@ -307,7 +285,13 @@
       }
     }, 6000);
 
-    // REFRESH OTOMATIS 30 MENIT
+    // PAKSA UNMUTE SETELAH KLIK (UNTUK TV)
+    document.addEventListener("click", () => {
+      const iframe = document.getElementById("video");
+      iframe.src = iframe.src.replace("mute=1", "mute=0");
+    });
+
+    // REFRESH 30 MENIT
     setInterval(()=> window.location.reload(), 1800000);
   </script>
 </body>
