@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Input Jadwal Dokter - Puskesmas Padasuka</title>
 
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
   <style>
     body { font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:#f6f8fa; margin:0; }
     .navbar { background:#1976d2; color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; }
@@ -41,7 +44,7 @@
     </select>
 
     <label>Nama Petugas</label>
-    <input type="text" id="nama" placeholder="Ketik nama petugas secara manual">
+    <select id="nama"><option value="">Memuat daftar Pegawai...</option></select>
 
     <label>Unit Pelayanan</label>
     <input type="text" id="unit" placeholder="Contoh: Umum, Gigi, Lansia, KIA, dll">
@@ -68,6 +71,36 @@
     const unit = document.getElementById("unit");
     const status = document.getElementById("status");
     const btn = document.getElementById("btnSimpan");
+    let choicesNama = null;
+
+    // ================================
+    //  🔥 LOAD DATA PEGAWAI (FIXED)
+    // ================================
+    const pegawaiRef = ref(db, "Pegawai");
+    const snap = await get(pegawaiRef);
+
+    // reset isi <select>
+    nama.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+
+    snap.forEach(ch => {
+      const d = ch.val();
+      const nm = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
+
+      const opt = document.createElement("option");
+      opt.value = nm;
+      opt.textContent = nm;
+      nama.appendChild(opt);
+    });
+
+    // FIX: Refresh Choices setelah data terisi
+    if (choicesNama) choicesNama.destroy();
+
+    choicesNama = new Choices(nama, {
+      searchEnabled: true,
+      shouldSort: false,
+      itemSelectText: '',
+      searchPlaceholderValue: 'Cari nama pegawai...'
+    });
 
     // ================================
     //  🔥 SIMPAN DATA
