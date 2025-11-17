@@ -73,23 +73,17 @@
     const btn = document.getElementById("btnSimpan");
     let choicesNama = null;
 
-    // 🔹 Load daftar Pegawai sekali
-    const PegawaiRef = ref(db, "Pegawai");
-    const snap = await get(PegawaiRef);
-    nama.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
-    snap.forEach(ch => {
-      const d = ch.val();
-      const nm = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
-      const opt = document.createElement("option");
-      opt.value = nm;
-      opt.textContent = nm;
-      nama.appendChild(opt);
-    });
+    // Hapus instance Choices lama agar data baru terbaca
+    if (choicesNama) {
+      choicesNama.destroy();
+    }
+
+    // Buat ulang dengan data yang sudah terisi
     choicesNama = new Choices(nama, {
-      searchEnabled: true,
-      shouldSort: false,
-      itemSelectText: '',
-      searchPlaceholderValue: 'Cari nama Pegawai...'
+    searchEnabled: true,
+    shouldSort: false,
+    itemSelectText: '',
+    searchPlaceholderValue: 'Cari nama pegawai...'
     });
 
     // 🔹 Simpan data ke Firebase
