@@ -44,7 +44,7 @@
     </select>
 
     <label>Nama Petugas</label>
-    <select id="nama"><option value="">Memuat daftar pegawai...</option></select>
+    <select id="nama"><option value="">Memuat daftar Pegawai...</option></select>
 
     <label>Unit Pelayanan</label>
     <input type="text" id="unit" placeholder="Contoh: Umum, Gigi, Lansia, KIA, dll">
@@ -73,9 +73,9 @@
     const btn = document.getElementById("btnSimpan");
     let choicesNama = null;
 
-    // 🔹 Load daftar pegawai sekali
-    const pegawaiRef = ref(db, "Pegawai");
-    const snap = await get(pegawaiRef);
+    // 🔹 Load daftar Pegawai sekali
+    const PegawaiRef = ref(db, "Pegawai");
+    const snap = await get(PegawaiRef);
     nama.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
     snap.forEach(ch => {
       const d = ch.val();
@@ -89,7 +89,7 @@
       searchEnabled: true,
       shouldSort: false,
       itemSelectText: '',
-      searchPlaceholderValue: 'Cari nama pegawai...'
+      searchPlaceholderValue: 'Cari nama Pegawai...'
     });
 
     // 🔹 Simpan data ke Firebase
