@@ -73,20 +73,38 @@
     const btn = document.getElementById("btnSimpan");
     let choicesNama = null;
 
-    // Hapus instance Choices lama agar data baru terbaca
-    if (choicesNama) {
-      choicesNama.destroy();
-    }
+    // ================================
+    //  🔥 LOAD DATA PEGAWAI (FIXED)
+    // ================================
+    const pegawaiRef = ref(db, "Pegawai");
+    const snap = await get(pegawaiRef);
 
-    // Buat ulang dengan data yang sudah terisi
-    choicesNama = new Choices(nama, {
-    searchEnabled: true,
-    shouldSort: false,
-    itemSelectText: '',
-    searchPlaceholderValue: 'Cari nama pegawai...'
+    // reset isi <select>
+    nama.innerHTML = `<option value="">-- Pilih Pegawai --</option>`;
+
+    snap.forEach(ch => {
+      const d = ch.val();
+      const nm = d.gelar ? `${d.nama} ${d.gelar}` : d.nama;
+
+      const opt = document.createElement("option");
+      opt.value = nm;
+      opt.textContent = nm;
+      nama.appendChild(opt);
     });
 
-    // 🔹 Simpan data ke Firebase
+    // FIX: Refresh Choices setelah data terisi
+    if (choicesNama) choicesNama.destroy();
+
+    choicesNama = new Choices(nama, {
+      searchEnabled: true,
+      shouldSort: false,
+      itemSelectText: '',
+      searchPlaceholderValue: 'Cari nama pegawai...'
+    });
+
+    // ================================
+    //  🔥 SIMPAN DATA
+    // ================================
     btn.addEventListener("click", async () => {
       if (!hari.value || !nama.value || !unit.value || !status.value) {
         alert("⚠️ Lengkapi semua field!");
@@ -103,14 +121,16 @@
         };
         await set(push(infoRef), newData);
         alert("✅ Data berhasil disimpan!");
-        window.location.reload(); // langsung refresh untuk memunculkan di hasil-informasi.html
+        window.location.reload();
       } catch (err) {
         console.error(err);
         alert("❌ Gagal menyimpan: " + err.message);
       }
     });
 
-    // 🔹 Reset otomatis 00:00
+    // ================================
+    //  🔥 RESET OTOMATIS 00:00
+    // ================================
     const resetAtMidnight = () => {
       const now = new Date();
       const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
