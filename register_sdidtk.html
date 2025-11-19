@@ -266,6 +266,41 @@ function fillDropdown(id, values) {
         dropdown.innerHTML += `<option>${v}</option>`;
     });
 }
+
+/* ============================
+      PATCH FILTER (DITAMBAHKAN)
+   ============================ */
+
+// Filter Tanggal Input
+$("#filterTanggal").on("change", function () {
+    let val = this.value;
+    table.column(15).search(val).draw(); 
+});
+
+// Filter Institusi
+$("#filterInstitusi").on("change", function () {
+    let val = this.value;
+    table.column(0).search(val).draw();
+});
+
+// Filter Usia
+$("#filterUsia").on("change", function () {
+    let val = this.value;
+    table.column(27).search(val).draw();
+});
+
+// Filter Kesimpulan
+$("#filterKesimpulan").on("change", function () {
+    let val = this.value;
+    table.column(33).search(val).draw();
+});
+
+// Filter Status Gizi
+$("#filterGizi").on("change", function () {
+    let val = this.value;
+    table.column(16).search(val).draw();
+});
+
 </script>
 
 </body>
