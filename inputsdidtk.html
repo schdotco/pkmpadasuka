@@ -1,49 +1,109 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Pencarian Data Anak Berdasarkan NIK</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Formulir Pendaftaran – Firebase</title>
 
 <style>
-body { font-family: Arial, sans-serif; background:#f4f6f8; padding:20px; }
-.box { background:white; padding:20px; border-radius:10px; max-width:480px; margin:auto; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-input, button { width:100%; padding:10px; margin-top:10px; border:1px solid #ccc; border-radius:6px; }
-button { background:#2b7cff; color:white; border:none; cursor:pointer; }
-button:hover { background:#1a5edb; }
-.label { font-weight:bold; margin-top:15px; display:block; }
+  body { font-family: Inter, system-ui, Arial; background:#f6f7fb; padding:20px; color:#111827; }
+  .container { max-width:900px; margin:0 auto; background:#fff; border-radius:12px; padding:22px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+
+  h1 { margin:0 0 10px; font-size:20px; }
+  .row { display:flex; gap:12px; }
+  .col { flex:1; min-width:140px; }
+
+  label { display:block; font-size:13px; margin-bottom:6px; color:#374151; }
+  input, select, textarea {
+    width:100%; padding:8px 10px; border-radius:8px;
+    border:1px solid #e5e7eb; font-size:14px;
+  }
+
+  .actions { display:flex; gap:8px; margin-top:8px; }
+  button { padding:10px 14px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
+  .btn-primary { background:#2563eb; color:white; }
+  .btn-clear { background:#efefef; color:#111827; }
+
+  #preFill { background:#e0f2fe; padding:10px; border-radius:8px; margin-top:12px; display:none; }
 </style>
 </head>
 
 <body>
-<div class="box">
-  <h2>Pencarian Data Anak</h2>
+<div class="container">
+<h1>Formulir Pendaftaran</h1>
 
-  <label class="label">Masukkan NIK Anak</label>
-  <input type="text" id="nikInput" placeholder="Masukkan NIK...">
+<!-- PENCARIAN NIK -->
+<div class="row">
+  <div class="col">
+    <label for="search_nik">Masukkan NIK</label>
+    <input id="search_nik" type="text" placeholder="NIK anak" />
+  </div>
 
-  <button onclick="cariData()">Cari Data</button>
-
-  <div id="hasil" style="margin-top:20px; display:none;">
-      <h3>Data Ditemukan</h3>
-
-      <label class="label">NIK</label>
-      <input type="text" id="nik" readonly>
-
-      <label class="label">Nama Anak</label>
-      <input type="text" id="nama_anak" readonly>
-
-      <label class="label">Tanggal Lahir</label>
-      <input type="text" id="tgl_lahir" readonly>
+  <div class="col" style="align-self:flex-end;">
+    <button type="button" id="btnSearch" class="btn-clear">Cek Data</button>
   </div>
 </div>
 
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<div id="preFill"></div>
 
-<script>
-// 1. Konfigurasi Firebase
+<!-- FORM -->
+<form id="regForm">
+
+  <!-- HANYA 3 YANG DITAMPILKAN -->
+  <div class="row">
+    <div class="col">
+      <label>Nama Lengkap</label>
+      <input id="nama_lengkap" name="nama_lengkap" type="text" required />
+    </div>
+
+    <div class="col">
+      <label>NIK</label>
+      <input id="nik" name="nik" type="text" required />
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <label>Tanggal Lahir</label>
+      <input id="tanggal_lahir" name="tanggal_lahir" type="date" required />
+    </div>
+  </div>
+
+  <!-- ======================= -->
+  <!-- SEMUA FIELD LAIN HIDDEN -->
+  <!-- ======================= -->
+
+  <input type="hidden" id="nama_institusi" name="nama_institusi" />
+  <input type="hidden" id="jenis_kelamin" name="jenis_kelamin" />
+  <input type="hidden" id="tempat_lahir" name="tempat_lahir" />
+  <input type="hidden" id="usia" name="usia" />
+  <input type="hidden" id="gol_darah" name="gol_darah" />
+  <input type="hidden" id="nomor_hp" name="nomor_hp" />
+  <input type="hidden" id="alamat" name="alamat" />
+  <input type="hidden" id="nama_orangtua" name="nama_orangtua" />
+  <input type="hidden" id="nik_orangtua" name="nik_orangtua" />
+  <input type="hidden" id="jenis_disabilitas" name="jenis_disabilitas" />
+  <input type="hidden" id="pernyataan" name="pernyataan" />
+
+  <!-- Hidden untuk semua kuesioner -->
+  <div id="hiddenKuesioner"></div>
+
+  <div class="actions">
+    <button type="submit" class="btn-primary">Simpan / Update</button>
+    <button type="button" id="clearBtn" class="btn-clear">Bersihkan</button>
+  </div>
+
+</form>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import {
+  getFirestore, collection, query, where,
+  getDocs, doc, setDoc, addDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
   authDomain: "padasuka-juara.firebaseapp.com",
@@ -53,47 +113,125 @@ const firebaseConfig = {
   appId: "1:469740864914:web:f17b3112a2d2e841666d4b"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-// 2. Variabel global untuk menyimpan seluruh data hasil bridging
-let bridgedData = {};
+const form = document.getElementById("regForm");
+const btnSearch = document.getElementById("btnSearch");
+const searchNik = document.getElementById("search_nik");
+const preFill = document.getElementById("preFill");
+let existingDocId = null;
 
+// =========== FUNGSI CEK NIK ==============
+btnSearch.addEventListener("click", async () => {
+  const nikVal = searchNik.value.trim();
+  if (!nikVal) return alert("Masukkan NIK");
 
-// 3. Fungsi Cari Data Berdasarkan NIK
-function cariData() {
-    let nikInput = document.getElementById("nikInput").value.trim();
+  const q = query(collection(db, "registrations"), where("nik", "==", nikVal));
+  const snap = await getDocs(q);
 
-    if (nikInput === "") {
-        alert("Masukkan NIK dahulu");
-        return;
+  if (snap.size > 0) {
+    const docSnap = snap.docs[0];
+    const d = docSnap.data();
+    existingDocId = docSnap.id;
+
+    // Tampilkan 3 data saja
+    preFill.style.display = "block";
+    preFill.innerHTML = `
+      <b>Data ditemukan:</b><br>
+      Nama: <b>${d.nama_lengkap}</b><br>
+      NIK: <b>${d.nik}</b><br>
+      Tanggal Lahir: <b>${d.tanggal_lahir}</b>
+    `;
+
+    // Prefill field utama
+    form.nama_lengkap.value = d.nama_lengkap || "";
+    form.nik.value = d.nik || "";
+    form.tanggal_lahir.value = d.tanggal_lahir || "";
+
+    // Prefill field lain (hidden)
+    const hiddenList = [
+      "nama_institusi","jenis_kelamin","tempat_lahir","usia","gol_darah",
+      "nomor_hp","alamat","nama_orangtua","nik_orangtua","jenis_disabilitas",
+      "pernyataan"
+    ];
+    hiddenList.forEach(f => form[f].value = d[f] || "");
+
+    // Prefill kuesioner (hidden)
+    if (d.kuesioner) {
+      Object.entries(d.kuesioner).forEach(([k,v]) => {
+        let el = document.getElementById(k);
+        if (!el) {
+          el = document.createElement("input");
+          el.type = "hidden";
+          el.id = k;
+          el.name = k;
+          document.getElementById("hiddenKuesioner").appendChild(el);
+        }
+        el.value = v;
+      });
     }
 
-    // Ambil data dari Firebase (table data-anak)
-    firebase.database().ref("data-anak").orderByChild("NIK").equalTo(nikInput)
-    .once("value", snapshot => {
-        if (snapshot.exists()) {
+  } else {
+    existingDocId = null;
+    preFill.style.display = "block";
+    preFill.innerHTML = "<b>Data tidak ditemukan, membuat baru.</b>";
+  }
+});
 
-            snapshot.forEach(child => {
-                let data = child.val();
+// =========== SIMPAN ===========
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-                // simpan semua data untuk kebutuhan bridging
-                bridgedData = data;
+  const data = {
+    nama_lengkap: form.nama_lengkap.value,
+    nik: form.nik.value,
+    tanggal_lahir: form.tanggal_lahir.value,
 
-                // tampilkan hanya 3 kolom
-                document.getElementById("nik").value = data.NIK;
-                document.getElementById("nama_anak").value = data["NAMA ANAK"];
-                document.getElementById("tgl_lahir").value = data["TANGGAL LAHIR (YYYY/MM/DD)"];
+    nama_institusi: form.nama_institusi.value,
+    jenis_kelamin: form.jenis_kelamin.value,
+    tempat_lahir: form.tempat_lahir.value,
+    usia: form.usia.value,
+    gol_darah: form.gol_darah.value,
+    nomor_hp: form.nomor_hp.value,
+    alamat: form.alamat.value,
+    nama_orangtua: form.nama_orangtua.value,
+    nik_orangtua: form.nik_orangtua.value,
+    jenis_disabilitas: form.jenis_disabilitas.value,
+    pernyataan: form.pernyataan.value,
 
-                document.getElementById("hasil").style.display = "block";
-            });
+    createdAt: serverTimestamp(),
+    kuesioner: {}
+  };
 
-        } else {
-            alert("Data tidak ditemukan!");
-        }
-    });
-}
+  // Ambil semua hidden kuesioner
+  document.querySelectorAll("#hiddenKuesioner input").forEach(el => {
+    data.kuesioner[el.name] = el.value;
+  });
 
+  try {
+    if (existingDocId) {
+      await setDoc(doc(db, "registrations", existingDocId), data, { merge:true });
+      alert("Data berhasil diperbarui.");
+    } else {
+      await addDoc(collection(db, "registrations"), data);
+      alert("Data baru disimpan.");
+    }
+    form.reset();
+    preFill.style.display = "none";
+    existingDocId = null;
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+// Clear
+document.getElementById("clearBtn").addEventListener("click", () => {
+  form.reset();
+  preFill.style.display = "none";
+  existingDocId = null;
+});
 </script>
+
 </body>
 </html>
