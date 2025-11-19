@@ -184,7 +184,7 @@ $(document).ready(function () {
 
 // Load Data Firestore
 function loadData() {
-    db.collection("sdidtk").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+    db.collection("registrations").orderBy("createdAt", "desc").onSnapshot(snapshot => {
 
         table.clear();
 
