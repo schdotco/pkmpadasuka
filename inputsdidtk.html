@@ -148,10 +148,11 @@
       </div>
 
       <div class="row-2">
-        <div class="field">
-          <label for="imt">IMT</label>
-          <input id="imt" name="imt" type="number" step="0.1" />
-        </div>
+        <div class="form-group">
+          <label>IMT (Otomatis)</label>
+          <input type="text" id="imt" name="imt" readonly>
+      </div>
+
 
         <div class="field">
           <label for="status_gizi">Status Gizi</label>
@@ -400,6 +401,21 @@ document.getElementById("clearBtn").addEventListener("click", () => {
   preFill.style.display = "none";
   existingDocId = null;
 });
+
+function hitungIMT() {
+    const bb = parseFloat(document.getElementById("berat_badan").value);
+    const tb = parseFloat(document.getElementById("tinggi_badan").value);
+
+    if (!isNaN(bb) && !isNaN(tb) && tb > 0) {
+        const tinggiMeter = tb / 100;
+        const imt = bb / (tinggiMeter * tinggiMeter);
+        document.getElementById("imt").value = imt.toFixed(1);
+    }
+}
+
+// trigger otomatis saat user input
+document.getElementById("berat_badan").addEventListener("input", hitungIMT);
+document.getElementById("tinggi_badan").addEventListener("input", hitungIMT);
 </script>
 
 </body>
