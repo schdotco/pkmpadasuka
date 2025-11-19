@@ -139,10 +139,10 @@ firebase.initializeApp(firebaseConfig);
         <th>Alamat</th>
         <th>Jenis Disabilitas</th>
 
-        <!-- Q1–Q19 -->
+        <!-- Q1–Q14 -->
         <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Q6</th>
         <th>Q7</th><th>Q8</th><th>Q9</th><th>Q10</th><th>Q11</th><th>Q12</th>
-        <th>Q13</th><th>Q14</th><th>Q15</th><th>Q16</th><th>Q17</th><th>Q18</th><th>Q19</th>
+        <th>Q13</th><th>Q14</th>
 
         <th>Petugas Input</th>
         <th>Tanggal Input</th>
@@ -211,12 +211,25 @@ function loadData() {
                 d.pernyataan || "",
                 d.alamat || "",
                 d.jenis_disabilitas || "",
-
-                d.q1 || "", d.q2 || "", d.q3 || "", d.q4 || "", d.q5 || "",
-                d.q6 || "", d.q7 || "", d.q8 || "", d.q9 || "", d.q10 || "",
-                d.q11 || "", d.q12 || "", d.q13 || "", d.q14 || "", d.q15 || "",
-                d.q16 || "", d.q17 || "", d.q18 || "", d.q19 || "",
-
+                d.kuesioner?.q1 || "",
+                d.kuesioner?.q2 || "",
+                d.kuesioner?.q3 || "",
+                d.kuesioner?.q4 || "",
+                d.kuesioner?.q5 || "",
+                d.kuesioner?.q6 || "",
+                d.kuesioner?.q7 || "",
+                d.kuesioner?.q8 || "",
+                d.kuesioner?.q9 || "",
+                d.kuesioner?.q10 || "",
+                d.kuesioner?.q11 || "",
+                d.kuesioner?.q12 || "",
+                d.kuesioner?.q13 || "",
+                d.kuesioner?.q14 || "",
+                d.kuesioner?.q15 || "",
+                d.kuesioner?.q16 || "",
+                d.kuesioner?.q17 || "",
+                d.kuesioner?.q18 || "",
+                d.kuesioner?.q19 || "",
                 d.petugas_input || "",
                 tglInput,
                 d.status_gizi || "",
