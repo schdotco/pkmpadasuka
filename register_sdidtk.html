@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Register SDIDTK - Rekap Data</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- UI -->
+<style>
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: #f4f6f9;
+        margin: 0;
+        padding: 20px;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .filter-box {
+        background: #fff;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 15px;
+    }
+
+    label {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    select, input {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #bbb;
+        background: #fff;
+    }
+
+    table.dataTable tbody tr:hover {
+        background: #f0f8ff;
+    }
+
+    .table-container {
+        background: white;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+</style>
+
+<!-- DATATABLES -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "ISI_APIKEY_ANDA",
+        authDomain: "ISI_AUTHDOMAIN",
+        databaseURL: "ISI_DB_URL",
+        projectId: "ISI_PROJECTID",
+        storageBucket: "ISI_STORAGE",
+        messagingSenderId: "ISI_MSG",
+        appId: "ISI_APPID"
+    };
+    firebase.initializeApp(firebaseConfig);
+</script>
+</head>
+<body>
+
+<h2>📋 Register / Rekap SDIDTK</h2>
+
+<!-- FILTER -->
+<div class="filter-box">
+    <div>
+        <label>Tanggal Input</label>
+        <input type="date" id="filterTanggal">
+    </div>
+
+    <div>
+        <label>Nama Institusi Pendidikan</label>
+        <select id="filterInstitusi">
+            <option value="">Semua</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Usia (Tahun)</label>
+        <select id="filterUsia">
+            <option value="">Semua</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Kesimpulan</label>
+        <select id="filterKesimpulan">
+            <option value="">Semua</option>
+            <option>Rujuk</option>
+            <option>Tidak</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Status Gizi</label>
+        <select id="filterGizi">
+            <option value="">Semua</option>
+            <option>Berat Badan Sangat Kurang</option>
+            <option>Berat Badan Kurang</option>
+            <option>Berat Badan Normal</option>
+            <option>Berat Badan Lebih</option>
+            <option>Obesitas</option>
+        </select>
+    </div>
+
+    <div>
+        <label>KPSP</label>
+        <select id="filterKPSP">
+            <option value="">Semua</option>
+            <option>Sesuai Usia</option>
+            <option>Meragukan</option>
+            <option>Kemungkinan Penyimpangan</option>
+        </select>
+    </div>
+
+    <div>
+        <label>GPPH</label>
+        <select id="filterGPPH">
+            <option value="">Semua</option>
+            <option>Normal &lt;13</option>
+            <option>Meragukan</option>
+            <option>&gt;13 Kemungkinan GPPH</option>
+        </select>
+    </div>
+
+    <div>
+        <label>KMPE</label>
+        <select id="filterKMPE">
+            <option value="">Semua</option>
+            <option>Normal = Tidak Ada Ya</option>
+            <option>Meragukan = Ada Ya 1</option>
+            <option>Gangguan MPE = Ada Jawaban 2</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Tes Daya Dengar</label>
+        <select id="filterDengar">
+            <option value="">Semua</option>
+            <option>Sesuai Umur</option>
+            <option>Kemungkinan Penyimpangan</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Tes Daya Lihat</label>
+        <select id="filterLihat">
+            <option value="">Semua</option>
+            <option>&gt;6/12 Daya Lihat Baik</option>
+            <option>&lt;6/12 Daya lihat Kurang</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Gigi</label>
+        <select id="filterGigi">
+            <option value="">Semua</option>
+            <option>Normal</option>
+            <option>Karies</option>
+        </select>
+    </div>
+
+</div>
+
+<!-- TABLE -->
+<div class="table-container">
+<table id="tabelSDIDTK" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>Tanggal</th>
+            <th>NIK</th>
+            <th>Nama</th>
+            <th>TTL</th>
+            <th>Institusi</th>
+            <th>Usia</th>
+            <th>Status Gizi</th>
+            <th>KPSP</th>
+            <th>GPPH</th>
+            <th>KMPE</th>
+            <th>Tes Dengar</th>
+            <th>Tes Lihat</th>
+            <th>Gigi</th>
+            <th>Kesimpulan</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+</div>
+
+<script>
+let dataTable;
+
+function loadData() {
+    firebase.database().ref("sdidtk").on("value", snapshot => {
+        const table = $("#tabelSDIDTK").DataTable();
+        table.clear();
+
+        const data = snapshot.val();
+
+        let institusiSet = new Set();
+        let usiaSet = new Set();
+
+        for (let id in data) {
+            let d = data[id];
+
+            table.row.add([
+                d.tanggal_input || "",
+                d.nik || "",
+                d.nama_lengkap || "",
+                d.tanggal_lahir || "",
+                d.nama_institusi || "",
+                d.usia || "",
+                d.status_gizi || "",
+                d.kpsp || "",
+                d.gpph || "",
+                d.kmpe || "",
+                d.tes_dengar || "",
+                d.tes_lihat || "",
+                d.gigi || "",
+                d.kesimpulan || ""
+            ]);
+
+            institusiSet.add(d.nama_institusi);
+            usiaSet.add(d.usia);
+        }
+
+        table.draw();
+
+        // isi filter otomatis
+        fillDropdown("filterInstitusi", institusiSet);
+        fillDropdown("filterUsia", usiaSet);
+    });
+}
+
+function fillDropdown(id, values) {
+    const dropdown = document.getElementById(id);
+    dropdown.innerHTML = '<option value="">Semua</option>';
+    [...values].forEach(v => {
+        if (v && v !== "") dropdown.innerHTML += `<option>${v}</option>`;
+    });
+}
+
+$(document).ready(function () {
+    dataTable = $("#tabelSDIDTK").DataTable({ pageLength: 25 });
+
+    loadData();
+
+    $("select, input").on("change", function () {
+        applyFilters();
+    });
+});
+
+function applyFilters() {
+    let table = $("#tabelSDIDTK").DataTable();
+
+    table.draw();
+}
+
+$.fn.dataTable.ext.search.push(function(settings, data) {
+    let tanggal = $("#filterTanggal").val();
+    let institusi = $("#filterInstitusi").val();
+    let usia = $("#filterUsia").val();
+    let gizi = $("#filterGizi").val();
+    let kpsp = $("#filterKPSP").val();
+    let gpph = $("#filterGPPH").val();
+    let kmpe = $("#filterKMPE").val();
+    let dengar = $("#filterDengar").val();
+    let lihat = $("#filterLihat").val();
+    let gigi = $("#filterGigi").val();
+    let kesimpulan = $("#filterKesimpulan").val();
+
+    return (
+        (tanggal === "" || data[0] === tanggal) &&
+        (institusi === "" || data[4] === institusi) &&
+        (usia === "" || data[5] === usia) &&
+        (gizi === "" || data[6] === gizi) &&
+        (kpsp === "" || data[7] === kpsp) &&
+        (gpph === "" || data[8] === gpph) &&
+        (kmpe === "" || data[9] === kmpe) &&
+        (dengar === "" || data[10] === dengar) &&
+        (lihat === "" || data[11] === lihat) &&
+        (gigi === "" || data[12] === gigi) &&
+        (kesimpulan === "" || data[13] === kesimpulan)
+    );
+});
+</script>
+
+</body>
+</html>
