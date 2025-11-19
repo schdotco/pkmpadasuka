@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Formulir Pendaftaran - Simpan ke Firebase</title>
+  <style>
+    body { font-family: Inter, system-ui, Arial; background:#f6f7fb; padding:20px; color:#111827; }
+    .container { max-width:900px; margin:0 auto; background:#fff; border-radius:12px; padding:22px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+    h1 { margin:0 0 10px; font-size:20px; }
+    form { display:grid; gap:12px; }
+    .row { display:flex; gap:12px; }
+    .col { flex:1; min-width:140px; }
+    label { display:block; font-size:13px; margin-bottom:6px; color:#374151; }
+    input[type="text"], input[type="date"], input[type="number"], textarea, select { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #e5e7eb; font-size:14px; box-sizing:border-box; }
+    .kuesioner { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; }
+    .q-item { background:#fbfdff; padding:8px; border-radius:8px; border:1px solid #eef2ff; }
+    .actions { display:flex; gap:8px; margin-top:8px; }
+    button { padding:10px 14px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
+    .btn-primary { background:#2563eb; color:white; }
+    .btn-clear { background:#efefef; color:#111827; }
+    .notice { margin-top:10px; padding:10px; border-radius:8px; }
+    .notice.success { background:#ecfdf5; color:#065f46; border:1px solid #bbf7d0; }
+    .notice.error { background:#fff1f2; color:#991b1b; border:1px solid #fecaca; }
+    small.hint { color:#6b7280; display:block; margin-top:4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Formulir Pendaftaran (simpan ke Firebase)</h1>
+    <p class="hint">Isi data sesuai kolom pada Google Sheets Anda. Timestamp akan diset otomatis.</p>
+
+    <form id="regForm">
+      <div class="row">
+        <div class="col">
+          <label for="nama_institusi">Nama Institusi Pendidikan</label>
+          <input id="nama_institusi" name="nama_institusi" type="text" required />
+        </div>
+        <div class="col">
+          <label for="pernyataan">Pernyataan Persetujuan</label>
+          <select id="pernyataan" name="pernyataan" required>
+            <option value="">-- pilih --</option>
+            <option value="SETUJU">SETUJU</option>
+            <option value="TIDAK">TIDAK</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="nama_lengkap">Nama Lengkap</label>
+          <input id="nama_lengkap" name="nama_lengkap" type="text" required />
+        </div>
+        <div class="col">
+          <label for="jenis_kelamin">Jenis Kelamin</label>
+          <select id="jenis_kelamin" name="jenis_kelamin" required>
+            <option value="">-- pilih --</option>
+            <option value="PEREMPUAN">Perempuan</option>
+            <option value="LAKI-LAKI">Laki-laki</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="nik">NIK (Nomor Induk Kependudukan)</label>
+          <input id="nik" name="nik" type="text" />
+        </div>
+        <div class="col">
+          <label for="tempat_lahir">Tempat Lahir</label>
+          <input id="tempat_lahir" name="tempat_lahir" type="text" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="tanggal_lahir">Tanggal Lahir</label>
+          <input id="tanggal_lahir" name="tanggal_lahir" type="date" />
+        </div>
+        <div class="col">
+          <label for="usia">Usia (tahun)</label>
+          <input id="usia" name="usia" type="number" min="0" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="gol_darah">Golongan Darah</label>
+          <input id="gol_darah" name="gol_darah" type="text" />
+        </div>
+        <div class="col">
+          <label for="nomor_hp">Nomor Handphone</label>
+          <input id="nomor_hp" name="nomor_hp" type="text" />
+        </div>
+      </div>
+
+      <div>
+        <label for="alamat">Alamat Rumah Lengkap</label>
+        <textarea id="alamat" name="alamat" rows="2"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="nama_orangtua">Nama Orangtua/Wali</label>
+          <input id="nama_orangtua" name="nama_orangtua" type="text" />
+        </div>
+        <div class="col">
+          <label for="nik_orangtua">NIK Orangtua/Wali</label>
+          <input id="nik_orangtua" name="nik_orangtua" type="text" />
+        </div>
+      </div>
+
+      <div>
+        <label for="jenis_disabilitas">Jenis Disabilitas (jika ada)</label>
+        <input id="jenis_disabilitas" name="jenis_disabilitas" type="text" />
+        <small class="hint">Isi "TIDAK ADA DISABILITAS" jika tidak ada.</small>
+      </div>
+
+      <hr />
+
+      <h3>Kuesioner singkat (jawab YA / TIDAK)</h3>
+      <p class="hint">Saya membuat field Q1..Q20 sesuai kolom yang tampak pada sheet. Anda bisa menambah/ubah label sesuai kebutuhan.</p>
+
+      <div class="kuesioner" id="kuesioner">
+        <!-- Example questions; ubah/extend sesuai sheet -->
+        <div class="q-item">
+          <label>Q1: Sering sangat lapar dan makan lebih banyak?</label>
+          <select name="q1">
+            <option value="">--</option>
+            <option value="YA">YA</option>
+            <option value="TIDAK">TIDAK</option>
+          </select>
+        </div>
+
+        <div class="q-item">
+          <label>Q2: Sering merasa haus meskipun sudah minum?</label>
+          <select name="q2">
+            <option value="">--</option>
+            <option value="YA">YA</option>
+            <option value="TIDAK">TIDAK</option>
+          </select>
+        </div>
+
+        <div class="q-item">
+          <label>Q3: Sering terbangun malam untuk buang air kecil?</label>
+          <select name="q3"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+
+        <div class="q-item">
+          <label>Q4: Kembali mengompol di malam hari?</label>
+          <select name="q4"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+
+        <div class="q-item">
+          <label>Q5: Penurunan berat badan meskipun nafsu makan meningkat?</label>
+          <select name="q5"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+
+        <div class="q-item">
+          <label>Q6: Ada keluarga yang pernah didiagnosis kencing manis?</label>
+          <select name="q6"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+
+        <div class="q-item">
+          <label>Q7: Kondisi perilaku: tantrum / mudah marah dll?</label>
+          <select name="q7"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+
+        <div class="q-item">
+          <label>Q8: Gangguan konsentrasi / hiperaktif?</label>
+          <select name="q8"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+
+        <div class="q-item">
+          <label>Q9: Ada anggota keluarga dengan talasemia / riwayat transfusi?</label>
+          <select name="q9"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+
+        <div class="q-item">
+          <label>Q10: Pernah batuk lebih dari 2 minggu / kemungkinan TBC?</label>
+          <select name="q10"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+
+        <!-- Tambah Q11..Q20 jika diperlukan -->
+        <div class="q-item">
+          <label>Q11</label>
+          <select name="q11"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+        <div class="q-item">
+          <label>Q12</label>
+          <select name="q12"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+        <div class="q-item">
+          <label>Q13</label>
+          <select name="q13"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+        <div class="q-item">
+          <label>Q14</label>
+          <select name="q14"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+        <div class="q-item">
+          <label>Q15</label>
+          <select name="q15"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+        <div class="q-item">
+          <label>Q16</label>
+          <select name="q16"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+        <div class="q-item">
+          <label>Q17</label>
+          <select name="q17"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+        <div class="q-item">
+          <label>Q18</label>
+          <select name="q18"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+        <div class="q-item">
+          <label>Q19</label>
+          <select name="q19"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+        <div class="q-item">
+          <label>Q20</label>
+          <select name="q20"><option value=""></option><option value="YA">YA</option><option value="TIDAK">TIDAK</option></select>
+        </div>
+
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary">Simpan ke Firebase</button>
+        <button type="button" id="clearBtn" class="btn-clear">Bersihkan</button>
+      </div>
+
+      <div id="msg"></div>
+    </form>
+  </div>
+
+  <!-- Firebase SDK (v9 modular) -->
+  <script type="module">
+    // 1) GANTI firebaseConfig berikut dengan config project Firebase Anda
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
+  authDomain: "padasuka-juara.firebaseapp.com",
+  projectId: "padasuka-juara",
+  storageBucket: "padasuka-juara.firebasestorage.app",
+  messagingSenderId: "469740864914",
+  appId: "1:469740864914:web:f17b3112a2d2e841666d4b"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // helper untuk menampilkan pesan
+    const msgBox = document.getElementById('msg');
+    function showMessage(text, type='success') {
+      msgBox.innerHTML = '<div class="notice ' + (type==='success' ? 'success' : 'error') + '">' + text + '</div>';
+      setTimeout(()=>{ msgBox.innerHTML = '' }, 6000);
+    }
+
+    // ambil form
+    const form = document.getElementById('regForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // ambil nilai-nilai utama
+      const data = {
+        nama_institusi: form.nama_institusi.value || '',
+        pernyataan: form.pernyataan.value || '',
+        nama_lengkap: form.nama_lengkap.value || '',
+        jenis_kelamin: form.jenis_kelamin.value || '',
+        nik: form.nik.value || '',
+        tempat_lahir: form.tempat_lahir.value || '',
+        tanggal_lahir: form.tanggal_lahir.value || '',
+        usia: form.usia.value ? Number(form.usia.value) : null,
+        gol_darah: form.gol_darah.value || '',
+        alamat: form.alamat.value || '',
+        nomor_hp: form.nomor_hp.value || '',
+        nama_orangtua: form.nama_orangtua.value || '',
+        nik_orangtua: form.nik_orangtua.value || '',
+        jenis_disabilitas: form.jenis_disabilitas.value || '',
+      };
+
+      // ambil kuesioner Q1..Q20
+      const kuesioner = {};
+      for (let i=1;i<=20;i++){
+        const el = form['q'+i];
+        kuesioner['q'+i] = el ? (el.value || '') : '';
+      }
+      data.kuesioner = kuesioner;
+
+      // timestamp server
+      data.createdAt = serverTimestamp();
+
+      try {
+        // simpan ke koleksi 'registrations'
+        const docRef = await addDoc(collection(db, "registrations"), data);
+        showMessage('Data tersimpan. ID: ' + docRef.id, 'success');
+        form.reset();
+      } catch (err) {
+        console.error(err);
+        showMessage('Terjadi kesalahan saat menyimpan: ' + (err.message || err), 'error');
+      }
+    });
+
+    // tombol clear
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (confirm('Bersihkan semua field?')) form.reset();
+    });
+
+  </script>
+</body>
+</html>
