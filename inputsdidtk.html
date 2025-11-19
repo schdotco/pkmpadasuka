@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Formulir Pendaftaran & Update – Firebase</title>
+  <style>
+    body { font-family: Inter, system-ui, Arial; background:#f6f7fb; padding:20px; color:#111827; }
+    .container { max-width:900px; margin:0 auto; background:#fff; border-radius:12px; padding:22px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+    h1 { margin:0 0 10px; font-size:20px; }
+    form { display:grid; gap:12px; }
+    .row { display:flex; gap:12px; }
+    .col { flex:1; min-width:140px; }
+    label { display:block; font-size:13px; margin-bottom:6px; color:#374151; }
+    input[type="text"], input[type="date"], input[type="number"], textarea, select { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #e5e7eb; font-size:14px; box-sizing:border-box; }
+    .kuesioner { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; }
+    .q-item { background:#fbfdff; padding:8px; border-radius:8px; border:1px solid #eef2ff; }
+    .actions { display:flex; gap:8px; margin-top:8px; }
+    button { padding:10px 14px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
+    .btn-primary { background:#2563eb; color:white; }
+    .btn-clear { background:#efefef; color:#111827; }
+    .notice { margin-top:10px; padding:10px; border-radius:8px; }
+    .notice.success { background:#ecfdf5; color:#065f46; border:1px solid #bbf7d0; }
+    .notice.error { background:#fff1f2; color:#991b1b; border:1px solid #fecaca; }
+    small.hint { color:#6b7280; display:block; margin-top:4px; }
+    .pre-fill-info { background:#e0f2fe; padding:8px; border-radius:8px; margin-bottom:12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Formulir Pendaftaran & Update</h1>
+    <p class="hint">Masukkan NIK untuk memeriksa apakah data sudah ada → jika ada, form akan terisi sebagian. Setelah itu lengkapi dan simpan.</p>
+
+    <div class="row">
+      <div class="col">
+        <label for="search_nik">Masukkan NIK</label>
+        <input id="search_nik" type="text" placeholder="NIK anak" />
+      </div>
+      <div class="col" style="align-self:flex-end;">
+        <button type="button" id="btnSearch" class="btn-clear">Cek Data</button>
+      </div>
+    </div>
+
+    <div id="preFill" class="pre-fill-info" style="display:none;">
+      <strong>Data ditemukan, Anda bisa memperbarui:</strong><br>
+      <span id="foundInfo"></span>
+    </div>
+
+    <form id="regForm">
+      <!-- field awal seperti sebelumnya -->
+      <div class="row">
+        <div class="col">
+          <label for="nama_institusi">Nama Institusi Pendidikan</label>
+          <input id="nama_institusi" name="nama_institusi" type="text" required />
+        </div>
+        <div class="col">
+          <label for="pernyataan">
+            <strong>PERNYATAAN PERSETUJUAN ORANG TUA/WALI</strong><br>
+            Dengan ini, saya menyetujui anak saya mengikuti kegiatan Pemeriksaan Kesehatan Gratis (PKG) yang diselenggarakan oleh pihak TK/PAUD bekerjasama dengan Puskesmas/Fasilitas Kesehatan Tingkat Pertama. Demikian pernyataan ini saya buat dengan sebenarnya untuk digunakan sebagaimana mestinya.
+          </label>
+          <select id="pernyataan" name="pernyataan" required>
+            <option value="">-- pilih --</option>
+            <option value="SETUJU">SETUJU</option>
+            <option value="TIDAK">TIDAK</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="nama_lengkap">Nama Lengkap</label>
+          <input id="nama_lengkap" name="nama_lengkap" type="text" required />
+        </div>
+        <div class="col">
+          <label for="jenis_kelamin">Jenis Kelamin</label>
+          <select id="jenis_kelamin" name="jenis_kelamin" required>
+            <option value="">-- pilih --</option>
+            <option value="PEREMPUAN">Perempuan</option>
+            <option value="LAKI-LAKI">Laki-laki</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="nik">NIK (Nomor Induk Kependudukan)</label>
+          <input id="nik" name="nik" type="text" required />
+        </div>
+        <div class="col">
+          <label for="tempat_lahir">Tempat Lahir</label>
+          <input id="tempat_lahir" name="tempat_lahir" type="text" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="tanggal_lahir">Tanggal Lahir</label>
+          <input id="tanggal_lahir" name="tanggal_lahir" type="date" />
+        </div>
+        <div class="col">
+          <label for="usia">Usia (tahun)</label>
+          <input id="usia" name="usia" type="number" min="0" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="gol_darah">Golongan Darah</label>
+          <input id="gol_darah" name="gol_darah" type="text" />
+        </div>
+        <div class="col">
+          <label for="nomor_hp">Nomor Handphone</label>
+          <input id="nomor_hp" name="nomor_hp" type="text" />
+        </div>
+      </div>
+
+      <div>
+        <label for="alamat">Alamat Rumah Lengkap</label>
+        <textarea id="alamat" name="alamat" rows="2"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label for="nama_orangtua">Nama Orangtua/Wali</label>
+          <input id="nama_orangtua" name="nama_orangtua" type="text" />
+        </div>
+        <div class="col">
+          <label for="nik_orangtua">NIK Orangtua/Wali</label>
+          <input id="nik_orangtua" name="nik_orangtua" type="text" />
+        </div>
+      </div>
+
+      <div>
+        <label for="jenis_disabilitas">Jenis Disabilitas (jika ada)</label>
+        <input id="jenis_disabilitas" name="jenis_disabilitas" type="text" />
+        <small class="hint">Isi "TIDAK ADA DISABILITAS" jika tidak ada.</small>
+      </div>
+
+      <hr />
+
+      <h3>Kuesioner (jawab YA / TIDAK)</h3>
+      <p class="hint">Pertanyaan berasal dari kolom sheet Anda. Lengkapi sesuai kebutuhan.</p>
+
+      <div class="kuesioner" id="kuesioner">
+        <!-- Contoh beberapa pertanyaan -->
+        <div class="q-item">
+          <label>Apakah anak sering merasa sangat lapar dan makan lebih banyak dari biasanya?</label>
+          <select name="q_hunger_more">
+            <option value="">--</option>
+            <option value="YA">YA</option>
+            <option value="TIDAK">TIDAK</option>
+          </select>
+        </div>
+        <div class="q-item">
+          <label>Apakah anak sering merasa haus meskipun sudah banyak minum?</label>
+          <select name="q_thirst_often">
+            <option value="">--</option>
+            <option value="YA">YA</option>
+            <option value="TIDAK">TIDAK</option>
+          </select>
+        </div>
+        <div class="q-item">
+          <label>Apakah anak sering terbangun malam untuk buang air kecil atau harus ke toilet lebih dari 2× per malam?</label>
+          <select name="q_night_pee">
+            <option value="">--</option>
+            <option value="YA">YA</option>
+            <option value="TIDAK">TIDAK</option>
+          </select>
+        </div>
+        <!-- Tambah pertanyaan lainnya berdasarkan sheet kolom -->
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary">Simpan / Update ke Firebase</button>
+        <button type="button" id="clearBtn" class="btn-clear">Bersihkan</button>
+      </div>
+
+      <div id="msg"></div>
+    </form>
+  </div>
+
+  <!-- Firebase SDK (v9 modular) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    // GANTI konfigurasi Anda
+    const firebaseConfig = {
+      apiKey: "API_KEY_HERE",
+      authDomain: "PROJECT_ID.firebaseapp.com",
+      projectId: "PROJECT_ID",
+      storageBucket: "PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const form = document.getElementById('regForm');
+    const btnSearch = document.getElementById('btnSearch');
+    const searchNik = document.getElementById('search_nik');
+    const preFillDiv = document.getElementById('preFill');
+    const foundInfoSpan = document.getElementById('foundInfo');
+
+    let existingDocId = null;  // untuk menyimpan id dokumen jika ditemukan
+
+    // Fungsi cek data berdasar NIK
+    btnSearch.addEventListener('click', async () => {
+      const nikVal = searchNik.value.trim();
+      if (!nikVal) {
+        alert('Masukkan NIK terlebih dahulu');
+        return;
+      }
+      try {
+        // query dokumen dengan where nik == nikVal
+        const q = query(collection(db, "registrations"), where("nik", "==", nikVal));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.size > 0) {
+          // ambil data pertama yang ditemukan
+          const docSnap = querySnapshot.docs[0];
+          const data = docSnap.data();
+          existingDocId = docSnap.id;
+          preFillDiv.style.display = 'block';
+          foundInfoSpan.textContent = `ID: ${docSnap.id} — nama: ${data.nama_lengkap} — institusi: ${data.nama_institusi}`;
+
+          // isi beberapa field form
+          form.nama_institusi.value = data.nama_institusi || '';
+          form.nama_lengkap.value = data.nama_lengkap || '';
+          form.nik.value = data.nik || '';
+          form.jenis_kelamin.value = data.jenis_kelamin || '';
+          form.tempat_lahir.value = data.tempat_lahir || '';
+          form.tanggal_lahir.value = data.tanggal_lahir || '';
+          form.usia.value = data.usia || '';
+          form.gol_darah.value = data.gol_darah || '';
+          form.alamat.value = data.alamat || '';
+          form.nomor_hp.value = data.nomor_hp || '';
+          form.nama_orangtua.value = data.nama_orangtua || '';
+          form.nik_orangtua.value = data.nik_orangtua || '';
+          form.jenis_disabilitas.value = data.jenis_disabilitas || '';
+          form.pernyataan.value = data.pernyataan || '';
+
+          // jika ada data kuesioner → isi
+          if (data.kuesioner) {
+            for (const [key, val] of Object.entries(data.kuesioner)) {
+              if (form[key]) form[key].value = val;
+            }
+          }
+        } else {
+          existingDocId = null;
+          preFillDiv.style.display = 'none';
+          alert('Data dengan NIK tersebut tidak ditemukan. Akan dibuat baru.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error saat mencari data: ' + err.message);
+      }
+    });
+
+    // Submit form: simpan atau update
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const data = {
+        nama_institusi: form.nama_institusi.value || '',
+        pernyataan: form.pernyataan.value || '',
+        nama_lengkap: form.nama_lengkap.value || '',
+        jenis_kelamin: form.jenis_kelamin.value || '',
+        nik: form.nik.value || '',
+        tempat_lahir: form.tempat_lahir.value || '',
+        tanggal_lahir: form.tanggal_lahir.value || '',
+        usia: form.usia.value ? Number(form.usia.value) : null,
+        gol_darah: form.gol_darah.value || '',
+        alamat: form.alamat.value || '',
+        nomor_hp: form.nomor_hp.value || '',
+        nama_orangtua: form.nama_orangtua.value || '',
+        nik_orangtua: form.nik_orangtua.value || '',
+        jenis_disabilitas: form.jenis_disabilitas.value || '',
+        createdAt: serverTimestamp()
+      };
+
+      // kuesioner
+      const kues = {};
+      const qElements = form.querySelectorAll('[name^="q_"]');
+      qElements.forEach(el => {
+        kues[el.name] = el.value || '';
+      });
+      data.kuesioner = kues;
+
+      try {
+        if (existingDocId) {
+          // update dokumen yang ada
+          await setDoc(doc(db, "registrations", existingDocId), data, { merge: true });
+          alert('Data berhasil di-update.');
+        } else {
+          // buat dokumen baru
+          await addDoc(collection(db, "registrations"), data);
+          alert('Data baru berhasil disimpan.');
+        }
+        form.reset();
+        preFillDiv.style.display = 'none';
+        existingDocId = null;
+      } catch (err) {
+        console.error(err);
+        alert('Terjadi kesalahan saat menyimpan: ' + err.message);
+      }
+    });
+
+    // Clear form
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (confirm('Bersihkan semua field?')) {
+        form.reset();
+        preFillDiv.style.display = 'none';
+        existingDocId = null;
+      }
+    });
+
+  </script>
+</body>
+</html>
