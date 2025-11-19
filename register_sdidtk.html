@@ -53,6 +53,7 @@
         padding: 15px;
         border-radius: 12px;
         box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        overflow-x: auto;
     }
 </style>
 
@@ -63,18 +64,18 @@
 
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
-      authDomain: "padasuka-juara.firebaseapp.com",
-      projectId: "padasuka-juara",
-      storageBucket: "padasuka-juara.firebasestorage.app",
-      messagingSenderId: "469740864914",
-      appId: "1:469740864914:web:f17b3112a2d2e841666d4b"
-    };
-    firebase.initializeApp(firebaseConfig);
+const firebaseConfig = {
+  apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
+  authDomain: "padasuka-juara.firebaseapp.com",
+  projectId: "padasuka-juara",
+  storageBucket: "padasuka-juara.firebasestorage.app",
+  messagingSenderId: "469740864914",
+  appId: "1:469740864914:web:f17b3112a2d2e841666d4b"
+};
+firebase.initializeApp(firebaseConfig);
 </script>
 </head>
 <body>
@@ -171,82 +172,118 @@
         </select>
     </div>
 
-    <div>
-        <label>Gigi</label>
-        <select id="filterGigi">
-            <option value="">Semua</option>
-            <option>Normal</option>
-            <option>Karies</option>
-        </select>
-    </div>
-
 </div>
 
 <!-- TABLE -->
 <div class="table-container">
-<table id="tabelSDIDTK" class="display" style="width:100%">
-    <thead>
-        <tr>
-            <th>Tanggal</th>
-            <th>NIK</th>
-            <th>Nama</th>
-            <th>TTL</th>
-            <th>Institusi</th>
-            <th>Usia</th>
-            <th>Status Gizi</th>
-            <th>KPSP</th>
-            <th>GPPH</th>
-            <th>KMPE</th>
-            <th>Tes Dengar</th>
-            <th>Tes Lihat</th>
-            <th>Gigi</th>
-            <th>Kesimpulan</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
+<table id="tabelSDIDTK" class="display" style="width:200%">
+<thead>
+    <tr>
+        <th>Nama Institusi</th>
+        <th>Nama Lengkap</th>
+        <th>Jenis Kelamin</th>
+        <th>NIK Anak</th>
+        <th>Nama Orang Tua</th>
+        <th>NIK Orang Tua</th>
+        <th>Tanggal Lahir</th>
+        <th>Tempat Lahir</th>
+        <th>No HP</th>
+        <th>Pernyataan</th>
+        <th>Alamat</th>
+        <th>Jenis Disabilitas</th>
+
+        <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Q6</th><th>Q7</th>
+        <th>Q8</th><th>Q9</th><th>Q10</th><th>Q11</th><th>Q12</th><th>Q13</th><th>Q14</th>
+
+        <th>Petugas Input</th>
+        <th>Tanggal Input</th>
+        <th>Status Gizi</th>
+        <th>Tes Dengar</th>
+        <th>Tes Lihat</th>
+        <th>Tanggal Ukur</th>
+        <th>Tinggi</th>
+        <th>Berat</th>
+        <th>Usia</th>
+        <th>Gigi</th>
+        <th>Gol Darah</th>
+        <th>GPPH</th>
+        <th>IMT</th>
+        <th>KMPE</th>
+        <th>KPSP</th>
+        <th>Kesimpulan</th>
+        <th>Keterangan Rujuk</th>
+    </tr>
+</thead>
+<tbody></tbody>
 </table>
 </div>
 
 <script>
-let dataTable;
+// Firestore
+const db = firebase.firestore();
 
 function loadData() {
-    firebase.database().ref("sdidtk").on("value", snapshot => {
+    db.collection("sdidtk").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+
         const table = $("#tabelSDIDTK").DataTable();
         table.clear();
-
-        const data = snapshot.val();
 
         let institusiSet = new Set();
         let usiaSet = new Set();
 
-        for (let id in data) {
-            let d = data[id];
+        snapshot.forEach(doc => {
+            let d = doc.data();
 
+            // Format tanggal input
+            let tglInput = "";
+            if (d.createdAt) {
+                tglInput = new Date(d.createdAt.toDate()).toISOString().split("T")[0];
+            }
+
+            // Tambah baris tabel lengkap
             table.row.add([
-                d.tanggal_input || "",
-                d.nik || "",
-                d.nama_lengkap || "",
-                d.tanggal_lahir || "",
                 d.nama_institusi || "",
-                d.usia || "",
+                d.nama_lengkap || "",
+                d.jenis_kelamin || "",
+                d.nik || "",
+                d.nama_orangtua || "",
+                d.nik_orangtua || "",
+                d.tanggal_lahir || "",
+                d.tempat_lahir || "",
+                d.nomor_hp || "",
+                d.pernyataan || "",
+                d.alamat || "",
+                d.jenis_disabilitas || "",
+
+                d.q1 || "", d.q2 || "", d.q3 || "", d.q4 || "", d.q5 || "", d.q6 || "", d.q7 || "",
+                d.q8 || "", d.q9 || "", d.q10 || "", d.q11 || "", d.q12 || "", d.q13 || "", d.q14 || "",
+
+                d.petugas_input || "",
+                tglInput,
                 d.status_gizi || "",
-                d.kpsp || "",
-                d.gpph || "",
-                d.kmpe || "",
                 d.tes_dengar || "",
                 d.tes_lihat || "",
+                d.tgl_ukur || "",
+                d.tinggi || "",
+                d.berat || "",
+                d.usia || "",
                 d.gigi || "",
-                d.kesimpulan || ""
+                d.gol_darah || "",
+                d.gpph || "",
+                d.imt || "",
+                d.kmpe || "",
+                d.kpsp || "",
+                d.kesimpulan || "",
+                d.ket_rujuk || ""
             ]);
 
-            institusiSet.add(d.nama_institusi);
-            usiaSet.add(d.usia);
-        }
+            if (d.nama_institusi) institusiSet.add(d.nama_institusi);
+            if (d.usia) usiaSet.add(d.usia);
+        });
 
         table.draw();
 
-        // isi filter otomatis
+        // isi dropdown filter
         fillDropdown("filterInstitusi", institusiSet);
         fillDropdown("filterUsia", usiaSet);
     });
@@ -260,48 +297,10 @@ function fillDropdown(id, values) {
     });
 }
 
+// DataTables init
 $(document).ready(function () {
-    dataTable = $("#tabelSDIDTK").DataTable({ pageLength: 25 });
-
+    $("#tabelSDIDTK").DataTable({ pageLength: 25 });
     loadData();
-
-    $("select, input").on("change", function () {
-        applyFilters();
-    });
-});
-
-function applyFilters() {
-    let table = $("#tabelSDIDTK").DataTable();
-
-    table.draw();
-}
-
-$.fn.dataTable.ext.search.push(function(settings, data) {
-    let tanggal = $("#filterTanggal").val();
-    let institusi = $("#filterInstitusi").val();
-    let usia = $("#filterUsia").val();
-    let gizi = $("#filterGizi").val();
-    let kpsp = $("#filterKPSP").val();
-    let gpph = $("#filterGPPH").val();
-    let kmpe = $("#filterKMPE").val();
-    let dengar = $("#filterDengar").val();
-    let lihat = $("#filterLihat").val();
-    let gigi = $("#filterGigi").val();
-    let kesimpulan = $("#filterKesimpulan").val();
-
-    return (
-        (tanggal === "" || data[0] === tanggal) &&
-        (institusi === "" || data[4] === institusi) &&
-        (usia === "" || data[5] === usia) &&
-        (gizi === "" || data[6] === gizi) &&
-        (kpsp === "" || data[7] === kpsp) &&
-        (gpph === "" || data[8] === gpph) &&
-        (kmpe === "" || data[9] === kmpe) &&
-        (dengar === "" || data[10] === dengar) &&
-        (lihat === "" || data[11] === lihat) &&
-        (gigi === "" || data[12] === gigi) &&
-        (kesimpulan === "" || data[13] === kesimpulan)
-    );
 });
 </script>
 
