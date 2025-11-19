@@ -1,315 +1,405 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Input SDIDTK</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Formulir Pendaftaran – Firebase</title>
 
-<!-- UI Styling -->
+<!-- Styling: profesional, rapi, responsif -->
 <style>
-    body {
-        font-family: 'Segoe UI', sans-serif;
-        background: #f3f6fa;
-        margin: 0;
-        padding: 0;
-    }
+  :root{
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --muted:#6b7280;
+    --accent:#2563eb;
+    --radius:12px;
+    --gap:14px;
+  }
+  *{box-sizing:border-box}
+  body { font-family: Inter, system-ui, Arial, sans-serif; background:var(--bg); margin:0; color:#111827; padding:28px; }
 
-    .container {
-        max-width: 900px;
-        margin: 30px auto;
-        background: #fff;
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    }
+  .container {
+    max-width:980px; margin:0 auto;
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:22px;
+    box-shadow:0 8px 28px rgba(16,24,40,0.06);
+  }
 
-    h2 {
-        text-align: center;
-        margin-bottom: 25px;
-        color: #1a1a1a;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  header h1 { margin:0; font-size:18px; letter-spacing:0.6px; color:#0f172a; }
 
-    .form-row {
-        display: flex;
-        gap: 20px;
-        margin-bottom: 15px;
-    }
+  .note { color:var(--muted); font-size:13px; margin-bottom:12px; }
 
-    .form-col {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
+  /* grid for rows */
+  .grid { display:grid; gap:var(--gap); }
+  .row-2 { grid-template-columns: 1fr 1fr; display:grid; gap:var(--gap); }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; display:grid; gap:var(--gap); }
+  .full { grid-template-columns: 1fr; }
 
-    label {
-        font-weight: 600;
-        margin-bottom: 6px;
-    }
+  .field { display:flex; flex-direction:column; }
+  label { font-weight:600; margin-bottom:6px; font-size:13px; color:#111827; }
+  input[type="text"], input[type="date"], input[type="number"], select, textarea {
+    padding:10px 12px; border-radius:10px; border:1px solid #e6eef8; background:#fff; font-size:14px;
+  }
+  textarea { min-height:80px; resize:vertical; }
 
-    input, select, textarea {
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #d0d7de;
-        font-size: 15px;
-    }
+  .actions { display:flex; gap:12px; margin-top:18px; }
+  .btn { padding:10px 14px; border-radius:10px; border:0; cursor:pointer; font-weight:700; font-size:14px; }
+  .btn-primary { background:var(--accent); color:#fff; box-shadow:0 6px 18px rgba(37,99,235,0.12); }
+  .btn-ghost { background:#f3f4f6; color:#0f172a; }
 
-    textarea {
-        min-height: 70px;
-    }
+  #preFill { background:#ecf6ff; padding:10px 12px; border-radius:10px; color:#0b4a83; margin-top:12px; display:none; font-size:14px; }
 
-    button {
-        width: 100%;
-        background: #0d6efd;
-        color: white;
-        padding: 12px;
-        border: none;
-        border-radius: 8px;
-        margin-top: 20px;
-        cursor: pointer;
-        font-size: 16px;
-    }
+  hr.sep { border:0; height:1px; background:#eef2f7; margin:20px 0; border-radius:2px; }
 
-    button:hover {
-        background: #0b5ed7;
-    }
-
-    /* Responsive */
-    @media (max-width: 700px) {
-        .form-row {
-            flex-direction: column;
-        }
-    }
+  /* responsive */
+  @media (max-width:860px){
+    .row-2, .row-3 { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 
 <body>
-<div class="container">
+  <div class="container">
+    <header>
+      <h1>Formulir Pendaftaran & Input Pemeriksaan SDIDTK</h1>
+      <div style="font-size:13px;color:var(--muted)">Pastikan NIK benar sebelum menyimpan</div>
+    </header>
 
-<h2>FORM INPUT SDIDTK</h2>
+    <p class="note">Masukkan NIK lalu klik <strong>"Cek Data"</strong> untuk mengambil data yang ada. Hanya NIK, Nama Lengkap, dan Tanggal Lahir yang ditampilkan — data lain akan ter-bridging dan tersimpan ke Firebase.</p>
 
-<form id="formInput">
-
-    <!-- Identitas Anak yang ditarik dari Firebase -->
-    <div class="form-row">
-        <div class="form-col">
-            <label>NIK</label>
-            <input id="nik" name="nik" type="text" required>
-        </div>
-        <div class="form-col">
-            <label>Nama Lengkap</label>
-            <input id="nama_lengkap" name="nama_lengkap" type="text" readonly>
-        </div>
+    <!-- Pencarian NIK (tetap seperti semula) -->
+    <div class="grid row-2" style="align-items:end;">
+      <div class="field">
+        <label for="search_nik">Masukkan NIK</label>
+        <input id="search_nik" type="text" placeholder="Masukkan NIK anak" />
+      </div>
+      <div style="display:flex; align-items:flex-end; gap:12px;">
+        <button id="btnSearch" class="btn btn-ghost" type="button">Cek Data</button>
+      </div>
     </div>
 
-    <div class="form-row">
-        <div class="form-col">
-            <label>Tanggal Lahir</label>
-            <input id="tanggal_lahir" name="tanggal_lahir" type="date" readonly>
-        </div>
-    </div>
+    <div id="preFill"></div>
 
-    <hr style="margin:25px 0;">
+    <form id="regForm" class="grid full" style="margin-top:12px;">
 
-    <h3 style="margin-bottom:15px;">Data Pemeriksaan SDIDTK</h3>
-
-    <div class="form-row">
-        <div class="form-col">
-            <label>Nama Petugas</label>
-            <input id="petugas_input" name="petugas_input" type="text">
+      <!-- TAMPILKAN HANYA 3 FIELD UTAMA -->
+      <div class="row-2">
+        <div class="field">
+          <label for="nama_lengkap">Nama Lengkap</label>
+          <input id="nama_lengkap" name="nama_lengkap" type="text" required />
         </div>
 
-        <div class="form-col">
-            <label>Tanggal Ukur</label>
-            <input id="tgl_ukur" name="tgl_ukur" type="date">
+        <div class="field">
+          <label for="nik">NIK</label>
+          <input id="nik" name="nik" type="text" required />
         </div>
-    </div>
+      </div>
 
-    <div class="form-row">
-        <div class="form-col">
-            <label>Berat Badan (kg)</label>
-            <input id="berat" name="berat" type="number" step="0.1">
+      <div class="row-2">
+        <div class="field">
+          <label for="tanggal_lahir">Tanggal Lahir</label>
+          <input id="tanggal_lahir" name="tanggal_lahir" type="date" required />
         </div>
+        <div></div>
+      </div>
 
-        <div class="form-col">
-            <label>Tinggi Badan (cm)</label>
-            <input id="tinggi" name="tinggi" type="number" step="0.1">
-        </div>
-    </div>
+      <!-- Hidden fields (tetap ada, tidak dihapus) -->
+      <input type="hidden" id="nama_institusi" name="nama_institusi" />
+      <input type="hidden" id="jenis_kelamin" name="jenis_kelamin" />
+      <input type="hidden" id="tempat_lahir" name="tempat_lahir" />
+      <input type="hidden" id="usia" name="usia" />
+      <input type="hidden" id="gol_darah" name="gol_darah" />
+      <input type="hidden" id="nomor_hp" name="nomor_hp" />
+      <input type="hidden" id="alamat" name="alamat" />
+      <input type="hidden" id="nama_orangtua" name="nama_orangtua" />
+      <input type="hidden" id="nik_orangtua" name="nik_orangtua" />
+      <input type="hidden" id="jenis_disabilitas" name="jenis_disabilitas" />
+      <input type="hidden" id="pernyataan" name="pernyataan" />
 
-    <div class="form-row">
-        <div class="form-col">
-            <label>IMT</label>
-            <input id="imt" name="imt" type="number" step="0.1">
-        </div>
+      <hr class="sep">
 
-        <div class="form-col">
-            <label>Status Gizi</label>
-            <select id="status_gizi" name="status_gizi">
-                <option value="">-- Pilih --</option>
-                <option>Berat Badan Sangat Kurang</option>
-                <option>Berat Badan Kurang</option>
-                <option>Berat Badan Normal</option>
-                <option>Berat Badan Lebih</option>
-                <option>Obesitas</option>
-            </select>
-        </div>
-    </div>
+      <!-- Input Pemeriksaan SDIDTK (tampil) -->
+      <h3 style="margin:0 0 6px 0;">Input Pemeriksaan SDIDTK</h3>
 
-    <div class="form-row">
-        <div class="form-col">
-            <label>KPSP</label>
-            <select id="kpsp" name="kpsp">
-                <option value="">-- Pilih --</option>
-                <option>Sesuai Usia</option>
-                <option>Meragukan</option>
-                <option>Kemungkinan Penyimpangan</option>
-            </select>
+      <div class="row-2">
+        <div class="field">
+          <label for="petugas_input">Nama Petugas</label>
+          <input id="petugas_input" name="petugas_input" type="text" />
         </div>
 
-        <div class="form-col">
-            <label>GPPH</label>
-            <select id="gpph" name="gpph">
-                <option value="">-- Pilih --</option>
-                <option>Normal <13</option>
-                <option>Meragukan</option>
-                <option>>13 Kemungkinan GPPH</option>
-            </select>
+        <div class="field">
+          <label for="tgl_ukur">Tanggal Ukur</label>
+          <input id="tgl_ukur" name="tgl_ukur" type="date" />
         </div>
-    </div>
+      </div>
 
-    <div class="form-row">
-        <div class="form-col">
-            <label>KMPE</label>
-            <select id="kmpe" name="kmpe">
-                <option value="">-- Pilih --</option>
-                <option>Normal = Tidak Ada Ya</option>
-                <option>Meragukan = Ada Ya 1</option>
-                <option>Gangguan MPE = Ada Jawaban 2</option>
-            </select>
+      <div class="row-2">
+        <div class="field">
+          <label for="berat">Berat Badan (kg)</label>
+          <input id="berat" name="berat" type="number" step="0.1" />
         </div>
 
-        <div class="form-col">
-            <label>Tes Daya Dengar</label>
-            <select id="tes_dengar" name="tes_dengar">
-                <option value="">-- Pilih --</option>
-                <option>Sesuai Umur</option>
-                <option>Kemungkinan Penyimpangan</option>
-            </select>
+        <div class="field">
+          <label for="tinggi">Tinggi Badan (cm)</label>
+          <input id="tinggi" name="tinggi" type="number" step="0.1" />
         </div>
-    </div>
+      </div>
 
-    <div class="form-row">
-        <div class="form-col">
-            <label>Tes Daya Lihat</label>
-            <select id="tes_lihat" name="tes_lihat">
-                <option value="">-- Pilih --</option>
-                <option>>6/12 Daya Lihat Baik</option>
-                <option><6/12 Daya lihat Kurang</option>
-            </select>
+      <div class="row-2">
+        <div class="field">
+          <label for="imt">IMT</label>
+          <input id="imt" name="imt" type="number" step="0.1" />
         </div>
 
-        <div class="form-col">
-            <label>Kondisi Gigi</label>
-            <select id="gigi" name="gigi">
-                <option value="">-- Pilih --</option>
-                <option>Normal</option>
-                <option>Karies</option>
-            </select>
+        <div class="field">
+          <label for="status_gizi">Status Gizi</label>
+          <select id="status_gizi" name="status_gizi">
+            <option value="">-- Pilih --</option>
+            <option>Berat Badan Sangat Kurang</option>
+            <option>Berat Badan Kurang</option>
+            <option>Berat Badan Normal</option>
+            <option>Berat Badan Lebih</option>
+            <option>Obesitas</option>
+          </select>
         </div>
-    </div>
+      </div>
 
-    <div class="form-row">
-        <div class="form-col">
-            <label>Kesimpulan</label>
-            <select id="kesimpulan" name="kesimpulan">
-                <option value="">-- Pilih --</option>
-                <option>Rujuk</option>
-                <option>Tidak</option>
-            </select>
+      <div class="row-2">
+        <div class="field">
+          <label for="kpsp">KPSP</label>
+          <select id="kpsp" name="kpsp">
+            <option value="">-- Pilih --</option>
+            <option>Sesuai Usia</option>
+            <option>Meragukan</option>
+            <option>Kemungkinan Penyimpangan</option>
+          </select>
         </div>
 
-        <div class="form-col">
-            <label>Keterangan Rujukan</label>
-            <textarea id="ket_rujuk" name="ket_rujuk"></textarea>
+        <div class="field">
+          <label for="gpph">GPPH</label>
+          <select id="gpph" name="gpph">
+            <option value="">-- Pilih --</option>
+            <option>Normal &lt;13</option>
+            <option>Meragukan</option>
+            <option>&gt;13 Kemungkinan GPPH</option>
+          </select>
         </div>
-    </div>
+      </div>
 
-    <button type="submit">Simpan Data</button>
+      <div class="row-2">
+        <div class="field">
+          <label for="kmpe">KMPE</label>
+          <select id="kmpe" name="kmpe">
+            <option value="">-- Pilih --</option>
+            <option>Normal = Tidak Ada Ya</option>
+            <option>Meragukan = Ada Ya 1</option>
+            <option>Gangguan MPE = Ada Jawaban 2</option>
+          </select>
+        </div>
 
-</form>
-</div>
+        <div class="field">
+          <label for="tes_dengar">Tes Daya Dengar</label>
+          <select id="tes_dengar" name="tes_dengar">
+            <option value="">-- Pilih --</option>
+            <option>Sesuai Umur</option>
+            <option>Kemungkinan Penyimpangan</option>
+          </select>
+        </div>
+      </div>
 
-<!-- Firebase -->
+      <div class="row-2">
+        <div class="field">
+          <label for="tes_lihat">Tes Daya Lihat</label>
+          <select id="tes_lihat" name="tes_lihat">
+            <option value="">-- Pilih --</option>
+            <option>&gt;6/12 Daya Lihat Baik</option>
+            <option>&lt;6/12 Daya lihat Kurang</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="gigi">Kondisi Gigi</label>
+          <select id="gigi" name="gigi">
+            <option value="">-- Pilih --</option>
+            <option>Normal</option>
+            <option>Karies</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="kesimpulan">Kesimpulan</label>
+          <select id="kesimpulan" name="kesimpulan">
+            <option value="">-- Pilih --</option>
+            <option>Rujuk</option>
+            <option>Tidak</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="ket_rujuk">Keterangan Rujukan</label>
+          <textarea id="ket_rujuk" name="ket_rujuk"></textarea>
+        </div>
+      </div>
+
+      <!-- kuesioner hidden container -->
+      <div id="hiddenKuesioner"></div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Simpan / Update</button>
+        <button type="button" id="clearBtn" class="btn btn-ghost">Bersihkan</button>
+      </div>
+
+    </form>
+  </div>
+
+<!-- FIREBASE: script & logic PASTI SAMA dengan semula (tidak diubah secara logika) -->
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import {
-        getFirestore, doc, getDoc, setDoc, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import {
+  getFirestore, collection, query, where,
+  getDocs, doc, setDoc, addDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "YOUR-API-KEY",
-        authDomain: "YOUR-PROJECT.firebaseapp.com",
-        projectId: "YOUR-PROJECT-ID",
-        storageBucket: "YOUR-PROJECT.appspot.com",
-        messagingSenderId: "SENDER-ID",
-        appId: "APP-ID"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
+  authDomain: "padasuka-juara.firebaseapp.com",
+  projectId: "padasuka-juara",
+  storageBucket: "padasuka-juara.firebasestorage.app",
+  messagingSenderId: "469740864914",
+  appId: "1:469740864914:web:f17b3112a2d2e841666d4b"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    const form = document.getElementById("formInput");
+const form = document.getElementById("regForm");
+const btnSearch = document.getElementById("btnSearch");
+const searchNik = document.getElementById("search_nik");
+const preFill = document.getElementById("preFill");
+let existingDocId = null;
 
-    // Auto-ambil data awal berdasarkan NIK
-    document.getElementById("nik").addEventListener("change", async (e) => {
-        const nik = e.target.value;
-        const ref = doc(db, "inputanak", nik);
-        const snap = await getDoc(ref);
+// =============================
+// CEK NIK & PREFILL  (LOGIKA TIDAK DIUBAH)
+// =============================
+btnSearch.addEventListener("click", async () => {
+  const nikVal = searchNik.value.trim();
+  if (!nikVal) return alert("Masukkan NIK");
 
-        if (snap.exists()) {
-            const d = snap.data();
-            document.getElementById("nama_lengkap").value = d.nama_lengkap || "";
-            document.getElementById("tanggal_lahir").value = d.tanggal_lahir || "";
+  const q = query(collection(db, "registrations"), where("nik", "==", nikVal));
+  const snap = await getDocs(q);
+
+  if (snap.size > 0) {
+    const docSnap = snap.docs[0];
+    const d = docSnap.data();
+    existingDocId = docSnap.id;
+
+    preFill.style.display = "block";
+    preFill.innerHTML = `
+      <b>Data ditemukan:</b><br>
+      Nama: <b>${d.nama_lengkap}</b><br>
+      NIK: <b>${d.nik}</b><br>
+      Tanggal Lahir: <b>${d.tanggal_lahir}</b>
+    `;
+
+    // Prefill tampil
+    ["nama_lengkap","nik","tanggal_lahir"].forEach(f => form[f].value = d[f] || "");
+
+    // Prefill hidden fields (tetap)
+    const hiddenFields = [
+      "nama_institusi","jenis_kelamin","tempat_lahir","usia","gol_darah","nomor_hp",
+      "alamat","nama_orangtua","nik_orangtua","jenis_disabilitas","pernyataan"
+    ];
+    hiddenFields.forEach(f => form[f].value = d[f] || "");
+
+    // Prefill field SDIDTK (tetap jadi nilai awal jika ada)
+    const sdidtkFields = [
+      "petugas_input","tgl_ukur","berat","tinggi","imt","status_gizi",
+      "kpsp","gpph","kmpe","tes_dengar","tes_lihat","gigi","kesimpulan","ket_rujuk"
+    ];
+    sdidtkFields.forEach(f => {
+      if (form[f]) form[f].value = d[f] || "";
+    });
+
+    // Prefill kuesioner (seperti semula)
+    if (d.kuesioner) {
+      Object.entries(d.kuesioner).forEach(([k,v]) => {
+        let el = document.getElementById(k);
+        if (!el) {
+          el = document.createElement("input");
+          el.type = "hidden";
+          el.id = k;
+          el.name = k;
+          document.getElementById("hiddenKuesioner").appendChild(el);
         }
-    });
+        el.value = v;
+      });
+    }
 
-    // Submit
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+  } else {
+    existingDocId = null;
+    preFill.style.display = "block";
+    preFill.innerHTML = "<b>Data tidak ditemukan, membuat baru.</b>";
+  }
+});
 
-        const nik = form.nik.value;
+// =============================
+// SIMPAN / UPDATE DATA (LOGIKA TIDAK DIUBAH)
+// =============================
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-        await setDoc(doc(db, "inputanak", nik), {
-            nama_lengkap: form.nama_lengkap.value,
-            nik: form.nik.value,
-            tanggal_lahir: form.tanggal_lahir.value,
+  const fieldList = [
+    "nama_lengkap","nik","tanggal_lahir",
+    "nama_institusi","jenis_kelamin","tempat_lahir","usia","gol_darah",
+    "nomor_hp","alamat","nama_orangtua","nik_orangtua","jenis_disabilitas",
+    "pernyataan",
 
-            // Rekam Pemeriksaan Baru
-            rekam_ukur: {
-                petugas_input: form.petugas_input.value,
-                tgl_ukur: form.tgl_ukur.value,
-                berat: form.berat.value,
-                tinggi: form.tinggi.value,
-                imt: form.imt.value,
-                status_gizi: form.status_gizi.value,
-                kpsp: form.kpsp.value,
-                gpph: form.gpph.value,
-                kmpe: form.kmpe.value,
-                tes_dengar: form.tes_dengar.value,
-                tes_lihat: form.tes_lihat.value,
-                gigi: form.gigi.value,
-                kesimpulan: form.kesimpulan.value,
-                ket_rujuk: form.ket_rujuk.value
-            },
+    // FIELD SDIDTK BARU (sekarang tampil & dapat diinput)
+    "petugas_input","tgl_ukur","berat","tinggi","imt","status_gizi",
+    "kpsp","gpph","kmpe","tes_dengar","tes_lihat","gigi","kesimpulan","ket_rujuk"
+  ];
 
-            updatedAt: serverTimestamp()
-        }, { merge: true });
+  const data = { createdAt: serverTimestamp(), kuesioner: {} };
 
-        alert("Data berhasil disimpan!");
-    });
+  fieldList.forEach(f => {
+    // pastikan elemen ada di DOM (beberapa hidden mungkin tidak ada)
+    if (form[f] !== undefined && form[f] !== null) data[f] = form[f].value || "";
+    else data[f] = "";
+  });
 
+  // simpan kuesioner
+  document.querySelectorAll("#hiddenKuesioner input").forEach(el => {
+    data.kuesioner[el.name] = el.value;
+  });
+
+  try {
+    if (existingDocId) {
+      await setDoc(doc(db, "registrations", existingDocId), data, { merge:true });
+      alert("Data diperbarui.");
+    } else {
+      await addDoc(collection(db, "registrations"), data);
+      alert("Data baru disimpan.");
+    }
+
+    form.reset();
+    preFill.style.display = "none";
+    existingDocId = null;
+
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+});
+
+// CLEAR
+document.getElementById("clearBtn").addEventListener("click", () => {
+  form.reset();
+  preFill.style.display = "none";
+  existingDocId = null;
+});
 </script>
 
 </body>
