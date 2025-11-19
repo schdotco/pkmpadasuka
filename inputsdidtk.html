@@ -403,19 +403,20 @@ document.getElementById("clearBtn").addEventListener("click", () => {
 });
 
 function hitungIMT() {
-    const bb = parseFloat(document.getElementById("berat_badan").value);
-    const tb = parseFloat(document.getElementById("tinggi_badan").value);
+    const bb = parseFloat(document.getElementById("berat").value);
+    const tb = parseFloat(document.getElementById("tinggi").value);
 
     if (!isNaN(bb) && !isNaN(tb) && tb > 0) {
         const tinggiMeter = tb / 100;
         const imt = bb / (tinggiMeter * tinggiMeter);
         document.getElementById("imt").value = imt.toFixed(1);
+    } else {
+        document.getElementById("imt").value = "";
     }
 }
 
-// trigger otomatis saat user input
-document.getElementById("berat_badan").addEventListener("input", hitungIMT);
-document.getElementById("tinggi_badan").addEventListener("input", hitungIMT);
+document.getElementById("berat").addEventListener("input", hitungIMT);
+document.getElementById("tinggi").addEventListener("input", hitungIMT);
 </script>
 
 </body>
