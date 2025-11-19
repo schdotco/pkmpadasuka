@@ -116,9 +116,13 @@
       </div>
 
       <div>
-        <label for="jenis_disabilitas">Jenis Disabilitas (jika ada)</label>
-        <input id="jenis_disabilitas" name="jenis_disabilitas" type="text" />
-        <small class="hint">Isi "TIDAK ADA DISABILITAS" jika tidak ada.</small>
+        <label for="jenis_disabilitas">Disabilitas</label>
+        <select id="jenis_disabilitas" name="jenis_disabilitas">
+            <option value="">-- Pilih --</option>
+            <option value="Tidak">Tidak</option>
+            <option value="Ya">Ya</option>
+        </select>
+        <small class="hint">Pilih Ya jika anak memiliki disabilitas.</small>
       </div>
 
       <hr />
