@@ -44,10 +44,6 @@
         background: #fff;
     }
 
-    table.dataTable tbody tr:hover {
-        background: #f0f8ff;
-    }
-
     .table-container {
         background: white;
         padding: 15px;
@@ -123,55 +119,6 @@ firebase.initializeApp(firebaseConfig);
             <option>Obesitas</option>
         </select>
     </div>
-
-    <div>
-        <label>KPSP</label>
-        <select id="filterKPSP">
-            <option value="">Semua</option>
-            <option>Sesuai Usia</option>
-            <option>Meragukan</option>
-            <option>Kemungkinan Penyimpangan</option>
-        </select>
-    </div>
-
-    <div>
-        <label>GPPH</label>
-        <select id="filterGPPH">
-            <option value="">Semua</option>
-            <option>Normal &lt;13</option>
-            <option>Meragukan</option>
-            <option>&gt;13 Kemungkinan GPPH</option>
-        </select>
-    </div>
-
-    <div>
-        <label>KMPE</label>
-        <select id="filterKMPE">
-            <option value="">Semua</option>
-            <option>Normal = Tidak Ada Ya</option>
-            <option>Meragukan = Ada Ya 1</option>
-            <option>Gangguan MPE = Ada Jawaban 2</option>
-        </select>
-    </div>
-
-    <div>
-        <label>Tes Daya Dengar</label>
-        <select id="filterDengar">
-            <option value="">Semua</option>
-            <option>Sesuai Umur</option>
-            <option>Kemungkinan Penyimpangan</option>
-        </select>
-    </div>
-
-    <div>
-        <label>Tes Daya Lihat</label>
-        <select id="filterLihat">
-            <option value="">Semua</option>
-            <option>&gt;6/12 Daya Lihat Baik</option>
-            <option>&lt;6/12 Daya lihat Kurang</option>
-        </select>
-    </div>
-
 </div>
 
 <!-- TABLE -->
@@ -192,8 +139,10 @@ firebase.initializeApp(firebaseConfig);
         <th>Alamat</th>
         <th>Jenis Disabilitas</th>
 
-        <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Q6</th><th>Q7</th>
-        <th>Q8</th><th>Q9</th><th>Q10</th><th>Q11</th><th>Q12</th><th>Q13</th><th>Q14</th>
+        <!-- Q1–Q19 -->
+        <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Q6</th>
+        <th>Q7</th><th>Q8</th><th>Q9</th><th>Q10</th><th>Q11</th><th>Q12</th>
+        <th>Q13</th><th>Q14</th><th>Q15</th><th>Q16</th><th>Q17</th><th>Q18</th><th>Q19</th>
 
         <th>Petugas Input</th>
         <th>Tanggal Input</th>
@@ -222,10 +171,21 @@ firebase.initializeApp(firebaseConfig);
 // Firestore
 const db = firebase.firestore();
 
+// INIT DATATABLE
+let table;
+$(document).ready(function () {
+    table = $("#tabelSDIDTK").DataTable({
+        pageLength: 25,
+        responsive: false,
+        scrollX: true
+    });
+    loadData();
+});
+
+// Load Data Firestore
 function loadData() {
     db.collection("sdidtk").orderBy("createdAt", "desc").onSnapshot(snapshot => {
 
-        const table = $("#tabelSDIDTK").DataTable();
         table.clear();
 
         let institusiSet = new Set();
@@ -234,13 +194,10 @@ function loadData() {
         snapshot.forEach(doc => {
             let d = doc.data();
 
-            // Format tanggal input
-            let tglInput = "";
-            if (d.createdAt) {
-                tglInput = new Date(d.createdAt.toDate()).toISOString().split("T")[0];
-            }
+            let tglInput = d.createdAt
+                ? new Date(d.createdAt.toDate()).toISOString().split("T")[0]
+                : "";
 
-            // Tambah baris tabel lengkap
             table.row.add([
                 d.nama_institusi || "",
                 d.nama_lengkap || "",
@@ -255,8 +212,10 @@ function loadData() {
                 d.alamat || "",
                 d.jenis_disabilitas || "",
 
-                d.q1 || "", d.q2 || "", d.q3 || "", d.q4 || "", d.q5 || "", d.q6 || "", d.q7 || "",
-                d.q8 || "", d.q9 || "", d.q10 || "", d.q11 || "", d.q12 || "", d.q13 || "", d.q14 || "",
+                d.q1 || "", d.q2 || "", d.q3 || "", d.q4 || "", d.q5 || "",
+                d.q6 || "", d.q7 || "", d.q8 || "", d.q9 || "", d.q10 || "",
+                d.q11 || "", d.q12 || "", d.q13 || "", d.q14 || "", d.q15 || "",
+                d.q16 || "", d.q17 || "", d.q18 || "", d.q19 || "",
 
                 d.petugas_input || "",
                 tglInput,
@@ -283,7 +242,6 @@ function loadData() {
 
         table.draw();
 
-        // isi dropdown filter
         fillDropdown("filterInstitusi", institusiSet);
         fillDropdown("filterUsia", usiaSet);
     });
@@ -293,15 +251,9 @@ function fillDropdown(id, values) {
     const dropdown = document.getElementById(id);
     dropdown.innerHTML = '<option value="">Semua</option>';
     [...values].forEach(v => {
-        if (v && v !== "") dropdown.innerHTML += `<option>${v}</option>`;
+        dropdown.innerHTML += `<option>${v}</option>`;
     });
 }
-
-// DataTables init
-$(document).ready(function () {
-    $("#tabelSDIDTK").DataTable({ pageLength: 25 });
-    loadData();
-});
 </script>
 
 </body>
