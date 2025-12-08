@@ -155,11 +155,13 @@
     font-weight: 600;
   }
 
-  .video-container {
+    .video-container {
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
     background: #000;
+    display: block;       /* FIX TERPENTING */
+    overflow: hidden;     /* optional, biar rapi */
   }
 
   .video-container iframe {
