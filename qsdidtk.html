@@ -221,80 +221,109 @@
   </div>
 
   <!-- Firebase SDK (v9 modular) -->
-  <script type="module">
-    // 1) GANTI firebaseConfig berikut dengan config project Firebase Anda
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+<script type="module">
+  // ===== IMPORT FIREBASE =====
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    serverTimestamp,
+    getDocs,
+    query,
+    where,
+    orderBy
+  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
-  authDomain: "padasuka-juara.firebaseapp.com",
-  projectId: "padasuka-juara",
-  storageBucket: "padasuka-juara.firebasestorage.app",
-  messagingSenderId: "469740864914",
-  appId: "1:469740864914:web:f17b3112a2d2e841666d4b"
-};
+  // ===== CONFIG =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
+    authDomain: "padasuka-juara.firebaseapp.com",
+    projectId: "padasuka-juara",
+    storageBucket: "padasuka-juara.firebasestorage.app",
+    messagingSenderId: "469740864914",
+    appId: "1:469740864914:web:f17b3112a2d2e841666d4b"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  // ===== INIT =====
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    // helper untuk menampilkan pesan
-    const msgBox = document.getElementById('msg');
-    function showMessage(text, type='success') {
-      msgBox.innerHTML = '<div class="notice ' + (type==='success' ? 'success' : 'error') + '">' + text + '</div>';
-      setTimeout(()=>{ msgBox.innerHTML = '' }, 6000);
+  // ===== LOAD DROPDOWN SEKOLAH =====
+  async function loadSekolah() {
+    const select = document.getElementById("nama_institusi");
+
+    const q = query(
+      collection(db, "sekolah"),
+      where("aktif", "==", "YA"),
+      orderBy("nama")
+    );
+
+    const snap = await getDocs(q);
+    snap.forEach(doc => {
+      const opt = document.createElement("option");
+      opt.value = doc.data().nama;
+      opt.textContent = doc.data().nama;
+      select.appendChild(opt);
+    });
+  }
+
+  // panggil saat halaman dibuka
+  loadSekolah();
+
+  // ===== HELPER PESAN =====
+  const msgBox = document.getElementById('msg');
+  function showMessage(text, type='success') {
+    msgBox.innerHTML =
+      '<div class="notice ' + (type==='success' ? 'success' : 'error') + '">' +
+      text + '</div>';
+    setTimeout(()=>{ msgBox.innerHTML = '' }, 6000);
+  }
+
+  // ===== SUBMIT FORM =====
+  const form = document.getElementById('regForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const data = {
+      nama_institusi: form.nama_institusi.value || '',
+      pernyataan: form.pernyataan.value || '',
+      nama_lengkap: form.nama_lengkap.value || '',
+      jenis_kelamin: form.jenis_kelamin.value || '',
+      nik: form.nik.value || '',
+      tempat_lahir: form.tempat_lahir.value || '',
+      tanggal_lahir: form.tanggal_lahir.value || '',
+      usia: form.usia.value ? Number(form.usia.value) : null,
+      gol_darah: form.gol_darah.value || '',
+      alamat: form.alamat.value || '',
+      nomor_hp: form.nomor_hp.value || '',
+      nama_orangtua: form.nama_orangtua.value || '',
+      nik_orangtua: form.nik_orangtua.value || '',
+      jenis_disabilitas: form.jenis_disabilitas.value || '',
+      createdAt: serverTimestamp()
+    };
+
+    const kuesioner = {};
+    for (let i = 1; i <= 14; i++) {
+      const el = form['q' + i];
+      kuesioner['q' + i] = el ? (el.value || '') : '';
     }
+    data.kuesioner = kuesioner;
 
-    // ambil form
-    const form = document.getElementById('regForm');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    try {
+      const docRef = await addDoc(collection(db, "registrations"), data);
+      showMessage('Data tersimpan. ID: ' + docRef.id, 'success');
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      showMessage('Terjadi kesalahan: ' + err.message, 'error');
+    }
+  });
 
-      // ambil nilai-nilai utama
-      const data = {
-        nama_institusi: form.nama_institusi.value || '',
-        pernyataan: form.pernyataan.value || '',
-        nama_lengkap: form.nama_lengkap.value || '',
-        jenis_kelamin: form.jenis_kelamin.value || '',
-        nik: form.nik.value || '',
-        tempat_lahir: form.tempat_lahir.value || '',
-        tanggal_lahir: form.tanggal_lahir.value || '',
-        usia: form.usia.value ? Number(form.usia.value) : null,
-        gol_darah: form.gol_darah.value || '',
-        alamat: form.alamat.value || '',
-        nomor_hp: form.nomor_hp.value || '',
-        nama_orangtua: form.nama_orangtua.value || '',
-        nik_orangtua: form.nik_orangtua.value || '',
-        jenis_disabilitas: form.jenis_disabilitas.value || '',
-      };
-
-      // ambil kuesioner Q1..Q20
-      const kuesioner = {};
-      for (let i=1;i<=14;i++){
-        const el = form['q'+i];
-        kuesioner['q'+i] = el ? (el.value || '') : '';
-      }
-      data.kuesioner = kuesioner;
-
-      // timestamp server
-      data.createdAt = serverTimestamp();
-
-      try {
-        // simpan ke koleksi 'registrations'
-        const docRef = await addDoc(collection(db, "registrations"), data);
-        showMessage('Data tersimpan. ID: ' + docRef.id, 'success');
-        form.reset();
-      } catch (err) {
-        console.error(err);
-        showMessage('Terjadi kesalahan saat menyimpan: ' + (err.message || err), 'error');
-      }
-    });
-
-    // tombol clear
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      if (confirm('Bersihkan semua field?')) form.reset();
-    });
-
-  </script>
+  // ===== CLEAR =====
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    if (confirm('Bersihkan semua field?')) form.reset();
+  });
+</script>
 </body>
 </html>
