@@ -7,102 +7,125 @@
 
 <!-- Styling: profesional, rapi, responsif -->
 <style>
-  :root{
-    --bg:#f6f7fb;
-    --card:#ffffff;
-    --muted:#6b7280;
-    --accent:#2563eb;
-    --radius:12px;
-    --gap:14px;
-  }
-  *{box-sizing:border-box}
-  body { font-family: Inter, system-ui, Arial, sans-serif; background:var(--bg); margin:0; color:#111827; padding:28px; }
-
-  .container {
-    max-width:980px; margin:0 auto;
-    background:var(--card);
-    border-radius:var(--radius);
-    padding:22px;
-    box-shadow:0 8px 28px rgba(16,24,40,0.06);
-  }
-
-  header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
-  header h1 { margin:0; font-size:18px; letter-spacing:0.6px; color:#0f172a; }
-
-  .note { color:var(--muted); font-size:13px; margin-bottom:12px; }
-
-  /* grid for rows */
-  .grid { display:grid; gap:var(--gap); }
-  .row-2 { grid-template-columns: 1fr 1fr; display:grid; gap:var(--gap); }
-  .row-3 { grid-template-columns: 1fr 1fr 1fr; display:grid; gap:var(--gap); }
-  .full { grid-template-columns: 1fr; }
-
-  .field { display:flex; flex-direction:column; }
-  label { font-weight:600; margin-bottom:6px; font-size:13px; color:#111827; }
-  input[type="text"], input[type="date"], input[type="number"], select, textarea {
-    padding:10px 12px; border-radius:10px; border:1px solid #e6eef8; background:#fff; font-size:14px;
-  }
-  textarea { min-height:80px; resize:vertical; }
-
-  .actions { display:flex; gap:12px; margin-top:18px; }
-  .btn { padding:10px 14px; border-radius:10px; border:0; cursor:pointer; font-weight:700; font-size:14px; }
-  .btn-primary { background:var(--accent); color:#fff; box-shadow:0 6px 18px rgba(37,99,235,0.12); }
-  .btn-ghost { background:#f3f4f6; color:#0f172a; }
-
-  #preFill { background:#ecf6ff; padding:10px 12px; border-radius:10px; color:#0b4a83; margin-top:12px; display:none; font-size:14px; }
-
-  hr.sep { border:0; height:1px; background:#eef2f7; margin:20px 0; border-radius:2px; }
-
-  /* responsive */
-  @media (max-width:860px){
-    .row-2, .row-3 { grid-template-columns: 1fr; }
-  }
-
-  /* ===== ENHANCEMENT UNTUK PETUGAS ===== */
-h3 {
-  margin-top: 8px;
-  font-size: 16px;
-  color: #0f172a;
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#64748b;
+  --accent:#2563eb;
+  --border:#e5e7eb;
+  --radius:14px;
+  --gap:16px;
 }
 
-.field label {
-  font-weight: 600;
+*{box-sizing:border-box}
+
+body{
+  font-family: Inter, system-ui, -apple-system, Arial, sans-serif;
+  background:var(--bg);
+  margin:0;
+  padding:24px;
+  color:var(--text);
 }
 
-select, input, textarea {
-  transition: border-color .15s, box-shadow .15s;
+.container{
+  max-width:980px;
+  margin:auto;
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:24px;
+  box-shadow:0 10px 32px rgba(15,23,42,.08);
 }
 
-select:focus, input:focus, textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:14px;
 }
 
-.row-2 {
-  align-items: end;
+header h1{
+  font-size:18px;
+  margin:0;
+  letter-spacing:.3px;
 }
 
-/* Field pemeriksaan dibuat lebih “lega” */
-textarea {
-  min-height: 90px;
+.note{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:16px;
 }
 
-/* Mobile comfort */
-@media (max-width: 640px) {
-  body {
-    padding: 16px;
-  }
-  header h1 {
-    font-size: 16px;
-    line-height: 1.3;
-  }
-  .actions {
-    flex-direction: column;
-  }
-  .btn {
-    width: 100%;
-  }
+.grid{display:grid;gap:var(--gap)}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+
+.field{
+  display:flex;
+  flex-direction:column;
+}
+
+label{
+  font-size:12.5px;
+  font-weight:600;
+  margin-bottom:6px;
+}
+
+input, select, textarea{
+  padding:11px 12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  font-size:14px;
+  background:#fff;
+}
+
+input:focus, select:focus, textarea:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(37,99,235,.12);
+}
+
+textarea{
+  min-height:96px;
+}
+
+hr.sep{
+  border:0;
+  height:1px;
+  background:#eef2f7;
+  margin:22px 0;
+}
+
+.actions{
+  display:flex;
+  gap:12px;
+  margin-top:22px;
+}
+
+.btn{
+  padding:11px 16px;
+  border-radius:10px;
+  border:0;
+  cursor:pointer;
+  font-weight:700;
+  font-size:14px;
+}
+
+.btn-primary{
+  background:var(--accent);
+  color:#fff;
+}
+
+.btn-ghost{
+  background:#f1f5f9;
+  color:#0f172a;
+}
+
+/* MOBILE */
+@media(max-width:768px){
+  body{padding:16px}
+  .row-2{grid-template-columns:1fr}
+  .actions{flex-direction:column}
+  .btn{width:100%}
 }
 </style>
 </head>
@@ -287,16 +310,12 @@ textarea {
           </select>
         </div>
 
-      <div class="row-2">
         <div class="field">
-          <label for="posyandu">
-            Posyandu Tempat Pemeriksaan
-          </label>
+          <label for="posyandu">Posyandu Tempat Pemeriksaan</label>
           <select id="posyandu" name="posyandu">
             <option value="">-- Pilih Posyandu --</option>
           </select>
         </div>
-        <div></div>
       </div>
 
         <div class="field">
