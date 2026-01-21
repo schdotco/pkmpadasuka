@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Input Data Sekolah</title>
+
+<style>
+body {
+  font-family: Inter, Arial;
+  background:#f6f7fb;
+  padding:20px;
+}
+.box {
+  max-width:500px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 6px 18px rgba(0,0,0,.06);
+}
+label {
+  display:block;
+  margin-top:12px;
+  font-size:13px;
+}
+input, select, button {
+  width:100%;
+  padding:8px 10px;
+  margin-top:6px;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+}
+button {
+  margin-top:16px;
+  background:#2563eb;
+  color:white;
+  font-weight:600;
+  border:0;
+  cursor:pointer;
+}
+.notice {
+  margin-top:10px;
+  padding:8px;
+  border-radius:8px;
+  font-size:13px;
+}
+.success { background:#ecfdf5; color:#065f46; }
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h3>Input Data Sekolah / PAUD</h3>
+
+  <form id="schoolForm">
+    <label>Nama Sekolah</label>
+    <input type="text" id="nama" required>
+
+    <label>Jenis</label>
+    <select id="jenis">
+      <option value="TK">TK</option>
+      <option value="PAUD">PAUD</option>
+      <option value="KOBER">KOBER</option>
+    </select>
+
+    <label>Status</label>
+    <select id="aktif">
+      <option value="YA">Aktif</option>
+      <option value="TIDAK">Tidak Aktif</option>
+    </select>
+
+    <button type="submit">Simpan Sekolah</button>
+  </form>
+
+  <div id="msg"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } 
+from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
+  authDomain: "padasuka-juara.firebaseapp.com",
+  projectId: "padasuka-juara"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const form = document.getElementById("schoolForm");
+const msg = document.getElementById("msg");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  await addDoc(collection(db, "sekolah"), {
+    nama: nama.value.toUpperCase(),
+    jenis: jenis.value,
+    aktif: aktif.value,
+    createdAt: serverTimestamp()
+  });
+
+  msg.innerHTML = `<div class="notice success">✅ Data sekolah tersimpan</div>`;
+  form.reset();
+});
+</script>
+
+</body>
+</html>
