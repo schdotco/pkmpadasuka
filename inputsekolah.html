@@ -51,75 +51,113 @@ button {
 
 <body>
 
-<div class="box">
-  <h3>Input Data Sekolah / PAUD</h3>
+  <div class="box">
+    <h3>Input Data Sekolah / PAUD</h3>
+  
+    <form id="schoolForm">
+      <label>Nama Sekolah</label>
+      <input type="text" id="nama" required>
+  
+      <label>Jenis</label>
+      <select id="jenis">
+        <option value="TK">TK</option>
+        <option value="PAUD">PAUD</option>
+        <option value="KOBER">KOBER</option>
+      </select>
+  
+      <label>Status</label>
+      <select id="aktif">
+        <option value="YA">Aktif</option>
+        <option value="TIDAK">Tidak Aktif</option>
+      </select>
+  
+      <button type="submit">Simpan Sekolah</button>
+    </form>
+  
+    <div id="msgSekolah"></div>
+  </div>
+  
+  <br>
+  
+  <div class="box">
+    <h3>Input Data Posyandu</h3>
+  
+    <form id="posyanduForm">
+      <label>Nama Posyandu</label>
+      <input type="text" id="nama_posyandu" required>
+  
+      <label>Status</label>
+      <select id="aktif_posyandu">
+        <option value="YA">Aktif</option>
+        <option value="TIDAK">Tidak Aktif</option>
+      </select>
+  
+      <button type="submit">Simpan Posyandu</button>
+    </form>
+  
+    <div id="msgPosyandu"></div>
+  </div>
 
-  <form id="schoolForm">
-    <label>Nama Sekolah</label>
-    <input type="text" id="nama" required>
-
-    <label>Jenis</label>
-    <select id="jenis">
-      <option value="TK">TK</option>
-      <option value="PAUD">PAUD</option>
-      <option value="KOBER">KOBER</option>
-    </select>
-
-    <label>Status</label>
-    <select id="aktif">
-      <option value="YA">Aktif</option>
-      <option value="TIDAK">Tidak Aktif</option>
-    </select>
-
-    <button type="submit">Simpan Sekolah</button>
-  </form>
-
-  <div id="msg"></div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } 
-from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
-  authDomain: "padasuka-juara.firebaseapp.com",
-  projectId: "padasuka-juara"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// ===== AMBIL ELEMENT =====
-const form = document.getElementById("schoolForm");
-const msg = document.getElementById("msg");
-
-const namaInput  = document.getElementById("nama");
-const jenisInput = document.getElementById("jenis");
-const aktifInput = document.getElementById("aktif");
-
-// ===== SUBMIT =====
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  try {
-    await addDoc(collection(db, "sekolah"), {
-      nama: namaInput.value.trim().toUpperCase(),
-      jenis: jenisInput.value,
-      aktif: aktifInput.value,
-      createdAt: serverTimestamp()
-    });
-
-    msg.innerHTML = `<div class="notice success">✅ Data sekolah tersimpan</div>`;
-    form.reset();
-
-  } catch (err) {
-    console.error(err);
-    msg.innerHTML = `<div class="notice">❌ Gagal menyimpan data</div>`;
-  }
-});
-</script>
+  /* ================= Script ================= */
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
+    authDomain: "padasuka-juara.firebaseapp.com",
+    projectId: "padasuka-juara"
+  };
+  
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  
+  /* ================= SEKOLAH ================= */
+  const schoolForm = document.getElementById("schoolForm");
+  const msgSekolah = document.getElementById("msgSekolah");
+  
+  schoolForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+  
+    try {
+      await addDoc(collection(db, "sekolah"), {
+        nama: document.getElementById("nama").value.trim().toUpperCase(),
+        jenis: document.getElementById("jenis").value,
+        aktif: document.getElementById("aktif").value,
+        createdAt: serverTimestamp()
+      });
+  
+      msgSekolah.innerHTML = `<div class="notice success">✅ Sekolah tersimpan</div>`;
+      schoolForm.reset();
+    } catch (err) {
+      console.error(err);
+      msgSekolah.innerHTML = `<div class="notice">❌ Gagal simpan sekolah</div>`;
+    }
+  });
+  
+  /* ================= POSYANDU ================= */
+  const posyanduForm = document.getElementById("posyanduForm");
+  const msgPosyandu = document.getElementById("msgPosyandu");
+  
+  posyanduForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+  
+    try {
+      await addDoc(collection(db, "posyandu"), {
+        nama: document.getElementById("nama_posyandu").value.trim().toUpperCase(),
+        aktif: document.getElementById("aktif_posyandu").value,
+        createdAt: serverTimestamp()
+      });
+  
+      msgPosyandu.innerHTML = `<div class="notice success">✅ Posyandu tersimpan</div>`;
+      posyanduForm.reset();
+    } catch (err) {
+      console.error(err);
+      msgPosyandu.innerHTML = `<div class="notice">❌ Gagal simpan posyandu</div>`;
+    }
+  });
+  </script>
 
 </body>
 </html>
