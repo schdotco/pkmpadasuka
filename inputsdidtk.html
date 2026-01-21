@@ -57,6 +57,53 @@
   @media (max-width:860px){
     .row-2, .row-3 { grid-template-columns: 1fr; }
   }
+
+  /* ===== ENHANCEMENT UNTUK PETUGAS ===== */
+h3 {
+  margin-top: 8px;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.field label {
+  font-weight: 600;
+}
+
+select, input, textarea {
+  transition: border-color .15s, box-shadow .15s;
+}
+
+select:focus, input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+}
+
+.row-2 {
+  align-items: end;
+}
+
+/* Field pemeriksaan dibuat lebih “lega” */
+textarea {
+  min-height: 90px;
+}
+
+/* Mobile comfort */
+@media (max-width: 640px) {
+  body {
+    padding: 16px;
+  }
+  header h1 {
+    font-size: 16px;
+    line-height: 1.3;
+  }
+  .actions {
+    flex-direction: column;
+  }
+  .btn {
+    width: 100%;
+  }
+}
 </style>
 </head>
 
@@ -240,6 +287,18 @@
           </select>
         </div>
 
+      <div class="row-2">
+        <div class="field">
+          <label for="posyandu">
+            Posyandu Tempat Pemeriksaan
+          </label>
+          <select id="posyandu" name="posyandu">
+            <option value="">-- Pilih Posyandu --</option>
+          </select>
+        </div>
+        <div></div>
+      </div>
+
         <div class="field">
           <label for="ket_rujuk">Keterangan Rujukan</label>
           <textarea id="ket_rujuk" name="ket_rujuk"></textarea>
@@ -265,6 +324,9 @@ import {
   getDocs, doc, setDoc, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
+/* =============================
+   FIREBASE INIT
+   ============================= */
 const firebaseConfig = {
   apiKey: "AIzaSyCIruNCiYTVhISuBWMotTfUYZbW8JKrLGE",
   authDomain: "padasuka-juara.firebaseapp.com",
@@ -277,15 +339,54 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* =============================
+   LOAD POSYANDU (DROPDOWN)
+   ============================= */
+async function loadPosyandu() {
+  const select = document.getElementById("posyandu");
+  if (!select) return;
+
+  select.innerHTML = `<option value="">-- Pilih Posyandu --</option>`;
+
+  try {
+    const snap = await getDocs(collection(db, "posyandu"));
+    const data = [];
+
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (d.aktif === "YA" && d.nama) {
+        data.push(d.nama);
+      }
+    });
+
+    data.sort();
+
+    data.forEach(nama => {
+      const opt = document.createElement("option");
+      opt.value = nama;
+      opt.textContent = nama;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Gagal load posyandu:", err);
+  }
+}
+
+// panggil saat halaman dibuka
+loadPosyandu();
+
+/* =============================
+   ELEMENT & STATE
+   ============================= */
 const form = document.getElementById("regForm");
 const btnSearch = document.getElementById("btnSearch");
 const searchNik = document.getElementById("search_nik");
 const preFill = document.getElementById("preFill");
 let existingDocId = null;
 
-// =============================
-// CEK NIK & PREFILL  (LOGIKA TIDAK DIUBAH)
-// =============================
+/* =============================
+   CEK NIK & PREFILL
+   ============================= */
 btnSearch.addEventListener("click", async () => {
   const nikVal = searchNik.value.trim();
   if (!nikVal) return alert("Masukkan NIK");
@@ -306,26 +407,32 @@ btnSearch.addEventListener("click", async () => {
       Tanggal Lahir: <b>${d.tanggal_lahir}</b>
     `;
 
-    // Prefill tampil
-    ["nama_lengkap","nik","tanggal_lahir"].forEach(f => form[f].value = d[f] || "");
+    // Prefill field tampil
+    ["nama_lengkap","nik","tanggal_lahir"].forEach(f => {
+      if (form[f]) form[f].value = d[f] || "";
+    });
 
-    // Prefill hidden fields (tetap)
+    // Prefill hidden field
     const hiddenFields = [
-      "nama_institusi","jenis_kelamin","tempat_lahir","usia","gol_darah","nomor_hp",
-      "alamat","nama_orangtua","nik_orangtua","jenis_disabilitas","pernyataan"
+      "nama_institusi","jenis_kelamin","tempat_lahir","usia","gol_darah",
+      "nomor_hp","alamat","nama_orangtua","nik_orangtua",
+      "jenis_disabilitas","pernyataan"
     ];
-    hiddenFields.forEach(f => form[f].value = d[f] || "");
+    hiddenFields.forEach(f => {
+      if (form[f]) form[f].value = d[f] || "";
+    });
 
-    // Prefill field SDIDTK (tetap jadi nilai awal jika ada)
+    // Prefill SDIDTK
     const sdidtkFields = [
       "petugas_input","tgl_ukur","berat","tinggi","imt","status_gizi",
-      "kpsp","gpph","kmpe","tes_dengar","tes_lihat","gigi","kesimpulan","ket_rujuk"
+      "kpsp","gpph","kmpe","tes_dengar","tes_lihat",
+      "gigi","kesimpulan","posyandu","ket_rujuk"
     ];
     sdidtkFields.forEach(f => {
       if (form[f]) form[f].value = d[f] || "";
     });
 
-    // Prefill kuesioner (seperti semula)
+    // Prefill kuesioner
     if (d.kuesioner) {
       Object.entries(d.kuesioner).forEach(([k,v]) => {
         let el = document.getElementById(k);
@@ -343,33 +450,32 @@ btnSearch.addEventListener("click", async () => {
   } else {
     existingDocId = null;
     preFill.style.display = "block";
-    preFill.innerHTML = "<b>Data tidak ditemukan, membuat baru.</b>";
+    preFill.innerHTML = "<b>Data tidak ditemukan, membuat data baru.</b>";
   }
 });
 
-// =============================
-// SIMPAN / UPDATE DATA (LOGIKA TIDAK DIUBAH)
-// =============================
+/* =============================
+   SIMPAN / UPDATE DATA
+   ============================= */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const fieldList = [
     "nama_lengkap","nik","tanggal_lahir",
     "nama_institusi","jenis_kelamin","tempat_lahir","usia","gol_darah",
-    "nomor_hp","alamat","nama_orangtua","nik_orangtua","jenis_disabilitas",
-    "pernyataan",
+    "nomor_hp","alamat","nama_orangtua","nik_orangtua",
+    "jenis_disabilitas","pernyataan",
 
-    // FIELD SDIDTK BARU (sekarang tampil & dapat diinput)
+    // SDIDTK
     "petugas_input","tgl_ukur","berat","tinggi","imt","status_gizi",
-    "kpsp","gpph","kmpe","tes_dengar","tes_lihat","gigi","kesimpulan","ket_rujuk"
+    "kpsp","gpph","kmpe","tes_dengar","tes_lihat",
+    "gigi","kesimpulan","posyandu","ket_rujuk"
   ];
 
   const data = { createdAt: serverTimestamp(), kuesioner: {} };
 
   fieldList.forEach(f => {
-    // pastikan elemen ada di DOM (beberapa hidden mungkin tidak ada)
-    if (form[f] !== undefined && form[f] !== null) data[f] = form[f].value || "";
-    else data[f] = "";
+    data[f] = form[f] ? form[f].value || "" : "";
   });
 
   // simpan kuesioner
@@ -380,10 +486,10 @@ form.addEventListener("submit", async (e) => {
   try {
     if (existingDocId) {
       await setDoc(doc(db, "registrations", existingDocId), data, { merge:true });
-      alert("Data diperbarui.");
+      alert("Data berhasil diperbarui.");
     } else {
       await addDoc(collection(db, "registrations"), data);
-      alert("Data baru disimpan.");
+      alert("Data baru berhasil disimpan.");
     }
 
     form.reset();
@@ -395,24 +501,29 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-// CLEAR
+/* =============================
+   CLEAR FORM
+   ============================= */
 document.getElementById("clearBtn").addEventListener("click", () => {
   form.reset();
   preFill.style.display = "none";
   existingDocId = null;
 });
 
+/* =============================
+   HITUNG IMT OTOMATIS
+   ============================= */
 function hitungIMT() {
-    const bb = parseFloat(document.getElementById("berat").value);
-    const tb = parseFloat(document.getElementById("tinggi").value);
+  const bb = parseFloat(document.getElementById("berat").value);
+  const tb = parseFloat(document.getElementById("tinggi").value);
 
-    if (!isNaN(bb) && !isNaN(tb) && tb > 0) {
-        const tinggiMeter = tb / 100;
-        const imt = bb / (tinggiMeter * tinggiMeter);
-        document.getElementById("imt").value = imt.toFixed(1);
-    } else {
-        document.getElementById("imt").value = "";
-    }
+  if (!isNaN(bb) && !isNaN(tb) && tb > 0) {
+    const tinggiMeter = tb / 100;
+    const imt = bb / (tinggiMeter * tinggiMeter);
+    document.getElementById("imt").value = imt.toFixed(1);
+  } else {
+    document.getElementById("imt").value = "";
+  }
 }
 
 document.getElementById("berat").addEventListener("input", hitungIMT);
