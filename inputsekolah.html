@@ -91,21 +91,33 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// ===== AMBIL ELEMENT =====
 const form = document.getElementById("schoolForm");
 const msg = document.getElementById("msg");
 
+const namaInput  = document.getElementById("nama");
+const jenisInput = document.getElementById("jenis");
+const aktifInput = document.getElementById("aktif");
+
+// ===== SUBMIT =====
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  await addDoc(collection(db, "sekolah"), {
-    nama: nama.value.toUpperCase(),
-    jenis: jenis.value,
-    aktif: aktif.value,
-    createdAt: serverTimestamp()
-  });
+  try {
+    await addDoc(collection(db, "sekolah"), {
+      nama: namaInput.value.trim().toUpperCase(),
+      jenis: jenisInput.value,
+      aktif: aktifInput.value,
+      createdAt: serverTimestamp()
+    });
 
-  msg.innerHTML = `<div class="notice success">✅ Data sekolah tersimpan</div>`;
-  form.reset();
+    msg.innerHTML = `<div class="notice success">✅ Data sekolah tersimpan</div>`;
+    form.reset();
+
+  } catch (err) {
+    console.error(err);
+    msg.innerHTML = `<div class="notice">❌ Gagal menyimpan data</div>`;
+  }
 });
 </script>
 
