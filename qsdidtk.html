@@ -23,6 +23,38 @@
     .notice.success { background:#ecfdf5; color:#065f46; border:1px solid #bbf7d0; }
     .notice.error { background:#fff1f2; color:#991b1b; border:1px solid #fecaca; }
     small.hint { color:#6b7280; display:block; margin-top:4px; }
+
+      /* ===== RESPONSIVE MOBILE ===== */
+  @media (max-width: 640px) {
+    .row {
+      flex-direction: column;
+    }
+  
+    .container {
+      padding: 16px;
+    }
+  
+    h1 {
+      font-size: 18px;
+      text-align: center;
+    }
+  
+    label {
+      font-size: 13px;
+    }
+  
+    button {
+      width: 100%;
+    }
+  
+    .actions {
+      flex-direction: column;
+    }
+  
+    .kuesioner {
+      grid-template-columns: 1fr;
+    }
+  }
   </style>
 </head>
 <body>
@@ -250,23 +282,37 @@
   const db = getFirestore(app);
 
   // ===== LOAD DROPDOWN SEKOLAH =====
-  async function loadSekolah() {
-    const select = document.getElementById("nama_institusi");
-
-    const q = query(
-      collection(db, "sekolah"),
-      where("aktif", "==", "YA"),
-      orderBy("nama")
-    );
-
-    const snap = await getDocs(q);
-    snap.forEach(doc => {
-      const opt = document.createElement("option");
-      opt.value = doc.data().nama;
-      opt.textContent = doc.data().nama;
-      select.appendChild(opt);
-    });
-  }
+    async function loadSekolah() {
+      const select = document.getElementById("nama_institusi");
+    
+      // bersihkan option lama (jaga-jaga)
+      select.innerHTML = `<option value="">-- Pilih Institusi --</option>`;
+    
+      try {
+        const snap = await getDocs(collection(db, "sekolah"));
+    
+        const data = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          if (d.aktif === "YA" && d.nama) {
+            data.push(d.nama);
+          }
+        });
+    
+        // urutkan A-Z
+        data.sort();
+    
+        data.forEach(nama => {
+          const opt = document.createElement("option");
+          opt.value = nama;
+          opt.textContent = nama;
+          select.appendChild(opt);
+        });
+    
+      } catch (err) {
+        console.error("Load sekolah error:", err);
+      }
+    }
 
   // panggil saat halaman dibuka
   loadSekolah();
