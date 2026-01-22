@@ -12,6 +12,7 @@ body{
   margin:0;
   padding:20px;
 }
+
 .container{
   max-width:900px;
   margin:auto;
@@ -20,6 +21,8 @@ body{
   box-shadow:0 3px 10px rgba(0,0,0,.1);
   padding:25px;
 }
+
+/* HEADER */
 .header{
   display:flex;
   justify-content:space-between;
@@ -28,46 +31,70 @@ body{
   padding-bottom:10px;
   margin-bottom:20px;
 }
+
 .header h1{
   margin:0;
   font-size:18px;
   color:#2f6fb3;
 }
-.header span{
-  font-size:13px;
-  color:#666;
+
+/* NAV LINK */
+.nav{
+  display:flex;
+  gap:20px;
 }
+
+.nav-link{
+  text-decoration:none;
+  color:#2f6fb3;
+  font-size:14px;
+  font-weight:600;
+}
+
+.nav-link:hover{
+  text-decoration:underline;
+}
+
+/* TITLE */
 h2{
   text-align:center;
   color:#2f6fb3;
   margin-bottom:5px;
 }
+
 .subtitle{
   text-align:center;
   font-size:13px;
   color:#666;
   margin-bottom:25px;
 }
+
+/* FORM */
 .form-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:15px;
 }
+
 label{
   font-size:13px;
 }
+
 input, select{
   width:100%;
   padding:10px;
   border-radius:6px;
   border:1px solid #ccc;
 }
+
+/* BUTTON */
 .buttons{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:15px;
   margin-top:20px;
 }
+
 .btn-primary{
   background:#2f6fb3;
   color:#fff;
@@ -76,6 +103,7 @@ input, select{
   border-radius:6px;
   cursor:pointer;
 }
+
 .btn-reset{
   background:#eaeaea;
   border:none;
@@ -83,6 +111,8 @@ input, select{
   border-radius:6px;
   cursor:pointer;
 }
+
+/* RESULT */
 .result{
   margin-top:25px;
   border:2px solid #2f6fb3;
@@ -90,14 +120,19 @@ input, select{
   padding:15px;
   background:#f7fbff;
 }
+
+/* FOOTER */
 footer{
   margin-top:25px;
   text-align:center;
   font-size:12px;
   color:#666;
 }
+
+/* RESPONSIVE */
 @media(max-width:700px){
-  .form-grid,.buttons{
+  .form-grid,
+  .buttons{
     grid-template-columns:1fr;
   }
 }
@@ -109,8 +144,16 @@ footer{
 <div class="container">
 
   <div class="header">
-    <h1>Puskesmas Padasuka</h1>
-    <span>Kota Bandung</span>
+    <h1>Puskesmas Padasuka Kota Bandung</h1>
+  
+    <div class="nav">
+      <a href="https://schdotco.github.io/pkmpadasuka/bmianak.html" class="nav-link">
+        BMI Anak
+      </a>
+      <a href="https://schdotco.github.io/pkmpadasuka/bmidewasa.html" class="nav-link">
+        BMI Dewasa
+      </a>
+    </div>
   </div>
 
   <h2>Kalkulator BMI Anak 5–19 Tahun</h2>
