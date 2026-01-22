@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator BMI Dewasa - Puskesmas Padasuka</title>
+
+<style>
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  background:#f3f7fc;
+  margin:0;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+}
+.header{
+  background:linear-gradient(135deg,#3b5f91,#2f4f7c);
+  color:#fff;
+  padding:25px;
+  border-radius:10px;
+  margin-bottom:25px;
+}
+.header h1{
+  margin:0;
+  font-size:22px;
+}
+.header p{
+  margin-top:8px;
+  font-size:14px;
+  opacity:.9;
+}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+.card{
+  background:#fff;
+  border-radius:10px;
+  padding:20px;
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+.card h3{
+  margin-top:0;
+  margin-bottom:15px;
+  font-size:18px;
+}
+.label{
+  font-size:13px;
+  margin-bottom:6px;
+}
+input{
+  width:100%;
+  padding:10px;
+  margin-bottom:15px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+.gender{
+  display:flex;
+  gap:15px;
+  margin-bottom:15px;
+}
+.gender button{
+  flex:1;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  background:#f7f7f7;
+  cursor:pointer;
+}
+.gender button.active{
+  background:#2f5fa7;
+  color:#fff;
+  border:none;
+}
+.btn-primary{
+  width:100%;
+  padding:12px;
+  background:#2f5fa7;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  font-size:15px;
+  cursor:pointer;
+}
+.btn-reset{
+  width:100%;
+  margin-top:10px;
+  padding:10px;
+  background:#6c757d;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+.result{
+  text-align:center;
+  font-size:18px;
+  margin-top:20px;
+}
+.bmi-box{
+  margin-top:20px;
+  border-left:4px solid #2f5fa7;
+  padding-left:15px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+table th, table td{
+  padding:8px;
+  border-bottom:1px solid #ddd;
+  font-size:13px;
+  text-align:left;
+}
+.note{
+  font-size:12px;
+  color:#555;
+  margin-top:15px;
+}
+footer{
+  margin-top:25px;
+  text-align:center;
+  font-size:12px;
+  color:#666;
+}
+@media(max-width:768px){
+  .grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Kalkulator BMI untuk Orang Dewasa</h1>
+    <p>Puskesmas Padasuka – Kota Bandung<br>
+    Hanya untuk usia 20 tahun ke atas</p>
+  </div>
+
+  <div class="grid">
+    <!-- INPUT -->
+    <div class="card">
+      <h3>Data Diri Anda</h3>
+
+      <div class="label">Jenis Kelamin (wajib)</div>
+      <div class="gender">
+        <button onclick="setGender('L')" id="L">♂ Laki-laki</button>
+        <button onclick="setGender('P')" id="P">♀ Perempuan</button>
+      </div>
+
+      <div class="label">Usia (tahun)</div>
+      <input type="number" id="usia" placeholder="Contoh: 25">
+
+      <div class="label">Tinggi Badan (cm)</div>
+      <input type="number" id="tinggi" placeholder="Contoh: 170">
+
+      <div class="label">Berat Badan (kg)</div>
+      <input type="number" id="berat" placeholder="Contoh: 65">
+
+      <button class="btn-primary" onclick="hitungBMI()">Hitung BMI</button>
+      <button class="btn-reset" onclick="resetForm()">Reset</button>
+    </div>
+
+    <!-- HASIL -->
+    <div class="card">
+      <h3>Hasil BMI Anda</h3>
+      <div class="result" id="hasil">
+        Silakan masukkan data Anda untuk melihat hasil perhitungan BMI
+      </div>
+
+      <div class="bmi-box">
+        <b>Kategori BMI untuk Orang Dewasa</b>
+        <table>
+          <tr><th>Kategori</th><th>Rentang BMI</th></tr>
+          <tr><td>Kurus (Underweight)</td><td>&lt; 18.5</td></tr>
+          <tr><td>Normal (Ideal)</td><td>18.5 – 24.9</td></tr>
+          <tr><td>Kelebihan Berat</td><td>25.0 – 29.9</td></tr>
+          <tr><td>Obesitas</td><td>≥ 30.0</td></tr>
+        </table>
+      </div>
+
+      <div class="note">
+        Catatan: BMI adalah indikator sederhana untuk menilai status gizi orang dewasa.
+        Hasil ini tidak menggantikan konsultasi dengan tenaga kesehatan.
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 Puskesmas Padasuka – Dinas Kesehatan Kota Bandung
+  </footer>
+
+</div>
+
+<script>
+let gender="";
+
+function setGender(g){
+  gender=g;
+  document.getElementById("L").classList.remove("active");
+  document.getElementById("P").classList.remove("active");
+  document.getElementById(g).classList.add("active");
+}
+
+function hitungBMI(){
+  const tinggi=document.getElementById("tinggi").value;
+  const berat=document.getElementById("berat").value;
+
+  if(!tinggi || !berat){
+    alert("Lengkapi tinggi dan berat badan.");
+    return;
+  }
+
+  const bmi=(berat/((tinggi/100)**2)).toFixed(1);
+  let kategori="";
+
+  if(bmi<18.5) kategori="Kurus (Underweight)";
+  else if(bmi<25) kategori="Normal (Ideal)";
+  else if(bmi<30) kategori="Kelebihan Berat";
+  else kategori="Obesitas";
+
+  document.getElementById("hasil").innerHTML=
+    `<b>BMI:</b> ${bmi}<br><b>Kategori:</b> ${kategori}`;
+}
+
+function resetForm(){
+  gender="";
+  document.getElementById("L").classList.remove("active");
+  document.getElementById("P").classList.remove("active");
+  document.getElementById("usia").value="";
+  document.getElementById("tinggi").value="";
+  document.getElementById("berat").value="";
+  document.getElementById("hasil").innerHTML=
+    "Silakan masukkan data Anda untuk melihat hasil perhitungan BMI";
+}
+</script>
+
+</body>
+</html>
