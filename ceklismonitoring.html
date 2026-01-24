@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitoring Kendaraan Dinas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <h1>Monitoring Kendaraan Dinas</h1>
+
+  <form id="monitorForm">
+    <label>Nama Petugas</label>
+    <input type="text" id="petugas" required>
+
+    <label>Plat Nomor</label>
+    <input type="text" id="plat" required>
+
+    <label>Tanggal</label>
+    <input type="date" id="tanggal" required>
+
+    <div class="checklist">
+      <label><input type="checkbox" value="Oli Mesin"> Oli Mesin</label>
+      <label><input type="checkbox" value="Air Radiator"> Air Radiator</label>
+      <label><input type="checkbox" value="Rem"> Rem</label>
+      <label><input type="checkbox" value="Lampu"> Lampu</label>
+      <label><input type="checkbox" value="Ban"> Ban</label>
+      <label><input type="checkbox" value="Klakson"> Klakson</label>
+    </div>
+
+    <label>Catatan</label>
+    <textarea id="catatan" rows="3"></textarea>
+
+    <button type="submit">Simpan Monitoring</button>
+  </form>
+
+  <p class="info">
+    Data tersimpan otomatis dan bisa dilihat oleh Admin
+  </p>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
