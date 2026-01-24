@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Monitoring Kendaraan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <h1>Data Monitoring Kendaraan</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Petugas</th>
+        <th>Plat</th>
+        <th>Tanggal</th>
+        <th>Ceklis</th>
+        <th>Catatan</th>
+      </tr>
+    </thead>
+    <tbody id="dataTable"></tbody>
+  </table>
+</div>
+
+<script src="script.js"></script>
+<script>
+  loadAdminData();
+</script>
+</body>
+</html>
