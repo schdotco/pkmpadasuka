@@ -170,158 +170,230 @@ Preview Jadwal
 
 <script type="module">
 
-import {db} from './app.js';
+import { db } from './app.js';
+import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-import {
-ref,
-onValue,
-push,
-set
-} from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+const pembinaSelect = document.getElementById("pembina");
+
+let PegawaiList = [];
 
 
-let pegawaiList=[]
+// =============================
+// SANITIZE KEY
+// =============================
 
-const pembinaSelect=document.getElementById("pembina")
+function sanitizeKey(str){
+
+return str.replace(/[.#$/\[\]/]/g,'_');
+
+}
 
 
-const pegawaiRef=ref(db,"Pegawai")
+// =============================
+// AMBIL DATA PEGAWAI
+// =============================
 
-onValue(pegawaiRef,(snapshot)=>{
+const PegawaiRef = ref(db,"Pegawai");
 
-pegawaiList=[]
+onValue(PegawaiRef,(snapshot)=>{
 
-pembinaSelect.innerHTML=""
+PegawaiList=[];
+
+pembinaSelect.innerHTML=`<option value="">-- Pilih Pembina --</option>`;
 
 snapshot.forEach(child=>{
 
-const data=child.val()
+const data = child.val();
 
-const nama=data.gelar
-? data.nama+" "+data.gelar
-: data.nama
+const namaLengkap = data.gelar
+? `${data.nama} ${data.gelar}`
+: data.nama;
 
-pegawaiList.push(nama)
+PegawaiList.push(namaLengkap);
 
-const opt=document.createElement("option")
-opt.value=nama
-opt.textContent=nama
+const opt=document.createElement("option");
 
-pembinaSelect.appendChild(opt)
+opt.value=namaLengkap;
+opt.textContent=namaLengkap;
 
-})
+pembinaSelect.appendChild(opt);
 
-generateDropdown()
+});
 
-})
+generateDropdowns();
+
+});
 
 
-function generateDropdown(){
 
-createDropdown("screeningCKG",5)
-createDropdown("bpjs",5)
-createDropdown("rekamMedis",5)
-createDropdown("kasir",3)
-createDropdown("farmasi",3)
+// =============================
+// GENERATE SEMUA DROPDOWN
+// =============================
+
+function generateDropdowns(){
+
+document
+.querySelectorAll(".dropdown-row")
+.forEach(container=>{
+
+const jumlah = container.dataset.jumlah || container.children.length || 3;
+
+createDropdown(container.id,jumlah);
+
+});
+
+
+
+setTimeout(()=>{
+
+document
+.querySelectorAll(".dropdown-row select")
+.forEach(sel=>{
+
+if(typeof Choices!=="undefined"){
+
+new Choices(sel,{
+searchEnabled:true,
+shouldSort:false,
+itemSelectText:'',
+searchPlaceholderValue:'Cari nama...'
+});
+
+}
+
+});
+
+},500);
 
 }
 
 
-function createDropdown(id,jumlah){
 
-const container=document.getElementById(id)
+// =============================
+// CREATE DROPDOWN
+// =============================
 
-container.innerHTML=""
+function createDropdown(containerId,jumlah){
+
+const container=document.getElementById(containerId);
+
+if(!container) return;
+
+container.innerHTML="";
 
 for(let i=0;i<jumlah;i++){
 
-const select=document.createElement("select")
+const select=document.createElement("select");
 
-const def=document.createElement("option")
+const optDefault=document.createElement("option");
 
-def.text="-- pilih pegawai --"
-def.value=""
+optDefault.value="";
+optDefault.textContent=`-- Pegawai ${i+1} --`;
 
-select.appendChild(def)
+select.appendChild(optDefault);
 
-pegawaiList.forEach(n=>{
+PegawaiList.forEach(nama=>{
 
-const opt=document.createElement("option")
+const opt=document.createElement("option");
 
-opt.value=n
-opt.text=n
+opt.value=nama;
+opt.textContent=nama;
 
-select.appendChild(opt)
+select.appendChild(opt);
 
-})
+});
 
-container.appendChild(select)
-
-}
+container.appendChild(select);
 
 }
-
-
-
-function ambilDataDropdown(){
-
-const data={}
-
-document.querySelectorAll(".dropdown-row")
-.forEach(row=>{
-
-const key=row.id
-
-const nama=[]
-
-row.querySelectorAll("select")
-.forEach(sel=>{
-
-if(sel.value!="")
-nama.push(sel.value)
-
-})
-
-data[key]=nama
-
-})
-
-return data
 
 }
 
 
+
+// =============================
+// AMBIL DATA SEMUA DROPDOWN
+// =============================
+
+function ambilSemuaData(){
+
+const kegiatan={};
+
+document
+.querySelectorAll(".dropdown-group")
+.forEach(group=>{
+
+const label = group.querySelector("label").textContent.trim();
+
+const key = sanitizeKey(label);
+
+const pegawaiList = Array
+.from(group.querySelectorAll("select"))
+.map(sel=>sel.value)
+.filter(v=>v!="");
+
+kegiatan[key] = pegawaiList.length>0
+? pegawaiList
+: ["-"];
+
+});
+
+return kegiatan;
+
+}
+
+
+
+// =============================
+// FORMAT WHATSAPP
+// =============================
 
 function formatWA(data){
 
-let txt=""
+const hari = new Date(data.tanggal)
+.toLocaleDateString("id-ID",{
+weekday:"long",
+day:"numeric",
+month:"long",
+year:"numeric"
+});
 
-txt+="Daily Padasuka\n\n"
+let text="";
 
-txt+="Tanggal : "+data.tanggal+"\n"
-txt+="Dress Code : "+data.dressCode+"\n"
-txt+="Pembina : "+data.pembina+"\n\n"
+text += `Daily Padasuka\n`;
+text += `${hari}\n\n`;
 
-txt+="07.00 : Antrian online\n"
-txt+="07.30 : Antrian offline\n\n"
+text += `Dress code : ${data.dressCode}\n\n`;
+
+text += `07.00 : Anjungan Antrian Daftar online\n`;
+text += `07.30 : Pendaftaran antrian offline\n\n`;
+
+text += `Tim Anjungan dan Piket\n`;
 
 Object.entries(data.kegiatan)
-.forEach(([k,v])=>{
+.forEach(([kegiatan,pegawai])=>{
 
-if(v.length>0)
-txt+=k+" : "+v.join(", ")+"\n"
+const nama = kegiatan.replace(/_/g," ");
 
-})
+text += `${nama} : ${pegawai.join(", ")}\n`;
 
-txt+="\n🤍Siap Melayani Dengan Hati🤍"
+});
 
-return txt
+text += `\n🤍Siap Melayani Dengan Hati🤍`;
+
+return text;
 
 }
 
 
 
-function previewJadwal(){
+// =============================
+// PREVIEW
+// =============================
+
+document
+.getElementById("btnPreview")
+.addEventListener("click",()=>{
 
 const data={
 
@@ -331,32 +403,31 @@ dressCode:document.getElementById("dressCode").value,
 
 pembina:pembinaSelect.value,
 
-kegiatan:ambilDataDropdown()
+kegiatan:ambilSemuaData()
 
-}
+};
 
-const txt=formatWA(data)
+const text = formatWA(data);
 
-const box=document.getElementById("previewBox")
+const preview=document.getElementById("previewBox");
 
-box.innerText=txt
+preview.innerText=text;
 
-box.style.display="block"
+preview.style.display="block";
 
-}
-
-
-document
-.getElementById("previewBtn")
-.onclick=previewJadwal
+});
 
 
+
+// =============================
+// SIMPAN FIREBASE
+// =============================
 
 document
 .getElementById("btnSimpanJadwal")
-.onclick=async()=>{
+.addEventListener("click",async()=>{
 
-const data={
+const dataJadwal={
 
 tanggal:document.getElementById("jadwalTanggal").value,
 
@@ -364,27 +435,40 @@ dressCode:document.getElementById("dressCode").value,
 
 pembina:pembinaSelect.value,
 
-kegiatan:ambilDataDropdown(),
+kegiatan:ambilSemuaData(),
 
-dibuat:new Date().toISOString()
+dibuatPada:new Date().toISOString()
+
+};
+
+try{
+
+const jadwalRef = ref(db,"jadwal");
+
+const newRef = push(jadwalRef);
+
+await set(newRef,dataJadwal);
+
+alert("✅ Jadwal berhasil disimpan");
+
+}
+catch(err){
+
+alert("❌ Gagal menyimpan jadwal : "+err.message);
 
 }
 
-const jadwalRef=ref(db,"jadwal")
-
-const newRef=push(jadwalRef)
-
-await set(newRef,data)
-
-alert("Jadwal berhasil disimpan")
-
-}
+});
 
 
+
+// =============================
+// SHARE WHATSAPP
+// =============================
 
 document
 .getElementById("btnShareWA")
-.onclick=()=>{
+.addEventListener("click",()=>{
 
 const data={
 
@@ -394,49 +478,53 @@ dressCode:document.getElementById("dressCode").value,
 
 pembina:pembinaSelect.value,
 
-kegiatan:ambilDataDropdown()
+kegiatan:ambilSemuaData()
 
-}
+};
 
-const txt=formatWA(data)
+const text = formatWA(data);
 
-const url="https://wa.me/?text="+encodeURIComponent(txt)
+const url = "https://wa.me/?text="+encodeURIComponent(text);
 
-window.open(url)
+window.open(url,"_blank");
 
-}
+});
 
 
+
+// =============================
+// LOAD JADWAL TERAKHIR
+// =============================
 
 function loadLastSchedule(){
 
-const jadwalRef=ref(db,"jadwal")
+const jadwalRef = ref(db,"jadwal");
 
-onValue(jadwalRef,(snap)=>{
+onValue(jadwalRef,(snapshot)=>{
 
-let last=null
+let lastData=null;
 
-snap.forEach(c=>{
-last=c.val()
-})
+snapshot.forEach(child=>{
+lastData=child.val();
+});
 
-if(!last) return
+if(!lastData) return;
 
 document
 .getElementById("jadwalTanggal")
-.value=last.tanggal
+.value = lastData.tanggal;
 
 document
 .getElementById("dressCode")
-.value=last.dressCode
+.value = lastData.dressCode;
 
-pembinaSelect.value=last.pembina
+pembinaSelect.value = lastData.pembina;
 
-})
+});
 
 }
 
-setTimeout(loadLastSchedule,2000)
+setTimeout(loadLastSchedule,1500);
 
 </script>
 
