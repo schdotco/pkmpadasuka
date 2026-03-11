@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>🗓️ Setting Jadwal Pegawai - Puskesmas Padasuka</title>
+<title>Setting Jadwal Pegawai - Puskesmas Padasuka</title>
 
 <link rel="stylesheet"
 href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
@@ -16,8 +16,8 @@ href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.c
 
 body{
 font-family:Segoe UI;
-margin:0;
 background:#f4f6f9;
+margin:0;
 }
 
 .navbar{
@@ -36,12 +36,19 @@ margin-right:10px;
 }
 
 main{
-max-width:1100px;
+max-width:1200px;
 margin:auto;
 background:white;
-padding:20px;
-margin-top:20px;
+padding:25px;
+margin-top:25px;
 border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+h2{
+color:#1976d2;
+border-bottom:2px solid #1976d2;
+padding-bottom:5px;
 }
 
 .form-grid{
@@ -54,6 +61,7 @@ gap:20px;
 display:flex;
 flex-wrap:wrap;
 gap:8px;
+margin-bottom:10px;
 }
 
 .dropdown-row select{
@@ -61,30 +69,32 @@ width:200px;
 height:38px;
 }
 
+.section{
+margin-top:30px;
+}
+
 button{
 cursor:pointer;
+border:none;
+border-radius:4px;
+padding:10px 15px;
 }
 
 .save-btn{
 background:#1976d2;
 color:white;
-border:none;
-padding:10px 20px;
-border-radius:5px;
 }
 
 .btn-secondary{
 background:#555;
 color:white;
-border:none;
-padding:10px 15px;
-border-radius:5px;
 }
 
 #previewBox{
 margin-top:25px;
 background:#f7f7f7;
-padding:15px;
+border:1px solid #ddd;
+padding:20px;
 border-radius:6px;
 white-space:pre-line;
 display:none;
@@ -100,9 +110,9 @@ display:none;
 <h3>🏛️ Data & Informasi UPTD Puskesmas Padasuka</h3>
 
 <div>
-<a href="admin-dashboard.html">Dashboard</a>
-<a href="jadwal.html">Jadwal</a>
-<a href="kalender.html">Kalender</a>
+<a href="#">Dashboard</a>
+<a href="#">Jadwal</a>
+<a href="#">Kalender</a>
 </div>
 
 </div>
@@ -132,89 +142,132 @@ display:none;
 </div>
 
 
-<h3>Screening CKG</h3>
-<div class="dropdown-row" id="screeningCKG"></div>
+<div class="section">
 
-<h3>BPJS</h3>
+<h3>Screening CKG</h3>
+<div class="dropdown-group">
+<div class="dropdown-row" id="screeningCKG"></div>
+</div>
+
+<h3>Pendaftaran & Skrining BPJS</h3>
+<div class="dropdown-group">
 <div class="dropdown-row" id="bpjs"></div>
+</div>
 
 <h3>Rekam Medis</h3>
+<div class="dropdown-group">
 <div class="dropdown-row" id="rekamMedis"></div>
+</div>
 
 <h3>Kasir</h3>
+<div class="dropdown-group">
 <div class="dropdown-row" id="kasir"></div>
+</div>
 
 <h3>Farmasi</h3>
+<div class="dropdown-group">
 <div class="dropdown-row" id="farmasi"></div>
+</div>
+
+<h3>Laboratorium</h3>
+<div class="dropdown-group">
+<div class="dropdown-row" id="lab"></div>
+</div>
+
+<h3>IGD Tindakan</h3>
+<div class="dropdown-group">
+<div class="dropdown-row" id="igd"></div>
+</div>
+
+<h3>Posyandu</h3>
+<div class="dropdown-group">
+<div class="dropdown-row" id="posyandu"></div>
+</div>
+
+<h3>Pusling</h3>
+<div class="dropdown-group">
+<div class="dropdown-row" id="pusling"></div>
+</div>
+
+<h3>Security</h3>
+<div class="dropdown-group">
+<div class="dropdown-row" id="satpam"></div>
+</div>
+
+<h3>Driver</h3>
+<div class="dropdown-group">
+<div class="dropdown-row" id="supir"></div>
+</div>
+
+<h3>Cleaning Service</h3>
+<div class="dropdown-group">
+<div class="dropdown-row" id="cs"></div>
+</div>
+
+</div>
 
 
 <div id="previewBox"></div>
 
 <br>
 
-<button id="previewBtn" class="btn-secondary">
-Preview Jadwal
-</button>
+<button id="btnPreview" class="btn-secondary">Preview Jadwal</button>
 
-<button id="btnSimpanJadwal" class="save-btn">
-💾 Simpan Jadwal
-</button>
+<button id="btnSimpanJadwal" class="save-btn">💾 Simpan Jadwal</button>
 
-<button id="btnShareWA" class="btn-secondary">
-📤 Share WhatsApp
-</button>
+<button id="btnShareWA" class="btn-secondary">📤 Share WhatsApp</button>
 
 
 </main>
 
 
+
 <script type="module">
 
 import { db } from './app.js';
-import { ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-const pembinaSelect = document.getElementById("pembina");
+import {
+ref,
+onValue,
+push,
+set
+} from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-let PegawaiList = [];
+
+let pegawaiList=[];
+
+const pembinaSelect=document.getElementById("pembina");
 
 
-// =============================
-// SANITIZE KEY
-// =============================
 
 function sanitizeKey(str){
-
 return str.replace(/[.#$/\[\]/]/g,'_');
-
 }
 
 
-// =============================
-// AMBIL DATA PEGAWAI
-// =============================
 
-const PegawaiRef = ref(db,"Pegawai");
+const pegawaiRef=ref(db,"Pegawai");
 
-onValue(PegawaiRef,(snapshot)=>{
+onValue(pegawaiRef,(snapshot)=>{
 
-PegawaiList=[];
+pegawaiList=[];
 
-pembinaSelect.innerHTML=`<option value="">-- Pilih Pembina --</option>`;
+pembinaSelect.innerHTML="";
 
 snapshot.forEach(child=>{
 
-const data = child.val();
+const data=child.val();
 
-const namaLengkap = data.gelar
-? `${data.nama} ${data.gelar}`
+const nama=data.gelar
+? data.nama+" "+data.gelar
 : data.nama;
 
-PegawaiList.push(namaLengkap);
+pegawaiList.push(nama);
 
 const opt=document.createElement("option");
 
-opt.value=namaLengkap;
-opt.textContent=namaLengkap;
+opt.value=nama;
+opt.textContent=nama;
 
 pembinaSelect.appendChild(opt);
 
@@ -226,58 +279,23 @@ generateDropdowns();
 
 
 
-// =============================
-// GENERATE SEMUA DROPDOWN
-// =============================
-
 function generateDropdowns(){
 
 document
 .querySelectorAll(".dropdown-row")
-.forEach(container=>{
+.forEach(row=>{
 
-const jumlah = container.dataset.jumlah || container.children.length || 3;
-
-createDropdown(container.id,jumlah);
+createDropdown(row.id,5);
 
 });
-
-
-
-setTimeout(()=>{
-
-document
-.querySelectorAll(".dropdown-row select")
-.forEach(sel=>{
-
-if(typeof Choices!=="undefined"){
-
-new Choices(sel,{
-searchEnabled:true,
-shouldSort:false,
-itemSelectText:'',
-searchPlaceholderValue:'Cari nama...'
-});
-
-}
-
-});
-
-},500);
 
 }
 
 
 
-// =============================
-// CREATE DROPDOWN
-// =============================
+function createDropdown(id,jumlah){
 
-function createDropdown(containerId,jumlah){
-
-const container=document.getElementById(containerId);
-
-if(!container) return;
+const container=document.getElementById(id);
 
 container.innerHTML="";
 
@@ -285,21 +303,21 @@ for(let i=0;i<jumlah;i++){
 
 const select=document.createElement("select");
 
-const optDefault=document.createElement("option");
-
-optDefault.value="";
-optDefault.textContent=`-- Pegawai ${i+1} --`;
-
-select.appendChild(optDefault);
-
-PegawaiList.forEach(nama=>{
-
 const opt=document.createElement("option");
 
-opt.value=nama;
-opt.textContent=nama;
+opt.value="";
+opt.text="-- pilih pegawai --";
 
 select.appendChild(opt);
+
+pegawaiList.forEach(n=>{
+
+const o=document.createElement("option");
+
+o.value=n;
+o.text=n;
+
+select.appendChild(o);
 
 });
 
@@ -311,30 +329,27 @@ container.appendChild(select);
 
 
 
-// =============================
-// AMBIL DATA SEMUA DROPDOWN
-// =============================
-
 function ambilSemuaData(){
 
 const kegiatan={};
 
 document
-.querySelectorAll(".dropdown-group")
-.forEach(group=>{
+.querySelectorAll(".dropdown-row")
+.forEach(row=>{
 
-const label = group.querySelector("label").textContent.trim();
+const key=row.id;
 
-const key = sanitizeKey(label);
+const nama=[];
 
-const pegawaiList = Array
-.from(group.querySelectorAll("select"))
-.map(sel=>sel.value)
-.filter(v=>v!="");
+row.querySelectorAll("select")
+.forEach(sel=>{
 
-kegiatan[key] = pegawaiList.length>0
-? pegawaiList
-: ["-"];
+if(sel.value!="")
+nama.push(sel.value);
+
+});
+
+kegiatan[key]=nama;
 
 });
 
@@ -344,56 +359,39 @@ return kegiatan;
 
 
 
-// =============================
-// FORMAT WHATSAPP
-// =============================
+function formatDaily(data){
 
-function formatWA(data){
+let txt="";
 
-const hari = new Date(data.tanggal)
-.toLocaleDateString("id-ID",{
-weekday:"long",
-day:"numeric",
-month:"long",
-year:"numeric"
-});
+txt+="*Daily Padasuka*\n\n";
 
-let text="";
+txt+="Tanggal : "+data.tanggal+"\n";
+txt+="Dress code : "+data.dressCode+"\n";
+txt+="Pembina : "+data.pembina+"\n\n";
 
-text += `Daily Padasuka\n`;
-text += `${hari}\n\n`;
-
-text += `Dress code : ${data.dressCode}\n\n`;
-
-text += `07.00 : Anjungan Antrian Daftar online\n`;
-text += `07.30 : Pendaftaran antrian offline\n\n`;
-
-text += `Tim Anjungan dan Piket\n`;
+txt+="07.00 : Antrian online\n";
+txt+="07.30 : Antrian offline\n\n";
 
 Object.entries(data.kegiatan)
-.forEach(([kegiatan,pegawai])=>{
+.forEach(([k,v])=>{
 
-const nama = kegiatan.replace(/_/g," ");
+if(v.length>0)
 
-text += `${nama} : ${pegawai.join(", ")}\n`;
+txt+=k+" : "+v.join(", ")+"\n";
 
 });
 
-text += `\n🤍Siap Melayani Dengan Hati🤍`;
+txt+="\n🤍Siap Melayani Dengan Hati🤍";
 
-return text;
+return txt;
 
 }
 
 
 
-// =============================
-// PREVIEW
-// =============================
-
 document
 .getElementById("btnPreview")
-.addEventListener("click",()=>{
+.onclick=()=>{
 
 const data={
 
@@ -407,27 +405,23 @@ kegiatan:ambilSemuaData()
 
 };
 
-const text = formatWA(data);
+const txt=formatDaily(data);
 
-const preview=document.getElementById("previewBox");
+const box=document.getElementById("previewBox");
 
-preview.innerText=text;
+box.innerText=txt;
 
-preview.style.display="block";
+box.style.display="block";
 
-});
+};
 
 
-
-// =============================
-// SIMPAN FIREBASE
-// =============================
 
 document
 .getElementById("btnSimpanJadwal")
-.addEventListener("click",async()=>{
+.onclick=async()=>{
 
-const dataJadwal={
+const data={
 
 tanggal:document.getElementById("jadwalTanggal").value,
 
@@ -437,38 +431,25 @@ pembina:pembinaSelect.value,
 
 kegiatan:ambilSemuaData(),
 
-dibuatPada:new Date().toISOString()
+dibuat:new Date().toISOString()
 
 };
 
-try{
+const jadwalRef=ref(db,"jadwal");
 
-const jadwalRef = ref(db,"jadwal");
+const newRef=push(jadwalRef);
 
-const newRef = push(jadwalRef);
+await set(newRef,data);
 
-await set(newRef,dataJadwal);
+alert("Jadwal berhasil disimpan");
 
-alert("✅ Jadwal berhasil disimpan");
-
-}
-catch(err){
-
-alert("❌ Gagal menyimpan jadwal : "+err.message);
-
-}
-
-});
+};
 
 
-
-// =============================
-// SHARE WHATSAPP
-// =============================
 
 document
 .getElementById("btnShareWA")
-.addEventListener("click",()=>{
+.onclick=()=>{
 
 const data={
 
@@ -482,43 +463,39 @@ kegiatan:ambilSemuaData()
 
 };
 
-const text = formatWA(data);
+const txt=formatDaily(data);
 
-const url = "https://wa.me/?text="+encodeURIComponent(text);
+const url="https://wa.me/?text="+encodeURIComponent(txt);
 
-window.open(url,"_blank");
+window.open(url);
 
-});
+};
 
 
-
-// =============================
-// LOAD JADWAL TERAKHIR
-// =============================
 
 function loadLastSchedule(){
 
-const jadwalRef = ref(db,"jadwal");
+const jadwalRef=ref(db,"jadwal");
 
-onValue(jadwalRef,(snapshot)=>{
+onValue(jadwalRef,(snap)=>{
 
-let lastData=null;
+let last=null;
 
-snapshot.forEach(child=>{
-lastData=child.val();
+snap.forEach(c=>{
+last=c.val();
 });
 
-if(!lastData) return;
+if(!last) return;
 
 document
 .getElementById("jadwalTanggal")
-.value = lastData.tanggal;
+.value=last.tanggal;
 
 document
 .getElementById("dressCode")
-.value = lastData.dressCode;
+.value=last.dressCode;
 
-pembinaSelect.value = lastData.pembina;
+pembinaSelect.value=last.pembina;
 
 });
 
