@@ -1,11 +1,11 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
+<!DOCTYPE html> 
+<html lang="id"> 
+<head> 
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
 
-<title>Daily Padasuka - Sistem Jadwal</title>
+<title>Daily Padasuka - Sistem Jadwal</title> 
 
 <link rel="stylesheet"
 href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
@@ -302,9 +302,7 @@ onValue(pegawaiRef,(snap)=>{
 pegawai=[]
 
 snap.forEach(c=>{
-
 pegawai.push(c.val().nama)
-
 })
 
 loadDropdown()
@@ -322,7 +320,6 @@ sel.innerHTML=""
 pegawai.forEach(n=>{
 
 const o=document.createElement("option")
-
 o.value=n
 o.text=n
 
@@ -340,24 +337,16 @@ searchEnabled:true
 }
 
 
-
 function ambil(id){
-
 return [...document.getElementById(id).selectedOptions]
 .map(o=>o.value).join(", ")
-
 }
-
 
 
 function preview(){
-
 const txt = generate()
-
 document.getElementById("preview").innerText = txt
-
 }
-
 
 
 function generate(){
@@ -416,17 +405,13 @@ t+="Lab : "+ambil("lab")+"\n"
 t+="IGD : "+ambil("igd")+"\n\n"
 
 t+="*Keamanan*\n"+ambil("satpam")+"\n\n"
-
 t+="*Driver*\n"+ambil("driver")+"\n\n"
-
 t+="*Cleaning Service*\n"+ambil("cs")+"\n\n"
 
 t+="🤍Siap Melayani Dengan Hati🤍"
 
 return t
-
 }
-
 
 
 function shareWA(){
@@ -441,6 +426,7 @@ window.open(
 
 window.preview = preview;
 window.shareWA = shareWA;
+
 </script>
 
 </body>
