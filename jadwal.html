@@ -5,14 +5,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Daily Padasuka - Super Admin</title>
+<title>Daily Padasuka - Sistem Jadwal</title>
 
 <link rel="stylesheet"
 href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
 
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
 
@@ -78,12 +76,6 @@ cursor:pointer;
 .preview-btn{background:#555;color:white}
 .save-btn{background:#1976d2;color:white}
 
-.admin-btn{
-background:#444;
-color:white;
-margin-right:5px;
-}
-
 </style>
 </head>
 
@@ -122,39 +114,202 @@ margin-right:5px;
 <input type="text" id="penyuluhan">
 </div>
 
-<!-- Struktur form utama Anda tetap sama -->
-<!-- bagian lain tidak diubah -->
 
 <div class="section">
 
-<h3>Kegiatan Tambahan</h3>
+<h3>Tim Anjungan dan Piket</h3>
 
-<div id="extraContainer"></div>
+<div class="row">
+<label>Pengatur Alur</label>
+<select class="pegawai multi" id="alur" multiple></select>
+</div>
 
-<button onclick="tambahKegiatan()">+ Tambah Kegiatan</button>
+<div class="row">
+<label>Skrining BPJS</label>
+<select class="pegawai multi" id="bpjs" multiple></select>
+</div>
+
+<div class="row">
+<label>Cetak Antrol</label>
+<select class="pegawai multi" id="antrol" multiple></select>
+</div>
+
+<div class="row">
+<label>Pendaftaran + Kasir</label>
+<select class="pegawai multi" id="daftarKasir" multiple></select>
+</div>
+
+<div class="row">
+<label>Kasir</label>
+<select class="pegawai multi" id="kasir" multiple></select>
+</div>
+
+<div class="row">
+<label>Rekam Medis</label>
+<select class="pegawai multi" id="rm" multiple></select>
+</div>
+
+<div class="row">
+<label>Informasi & Rujukan</label>
+<select class="pegawai multi" id="rujukan" multiple></select>
+</div>
+
+<div id="extraAnjungan"></div>
+<button onclick="tambahKegiatan('extraAnjungan')">+ Tambah Kegiatan</button>
 
 </div>
 
+
+<div class="section">
+
+<h3>KLASTER 1</h3>
+
+<div class="row">
+<label>Rekon Aset</label>
+<select class="pegawai multi" id="aset" multiple></select>
+</div>
+
+<div class="row">
+<label>Keuangan</label>
+<select class="pegawai multi" id="keuangan" multiple></select>
+</div>
+
+<div class="row">
+<label>Surat Masuk</label>
+<select class="pegawai multi" id="surat" multiple></select>
+</div>
+
+<div class="row">
+<label>Kepegawaian</label>
+<select class="pegawai multi" id="pegawai" multiple></select>
+</div>
+
+<div id="extraK1"></div>
+<button onclick="tambahKegiatan('extraK1')">+ Tambah Kegiatan</button>
+
+</div>
+
+
+<div class="section">
+
+<h3>KLASTER 2</h3>
+
+<div class="row">
+<label>KIA</label>
+<select class="pegawai multi" id="kia" multiple></select>
+</div>
+
+<div class="row">
+<label>USG</label>
+<select class="pegawai multi" id="usg" multiple></select>
+</div>
+
+<div class="row">
+<label>PONED PAGI</label>
+<select class="pegawai multi" id="ponedPagi" multiple></select>
+</div>
+
+<div class="row">
+<label>PONED SORE</label>
+<select class="pegawai multi" id="ponedSore" multiple></select>
+</div>
+
+<div class="row">
+<label>PONED MALAM</label>
+<select class="pegawai multi" id="ponedMalam" multiple></select>
+</div>
+
+<div id="extraK2"></div>
+<button onclick="tambahKegiatan('extraK2')">+ Tambah Kegiatan</button>
+
+</div>
+
+
+<div class="section">
+
+<h3>KLASTER 3</h3>
+
+<div class="row">
+<label>Penapisan</label>
+<select class="pegawai multi" id="penapisan" multiple></select>
+</div>
+
+<div class="row">
+<label>Dewasa</label>
+<select class="pegawai multi" id="dewasa" multiple></select>
+</div>
+
+<div class="row">
+<label>Lansia</label>
+<select class="pegawai multi" id="lansia" multiple></select>
+</div>
+
+<div id="extraK3"></div>
+<button onclick="tambahKegiatan('extraK3')">+ Tambah Kegiatan</button>
+
+</div>
+
+
+<div class="section">
+
+<h3>KLASTER 5</h3>
+
+<div class="row">
+<label>Gigi</label>
+<select class="pegawai multi" id="gigi" multiple></select>
+</div>
+
+<div class="row">
+<label>Farmasi</label>
+<select class="pegawai multi" id="farmasi" multiple></select>
+</div>
+
+<div class="row">
+<label>Lab</label>
+<select class="pegawai multi" id="lab" multiple></select>
+</div>
+
+<div class="row">
+<label>IGD</label>
+<select class="pegawai multi" id="igd" multiple></select>
+</div>
+
+<div id="extraK5"></div>
+<button onclick="tambahKegiatan('extraK5')">+ Tambah Kegiatan</button>
+
+</div>
+
+
+<div class="section">
+
+<h3>Keamanan</h3>
+<select class="pegawai multi" id="satpam" multiple></select>
+
+<h3>Driver</h3>
+<select class="pegawai multi" id="driver" multiple></select>
+
+<h3>Cleaning Service</h3>
+<select class="pegawai multi" id="cs" multiple></select>
+
+<div id="extraCS"></div>
+<button onclick="tambahKegiatan('extraCS')">+ Tambah Kegiatan</button>
+
+</div>
+
+
 <button class="preview-btn" onclick="preview()">Preview</button>
 <button class="save-btn" onclick="shareWA()">Share WhatsApp</button>
-
-<hr>
-
-<button class="admin-btn" onclick="copyKemarin()">Copy Jadwal Kemarin</button>
-<button class="admin-btn" onclick="simpanJadwal()">Simpan Jadwal</button>
-<button class="admin-btn" onclick="loadRiwayat()">Riwayat Jadwal</button>
-<button class="admin-btn" onclick="exportPDF()">Export PDF</button>
 
 <div id="preview"></div>
 
 </main>
 
+
 <script type="module">
 
 import { db } from './app.js'
-
-import { ref,onValue,set,get }
-from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js"
+import { ref,onValue } from
+"https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js"
 
 let pegawai=[]
 
@@ -181,13 +336,10 @@ document.querySelectorAll(".pegawai")
 sel.innerHTML=""
 
 pegawai.forEach(n=>{
-
 const o=document.createElement("option")
 o.value=n
 o.text=n
-
 sel.appendChild(o)
-
 })
 
 new Choices(sel,{
@@ -201,22 +353,17 @@ searchEnabled:true
 
 
 function ambil(id){
-
-const el=document.getElementById(id)
-
-if(!el) return ""
-
-return [...el.selectedOptions]
+return [...document.getElementById(id).selectedOptions]
 .map(o=>o.value).join(", ")
-
 }
 
 
-function tambahKegiatan(){
 
-const container=document.getElementById("extraContainer")
+function tambahKegiatan(containerId){
 
-const i=document.querySelectorAll(".extra-item").length
+const container=document.getElementById(containerId)
+
+const index=container.querySelectorAll(".extra-item").length
 
 const div=document.createElement("div")
 
@@ -225,18 +372,18 @@ div.className="extra-item"
 div.innerHTML=`
 <div class="row">
 <label>Nama Kegiatan</label>
-<input type="text" id="extraNama${i}">
+<input type="text" id="${containerId}_nama${index}">
 </div>
 
 <div class="row">
 <label>Petugas</label>
-<select class="pegawai multi" id="extraPetugas${i}" multiple></select>
+<select class="pegawai multi" id="${containerId}_petugas${index}" multiple></select>
 </div>
 `
 
 container.appendChild(div)
 
-const sel=document.getElementById("extraPetugas"+i)
+const sel=document.getElementById(containerId+"_petugas"+index)
 
 pegawai.forEach(n=>{
 const o=document.createElement("option")
@@ -251,6 +398,42 @@ searchEnabled:true
 })
 
 }
+
+
+
+function generateExtra(containerId){
+
+let txt=""
+
+const container=document.getElementById(containerId)
+
+const items=container.querySelectorAll(".extra-item")
+
+items.forEach((e,i)=>{
+
+const nama=document.getElementById(containerId+"_nama"+i)?.value
+const petugas=ambil(containerId+"_petugas"+i)
+
+if(nama){
+txt+=nama+" : "+petugas+"\n"
+}
+
+})
+
+return txt
+
+}
+
+
+
+function preview(){
+
+const txt = generate()
+
+document.getElementById("preview").innerText = txt
+
+}
+
 
 
 function generate(){
@@ -271,18 +454,62 @@ t+=document.getElementById("kegiatanPagi").value+" : "
 t+="*Penyuluhan 7.15 : "
 +document.getElementById("penyuluhan").value+"*\n\n"
 
-const extras=document.querySelectorAll(".extra-item")
+t+="*07.00 : Anjungan Antrian Daftar online*\n"
+t+="*07.30 : Pendaftaran antrian offline*\n\n"
 
-extras.forEach((e,i)=>{
+t+="*Tim Anjungan dan piket*\n"
 
-const nama=document.getElementById("extraNama"+i).value
-const petugas=ambil("extraPetugas"+i)
+t+="1. Pengatur Alur : "+ambil("alur")+"\n"
+t+="2. Skrining BPJS : "+ambil("bpjs")+"\n"
+t+="3. Cetak antrol : "+ambil("antrol")+"\n"
+t+="4. Pendaftaran + Kasir : "+ambil("daftarKasir")+"\n"
+t+="5. Kasir : "+ambil("kasir")+"\n"
+t+="6. Rekam Medis : "+ambil("rm")+"\n"
+t+="7. Informasi & Rujukan : "+ambil("rujukan")+"\n"
 
-if(nama){
-t+=nama+" : "+petugas+"\n"
-}
+t+=generateExtra("extraAnjungan")
 
-})
+t+="\n*KLASTER 1*\n"
+
+t+="Rekon Aset : "+ambil("aset")+"\n"
+t+="Keuangan : "+ambil("keuangan")+"\n"
+t+="Surat : "+ambil("surat")+"\n"
+t+="Kepegawaian : "+ambil("pegawai")+"\n"
+
+t+=generateExtra("extraK1")
+
+t+="\n*KLASTER 2*\n"
+
+t+="KIA : "+ambil("kia")+"\n"
+t+="USG : "+ambil("usg")+"\n"
+t+="PONED PAGI : "+ambil("ponedPagi")+"\n"
+t+="PONED SORE : "+ambil("ponedSore")+"\n"
+t+="PONED MALAM : "+ambil("ponedMalam")+"\n"
+
+t+=generateExtra("extraK2")
+
+t+="\n*KLASTER 3*\n"
+
+t+="Penapisan : "+ambil("penapisan")+"\n"
+t+="Dewasa : "+ambil("dewasa")+"\n"
+t+="Lansia : "+ambil("lansia")+"\n"
+
+t+=generateExtra("extraK3")
+
+t+="\n*KLASTER 5*\n"
+
+t+="Gigi : "+ambil("gigi")+"\n"
+t+="Farmasi : "+ambil("farmasi")+"\n"
+t+="Lab : "+ambil("lab")+"\n"
+t+="IGD : "+ambil("igd")+"\n"
+
+t+=generateExtra("extraK5")
+
+t+="\n*Keamanan*\n"+ambil("satpam")+"\n\n"
+t+="*Driver*\n"+ambil("driver")+"\n\n"
+t+="*Cleaning Service*\n"+ambil("cs")+"\n"
+
+t+=generateExtra("extraCS")
 
 t+="\n🤍Siap Melayani Dengan Hati🤍"
 
@@ -291,16 +518,9 @@ return t
 }
 
 
-function preview(){
-
-document.getElementById("preview").innerText=generate()
-
-}
-
-
 function shareWA(){
 
-const text=generate()
+const text = generate()
 
 window.open(
 "https://wa.me/?text="+encodeURIComponent(text)
@@ -308,113 +528,9 @@ window.open(
 
 }
 
-
-function kumpulkanData(){
-
-const data={}
-
-document.querySelectorAll("input,select").forEach(el=>{
-
-if(el.tagName=="INPUT")
-data[el.id]=el.value
-
-else
-data[el.id]=[...el.selectedOptions].map(o=>o.value)
-
-})
-
-return data
-
-}
-
-
-function simpanJadwal(){
-
-const tanggal=document.getElementById("tanggal").value
-
-if(!tanggal){
-alert("Isi tanggal")
-return
-}
-
-set(ref(db,"jadwal/"+tanggal),kumpulkanData())
-
-alert("Jadwal tersimpan")
-
-}
-
-
-async function copyKemarin(){
-
-const t=document.getElementById("tanggal").value
-
-const d=new Date(t)
-
-d.setDate(d.getDate()-1)
-
-const key=d.toISOString().slice(0,10)
-
-const snap=await get(ref(db,"jadwal/"+key))
-
-if(!snap.exists()){
-alert("Tidak ada jadwal kemarin")
-return
-}
-
-const data=snap.val()
-
-Object.keys(data).forEach(id=>{
-
-const el=document.getElementById(id)
-
-if(!el) return
-
-if(el.tagName=="INPUT"){
-el.value=data[id]
-}else{
-[...el.options].forEach(o=>{
-o.selected=data[id]?.includes(o.value)
-})
-}
-
-})
-
-}
-
-
-function loadRiwayat(){
-
-onValue(ref(db,"jadwal"),snap=>{
-
-let txt="Riwayat Jadwal\n\n"
-
-snap.forEach(c=>{
-txt+=c.key+"\n"
-})
-
-alert(txt)
-
-})
-
-}
-
-
-function exportPDF(){
-
-const el=document.getElementById("preview")
-
-html2pdf().from(el).save("Daily-Padasuka.pdf")
-
-}
-
-
-window.preview=preview
-window.shareWA=shareWA
-window.tambahKegiatan=tambahKegiatan
-window.copyKemarin=copyKemarin
-window.simpanJadwal=simpanJadwal
-window.loadRiwayat=loadRiwayat
-window.exportPDF=exportPDF
+window.preview = preview
+window.shareWA = shareWA
+window.tambahKegiatan = tambahKegiatan
 
 </script>
 
