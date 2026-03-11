@@ -308,12 +308,13 @@ cursor:pointer;
 <script type="module">
 
 import { db } from './app.js'
-import { ref,onValue } from
+import { ref,onValue,set } from
 "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js"
 
 let pegawai=[]
 
 const pegawaiRef=ref(db,"Pegawai")
+const autosaveRef=ref(db,"autosaveDaily/latest")
 
 onValue(pegawaiRef,(snap)=>{
 
@@ -324,6 +325,8 @@ pegawai.push(c.val().nama)
 })
 
 loadDropdown()
+
+setTimeout(loadAutosave,500)
 
 })
 
@@ -354,86 +357,87 @@ searchEnabled:true
 
 function ambil(id){
 return [...document.getElementById(id).selectedOptions]
-.map(o=>o.value).join(", ")
+.map(o=>o.value)
+}
+
+function ambilText(id){
+return ambil(id).join(", ")
 }
 
 
+async function simpanAutosave(){
 
-function tambahKegiatan(containerId){
+const data={}
 
-const container=document.getElementById(containerId)
+document.querySelectorAll("input, select").forEach(el=>{
 
-const index=container.querySelectorAll(".extra-item").length
+if(!el.id) return
 
-const div=document.createElement("div")
+if(el.multiple){
 
-div.className="extra-item"
+data[el.id]=[...el.selectedOptions].map(o=>o.value)
 
-div.innerHTML=`
-<div class="row">
-<label>Nama Kegiatan</label>
-<input type="text" id="${containerId}_nama${index}">
-</div>
+}else{
 
-<div class="row">
-<label>Petugas</label>
-<select class="pegawai multi" id="${containerId}_petugas${index}" multiple></select>
-</div>
-`
+data[el.id]=el.value
 
-container.appendChild(div)
-
-const sel=document.getElementById(containerId+"_petugas"+index)
-
-pegawai.forEach(n=>{
-const o=document.createElement("option")
-o.value=n
-o.text=n
-sel.appendChild(o)
-})
-
-new Choices(sel,{
-removeItemButton:true,
-searchEnabled:true
-})
-
-}
-
-
-
-function generateExtra(containerId){
-
-let txt=""
-
-const container=document.getElementById(containerId)
-
-const items=container.querySelectorAll(".extra-item")
-
-items.forEach((e,i)=>{
-
-const nama=document.getElementById(containerId+"_nama"+i)?.value
-const petugas=ambil(containerId+"_petugas"+i)
-
-if(nama){
-txt+=nama+" : "+petugas+"\n"
 }
 
 })
 
-return txt
+await set(autosaveRef,data)
 
 }
 
+
+function loadAutosave(){
+
+onValue(autosaveRef,(snap)=>{
+
+const data=snap.val()
+
+if(!data) return
+
+Object.keys(data).forEach(id=>{
+
+const el=document.getElementById(id)
+
+if(!el) return
+
+if(el.multiple){
+
+const values=data[id]
+
+for(let opt of el.options){
+
+if(values.includes(opt.value)){
+opt.selected=true
+}
+
+}
+
+}else{
+
+el.value=data[id]
+
+}
+
+})
+
+})
+
+}
 
 
 function preview(){
 
-const txt = generate()
+simpanAutosave()
 
-document.getElementById("preview").innerText = txt
+const txt=generate()
+
+document.getElementById("preview").innerText=txt
 
 }
-
 
 
 function generate(){
@@ -449,7 +453,7 @@ t+= new Date(document.getElementById("tanggal").value)
 t+="Dress code: "+document.getElementById("dress").value+"\n\n"
 
 t+=document.getElementById("kegiatanPagi").value+" : "
-+ambil("penceramah")+"\n\n"
++ambilText("penceramah")+"\n\n"
 
 t+="*Penyuluhan 7.15 : "
 +document.getElementById("penyuluhan").value+"*\n\n"
@@ -459,59 +463,15 @@ t+="*07.30 : Pendaftaran antrian offline*\n\n"
 
 t+="*Tim Anjungan dan piket*\n"
 
-t+="1. Pengatur Alur : "+ambil("alur")+"\n"
-t+="2. Skrining BPJS : "+ambil("bpjs")+"\n"
-t+="3. Cetak antrol : "+ambil("antrol")+"\n"
-t+="4. Pendaftaran + Kasir : "+ambil("daftarKasir")+"\n"
-t+="5. Kasir : "+ambil("kasir")+"\n"
-t+="6. Rekam Medis : "+ambil("rm")+"\n"
-t+="7. Informasi & Rujukan : "+ambil("rujukan")+"\n"
+t+="1. Pengatur Alur : "+ambilText("alur")+"\n"
+t+="2. Skrining BPJS : "+ambilText("bpjs")+"\n"
+t+="3. Cetak antrol : "+ambilText("antrol")+"\n"
+t+="4. Pendaftaran + Kasir : "+ambilText("daftarKasir")+"\n"
+t+="5. Kasir : "+ambilText("kasir")+"\n"
+t+="6. Rekam Medis : "+ambilText("rm")+"\n"
+t+="7. Informasi & Rujukan : "+ambilText("rujukan")+"\n\n"
 
-t+=generateExtra("extraAnjungan")
-
-t+="\n*KLASTER 1*\n"
-
-t+="Rekon Aset : "+ambil("aset")+"\n"
-t+="Keuangan : "+ambil("keuangan")+"\n"
-t+="Surat : "+ambil("surat")+"\n"
-t+="Kepegawaian : "+ambil("pegawai")+"\n"
-
-t+=generateExtra("extraK1")
-
-t+="\n*KLASTER 2*\n"
-
-t+="KIA : "+ambil("kia")+"\n"
-t+="USG : "+ambil("usg")+"\n"
-t+="PONED PAGI : "+ambil("ponedPagi")+"\n"
-t+="PONED SORE : "+ambil("ponedSore")+"\n"
-t+="PONED MALAM : "+ambil("ponedMalam")+"\n"
-
-t+=generateExtra("extraK2")
-
-t+="\n*KLASTER 3*\n"
-
-t+="Penapisan : "+ambil("penapisan")+"\n"
-t+="Dewasa : "+ambil("dewasa")+"\n"
-t+="Lansia : "+ambil("lansia")+"\n"
-
-t+=generateExtra("extraK3")
-
-t+="\n*KLASTER 5*\n"
-
-t+="Gigi : "+ambil("gigi")+"\n"
-t+="Farmasi : "+ambil("farmasi")+"\n"
-t+="Lab : "+ambil("lab")+"\n"
-t+="IGD : "+ambil("igd")+"\n"
-
-t+=generateExtra("extraK5")
-
-t+="\n*Keamanan*\n"+ambil("satpam")+"\n\n"
-t+="*Driver*\n"+ambil("driver")+"\n\n"
-t+="*Cleaning Service*\n"+ambil("cs")+"\n"
-
-t+=generateExtra("extraCS")
-
-t+="\n🤍Siap Melayani Dengan Hati🤍"
+t+="🤍Siap Melayani Dengan Hati🤍"
 
 return t
 
@@ -520,7 +480,9 @@ return t
 
 function shareWA(){
 
-const text = generate()
+simpanAutosave()
+
+const text=generate()
 
 window.open(
 "https://wa.me/?text="+encodeURIComponent(text)
@@ -528,9 +490,10 @@ window.open(
 
 }
 
-window.preview = preview
-window.shareWA = shareWA
-window.tambahKegiatan = tambahKegiatan
+
+window.preview=preview
+window.shareWA=shareWA
+window.tambahKegiatan=tambahKegiatan
 
 </script>
 
