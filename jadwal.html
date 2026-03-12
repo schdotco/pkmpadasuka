@@ -457,6 +457,15 @@ padding:12px;
 <h3>Cleaning Service</h3>
 <select class="pegawai multi" id="cs" multiple></select>
 
+<h3>Cuti Alasan Penting</h3>
+<select class="pegawai multi" id="cap" multiple></select>
+
+<h3>CTB</h3>
+<select class="pegawai multi" id="ctb" multiple></select>
+
+<h3>Sakit</h3>
+<select class="pegawai multi" id="sakit" multiple></select>
+
 <div id="extraCS"></div>
 <button onclick="tambahKegiatan('extraCS')">+ Tambah Kegiatan</button>
 
@@ -760,6 +769,15 @@ t+=ambilText("driver")+"\n\n"
 
 t+="*Cleaning Service*\n"
 t+=ambilText("cs")+"\n"
+
+t+="*Cuti Alasan Penting*\n"
+t+=ambilText("cap")+"\n"
+
+t+="*CTB*\n"
+t+=ambilText("ctb")+"\n"
+
+t+="*Sakit*\n"
+t+=ambilText("sakit")+"\n"
 
 t+=generateExtra("extraCS")
 
