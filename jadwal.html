@@ -278,7 +278,7 @@ padding:12px;
 
 <div class="section">
 
-<h3>Tim Anjungan dan Piket</h3>
+<h3>Tim Anjungan dan Piket Pelayanan </h3>
 
 <div class="row">
 <label>Pengatur Alur</label>
@@ -315,6 +315,11 @@ padding:12px;
 <select class="pegawai multi" id="rujukan" multiple></select>
 </div>
 
+<div class="row">
+<label>UHC</label>
+<select class="pegawai multi" id="uhc" multiple></select>
+</div>
+
 <div id="extraAnjungan"></div>
 <button onclick="tambahKegiatan('extraAnjungan')">+ Tambah Kegiatan</button>
 
@@ -323,6 +328,7 @@ padding:12px;
 
 <div class="section">
 
+<h3>I. Kegiatan Dalam Gedung</h3>
 <h3>KLASTER 1</h3>
 
 <div class="row">
@@ -331,13 +337,18 @@ padding:12px;
 </div>
 
 <div class="row">
-<label>Keuangan</label>
+<label>Keuangan/LS</label>
 <select class="pegawai multi" id="keuangan" multiple></select>
 </div>
 
 <div class="row">
-<label>Surat Masuk</label>
+<label>Surat Masuk & Keluar</label>
 <select class="pegawai multi" id="surat" multiple></select>
+</div>
+
+<div class="row">
+<label>UKM</label>
+<select class="pegawai multi" id="ukm" multiple></select>
 </div>
 
 <div class="row">
@@ -360,6 +371,11 @@ padding:12px;
 <select class="pegawai multi" id="kia" multiple></select>
 </div>
 
+<div class="row"> 
+<label>KB</label>
+<select class="pegawai multi" id="kb" multiple></select>
+</div>  
+  
 <div class="row">
 <label>USG</label>
 <select class="pegawai multi" id="usg" multiple></select>
@@ -380,6 +396,11 @@ padding:12px;
 <select class="pegawai multi" id="ponedMalam" multiple></select>
 </div>
 
+<div class="row">
+<label>Penapisan dan Pemeriksaan MTBS Remaja</label>
+<select class="pegawai multi" id="mtbs" multiple></select>
+</div> 
+
 <div id="extraK2"></div>
 <button onclick="tambahKegiatan('extraK2')">+ Tambah Kegiatan</button>
 
@@ -391,7 +412,7 @@ padding:12px;
 <h3>KLASTER 3</h3>
 
 <div class="row">
-<label>Penapisan</label>
+<label>Penapisan/Skrining Lansia & Dewasa</label>
 <select class="pegawai multi" id="penapisan" multiple></select>
 </div>
 
@@ -403,6 +424,11 @@ padding:12px;
 <div class="row">
 <label>Lansia</label>
 <select class="pegawai multi" id="lansia" multiple></select>
+</div>
+
+<div class="row">
+<label>PDP</label>
+<select class="pegawai multi" id="pdp" multiple></select>
 </div>
 
 <div id="extraK3"></div>
@@ -438,7 +464,7 @@ padding:12px;
 <h3>KLASTER 5</h3>
 
 <div class="row">
-<label>Gigi</label>
+<label>Gigi & Mulut</label>
 <select class="pegawai multi" id="gigi" multiple></select>
 </div>
 
@@ -453,13 +479,18 @@ padding:12px;
 </div>
 
 <div class="row">
-<label>IGD</label>
+<label>IGD/Tindakan</label>
 <select class="pegawai multi" id="igd" multiple></select>
 </div>
 
 <div class="row">
 <label>KIR/CKG</label>
 <select class="pegawai multi" id="kir" multiple></select>
+</div>
+
+<div class="row">
+<label>Konseling</label>
+<select class="pegawai multi" id="konseling" multiple></select>
 </div>
 
 <div id="extraK5"></div>
@@ -480,7 +511,7 @@ padding:12px;
   
 <div class="section">
   
-<h3>Cleaning Service</h3>
+<h3>Cleaning Service (Mengontrol Kebersihan berkala)</h3>
 <select class="pegawai multi" id="cs" multiple></select>
 
 <h3>Cuti Alasan Penting</h3>
@@ -496,6 +527,7 @@ padding:12px;
   
 <div class="section">
 
+<h3>II. Kegiatan Luar Gedung </h3> 
 <h3>Rapat</h3>
 <select class="pegawai multi" id="rapat" multiple></select>
 
@@ -573,6 +605,12 @@ loadDropdown()
 
 setTimeout(loadAutosave,500)
 
+})
+
+/* AUTOSAVE SAAT INPUT BERUBAH */
+
+document.addEventListener("change",()=>{
+simpanAutosave()
 })
 
 
@@ -683,10 +721,16 @@ const container=document.getElementById(containerId)
 
 const items=container.querySelectorAll(".extra-item")
 
-items.forEach((item,i)=>{
+items.forEach(item=>{
 
-const nama=document.getElementById(containerId+"_nama"+i)?.value
-const petugas=ambilText(containerId+"_petugas"+i)
+const nama=item.querySelector("input")?.value
+const select=item.querySelector("select")
+
+let petugas=""
+
+if(select){
+petugas=[...select.selectedOptions].map(o=>o.value).join(", ")
+}
 
 if(nama){
 txt+=nama+" : "+petugas+"\n"
@@ -814,7 +858,12 @@ t+="*Penyuluhan 7.15 : "
 t+="*07.00 : Anjungan Antrian Daftar online*\n"
 t+="*07.30 : Pendaftaran antrian offline*\n\n"
 
-t+="*Tim Anjungan dan piket*\n"
+
+/* ========================= */
+/* TIM ANJUNGAN              */
+/* ========================= */
+
+t+="*Tim Anjungan dan piket pelayanan*\n"
 
 t+="1. Pengatur Alur : "+ambilText("alur")+"\n"
 t+="2. Skrining BPJS : "+ambilText("bpjs")+"\n"
@@ -823,35 +872,59 @@ t+="4. Pendaftaran + Kasir : "+ambilText("daftarKasir")+"\n"
 t+="5. Kasir : "+ambilText("kasir")+"\n"
 t+="6. Rekam Medis : "+ambilText("rm")+"\n"
 t+="7. Informasi & Rujukan : "+ambilText("rujukan")+"\n"
+t+="8. UHC : "+ambilText("uhc")+"\n"
 
 t+=generateExtra("extraAnjungan")
+
+
+/* ========================= */
+/* KEGIATAN DALAM GEDUNG     */
+/* ========================= */
+
+t+="\n*I. Kegiatan Dalam Gedung*\n"
+
+
+/* KLASTER 1 */
 
 t+="\n*KLASTER 1*\n"
 
 t+="Rekon Aset : "+ambilText("aset")+"\n"
-t+="Keuangan : "+ambilText("keuangan")+"\n"
-t+="Surat Masuk : "+ambilText("surat")+"\n"
+t+="Keuangan/LS : "+ambilText("keuangan")+"\n"
+t+="Surat Masuk & Keluar : "+ambilText("surat")+"\n"
+t+="UKM : "+ambilText("ukm")+"\n"
 t+="Kepegawaian : "+ambilText("pegawai")+"\n"
 
 t+=generateExtra("extraK1")
 
+
+/* KLASTER 2 */
+
 t+="\n*KLASTER 2*\n"
 
 t+="KIA : "+ambilText("kia")+"\n"
+t+="KB : "+ambilText("kb")+"\n"
 t+="USG : "+ambilText("usg")+"\n"
-t+="PONED PAGI : "+ambilText("ponedPagi")+"\n"
-t+="PONED SORE : "+ambilText("ponedSore")+"\n"
-t+="PONED MALAM : "+ambilText("ponedMalam")+"\n"
+t+="PONED Pagi : "+ambilText("ponedPagi")+"\n"
+t+="PONED Sore : "+ambilText("ponedSore")+"\n"
+t+="PONED Malam : "+ambilText("ponedMalam")+"\n"
+t+="Penapisan dan Pemeriksaan MTBS Remaja : "+ambilText("mtbs")+"\n"
 
 t+=generateExtra("extraK2")
 
+
+/* KLASTER 3 */
+
 t+="\n*KLASTER 3*\n"
 
-t+="Penapisan : "+ambilText("penapisan")+"\n"
+t+="Penapisan/Skrining Lansia & Dewasa : "+ambilText("penapisan")+"\n"
 t+="Dewasa : "+ambilText("dewasa")+"\n"
 t+="Lansia : "+ambilText("lansia")+"\n"
+t+="PDP : "+ambilText("pdp")+"\n"
 
 t+=generateExtra("extraK3")
+
+
+/* KLASTER 4 */
 
 t+="\n*KLASTER 4*\n"
 
@@ -861,21 +934,35 @@ t+="Kesling : "+ambilText("kesling")+"\n"
 
 t+=generateExtra("extraK4")
 
+
+/* KLASTER 5 */
+
 t+="\n*KLASTER 5*\n"
 
-t+="Gigi : "+ambilText("gigi")+"\n"
+t+="Gigi & Mulut : "+ambilText("gigi")+"\n"
 t+="Farmasi : "+ambilText("farmasi")+"\n"
 t+="Lab : "+ambilText("lab")+"\n"
-t+="IGD : "+ambilText("igd")+"\n"
+t+="IGD/Tindakan : "+ambilText("igd")+"\n"
 t+="KIR/CKG : "+ambilText("kir")+"\n"
+t+="Konseling : "+ambilText("konseling")+"\n"
 
 t+=generateExtra("extraK5")
+
+
+/* ========================= */
+/* PETUGAS UMUM              */
+/* ========================= */
 
 t+="\n*Keamanan*\n"
 t+=ambilText("satpam")+"\n\n"
 
 t+="*Driver*\n"
 t+=ambilText("driver")+"\n\n"
+
+
+/* ========================= */
+/* STATUS PEGAWAI            */
+/* ========================= */
 
 t+="*Cleaning Service*\n"
 t+=ambilText("cs")+"\n"
@@ -889,17 +976,25 @@ t+=ambilText("ctb")+"\n"
 t+="*Sakit*\n"
 t+=ambilText("sakit")+"\n"
 
-t+="*Rapat*\n"
-t+=ambilText("rapat")+"\n"
 
-t+="*Posyandu*\n"
-t+=ambilText("posyandu")+"\n"
+/* ========================= */
+/* KEGIATAN LUAR GEDUNG      */
+/* ========================= */
+
+t+="\n*II. Kegiatan Luar Gedung*\n"
+
+t+="Rapat : "+ambilText("rapat")+"\n"
+t+="Posyandu : "+ambilText("posyandu")+"\n"
 
 t+=generateExtra("extraCS")
+
+
+/* ========================= */
 
 t+="\n🤍Siap Melayani Dengan Hati🤍"
 
 return t
+
 }
 
 
