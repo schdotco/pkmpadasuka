@@ -410,7 +410,29 @@ padding:12px;
 
 </div>
 
+<h3>KLASTER 4</h3>
 
+<div class="row">
+<label>TB</label>
+<select class="pegawai multi" id="tb" multiple></select>
+</div>
+
+<div class="row">
+<label>Surveilans</label>
+<select class="pegawai multi" id="sv" multiple></select>
+</div>
+
+<div class="row">
+<label>Kesling</label>
+<select class="pegawai multi" id="kesling" multiple></select>
+</div>
+
+<div id="extraK4"></div>
+<button onclick="tambahKegiatan('extraK4')">+ Tambah Kegiatan</button>
+
+</div>
+
+  
 <div class="section">
 
 <h3>KLASTER 5</h3>
@@ -454,6 +476,10 @@ padding:12px;
 <h3>Driver</h3>
 <select class="pegawai multi" id="driver" multiple></select>
 
+</div>
+  
+<div class="section">
+  
 <h3>Cleaning Service</h3>
 <select class="pegawai multi" id="cs" multiple></select>
 
@@ -466,11 +492,20 @@ padding:12px;
 <h3>Sakit</h3>
 <select class="pegawai multi" id="sakit" multiple></select>
 
+</div>
+  
+<div class="section">
+
+<h3>Rapat</h3>
+<select class="pegawai multi" id="rapat" multiple></select>
+
+<h3>Posyandu</h3>
+<select class="pegawai multi" id="posyandu" multiple></select> 
+  
 <div id="extraCS"></div>
 <button onclick="tambahKegiatan('extraCS')">+ Tambah Kegiatan</button>
 
 </div>
-
 
 <button class="preview-btn" onclick="preview()">Preview</button>
 <button class="save-btn" onclick="shareWA()">Share WhatsApp</button>
@@ -751,6 +786,14 @@ t+="Lansia : "+ambilText("lansia")+"\n"
 
 t+=generateExtra("extraK3")
 
+t+="\n*KLASTER 4*\n"
+
+t+="Penapisan : "+ambilText("tb")+"\n"
+t+="Dewasa : "+ambilText("sv")+"\n"
+t+="Lansia : "+ambilText("kesling")+"\n"
+
+t+=generateExtra("extraK3")
+
 t+="\n*KLASTER 5*\n"
 
 t+="Gigi : "+ambilText("gigi")+"\n"
@@ -778,6 +821,12 @@ t+=ambilText("ctb")+"\n"
 
 t+="*Sakit*\n"
 t+=ambilText("sakit")+"\n"
+
+t+="*Rapat*\n"
+t+=ambilText("rapat")+"\n"
+
+t+="*Posyandu*\n"
+t+=ambilText("posyandu")+"\n"
 
 t+=generateExtra("extraCS")
 
