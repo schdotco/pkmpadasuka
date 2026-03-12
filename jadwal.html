@@ -127,6 +127,98 @@ margin-top:40px;
 font-size:13px;
 }
 
+
+/* ================= MOBILE RESPONSIVE ================= */
+
+@media (max-width: 768px){
+
+header{
+flex-direction:column;
+align-items:flex-start;
+gap:8px;
+}
+
+header nav{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+}
+
+header nav a{
+margin:0;
+font-size:13px;
+}
+
+.logout{
+margin-top:5px;
+}
+
+main{
+margin:10px;
+padding:18px;
+}
+
+.row{
+grid-template-columns:1fr;
+gap:6px;
+}
+
+.row label{
+font-size:14px;
+font-weight:600;
+}
+
+input, select{
+width:100%;
+font-size:14px;
+}
+
+h2{
+font-size:20px;
+}
+
+h3{
+font-size:16px;
+}
+
+button{
+width:100%;
+margin-top:8px;
+font-size:15px;
+}
+
+.preview-btn{
+margin-top:20px;
+}
+
+#preview{
+font-size:14px;
+line-height:1.6;
+}
+
+}
+
+/* ================= EXTRA SMALL PHONE ================= */
+
+@media (max-width:480px){
+
+header .title span{
+font-size:14px;
+}
+
+header img{
+height:28px;
+}
+
+main{
+padding:14px;
+}
+
+button{
+padding:12px;
+}
+
+}
 </style>
 </head>
 
