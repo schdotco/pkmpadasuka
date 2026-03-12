@@ -520,9 +520,41 @@ padding:12px;
 
 <script type="module">
 
-import { db } from './app.js'
+import { db, auth } from './app.js'
+
 import { ref,onValue,set } from
 "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js"
+
+import { onAuthStateChanged, signOut } from
+"https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js"
+
+
+/* ===================== */
+/* PROTEKSI HALAMAN      */
+/* ===================== */
+
+onAuthStateChanged(auth,(user)=>{
+
+if(!user){
+
+window.location.href="login.html"
+
+}
+
+})
+
+
+/* ===================== */
+/* LOGOUT BUTTON         */
+/* ===================== */
+
+document.querySelector(".logout").onclick = async () => {
+
+await signOut(auth)
+
+window.location.href="login.html"
+
+}
 
 let pegawai=[]
 
