@@ -4,7 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
+  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
   <style>
     /* 🌐 Global & Tema SILATPUSAKA (Hijau Emerald) */
     :root {
@@ -103,7 +106,7 @@
       text-align: center;
     }
 
-    .dashboard h2 {
+    .section-title {
       font-size: 24px;
       color: var(--primary);
       font-weight: 700;
@@ -114,15 +117,15 @@
       letter-spacing: 0.5px;
     }
 
-    /* 🔹 Card Grid */
+    /* 🔹 Card Grid (Menu Utama) */
     .card-grid {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 30px;
+      margin-bottom: 60px; /* Jarak ke seksi linktree */
     }
 
-    /* 🔹 Card */
     .card {
       background: #fff;
       border-radius: 16px;
@@ -138,7 +141,7 @@
 
     .card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 10px 20px rgba(5, 150, 105, 0.15); /* Bayangan hijau saat hover */
+      box-shadow: 0 10px 20px rgba(5, 150, 105, 0.15);
     }
 
     .card img {
@@ -146,7 +149,7 @@
       height: 90px;
       margin-top: 20px;
       border-radius: 50%;
-      background: var(--surface-light); /* Latar belakang hijau muda untuk ikon */
+      background: var(--surface-light);
       object-fit: cover;
       padding: 10px;
       transition: transform 0.2s ease;
@@ -192,6 +195,72 @@
       background: var(--primary-dark);
     }
 
+    /* 🔹 Linktree Section (Menu Tambahan) */
+    .linktree-container {
+      max-width: 600px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .linktree-container .section-title {
+      font-size: 20px;
+      margin-bottom: 25px;
+      text-align: center;
+      display: block;
+      border: none;
+    }
+
+    .link-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      padding: 16px 24px;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--primary-dark);
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .link-item:hover {
+      border-color: var(--primary);
+      background: var(--surface-light);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 15px rgba(5, 150, 105, 0.1);
+      color: var(--primary);
+    }
+
+    .link-item .link-icon {
+      font-size: 20px;
+      width: 30px;
+      text-align: center;
+      margin-right: 15px;
+      color: var(--primary-light);
+    }
+
+    .link-item .link-text {
+      flex: 1;
+      font-size: 15px;
+    }
+
+    .link-item .chevron {
+      color: #cbd5e1;
+      transition: color 0.3s ease;
+    }
+
+    .link-item:hover .chevron {
+      color: var(--primary);
+    }
+
     /* 🔹 Footer */
     footer {
       background: var(--primary);
@@ -209,16 +278,10 @@
 
     /* 🔹 Responsive */
     @media (max-width: 768px) {
-      .navbar h1 {
-        font-size: 15px;
-      }
-      .navbar-left img {
-        width: 34px;
-        height: 34px;
-      }
-      .card {
-        width: 180px;
-      }
+      .navbar h1 { font-size: 15px; }
+      .navbar-left img { width: 34px; height: 34px; }
+      .card { width: 180px; }
+      .linktree-container { padding: 0 10px; }
     }
   </style>
 </head>
@@ -239,9 +302,9 @@
   </div>
 
   <div class="dashboard">
-    <h2>Admin Menu</h2>
+    <h2 class="section-title">Menu Utama Admin</h2>
+    
     <div class="card-grid">
-
       <div class="card">
         <img src="https://cdn-icons-png.flaticon.com/512/3082/3082039.png" alt="Jadwal">
         <div class="card-content">
@@ -286,12 +349,43 @@
         </div>
         <button onclick="location.href='hasil-informasi.html'">Masuk</button>
       </div>
-
     </div>
+
+    <div class="linktree-container">
+      <h2 class="section-title" style="font-size: 18px; color: #64748b;">Tautan Cepat Layanan (Linktree)</h2>
+      <div class="link-list">
+        
+        <a href="#" class="link-item" target="_blank">
+          <i class="fas fa-desktop link-icon"></i>
+          <span class="link-text">Pendaftaran Antrean Online</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </a>
+
+        <a href="#" class="link-item" target="_blank">
+          <i class="fab fa-whatsapp link-icon" style="color: #25D366;"></i>
+          <span class="link-text">Layanan Pengaduan (WhatsApp)</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </a>
+
+        <a href="#" class="link-item" target="_blank">
+          <i class="fas fa-syringe link-icon"></i>
+          <span class="link-text">Informasi Jadwal Vaksinasi</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </a>
+
+        <a href="#" class="link-item" target="_blank">
+          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
+          <span class="link-text">Instagram Puskesmas Padasuka</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </a>
+
+      </div>
+    </div>
+
   </div>
 
   <footer>
-    © 2025 <b>UPTD Puskesmas Padasuka</b> - Kota Bandung. All Rights Reserved.
+    © 2026 <b>UPTD Puskesmas Padasuka</b> - Kota Bandung. All Rights Reserved.
   </footer>
 
   <script>
