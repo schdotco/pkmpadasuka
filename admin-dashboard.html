@@ -4,12 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - Data & Informasi UPTD Puskesmas Padasuka</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    /* 🌐 Global */
+    /* 🌐 Global & Tema SILATPUSAKA (Hijau Emerald) */
+    :root {
+      --primary: #059669; /* Emerald 600 */
+      --primary-dark: #047857; /* Emerald 700 */
+      --primary-light: #10b981; /* Emerald 500 */
+      --bg-light: #f8fafc;
+      --surface-light: #ecfdf5; /* Hijau sangat muda untuk aksen */
+    }
+
     body {
       margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #f9fafc;
+      font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-light);
       color: #333;
       display: flex;
       flex-direction: column;
@@ -18,7 +27,7 @@
 
     /* 🔹 Navbar */
     .navbar {
-      background: linear-gradient(90deg, #1565c0, #1976d2);
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
       color: #fff;
       display: flex;
       justify-content: space-between;
@@ -59,7 +68,7 @@
     }
 
     .navbar .menu a {
-      color: #e3f2fd;
+      color: var(--surface-light);
       text-decoration: none;
       font-size: 14px;
       transition: color 0.2s ease;
@@ -71,18 +80,18 @@
 
     .navbar button {
       background: #fff;
-      color: #1976d2;
+      color: var(--primary);
       border: none;
       padding: 7px 14px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
       transition: background 0.2s ease;
     }
 
     .navbar button:hover {
-      background: #e3f2fd;
+      background: var(--surface-light);
     }
 
     /* 🔹 Dashboard Section */
@@ -96,9 +105,9 @@
 
     .dashboard h2 {
       font-size: 24px;
-      color: #1565c0;
+      color: var(--primary);
       font-weight: 700;
-      border-bottom: 3px solid #1976d2;
+      border-bottom: 3px solid var(--primary-light);
       display: inline-block;
       margin-bottom: 40px;
       padding-bottom: 6px;
@@ -117,19 +126,19 @@
     .card {
       background: #fff;
       border-radius: 16px;
-      box-shadow: 0 5px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.05);
       width: 230px;
       display: flex;
       flex-direction: column;
       align-items: center;
       overflow: hidden;
       transition: all 0.25s ease;
-      border: 1px solid #e6ebf2;
+      border: 1px solid #e2e8f0;
     }
 
     .card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 10px 20px rgba(25,118,210,0.18);
+      box-shadow: 0 10px 20px rgba(5, 150, 105, 0.15); /* Bayangan hijau saat hover */
     }
 
     .card img {
@@ -137,7 +146,7 @@
       height: 90px;
       margin-top: 20px;
       border-radius: 50%;
-      background: #e3f2fd;
+      background: var(--surface-light); /* Latar belakang hijau muda untuk ikon */
       object-fit: cover;
       padding: 10px;
       transition: transform 0.2s ease;
@@ -154,9 +163,9 @@
 
     .card h3 {
       font-size: 16px;
-      color: #1976d2;
+      color: var(--primary);
       margin: 10px 0 6px 0;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .card p {
@@ -167,26 +176,26 @@
     }
 
     .card button {
-      background: #1976d2;
+      background: var(--primary);
       color: #fff;
       border: none;
-      padding: 10px;
+      padding: 12px;
       font-size: 14px;
       cursor: pointer;
       border-radius: 0 0 16px 16px;
-      font-weight: 500;
+      font-weight: 600;
       width: 100%;
       transition: background 0.2s ease;
     }
 
     .card button:hover {
-      background: #125ca1;
+      background: var(--primary-dark);
     }
 
     /* 🔹 Footer */
     footer {
-      background: #1976d2;
-      color: #e3f2fd;
+      background: var(--primary);
+      color: var(--surface-light);
       text-align: center;
       padding: 14px;
       font-size: 13px;
@@ -215,7 +224,6 @@
 </head>
 <body>
 
-  <!-- 🔷 Navbar -->
   <div class="navbar">
     <div class="navbar-left">
       <img src="logo.png" alt="Logo Puskesmas"/>
@@ -230,7 +238,6 @@
     <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- 🔷 Dashboard -->
   <div class="dashboard">
     <h2>Admin Menu</h2>
     <div class="card-grid">
@@ -283,7 +290,6 @@
     </div>
   </div>
 
-  <!-- 🔷 Footer -->
   <footer>
     © 2025 <b>UPTD Puskesmas Padasuka</b> - Kota Bandung. All Rights Reserved.
   </footer>
