@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILATPUSAKA - Puskesmas Padasuka Kota Bandung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; }
+        .bg-puskesmas { background-color: #059669; } /* Hijau khas kesehatan */
+        .text-puskesmas { color: #059669; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-gray-100 py-2 border-b text-xs text-gray-600">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+            <span><i class="fas fa-map-marker-alt mr-2"></i> Kec. Cibeunying Kidul, Kota Bandung</span>
+            <span><i class="fas fa-clock mr-2"></i> Jam Layanan: 07:30 - 14:30 WIB</span>
+        </div>
+    </div>
+
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center h-20">
+            <div class="flex items-center space-x-3">
+                <div class="bg-puskesmas p-2 rounded-lg text-white">
+                    <i class="fas fa-hospital-user text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-xl leading-none text-gray-800 tracking-tight">SILATPUSAKA</h1>
+                    <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Puskesmas Padasuka Kota Bandung</p>
+                </div>
+            </div>
+            <div class="hidden md:flex space-x-6 font-medium text-gray-600 italic">
+                <a href="#" class="hover:text-puskesmas transition">Beranda</a>
+                <a href="#" class="hover:text-puskesmas transition">Profil</a>
+                <a href="#" class="hover:text-puskesmas transition">Layanan</a>
+                <a href="#" class="hover:text-puskesmas transition">Jadwal Dokter</a>
+                <a href="#" class="bg-puskesmas text-white px-5 py-2 rounded-full text-sm">Pendaftaran Online</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="bg-gradient-to-r from-emerald-600 to-teal-500 py-20 text-white">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
+            <div>
+                <span class="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold mb-4 inline-block">Sistem Informasi Layanan Terpadu</span>
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">Mewujudkan Masyarakat Padasuka yang Sehat & Mandiri</h2>
+                <p class="text-emerald-50 mb-8 leading-relaxed">
+                    Akses informasi layanan kesehatan, antrean pendaftaran, dan edukasi kesehatan dalam satu platform digital yang mudah dan cepat.
+                </p>
+                <div class="flex space-x-4">
+                    <button class="bg-white text-emerald-700 px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-gray-100 transition">Cek Antrean</button>
+                    <button class="border border-white px-6 py-3 rounded-lg font-bold hover:bg-white/10 transition">Lihat Fasilitas</button>
+                </div>
+            </div>
+            <div class="hidden md:block">
+                <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000" 
+                     class="rounded-2xl shadow-2xl border-8 border-white/10" alt="Puskesmas">
+            </div>
+        </div>
+    </header>
+
+    <section class="max-w-7xl mx-auto px-4 -mt-12">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-6 rounded-xl shadow-lg text-center hover:-translate-y-2 transition cursor-pointer border-b-4 border-emerald-500">
+                <i class="fas fa-notes-medical text-3xl text-puskesmas mb-3"></i>
+                <h4 class="font-bold text-gray-700">Pendaftaran</h4>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg text-center hover:-translate-y-2 transition cursor-pointer border-b-4 border-emerald-500">
+                <i class="fas fa-stethoscope text-3xl text-puskesmas mb-3"></i>
+                <h4 class="font-bold text-gray-700">Poli Umum</h4>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg text-center hover:-translate-y-2 transition cursor-pointer border-b-4 border-emerald-500">
+                <i class="fas fa-baby text-3xl text-puskesmas mb-3"></i>
+                <h4 class="font-bold text-gray-700">KIA/KB</h4>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg text-center hover:-translate-y-2 transition cursor-pointer border-b-4 border-emerald-500">
+                <i class="fas fa-pills text-3xl text-puskesmas mb-3"></i>
+                <h4 class="font-bold text-gray-700">Farmasi</h4>
+            </div>
+        </div>
+    </section>
+
+    <main class="max-w-7xl mx-auto px-4 py-20">
+        <div class="text-center mb-16">
+            <h3 class="text-3xl font-bold text-gray-800">Layanan Puskesmas Padasuka</h3>
+            <div class="w-20 h-1 bg-puskesmas mx-auto mt-4"></div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <article class="bg-white rounded-lg overflow-hidden shadow-md border border-gray-100">
+                <div class="h-48 bg-gray-200"></div>
+                <div class="p-6">
+                    <span class="text-xs font-bold text-puskesmas uppercase">Edukasi</span>
+                    <h5 class="font-bold text-lg my-2">Pencegahan Stunting pada Balita</h5>
+                    <p class="text-gray-500 text-sm mb-4">Informasi mengenai pentingnya gizi bagi pertumbuhan anak...</p>
+                    <a href="#" class="text-puskesmas font-semibold text-sm italic">Selengkapnya →</a>
+                </div>
+            </article>
+
+            <article class="bg-white rounded-lg overflow-hidden shadow-md border border-gray-100">
+                <div class="h-48 bg-gray-200"></div>
+                <div class="p-6">
+                    <span class="text-xs font-bold text-puskesmas uppercase">Pengumuman</span>
+                    <h5 class="font-bold text-lg my-2">Jadwal Vaksinasi Rutin</h5>
+                    <p class="text-gray-500 text-sm mb-4">Update terbaru jadwal pelaksanaan vaksinasi untuk masyarakat umum...</p>
+                    <a href="#" class="text-puskesmas font-semibold text-sm italic">Selengkapnya →</a>
+                </div>
+            </article>
+
+            <div class="bg-emerald-50 p-8 rounded-lg border border-emerald-100">
+                <h5 class="font-bold text-emerald-900 mb-6">Statistik Pengunjung Hari Ini</h5>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 text-sm">Poli Umum</span>
+                        <span class="font-bold text-puskesmas">42 Pasien</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 70%"></div>
+                    </div>
+                    <div class="flex justify-between items-center mt-4">
+                        <span class="text-gray-600 text-sm">Poli Gigi</span>
+                        <span class="font-bold text-puskesmas">15 Pasien</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 30%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-gray-400 py-12">
+        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-10">
+            <div>
+                <h4 class="text-white font-bold mb-4">Kontak Kami</h4>
+                <p class="text-sm">Jl. Padasuka No. XX, Cibeunying Kidul</p>
+                <p class="text-sm">Kota Bandung, Jawa Barat</p>
+                <p class="text-sm mt-2 font-bold text-emerald-500 italic">Telepon: (022) XXX-XXXX</p>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-4">Tautan Terkait</h4>
+                <ul class="text-sm space-y-2">
+                    <li><a href="#" class="hover:text-white">Dinas Kesehatan Kota Bandung</a></li>
+                    <li><a href="#" class="hover:text-white">BPJS Kesehatan</a></li>
+                    <li><a href="#" class="hover:text-white">Portal Bandung Juara</a></li>
+                </ul>
+            </div>
+            <div class="text-right">
+                <p class="text-sm">&copy; 2026 Puskesmas Padasuka.</p>
+                <p class="text-[10px] uppercase mt-2">Dikelola oleh Tim IT SILATPUSAKA</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
