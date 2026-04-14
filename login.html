@@ -1,218 +1,258 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - Data & Informasi UPTD Puskesmas Padasuka</title>
-  <link rel="stylesheet" href="style.css"/>
-  <style>
-    /* 🌐 Desain Profesional Tema SILATPUSAKA (Hijau Emerald) */
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      background: #f0fdf4; /* Background hijau sangat muda */
-    }
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login - SILATPUSAKA Puskesmas Padasuka</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #059669;
+            --primary-dark: #047857;
+            --secondary: #14b8a6;
+            --bg-light: #f8fafc;
+        }
 
-    header {
-      background: linear-gradient(90deg, #059669, #10b981);
-      color: #fff;
-      text-align: center;
-      padding: 16px;
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--bg-light);
+        }
 
-    main {
-      display: flex;
-      flex: 1;
-      flex-wrap: wrap;
-      align-items: stretch;
-    }
+        header {
+            background: #fff;
+            color: var(--primary);
+            text-align: center;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-bottom: 2px solid var(--primary);
+            text-transform: uppercase;
+        }
 
-    /* 🔹 Panel kiri - Tema Hijau */
-    .left-panel {
-      background: linear-gradient(180deg, #10b981, #059669);
-      color: #fff;
-      flex: 1;
-      min-width: 320px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 40px 20px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
+        main {
+            display: flex;
+            flex: 1;
+            flex-wrap: wrap;
+            align-items: stretch;
+        }
 
-    .left-panel::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15), transparent 60%);
-      z-index: 0;
-    }
+        /* 🔹 Panel kiri */
+        .left-panel {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            flex: 1.2;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
 
-    .left-panel h1 {
-      font-size: 26px;
-      font-weight: 700;
-      margin-bottom: 10px;
-      z-index: 1;
-      position: relative;
-    }
+        .left-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            opacity: 0.1;
+            background-image: url("https://www.transparenttextures.com/patterns/cubes.png");
+        }
 
-    .left-panel p {
-      font-size: 15px;
-      line-height: 1.6;
-      max-width: 340px;
-      z-index: 1;
-      position: relative;
-    }
+        .left-panel h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            line-height: 1.2;
+            position: relative;
+        }
 
-    .left-panel img {
-      width: 180px;
-      margin-top: 25px;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
-      z-index: 1;
-      position: relative;
-      transition: transform 0.4s ease;
-    }
+        .left-panel p {
+            font-size: 16px;
+            line-height: 1.6;
+            max-width: 400px;
+            color: #ecfdf5;
+            position: relative;
+        }
 
-    .left-panel img:hover {
-      transform: scale(1.05);
-    }
+        .left-panel .icon-box {
+            font-size: 80px;
+            margin-top: 30px;
+            color: white;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+            position: relative;
+        }
 
-    /* 🔹 Panel kanan */
-    .right-panel {
-      flex: 1;
-      min-width: 320px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 40px;
-      background: #f8fafc;
-      position: relative;
-    }
+        /* 🔹 Panel kanan */
+        .right-panel {
+            flex: 1;
+            min-width: 320px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            background: var(--bg-light);
+        }
 
-    .card {
-      background: #fff;
-      padding: 30px;
-      border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.05);
-      width: 100%;
-      max-width: 340px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      transition: all 0.3s ease;
-      border: 1px solid #e2e8f0;
-    }
+        .card {
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 1px solid #e2e8f0;
+        }
 
-    .card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 28px rgba(0,0,0,0.08);
-    }
+        .card-header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
 
-    .card h3 {
-      text-align: center;
-      margin-bottom: 10px;
-      color: #059669; /* Warna Hijau Utama */
-      font-size: 22px;
-      font-weight: 600;
-    }
+        .card-header i {
+            font-size: 40px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
 
-    .card input {
-      padding: 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: 14px;
-      width: 100%;
-      box-sizing: border-box;
-      transition: border-color 0.3s, box-shadow 0.3s;
-    }
+        .card h3 {
+            margin: 0;
+            color: #1e293b;
+            font-size: 24px;
+            font-weight: 700;
+        }
 
-    .card input:focus {
-      border-color: #059669;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
-    }
+        .card p {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 5px;
+        }
 
-    .card button {
-      background: linear-gradient(90deg, #059669, #10b981);
-      color: #fff;
-      border: none;
-      padding: 10px;
-      font-size: 15px;
-      font-weight: 600;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 12px;
-      transition: background 0.3s, transform 0.1s ease;
-    }
+        .input-group {
+            position: relative;
+        }
 
-    .card button:hover {
-      background: linear-gradient(90deg, #047857, #059669);
-      transform: translateY(-1px);
-    }
+        .input-group i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
 
-    .link {
-      text-align: center;
-      font-size: 14px;
-      margin-top: 8px;
-    }
+        .card input {
+            padding: 12px 12px 12px 40px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
 
-    .link a {
-      color: #059669;
-      text-decoration: none;
-      font-weight: 500;
-    }
+        .card input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1);
+        }
 
-    .link a:hover {
-      text-decoration: underline;
-    }
+        .card button {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
 
-    @media (max-width: 768px) {
-      .left-panel {
-        padding: 30px 15px;
-      }
-      .left-panel h1 {
-        font-size: 22px;
-      }
-      .left-panel img {
-        width: 150px;
-      }
-      .card {
-        padding: 25px;
-      }
-    }
-  </style>
+        .card button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(5, 150, 105, 0.2);
+        }
+
+        .link {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 10px;
+            color: #64748b;
+        }
+
+        .link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .left-panel { display: none; }
+            .right-panel { background-color: var(--primary); padding: 20px; }
+            .card { box-shadow: none; border-radius: 15px; }
+        }
+    </style>
 </head>
 <body>
-  <header>Portal Login - Data & Informasi UPTD Puskesmas Padasuka</header>
+    <header>Portal Internal - UPTD Puskesmas Padasuka Kota Bandung</header>
 
-  <main>
-    <div class="left-panel">
-      <h1>SATU AKSES UNTUK SEMUA</h1>
-      <p>Portal internal untuk pengelolaan <b>Data & Informasi UPTD Puskesmas Padasuka</b>.</p>
-      <img src="https://cdn-icons-png.flaticon.com/512/883/883407.png" alt="Ilustrasi Login Medis">
-    </div>
+    <main>
+        <div class="left-panel">
+            <h1>SILATPUSAKA</h1>
+            <p>Sistem Informasi Layanan Terpadu.<br>Kelola data kesehatan masyarakat dengan cepat, akurat, dan aman.</p>
+            <div class="icon-box">
+                <i class="fas fa-user-shield"></i>
+            </div>
+        </div>
 
-    <div class="right-panel">
-      <form id="loginForm" class="card">
-        <h3>Login</h3>
-        <input type="email" id="email" placeholder="Email" required />
-        <input type="password" id="password" placeholder="Password" required />
-        <button type="submit">Masuk</button>
-        <div class="link">Belum punya akun? <a href="register.html">Daftar</a></div>
-      </form>
-    </div>
-  </main>
+        <div class="right-panel">
+            <form id="loginForm" class="card">
+                <div class="card-header">
+                    <i class="fas fa-hospital-user"></i>
+                    <h3>Selamat Datang</h3>
+                    <p>Silakan masuk ke akun Anda</p>
+                </div>
 
-  <script type="module" src="./auth.js"></script>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="email" placeholder="Alamat Email" required />
+                </div>
+
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="Kata Sandi" required />
+                </div>
+
+                <button type="submit">Masuk ke Sistem</button>
+                
+                <div class="link">
+                    Lupa password? <a href="#">Hubungi IT</a>
+                </div>
+                <div class="link">
+                    Belum punya akses? <a href="register.html">Daftar Akun</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script type="module" src="./auth.js"></script>
 </body>
 </html>
