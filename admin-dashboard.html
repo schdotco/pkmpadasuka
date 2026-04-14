@@ -14,8 +14,8 @@
       --primary: #059669; /* Emerald 600 */
       --primary-dark: #047857; /* Emerald 700 */
       --primary-light: #10b981; /* Emerald 500 */
-      --bg-light: #f8fafc;
-      --surface-light: #ecfdf5; /* Hijau sangat muda untuk aksen */
+      --bg-light: #f1f5f9; /* Sedikit lebih gelap agar kartu warna putih lebih menonjol */
+      --surface-light: #ecfdf5; 
     }
 
     body {
@@ -42,246 +42,128 @@
       z-index: 10;
     }
 
-    .navbar-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .navbar-left img {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: white;
-      padding: 3px;
-      object-fit: cover;
-    }
-
-    .navbar h1 {
-      font-size: 18px;
-      font-weight: 600;
-      margin: 0;
-      letter-spacing: 0.3px;
-    }
-
-    .navbar .menu {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .navbar .menu a {
-      color: var(--surface-light);
-      text-decoration: none;
-      font-size: 14px;
-      transition: color 0.2s ease;
-    }
-
-    .navbar .menu a:hover {
-      color: #fff;
-    }
-
+    .navbar-left { display: flex; align-items: center; gap: 12px; }
+    .navbar-left img { width: 42px; height: 42px; border-radius: 50%; background: white; padding: 3px; object-fit: cover; }
+    .navbar h1 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: 0.3px; }
+    .navbar .menu { display: flex; gap: 20px; flex-wrap: wrap; }
+    .navbar .menu a { color: var(--surface-light); text-decoration: none; font-size: 14px; transition: color 0.2s ease; }
+    .navbar .menu a:hover { color: #fff; }
+    
     .navbar button {
-      background: #fff;
-      color: var(--primary);
-      border: none;
-      padding: 7px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      transition: background 0.2s ease;
+      background: #fff; color: var(--primary); border: none;
+      padding: 7px 14px; border-radius: 6px; cursor: pointer;
+      font-size: 13px; font-weight: 600; transition: background 0.2s ease;
     }
-
-    .navbar button:hover {
-      background: var(--surface-light);
-    }
+    .navbar button:hover { background: var(--surface-light); }
 
     /* 🔹 Dashboard Section */
     .dashboard {
       flex: 1;
-      max-width: 1300px;
+      max-width: 1400px; /* Diperlebar sedikit agar muat banyak kolom */
       margin: 40px auto;
       padding: 0 30px 60px;
-      text-align: center;
     }
 
-    .section-title {
-      font-size: 24px;
-      color: var(--primary);
-      font-weight: 700;
+    .section-title-main {
+      font-size: 24px; color: var(--primary); font-weight: 700;
       border-bottom: 3px solid var(--primary-light);
-      display: inline-block;
-      margin-bottom: 40px;
-      padding-bottom: 6px;
-      letter-spacing: 0.5px;
+      display: inline-block; margin-bottom: 30px; padding-bottom: 6px;
+      text-align: center; width: 100%; max-width: 300px;
+      margin-left: auto; margin-right: auto; display: block;
     }
 
-    /* 🔹 Card Grid (Menu Utama) */
+    /* 🔹 Card Grid (Menu Utama Admin) */
     .card-grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 30px;
-      margin-bottom: 60px; /* Jarak ke seksi linktree */
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 25px;
+      margin-bottom: 60px;
     }
 
     .card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 5px 12px rgba(0,0,0,0.05);
-      width: 230px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      overflow: hidden;
-      transition: all 0.25s ease;
-      border: 1px solid #e2e8f0;
+      background: #fff; border-radius: 16px; box-shadow: 0 5px 12px rgba(0,0,0,0.04);
+      width: 220px; display: flex; flex-direction: column; align-items: center;
+      overflow: hidden; transition: all 0.25s ease; border: 1px solid #e2e8f0;
+      text-align: center;
     }
 
-    .card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 10px 20px rgba(5, 150, 105, 0.15);
-    }
-
-    .card img {
-      width: 90px;
-      height: 90px;
-      margin-top: 20px;
-      border-radius: 50%;
-      background: var(--surface-light);
-      object-fit: cover;
-      padding: 10px;
-      transition: transform 0.2s ease;
-    }
-
-    .card:hover img {
-      transform: scale(1.05);
-    }
-
-    .card-content {
-      padding: 16px;
-      flex: 1;
-    }
-
-    .card h3 {
-      font-size: 16px;
-      color: var(--primary);
-      margin: 10px 0 6px 0;
-      font-weight: 700;
-    }
-
-    .card p {
-      font-size: 13.5px;
-      color: #555;
-      margin: 0;
-      line-height: 1.5;
-    }
-
+    .card:hover { transform: translateY(-6px); box-shadow: 0 10px 20px rgba(5, 150, 105, 0.15); }
+    .card img { width: 80px; height: 80px; margin-top: 20px; border-radius: 50%; background: var(--surface-light); padding: 10px; transition: transform 0.2s ease; }
+    .card:hover img { transform: scale(1.05); }
+    .card-content { padding: 16px; flex: 1; }
+    .card h3 { font-size: 15px; color: var(--primary); margin: 10px 0 6px 0; font-weight: 700; }
+    .card p { font-size: 12.5px; color: #64748b; margin: 0; line-height: 1.5; }
     .card button {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 12px;
-      font-size: 14px;
-      cursor: pointer;
-      border-radius: 0 0 16px 16px;
-      font-weight: 600;
-      width: 100%;
-      transition: background 0.2s ease;
+      background: var(--primary); color: #fff; border: none; padding: 12px;
+      font-size: 14px; cursor: pointer; border-radius: 0 0 16px 16px; font-weight: 600;
+      width: 100%; transition: background 0.2s ease;
+    }
+    .card button:hover { background: var(--primary-dark); }
+
+    /* 🔹 GARIS PEMISAH */
+    .divider {
+      height: 1px; background: #cbd5e1; margin: 50px 0; position: relative;
+    }
+    .divider span {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--bg-light); padding: 0 20px; color: #64748b; font-weight: 600; font-size: 14px;
     }
 
-    .card button:hover {
-      background: var(--primary-dark);
+    /* 🔹 GRID KATEGORI LINK (Inovasi Baru) */
+    .link-sections-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 30px;
+      align-items: start;
     }
 
-    /* 🔹 Linktree Section (Menu Tambahan) */
     .linktree-container {
-      max-width: 600px;
-      margin: 0 auto;
+      background: #fff;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      border: 1px solid #e2e8f0;
       text-align: left;
     }
 
-    .linktree-container .section-title {
-      font-size: 20px;
-      margin-bottom: 25px;
-      text-align: center;
-      display: block;
-      border: none;
+    .linktree-container .category-title {
+      font-size: 16px; color: var(--primary-dark); font-weight: 700;
+      margin-bottom: 20px; margin-top: 0;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 2px solid var(--surface-light); padding-bottom: 10px;
     }
 
-    .link-list {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
+    .link-list { display: flex; flex-direction: column; gap: 12px; }
 
     .link-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #fff;
-      padding: 16px 24px;
-      border-radius: 12px;
-      text-decoration: none;
-      color: var(--primary-dark);
-      font-weight: 600;
-      border: 1px solid #e2e8f0;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      display: flex; align-items: center; justify-content: space-between;
+      background: #f8fafc; padding: 12px 16px; border-radius: 10px;
+      text-decoration: none; color: #334155; font-weight: 500;
+      border: 1px solid #e2e8f0; transition: all 0.2s ease;
     }
 
     .link-item:hover {
-      border-color: var(--primary);
-      background: var(--surface-light);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 15px rgba(5, 150, 105, 0.1);
-      color: var(--primary);
+      border-color: var(--primary-light); background: var(--surface-light);
+      transform: translateX(4px); /* Animasi geser ke kanan sedikit, bukan ke atas */
+      box-shadow: 0 4px 10px rgba(5, 150, 105, 0.08); color: var(--primary-dark);
     }
 
     .link-item .link-icon {
-      font-size: 20px;
-      width: 30px;
-      text-align: center;
-      margin-right: 15px;
-      color: var(--primary-light);
+      font-size: 16px; width: 24px; text-align: center; margin-right: 12px; color: var(--primary-light);
     }
 
-    .link-item .link-text {
-      flex: 1;
-      font-size: 15px;
-    }
-
-    .link-item .chevron {
-      color: #cbd5e1;
-      transition: color 0.3s ease;
-    }
-
-    .link-item:hover .chevron {
-      color: var(--primary);
-    }
+    .link-item .link-text { flex: 1; font-size: 13px; line-height: 1.4; }
+    .link-item .chevron { color: #cbd5e1; font-size: 12px; transition: color 0.3s ease; }
+    .link-item:hover .chevron { color: var(--primary); }
 
     /* 🔹 Footer */
-    footer {
-      background: var(--primary);
-      color: var(--surface-light);
-      text-align: center;
-      padding: 14px;
-      font-size: 13px;
-      font-weight: 400;
-      margin-top: auto;
-    }
-
-    footer b {
-      color: #fff;
-    }
+    footer { background: var(--primary); color: var(--surface-light); text-align: center; padding: 14px; font-size: 13px; margin-top: auto; }
+    footer b { color: #fff; }
 
     /* 🔹 Responsive */
     @media (max-width: 768px) {
       .navbar h1 { font-size: 15px; }
       .navbar-left img { width: 34px; height: 34px; }
-      .card { width: 180px; }
-      .linktree-container { padding: 0 10px; }
+      .link-sections-grid { grid-template-columns: 1fr; } /* Menjadi 1 kolom di HP */
+      .card { width: 100%; max-width: 300px; }
     }
   </style>
 </head>
@@ -302,14 +184,14 @@
   </div>
 
   <div class="dashboard">
-    <h2 class="section-title">Menu Utama Admin</h2>
+    <h2 class="section-title-main">Menu Utama Admin</h2>
     
     <div class="card-grid">
       <div class="card">
         <img src="https://cdn-icons-png.flaticon.com/512/3082/3082039.png" alt="Jadwal">
         <div class="card-content">
           <h3>Jadwal</h3>
-          <p>Jadwal Harian Pegawai UPTD Puskesmas Padasuka</p>
+          <p>Jadwal Harian Pegawai</p>
         </div>
         <button onclick="window.location.href='jadwal.html'">Masuk</button>
       </div>
@@ -317,8 +199,8 @@
       <div class="card">
         <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Review Cuti">
         <div class="card-content">
-          <h3>Review Cuti Pegawai</h3>
-          <p>Manajemen Kepegawaian UPTD Puskesmas Padasuka</p>
+          <h3>Review Cuti</h3>
+          <p>Manajemen Kepegawaian</p>
         </div>
         <button onclick="window.location.href='cuti-admin.html'">Masuk</button>
       </div>
@@ -326,8 +208,8 @@
       <div class="card">
         <img src="https://cdn-icons-png.flaticon.com/512/679/679720.png" alt="List Cuti">
         <div class="card-content">
-          <h3>List Pengajuan Cuti</h3>
-          <p>Daftar pengajuan cuti pegawai aktif</p>
+          <h3>List Pengajuan</h3>
+          <p>Daftar cuti aktif</p>
         </div>
         <button onclick="location.href='cuti-list.html'">Masuk</button>
       </div>
@@ -335,8 +217,8 @@
       <div class="card">
         <img src="https://cdn-icons-png.flaticon.com/512/633/633611.png" alt="Input Informasi">
         <div class="card-content">
-          <h3>Input Jadwal TV Informasi</h3>
-          <p>Kelola jadwal informasi untuk layar TV Puskesmas</p>
+          <h3>Input TV Info</h3>
+          <p>Kelola jadwal layar TV</p>
         </div>
         <button onclick="location.href='informasi.html'">Masuk</button>
       </div>
@@ -344,239 +226,149 @@
       <div class="card">
         <img src="https://cdn-icons-png.flaticon.com/512/189/189665.png" alt="Layar TV">
         <div class="card-content">
-          <h3>Layar Informasi TV</h3>
-          <p>Tampilan informasi terkini di ruang tunggu pasien</p>
+          <h3>Layar TV</h3>
+          <p>Tampilan ruang tunggu</p>
         </div>
         <button onclick="location.href='hasil-informasi.html'">Masuk</button>
       </div>
     </div>
 
-    <div class="linktree-container">
-      <h2 class="section-title" style="font-size: 18px; color: #64748b;">Data Puskesmas Padasuka</h2>
-      <div class="link-list">
-        
-        <a href="https://docs.google.com/spreadsheets/d/1xzf8rTbuR3js9KNG1e_zadpgFAEnHKYKFsDNwSuT4kk/edit?usp=sharing" class="link-item" target="_blank">
-          <i class="fas fa-desktop link-icon"></i>
-          <span class="link-text">Jadwal Apel Pagi UPTD Puskesmas Padasuka - Google Sheets</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-      </div>
+    <div class="divider">
+      <span>Arsip & Dokumen Internal</span>
     </div>
 
-    <div class="linktree-container">
-      <h2 class="section-title" style="font-size: 18px; color: #64748b;">PERENCANAAN - MANAJEMEN</h2>
-      <div class="link-list">
-        
-        <a href="https://docs.google.com/spreadsheets/d/1xzf8rTbuR3js9KNG1e_zadpgFAEnHKYKFsDNwSuT4kk/edit?usp=sharing" class="link-item" target="_blank">
-          <i class="fas fa-desktop link-icon"></i>
-          <span class="link-text">1. Bahan RUK 2027</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-whatsapp link-icon" style="color: #25D366;"></i>
-          <span class="link-text">2. RUK dan RPK</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fas fa-syringe link-icon"></i>
-          <span class="link-text">3. Materi LOKBUL dan LOKMIN</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">LAMAN PUSAKA (Layanan Manajemen Puskesmas Padasuka) - Google Drive</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
+    <div class="link-sections-grid">
+      
+      <div class="linktree-container">
+        <h3 class="category-title"><i class="fas fa-hospital text-emerald-600"></i> Data Puskesmas Padasuka</h3>
+        <div class="link-list">
+          <a href="https://docs.google.com/spreadsheets/d/1xzf8rTbuR3js9KNG1e_zadpgFAEnHKYKFsDNwSuT4kk/edit?usp=sharing" class="link-item" target="_blank">
+            <i class="fas fa-file-excel link-icon"></i>
+            <span class="link-text">Jadwal Apel Pagi - Sheets</span>
+            <i class="fas fa-chevron-right chevron"></i>
+          </a>
+        </div>
       </div>
-    </div>
-    
-    <div class="linktree-container">
-      <h2 class="section-title" style="font-size: 18px; color: #64748b;">ASET</h2>
-      <div class="link-list">
-        
-        <a href="https://docs.google.com/spreadsheets/d/1xzf8rTbuR3js9KNG1e_zadpgFAEnHKYKFsDNwSuT4kk/edit?usp=sharing" class="link-item" target="_blank">
-          <i class="fas fa-desktop link-icon"></i>
-          <span class="link-text">PERMINTAAN BARANG</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
+
+      <div class="linktree-container">
+        <h3 class="category-title"><i class="fas fa-project-diagram text-emerald-600"></i> Perencanaan - Manajemen</h3>
+        <div class="link-list">
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-file-alt link-icon"></i><span class="link-text">1. Bahan RUK 2027</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-file-signature link-icon"></i><span class="link-text">2. RUK dan RPK</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-users link-icon"></i><span class="link-text">3. Materi LOKBUL dan LOKMIN</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fab fa-google-drive link-icon"></i><span class="link-text">LAMAN PUSAKA (G-Drive)</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+        </div>
       </div>
-    </div>
 
- <div class="linktree-container">
-      <h2 class="section-title" style="font-size: 18px; color: #64748b;">KEUANGAN - BOK 2025</h2>
-      <div class="link-list">
-        
-        <a href="https://docs.google.com/spreadsheets/d/1xzf8rTbuR3js9KNG1e_zadpgFAEnHKYKFsDNwSuT4kk/edit?usp=sharing" class="link-item" target="_blank">
-          <i class="fas fa-desktop link-icon"></i>
-          <span class="link-text">1. MATRIKS BOK 2026 (diisi maks tgl 5 setiap bulan pengajuan)</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-whatsapp link-icon" style="color: #25D366;"></i>
-          <span class="link-text">2. DPA BOK 2026</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fas fa-syringe link-icon"></i>
-          <span class="link-text">3. RBA dan TOR 2026</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">4. MONEV BULANAN BOK 2026</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">5. FORMAT PERJADIN 2026</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
+      <div class="linktree-container">
+        <h3 class="category-title"><i class="fas fa-wallet text-emerald-600"></i> Keuangan - BOK 2026</h3>
+        <div class="link-list">
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-table link-icon"></i><span class="link-text">1. MATRIKS BOK 2026</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-file-invoice-dollar link-icon"></i><span class="link-text">2. DPA BOK 2026</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-paste link-icon"></i><span class="link-text">3. RBA dan TOR 2026</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-chart-line link-icon"></i><span class="link-text">4. MONEV BULANAN BOK 2026</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-plane-departure link-icon"></i><span class="link-text">5. FORMAT PERJADIN 2026</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+        </div>
       </div>
-    </div>
 
- <div class="linktree-container">
-      <h2 class="section-title" style="font-size: 18px; color: #64748b;">KEPEGAWAIAN</h2>
-      <div class="link-list">
-        
-        <a href="https://docs.google.com/spreadsheets/d/1xzf8rTbuR3js9KNG1e_zadpgFAEnHKYKFsDNwSuT4kk/edit?usp=sharing" class="link-item" target="_blank">
-          <i class="fas fa-desktop link-icon"></i>
-          <span class="link-text">1. Input Pelatihan, Workshop dan Seminar</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-whatsapp link-icon" style="color: #25D366;"></i>
-          <span class="link-text">2. JADWAL PELAYANAN & PENGAJUAN CUTI 2025</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fas fa-syringe link-icon"></i>
-          <span class="link-text">3. NOMINATIF PEGAWAI</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">4. DATA PELATIHAN KOMPETENSI PEGAWAI</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">5. STR, SIP PEGAWAI PADASUKA</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">6. SERTIFIKAT PENGABDIAN</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">7. Rekap Daily Activity</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-        
+      <div class="linktree-container">
+        <h3 class="category-title"><i class="fas fa-id-badge text-emerald-600"></i> Kepegawaian</h3>
+        <div class="link-list">
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-chalkboard-teacher link-icon"></i><span class="link-text">1. Input Pelatihan/Seminar</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-calendar-check link-icon"></i><span class="link-text">2. Jadwal Pelayanan & Cuti 2025</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-address-book link-icon"></i><span class="link-text">3. Nominatif Pegawai</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-certificate link-icon"></i><span class="link-text">4. Data Kompetensi & Pelatihan</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-id-card link-icon"></i><span class="link-text">5. STR, SIP Pegawai</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-award link-icon"></i><span class="link-text">6. Sertifikat Pengabdian</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-clipboard-check link-icon"></i><span class="link-text">7. Rekap Daily Activity</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+        </div>
       </div>
-    </div>
 
- <div class="linktree-container">
-      <h2 class="section-title" style="font-size: 18px; color: #64748b;">DATIN</h2>
-      <div class="link-list">
-        
-        <a href="https://docs.google.com/spreadsheets/d/1xzf8rTbuR3js9KNG1e_zadpgFAEnHKYKFsDNwSuT4kk/edit?usp=sharing" class="link-item" target="_blank">
-          <i class="fas fa-desktop link-icon"></i>
-          <span class="link-text">1. DATIN 2026</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-whatsapp link-icon" style="color: #25D366;"></i>
-          <span class="link-text">2. MASTER e-PKP 2026</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fas fa-syringe link-icon"></i>
-          <span class="link-text">3. MASTER SPM 2026</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">4. MASTER e-SAKIP 2026</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">5. LAPORAN PROGRAM 2025</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">6. DATA DASAR PUSKESMAS PADASUKA TAHUN 2025</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">7. TIM MUTU DAN PEMEGANG PROGRAM TAHUN 2025</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">8. LAPORAN BULANAN e-SAKIP, PWS, SPM 2024</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-instagram link-icon" style="color: #E1306C;"></i>
-          <span class="link-text">9. Renstra dan Laptah 2024</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-        
+      <div class="linktree-container">
+        <h3 class="category-title"><i class="fas fa-database text-emerald-600"></i> DATIN</h3>
+        <div class="link-list">
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-server link-icon"></i><span class="link-text">1. DATIN 2026</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-laptop-medical link-icon"></i><span class="link-text">2. MASTER e-PKP 2026</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-notes-medical link-icon"></i><span class="link-text">3. MASTER SPM 2026</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-file-contract link-icon"></i><span class="link-text">4. MASTER e-SAKIP 2026</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-folder-open link-icon"></i><span class="link-text">5. Laporan Program 2025</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-hospital-alt link-icon"></i><span class="link-text">6. Data Dasar Puskesmas 2025</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-user-md link-icon"></i><span class="link-text">7. Tim Mutu & Pemegang Program</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-chart-bar link-icon"></i><span class="link-text">8. Lap. Bulanan e-SAKIP, dll (2024)</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-book link-icon"></i><span class="link-text">9. Renstra & Laptah 2024</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+        </div>
       </div>
-    </div>
 
-    <div class="linktree-container">
-      <h2 class="section-title" style="font-size: 18px; color: #64748b;">MUTU - KESELAMATAN</h2>
-      <div class="link-list">
-        
-        <a href="https://docs.google.com/spreadsheets/d/1xzf8rTbuR3js9KNG1e_zadpgFAEnHKYKFsDNwSuT4kk/edit?usp=sharing" class="link-item" target="_blank">
-          <i class="fas fa-desktop link-icon"></i>
-          <span class="link-text">1. LAPORAN SAKIT PEGAWAI</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
-        <a href="#" class="link-item" target="_blank">
-          <i class="fab fa-whatsapp link-icon" style="color: #25D366;"></i>
-          <span class="link-text">2. INSIDEN K3 PADA PEGAWAI</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </a>
-
+      <div class="linktree-container">
+        <h3 class="category-title"><i class="fas fa-shield-alt text-emerald-600"></i> Mutu & Aset</h3>
+        <div class="link-list">
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-thermometer-half link-icon"></i><span class="link-text">1. Laporan Sakit Pegawai</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-exclamation-triangle link-icon"></i><span class="link-text">2. Insiden K3 Pada Pegawai</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+          <a href="#" class="link-item" target="_blank">
+            <i class="fas fa-boxes link-icon"></i><span class="link-text">3. Permintaan Barang (Aset)</span><i class="fas fa-chevron-right chevron"></i>
+          </a>
+        </div>
       </div>
+
     </div>
-    
   </div>
 
   <footer>
-    © 2025 UPTD Puskesmas Padasuka - Kota Bandung. All Rights Reserved.
+    © 2026 UPTD Puskesmas Padasuka - Kota Bandung. All Rights Reserved.
   </footer>
 
   <script>
