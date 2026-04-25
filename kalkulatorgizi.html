@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Z-Score WHO & Kurva Pertumbuhan</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h2 { text-align: center; color: #2c3e50; }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        label { font-weight: bold; font-size: 14px; margin-bottom: 8px; display: block; }
+        select, input {
+            width: 100%; padding: 10px; border: 1px solid #ccc;
+            border-radius: 6px; box-sizing: border-box; font-size: 15px;
+        }
+        button {
+            width: 100%; background-color: #007bff; color: white; border: none;
+            padding: 14px; font-size: 16px; border-radius: 6px; cursor: pointer;
+            font-weight: bold; transition: background 0.3s;
+        }
+        button:hover { background-color: #0056b3; }
+        .result-box {
+            margin-top: 25px; padding: 20px; border-radius: 8px; text-align: center;
+            background-color: #e9ecef; border: 1px solid #dee2e6;
+        }
+        .result-box h3 { margin: 0 0 10px 0; font-size: 24px; }
+        .result-box p { margin: 0; font-size: 18px; font-weight: bold; }
+        .status-buruk { color: #dc3545; }
+        .status-kurang { color: #fd7e14; }
+        .status-normal { color: #28a745; }
+        .status-lebih { color: #6f42c1; }
+        .chart-wrapper { margin-top: 30px; height: 450px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Kalkulator Berat Badan Menurut Umur (WHO)</h2>
+    <p style="text-align: center; color: #666; margin-bottom: 30px;">
+        Menggunakan rumus exact LMS WHO untuk usia 0 - 12 Bulan.
+    </p>
+    
+    <div class="form-grid">
+        <div>
+            <label for="gender">Jenis Kelamin:</label>
+            <select id="gender">
+                <option value="male">Laki-laki</option>
+                <option value="female">Perempuan</option>
+            </select>
+        </div>
+        <div>
+            <label for="age">Umur (Bulan):</label>
+            <input type="number" id="age" min="0" max="12" value="6" required>
+        </div>
+        <div>
+            <label for="weight">Berat Badan (kg):</label>
+            <input type="number" id="weight" step="0.1" placeholder="Misal: 7.5" required>
+        </div>
+    </div>
+    
+    <button onclick="hitungZScore()">Hitung Z-Score & Tampilkan Kurva</button>
+
+    <div id="result" class="result-box" style="display: none;">
+        <h3>Z-Score: <span id="zscore-val"></span></h3>
+        <p>Status Gizi: <span id="status-val"></span></p>
+    </div>
+
+    <div class="chart-wrapper">
+        <canvas id="growthChart"></canvas>
+    </div>
+</div>
+
+<script>
+    // DATA LMS WHO ORIGINAL (Berat Badan menurut Umur 0-12 Bulan)
+    // L = Parameter Box-Cox, M = Median, S = Koefisien Variasi
+    const lmsData = {
+        male: [
+            { L: 0.3487, M: 3.3464, S: 0.14602 }, // 0 bulan
+            { L: 0.1388, M: 4.4700, S: 0.13395 }, // 1 bulan
+            { L: 0.0382, M: 5.5786, S: 0.12461 }, // 2 bulan
+            { L: -0.0153, M: 6.3986, S: 0.11790 }, // 3 bulan
+            { L: -0.0460, M: 7.0142, S: 0.11320 }, // 4 bulan
+            { L: -0.0632, M: 7.4988, S: 0.10986 }, // 5 bulan
+            { L: -0.0722, M: 7.9157, S: 0.10745 }, // 6 bulan
+            { L: -0.0759, M: 8.3006, S: 0.10578 }, // 7 bulan
+            { L: -0.0760, M: 8.6481, S: 0.10468 }, // 8 bulan
+            { L: -0.0735, M: 8.9669, S: 0.10405 }, // 9 bulan
+            { L: -0.0691, M: 9.2635, S: 0.10382 }, // 10 bulan
+            { L: -0.0632, M: 9.5427, S: 0.10393 }, // 11 bulan
+            { L: -0.0560, M: 9.8080, S: 0.10432 }  // 12 bulan
+        ],
+        female: [
+            { L: 0.3809, M: 3.2322, S: 0.14171 }, // 0 bulan
+            { L: 0.1610, M: 4.1873, S: 0.13083 }, // 1 bulan
+            { L: 0.0528, M: 5.1283, S: 0.12154 }, // 2 bulan
+            { L: -0.0053, M: 5.8456, S: 0.11475 }, // 3 bulan
+            { L: -0.0381, M: 6.4230, S: 0.11003 }, // 4 bulan
+            { L: -0.0559, M: 6.8973, S: 0.10672 }, // 5 bulan
+            { L: -0.0637, M: 7.2995, S: 0.10443 }, // 6 bulan
+            { L: -0.0649, M: 7.6496, S: 0.10294 }, // 7 bulan
+            { L: -0.0617, M: 7.9587, S: 0.10212 }, // 8 bulan
+            { L: -0.0553, M: 8.2361, S: 0.10183 }, // 9 bulan
+            { L: -0.0465, M: 8.4893, S: 0.10196 }, // 10 bulan
+            { L: -0.0359, M: 8.7237, S: 0.10243 }, // 11 bulan
+            { L: -0.0238, M: 8.9436, S: 0.10316 }  // 12 bulan
+        ]
+    };
+
+    let chartInstance = null;
+
+    // Fungsi matematika LMS WHO untuk menghitung Z-Score berdasarkan L, M, S
+    function calculateZ(y, l, m, s) {
+        if (l === 0) {
+            return Math.log(y / m) / s;
+        } else {
+            return (Math.pow((y / m), l) - 1) / (l * s);
+        }
+    }
+
+    // Fungsi matematika LMS untuk membalikkan Z-Score menjadi nilai Berat Badan aktual
+    // Digunakan untuk menggambar garis kurva standar (+3SD, +2SD, dll)
+    function calculateYFromZ(z, l, m, s) {
+        if (l === 0) {
+            return m * Math.exp(s * z);
+        } else {
+            return m * Math.pow((1 + l * s * z), 1 / l);
+        }
+    }
+
+    function hitungZScore() {
+        const gender = document.getElementById('gender').value;
+        const age = parseInt(document.getElementById('age').value);
+        const weight = parseFloat(document.getElementById('weight').value);
+
+        if (isNaN(age) || isNaN(weight) || age < 0 || age > 12) {
+            alert("Masukkan umur (0-12) dan berat badan yang valid.");
+            return;
+        }
+
+        // Ambil data L, M, S sesuai bulan dan jenis kelamin
+        const lms = lmsData[gender][age];
+        
+        // 1. Hitung Z-Score
+        const zScore = calculateZ(weight, lms.L, lms.M, lms.S);
+        const roundedZ = zScore.toFixed(2);
+
+        // 2. Tentukan Status Gizi (Berdasarkan Kemenkes RI / WHO)
+        let status = "";
+        let colorClass = "";
+        if (zScore < -3) {
+            status = "Gizi Buruk (Severely Underweight)"; colorClass = "status-buruk";
+        } else if (zScore >= -3 && zScore < -2) {
+            status = "Gizi Kurang (Underweight)"; colorClass = "status-kurang";
+        } else if (zScore >= -2 && zScore <= 1) {
+            status = "Gizi Baik (Normal)"; colorClass = "status-normal";
+        } else {
+            status = "Risiko Berat Badan Lebih"; colorClass = "status-lebih";
+        }
+
+        // Tampilkan Hasil Teks
+        document.getElementById('zscore-val').innerText = roundedZ;
+        const statusEl = document.getElementById('status-val');
+        statusEl.innerText = status;
+        statusEl.className = colorClass;
+        document.getElementById('result').style.display = 'block';
+
+        // 3. Update Grafik Kurva
+        gambarKurva(gender, age, weight);
+    }
+
+    function gambarKurva(gender, userAge, userWeight) {
+        const dataSet = lmsData[gender];
+        const labels = Array.from({length: 13}, (_, i) => i); // [0,1,2...,12]
+        
+        // Buat array data untuk setiap garis standar WHO
+        const sd3pos = labels.map(i => calculateYFromZ(3, dataSet[i].L, dataSet[i].M, dataSet[i].S));
+        const sd2pos = labels.map(i => calculateYFromZ(2, dataSet[i].L, dataSet[i].M, dataSet[i].S));
+        const median = labels.map(i => dataSet[i].M); // Median sama dengan Z=0
+        const sd2neg = labels.map(i => calculateYFromZ(-2, dataSet[i].L, dataSet[i].M, dataSet[i].S));
+        const sd3neg = labels.map(i => calculateYFromZ(-3, dataSet[i].L, dataSet[i].M, dataSet[i].S));
+
+        const ctx = document.getElementById('growthChart').getContext('2d');
+
+        // Hancurkan grafik lama jika ada agar tidak tumpang tindih
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        const lineColor = gender === 'male' ? 'rgba(0, 123, 255, 0.5)' : 'rgba(232, 62, 140, 0.5)';
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: '+3 SD', data: sd3pos, borderColor: '#333', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false },
+                    { label: '+2 SD', data: sd2pos, borderColor: '#e74c3c', borderWidth: 1, pointRadius: 0, fill: false },
+                    { label: 'Median', data: median, borderColor: '#2ecc71', borderWidth: 3, pointRadius: 0, fill: false },
+                    { label: '-2 SD', data: sd2neg, borderColor: '#e74c3c', borderWidth: 1, pointRadius: 0, fill: false },
+                    { label: '-3 SD', data: sd3neg, borderColor: '#333', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false },
+                    {
+                        label: 'Anak Anda',
+                        data: [{ x: userAge, y: userWeight }],
+                        backgroundColor: '#000',
+                        borderColor: '#000',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        type: 'scatter',
+                        showLine: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Umur (Bulan)' }, type: 'linear', min: 0, max: 12, ticks: { stepSize: 1 } },
+                    y: { title: { display: true, text: 'Berat Badan (kg)' } }
+                },
+                plugins: {
+                    title: { display: true, text: `Kurva Pertumbuhan WHO - ${gender === 'male' ? 'Laki-Laki' : 'Perempuan'}` }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
