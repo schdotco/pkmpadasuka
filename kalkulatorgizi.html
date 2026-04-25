@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator Z-Score WHO & Kurva Pertumbuhan</title>
+    <title>Kalkulator Status Perkembangan Gizi Anak</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            background-color: #f9f9f9;
             color: #333;
             margin: 0;
             padding: 20px;
@@ -16,213 +16,268 @@
         .container {
             background: #fff;
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            max-width: 900px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            max-width: 1000px;
             margin: 0 auto;
         }
-        h2 { text-align: center; color: #2c3e50; }
+        h2 { text-align: center; color: #5a3e2b; margin-bottom: 5px; }
+        h1 { text-align: center; color: #7cb342; margin-top: 0; margin-bottom: 30px; }
+        
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            background: #f1f1f1;
+            padding: 20px;
+            border-radius: 8px;
         }
-        label { font-weight: bold; font-size: 14px; margin-bottom: 8px; display: block; }
+        label { font-weight: bold; font-size: 13px; margin-bottom: 5px; display: block; color: #555; }
         select, input {
             width: 100%; padding: 10px; border: 1px solid #ccc;
-            border-radius: 6px; box-sizing: border-box; font-size: 15px;
+            border-radius: 4px; box-sizing: border-box; font-size: 14px;
         }
         button {
-            width: 100%; background-color: #007bff; color: white; border: none;
-            padding: 14px; font-size: 16px; border-radius: 6px; cursor: pointer;
+            width: 100%; background-color: #8bc34a; color: white; border: none;
+            padding: 15px; font-size: 16px; border-radius: 4px; cursor: pointer;
             font-weight: bold; transition: background 0.3s;
         }
-        button:hover { background-color: #0056b3; }
-        .result-box {
-            margin-top: 25px; padding: 20px; border-radius: 8px; text-align: center;
-            background-color: #e9ecef; border: 1px solid #dee2e6;
+        button:hover { background-color: #7cb342; }
+
+        .chart-section { margin-top: 40px; display: none; }
+        .chart-title { 
+            text-align: center; margin: 30px 0 10px 0; color: #444; font-size: 18px;
+            border-bottom: 1px solid #ddd; padding-bottom: 10px;
         }
-        .result-box h3 { margin: 0 0 10px 0; font-size: 24px; }
-        .result-box p { margin: 0; font-size: 18px; font-weight: bold; }
-        .status-buruk { color: #dc3545; }
-        .status-kurang { color: #fd7e14; }
-        .status-normal { color: #28a745; }
-        .status-lebih { color: #6f42c1; }
-        .chart-wrapper { margin-top: 30px; height: 450px; }
+        .canvas-container { 
+            position: relative; height: 350px; width: 100%; 
+            background: #fdfdfd; border: 1px solid #eee; padding: 10px; box-sizing: border-box;
+        }
+
+        /* Kotak Hijau Hasil Analisis */
+        .result-box {
+            margin-top: 40px; padding: 25px; border-radius: 8px;
+            background-color: #8bc34a; color: white; display: none;
+        }
+        .result-box h3 { margin-top: 0; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 10px; }
+        .data-summary {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;
+            font-size: 15px; font-weight: bold;
+        }
+        .data-summary div::before { content: "› "; }
+        .status-item { margin-bottom: 15px; font-size: 14px; }
+        .status-item strong { font-size: 15px; display: block; margin-bottom: 3px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Kalkulator Berat Badan Menurut Umur (WHO)</h2>
-    <p style="text-align: center; color: #666; margin-bottom: 30px;">
-        Menggunakan rumus exact LMS WHO untuk usia 0 - 12 Bulan.
-    </p>
+    <h2>Kalkulator Perhitungan</h2>
+    <h1>Status Perkembangan Gizi Anak</h1>
     
     <div class="form-grid">
         <div>
-            <label for="gender">Jenis Kelamin:</label>
+            <label>Jenis Kelamin:</label>
             <select id="gender">
                 <option value="male">Laki-laki</option>
                 <option value="female">Perempuan</option>
             </select>
         </div>
         <div>
-            <label for="age">Umur (Bulan):</label>
-            <input type="number" id="age" min="0" max="12" value="6" required>
+            <label>Usia (Bulan):</label>
+            <input type="number" id="age" min="0" max="60" value="60" required>
         </div>
         <div>
-            <label for="weight">Berat Badan (kg):</label>
-            <input type="number" id="weight" step="0.1" placeholder="Misal: 7.5" required>
+            <label>Berat Badan (kg):</label>
+            <input type="number" id="weight" step="0.1" value="15" required>
+        </div>
+        <div>
+            <label>Tinggi Badan (cm):</label>
+            <input type="number" id="height" step="0.1" value="105" required>
+        </div>
+        <div>
+            <label>Lingkar Kepala (cm):</label>
+            <input type="number" id="head" step="0.1" value="50" required>
         </div>
     </div>
     
-    <button onclick="hitungZScore()">Hitung Z-Score & Tampilkan Kurva</button>
+    <button onclick="prosesData()">Hitung Status Gizi</button>
 
-    <div id="result" class="result-box" style="display: none;">
-        <h3>Z-Score: <span id="zscore-val"></span></h3>
-        <p>Status Gizi: <span id="status-val"></span></p>
+    <div id="chartsContainer" class="chart-section">
+        <div class="chart-title">Berat Badan Menurut Umur (BB/U)</div>
+        <div class="canvas-container"><canvas id="chartWFA"></canvas></div>
+
+        <div class="chart-title">Tinggi Badan Menurut Umur (TB/U)</div>
+        <div class="canvas-container"><canvas id="chartHFA"></canvas></div>
+
+        <div class="chart-title">Berat Badan Menurut Tinggi Badan (BB/TB)</div>
+        <div class="canvas-container"><canvas id="chartWFH"></canvas></div>
+
+        <div class="chart-title">Lingkar Kepala Menurut Umur (LK/U)</div>
+        <div class="canvas-container"><canvas id="chartHCFA"></canvas></div>
     </div>
 
-    <div class="chart-wrapper">
-        <canvas id="growthChart"></canvas>
+    <div id="resultBox" class="result-box">
+        <h3>Anak Anda</h3>
+        <div class="data-summary">
+            <div>Jenis Kelamin : <span id="resGender"></span></div>
+            <div>Berat Badan : <span id="resWeight"></span> Kg</div>
+            <div>Usia : <span id="resAge"></span> Bulan</div>
+            <div>Tinggi Badan : <span id="resHeight"></span> Cm</div>
+            <div>Lingkar Kepala : <span id="resHead"></span> Cm</div>
+        </div>
+
+        <div class="status-item">
+            <strong>Berat Badan Menurut Umur (BB/U)</strong>
+            <span id="statWFA"></span>
+        </div>
+        <div class="status-item">
+            <strong>Tinggi Badan Menurut Umur (TB/U)</strong>
+            <span id="statHFA"></span>
+        </div>
+        <div class="status-item">
+            <strong>Berat Badan Menurut Tinggi Badan (BB/TB)</strong>
+            <span id="statWFH"></span>
+        </div>
+        <div class="status-item">
+            <strong>Lingkar Kepala Menurut Umur (LK/U)</strong>
+            <span id="statHCFA"></span>
+        </div>
     </div>
 </div>
 
 <script>
-    // DATA LMS WHO ORIGINAL (Berat Badan menurut Umur 0-12 Bulan)
-    // L = Parameter Box-Cox, M = Median, S = Koefisien Variasi
-    const lmsData = {
-        male: [
-            { L: 0.3487, M: 3.3464, S: 0.14602 }, // 0 bulan
-            { L: 0.1388, M: 4.4700, S: 0.13395 }, // 1 bulan
-            { L: 0.0382, M: 5.5786, S: 0.12461 }, // 2 bulan
-            { L: -0.0153, M: 6.3986, S: 0.11790 }, // 3 bulan
-            { L: -0.0460, M: 7.0142, S: 0.11320 }, // 4 bulan
-            { L: -0.0632, M: 7.4988, S: 0.10986 }, // 5 bulan
-            { L: -0.0722, M: 7.9157, S: 0.10745 }, // 6 bulan
-            { L: -0.0759, M: 8.3006, S: 0.10578 }, // 7 bulan
-            { L: -0.0760, M: 8.6481, S: 0.10468 }, // 8 bulan
-            { L: -0.0735, M: 8.9669, S: 0.10405 }, // 9 bulan
-            { L: -0.0691, M: 9.2635, S: 0.10382 }, // 10 bulan
-            { L: -0.0632, M: 9.5427, S: 0.10393 }, // 11 bulan
-            { L: -0.0560, M: 9.8080, S: 0.10432 }  // 12 bulan
-        ],
-        female: [
-            { L: 0.3809, M: 3.2322, S: 0.14171 }, // 0 bulan
-            { L: 0.1610, M: 4.1873, S: 0.13083 }, // 1 bulan
-            { L: 0.0528, M: 5.1283, S: 0.12154 }, // 2 bulan
-            { L: -0.0053, M: 5.8456, S: 0.11475 }, // 3 bulan
-            { L: -0.0381, M: 6.4230, S: 0.11003 }, // 4 bulan
-            { L: -0.0559, M: 6.8973, S: 0.10672 }, // 5 bulan
-            { L: -0.0637, M: 7.2995, S: 0.10443 }, // 6 bulan
-            { L: -0.0649, M: 7.6496, S: 0.10294 }, // 7 bulan
-            { L: -0.0617, M: 7.9587, S: 0.10212 }, // 8 bulan
-            { L: -0.0553, M: 8.2361, S: 0.10183 }, // 9 bulan
-            { L: -0.0465, M: 8.4893, S: 0.10196 }, // 10 bulan
-            { L: -0.0359, M: 8.7237, S: 0.10243 }, // 11 bulan
-            { L: -0.0238, M: 8.9436, S: 0.10316 }  // 12 bulan
-        ]
+    // Data Titik Utama WHO (Disederhanakan untuk keperluan Prototype 0-60 bulan)
+    // M = Median, S = Standard Deviation (Variansi)
+    const milestones = {
+        WFA: { // Berat vs Umur (x: bulan, y: kg)
+            male: { 0:3.3, 12:9.6, 24:12.2, 36:14.3, 48:16.3, 60:18.3, S: 0.11 },
+            female: { 0:3.2, 12:8.9, 24:11.5, 36:13.9, 48:16.1, 60:18.2, S: 0.11 }
+        },
+        HFA: { // Tinggi vs Umur (x: bulan, y: cm)
+            male: { 0:49.9, 12:75.7, 24:87.1, 36:96.1, 48:103.3, 60:110.0, S: 0.04 },
+            female: { 0:49.1, 12:74.0, 24:85.7, 36:95.1, 48:102.7, 60:109.4, S: 0.04 }
+        },
+        WFH: { // Berat vs Tinggi (x: cm, y: kg) -> Asumsi Tinggi 45cm - 120cm
+            male: { 45:2.4, 60:5.7, 75:9.6, 90:12.9, 105:16.8, 120:21.5, S: 0.09 },
+            female: { 45:2.5, 60:5.5, 75:9.4, 90:12.6, 105:16.5, 120:21.3, S: 0.09 }
+        },
+        HCFA: { // Lingkar Kepala vs Umur (x: bulan, y: cm)
+            male: { 0:34.5, 12:46.1, 24:48.3, 36:49.5, 48:50.4, 60:51.0, S: 0.03 },
+            female: { 0:33.9, 12:44.8, 24:47.2, 36:48.5, 48:49.5, 60:50.1, S: 0.03 }
+        }
     };
 
-    let chartInstance = null;
+    let charts = {}; // Menyimpan instance grafik agar bisa direset
 
-    // Fungsi matematika LMS WHO untuk menghitung Z-Score berdasarkan L, M, S
-    function calculateZ(y, l, m, s) {
-        if (l === 0) {
-            return Math.log(y / m) / s;
-        } else {
-            return (Math.pow((y / m), l) - 1) / (l * s);
+    // Fungsi Interpolasi Linier (Menghitung M untuk titik di antara milestones)
+    function getMedian(dataObj, targetX) {
+        let keys = Object.keys(dataObj).filter(k => k !== 'S').map(Number).sort((a,b)=>a-b);
+        if (targetX <= keys[0]) return dataObj[keys[0]];
+        if (targetX >= keys[keys.length-1]) return dataObj[keys[keys.length-1]];
+
+        let lower = keys[0], upper = keys[keys.length-1];
+        for (let i = 0; i < keys.length - 1; i++) {
+            if (targetX >= keys[i] && targetX <= keys[i + 1]) {
+                lower = keys[i]; upper = keys[i + 1]; break;
+            }
         }
+        let fraction = (targetX - lower) / (upper - lower);
+        return dataObj[lower] + fraction * (dataObj[upper] - dataObj[lower]);
     }
 
-    // Fungsi matematika LMS untuk membalikkan Z-Score menjadi nilai Berat Badan aktual
-    // Digunakan untuk menggambar garis kurva standar (+3SD, +2SD, dll)
-    function calculateYFromZ(z, l, m, s) {
-        if (l === 0) {
-            return m * Math.exp(s * z);
-        } else {
-            return m * Math.pow((1 + l * s * z), 1 / l);
-        }
+    // Menghitung Z-Score Sederhana: Z = (Y - Median) / (Median * S)
+    function calcZ(y, m, s) { return (y - m) / (m * s); }
+    // Menghitung nilai Y dari Z-Score untuk menggambar garis kurva
+    function calcY(z, m, s) { return m + (z * m * s); }
+
+    function prosesData() {
+        let gender = document.getElementById('gender').value;
+        let genderText = gender === 'male' ? 'Laki-laki' : 'Perempuan';
+        let age = parseFloat(document.getElementById('age').value);
+        let weight = parseFloat(document.getElementById('weight').value);
+        let height = parseFloat(document.getElementById('height').value);
+        let head = parseFloat(document.getElementById('head').value);
+
+        // Update Kotak Hijau Text
+        document.getElementById('resGender').innerText = genderText;
+        document.getElementById('resAge').innerText = age;
+        document.getElementById('resWeight').innerText = weight;
+        document.getElementById('resHeight').innerText = height;
+        document.getElementById('resHead').innerText = head;
+
+        // Tampilkan Container
+        document.getElementById('chartsContainer').style.display = 'block';
+        document.getElementById('resultBox').style.display = 'block';
+
+        // 1. BB/U (Weight for Age)
+        let wfaMedian = getMedian(milestones.WFA[gender], age);
+        let wfaZ = calcZ(weight, wfaMedian, milestones.WFA[gender].S);
+        let wfaStatus = (wfaZ < -2) ? "Kurang (Underweight)" : (wfaZ > 2) ? "Lebih (Overweight)" : "Normal";
+        document.getElementById('statWFA').innerHTML = `Berdasarkan umur, berat badan anak dalam kategori <b>${wfaStatus}</b>. (Z-Score: ${wfaZ.toFixed(2)})<br>Rekomendasi median berat badan anak seharusnya <b>${wfaMedian.toFixed(1)} kg</b>.`;
+        gambarGrafik('chartWFA', milestones.WFA[gender], age, weight, 0, 60, "Umur (Bulan)", "Berat (kg)");
+
+        // 2. TB/U (Height for Age)
+        let hfaMedian = getMedian(milestones.HFA[gender], age);
+        let hfaZ = calcZ(height, hfaMedian, milestones.HFA[gender].S);
+        let hfaStatus = (hfaZ < -2) ? "Pendek (Stunted)" : (hfaZ > 2) ? "Tinggi" : "Normal";
+        document.getElementById('statHFA').innerHTML = `Berdasarkan umur, tinggi badan anak dalam kategori <b>${hfaStatus}</b>. (Z-Score: ${hfaZ.toFixed(2)})<br>Rekomendasi median tinggi badan anak seharusnya <b>${hfaMedian.toFixed(1)} cm</b>.`;
+        gambarGrafik('chartHFA', milestones.HFA[gender], age, height, 0, 60, "Umur (Bulan)", "Tinggi (cm)");
+
+        // 3. BB/TB (Weight for Height)
+        let wfhMedian = getMedian(milestones.WFH[gender], height);
+        let wfhZ = calcZ(weight, wfhMedian, milestones.WFH[gender].S);
+        let wfhStatus = (wfhZ < -2) ? "Gizi Kurang (Wasted)" : (wfhZ > 2) ? "Beresiko Obesitas" : "Gizi Baik (Normal)";
+        document.getElementById('statWFH').innerHTML = `Berdasarkan tinggi badannya, proporsi berat badan anak adalah <b>${wfhStatus}</b>. (Z-Score: ${wfhZ.toFixed(2)})<br>Rekomendasi median berat badan ideal untuk tinggi ini adalah <b>${wfhMedian.toFixed(1)} kg</b>.`;
+        gambarGrafik('chartWFH', milestones.WFH[gender], height, weight, 45, 120, "Tinggi Badan (cm)", "Berat Badan (kg)", 5);
+
+        // 4. LK/U (Head Circumference for Age)
+        let hcfaMedian = getMedian(milestones.HCFA[gender], age);
+        let hcfaZ = calcZ(head, hcfaMedian, milestones.HCFA[gender].S);
+        let hcfaStatus = (hcfaZ < -2) ? "Mikrosefali (Terlalu Kecil)" : (hcfaZ > 2) ? "Makrosefali (Terlalu Besar)" : "Normal";
+        document.getElementById('statHCFA').innerHTML = `Berdasarkan umur, lingkar kepala anak dalam kategori <b>${hcfaStatus}</b>. (Z-Score: ${hcfaZ.toFixed(2)})<br>Rekomendasi median lingkar kepala anak seharusnya <b>${hcfaMedian.toFixed(1)} cm</b>.`;
+        gambarGrafik('chartHCFA', milestones.HCFA[gender], age, head, 0, 60, "Umur (Bulan)", "Lingkar Kepala (cm)");
     }
 
-    function hitungZScore() {
-        const gender = document.getElementById('gender').value;
-        const age = parseInt(document.getElementById('age').value);
-        const weight = parseFloat(document.getElementById('weight').value);
-
-        if (isNaN(age) || isNaN(weight) || age < 0 || age > 12) {
-            alert("Masukkan umur (0-12) dan berat badan yang valid.");
-            return;
-        }
-
-        // Ambil data L, M, S sesuai bulan dan jenis kelamin
-        const lms = lmsData[gender][age];
+    // Fungsi Penggambar Grafik Global
+    function gambarGrafik(canvasId, dataObj, userX, userY, minX, maxX, xLabel, yLabel, step = 1) {
+        let labels = [];
+        let sd3pos = [], sd2pos = [], sd1pos = [], median = [], sd1neg = [], sd2neg = [], sd3neg = [];
         
-        // 1. Hitung Z-Score
-        const zScore = calculateZ(weight, lms.L, lms.M, lms.S);
-        const roundedZ = zScore.toFixed(2);
-
-        // 2. Tentukan Status Gizi (Berdasarkan Kemenkes RI / WHO)
-        let status = "";
-        let colorClass = "";
-        if (zScore < -3) {
-            status = "Gizi Buruk (Severely Underweight)"; colorClass = "status-buruk";
-        } else if (zScore >= -3 && zScore < -2) {
-            status = "Gizi Kurang (Underweight)"; colorClass = "status-kurang";
-        } else if (zScore >= -2 && zScore <= 1) {
-            status = "Gizi Baik (Normal)"; colorClass = "status-normal";
-        } else {
-            status = "Risiko Berat Badan Lebih"; colorClass = "status-lebih";
+        for (let i = minX; i <= maxX; i += step) {
+            labels.push(i);
+            let m = getMedian(dataObj, i);
+            let s = dataObj.S;
+            sd3pos.push(calcY(3, m, s));
+            sd2pos.push(calcY(2, m, s));
+            sd1pos.push(calcY(1, m, s));
+            median.push(m);
+            sd1neg.push(calcY(-1, m, s));
+            sd2neg.push(calcY(-2, m, s));
+            sd3neg.push(calcY(-3, m, s));
         }
 
-        // Tampilkan Hasil Teks
-        document.getElementById('zscore-val').innerText = roundedZ;
-        const statusEl = document.getElementById('status-val');
-        statusEl.innerText = status;
-        statusEl.className = colorClass;
-        document.getElementById('result').style.display = 'block';
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        if (charts[canvasId]) charts[canvasId].destroy();
 
-        // 3. Update Grafik Kurva
-        gambarKurva(gender, age, weight);
-    }
-
-    function gambarKurva(gender, userAge, userWeight) {
-        const dataSet = lmsData[gender];
-        const labels = Array.from({length: 13}, (_, i) => i); // [0,1,2...,12]
-        
-        // Buat array data untuk setiap garis standar WHO
-        const sd3pos = labels.map(i => calculateYFromZ(3, dataSet[i].L, dataSet[i].M, dataSet[i].S));
-        const sd2pos = labels.map(i => calculateYFromZ(2, dataSet[i].L, dataSet[i].M, dataSet[i].S));
-        const median = labels.map(i => dataSet[i].M); // Median sama dengan Z=0
-        const sd2neg = labels.map(i => calculateYFromZ(-2, dataSet[i].L, dataSet[i].M, dataSet[i].S));
-        const sd3neg = labels.map(i => calculateYFromZ(-3, dataSet[i].L, dataSet[i].M, dataSet[i].S));
-
-        const ctx = document.getElementById('growthChart').getContext('2d');
-
-        // Hancurkan grafik lama jika ada agar tidak tumpang tindih
-        if (chartInstance) {
-            chartInstance.destroy();
-        }
-
-        const lineColor = gender === 'male' ? 'rgba(0, 123, 255, 0.5)' : 'rgba(232, 62, 140, 0.5)';
-
-        chartInstance = new Chart(ctx, {
+        charts[canvasId] = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
-                    { label: '+3 SD', data: sd3pos, borderColor: '#333', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false },
-                    { label: '+2 SD', data: sd2pos, borderColor: '#e74c3c', borderWidth: 1, pointRadius: 0, fill: false },
-                    { label: 'Median', data: median, borderColor: '#2ecc71', borderWidth: 3, pointRadius: 0, fill: false },
-                    { label: '-2 SD', data: sd2neg, borderColor: '#e74c3c', borderWidth: 1, pointRadius: 0, fill: false },
-                    { label: '-3 SD', data: sd3neg, borderColor: '#333', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false },
+                    { label: '+3 SD', data: sd3pos, borderColor: '#d32f2f', borderWidth: 1, pointRadius: 0, fill: false },
+                    { label: '+2 SD', data: sd2pos, borderColor: '#f44336', borderWidth: 1, pointRadius: 0, fill: false },
+                    { label: '+1 SD', data: sd1pos, borderColor: '#fbc02d', borderWidth: 1, pointRadius: 0, fill: false },
+                    { label: 'Median', data: median, borderColor: '#388e3c', borderWidth: 2, pointRadius: 0, fill: false },
+                    { label: '-1 SD', data: sd1neg, borderColor: '#fbc02d', borderWidth: 1, pointRadius: 0, fill: false },
+                    { label: '-2 SD', data: sd2neg, borderColor: '#f44336', borderWidth: 1, pointRadius: 0, fill: false },
+                    { label: '-3 SD', data: sd3neg, borderColor: '#d32f2f', borderWidth: 1, pointRadius: 0, fill: false },
                     {
                         label: 'Anak Anda',
-                        data: [{ x: userAge, y: userWeight }],
-                        backgroundColor: '#000',
-                        borderColor: '#000',
+                        data: [{ x: userX, y: userY }], // Titik spesifik anak
+                        backgroundColor: '#1976d2',
+                        borderColor: '#1976d2',
                         pointRadius: 6,
                         pointHoverRadius: 8,
                         type: 'scatter',
@@ -234,11 +289,12 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { title: { display: true, text: 'Umur (Bulan)' }, type: 'linear', min: 0, max: 12, ticks: { stepSize: 1 } },
-                    y: { title: { display: true, text: 'Berat Badan (kg)' } }
+                    x: { title: { display: true, text: xLabel }, type: 'linear', min: minX, max: maxX },
+                    y: { title: { display: true, text: yLabel } }
                 },
                 plugins: {
-                    title: { display: true, text: `Kurva Pertumbuhan WHO - ${gender === 'male' ? 'Laki-Laki' : 'Perempuan'}` }
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                    tooltip: { mode: 'index', intersect: false }
                 }
             }
         });
