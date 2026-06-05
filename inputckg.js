@@ -272,12 +272,16 @@ async function autoContinueForm(){
 
     let currentId = null;
 
-    // 1-3 (Ant Design Forms)
+// 1-3 (Ant Design Forms & SurveyJS)
     if(title.includes('gizi (bb') || title.includes('lingkar perut')){
         currentId = 'gizi'; updateStatus('MENGISI TAHAP: GIZI');
-        const inputBB = document.querySelector('input[placeholder*="satuan kg" i]') || document.querySelector('input[placeholder*="Berat Badan" i]');
-        const inputTB = document.querySelector('input[placeholder*="tinggi badan" i]');
-        const inputLP = realInputs.find(el => (el.placeholder || '').toLowerCase().includes('hasil pengukuran') && !(el.placeholder || '').toLowerCase().includes('tinggi badan'));
+        
+        // Cari pakai placeholder DULU (untuk versi web lama), 
+        // JIKA GAGAL: langsung tembak dari urutan input (realInputs) untuk versi web baru
+        const inputBB = document.querySelector('input[placeholder*="satuan kg" i]') || document.querySelector('input[placeholder*="Berat Badan" i]') || realInputs[0];
+        const inputTB = document.querySelector('input[placeholder*="tinggi badan" i]') || realInputs[1];
+        const inputLP = realInputs.find(el => (el.placeholder || '').toLowerCase().includes('hasil pengukuran') && !(el.placeholder || '').toLowerCase().includes('tinggi badan')) || realInputs[2];
+        
         if(inputBB) forceInject(inputBB, data.bb); await sleep(800);
         if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
         if(inputLP) forceInject(inputLP, data.lp); await sleep(1000);
