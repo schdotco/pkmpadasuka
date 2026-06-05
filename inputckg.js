@@ -1,11 +1,23 @@
+// ==UserScript==
+// @name         AUTO CKG FINAL FIX FORM KEMENKES
+// @namespace    auto-ckg-final
+// @version      1007.0
+// @description  AUTO CKG FINAL - SURVEYJS FIX (9 TAHAPAN)
+// @match        https://sehatindonesiaku.kemkes.go.id/*
+// @match        https://form.kemkes.go.id/*
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_deleteValue
+// ==/UserScript==
+
 (function(){
 'use strict';
 
 /* =========================================================
    CONFIG
 ========================================================= */
-const SHEET_ID = '15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY';
-const GID = '0';
+const SHEET_ID = '1kDShNBXFk3QtrrGaEX0fTjmRd1zGjb0s9n21a_1oHSM';
+const GID = '250649365';
 
 const TARGETS = [
     { id: 'gizi', txt: 'gizi (bb' },
@@ -48,12 +60,12 @@ async function cariData(nikInput){
     const json = JSON.parse(txt.substring(47, txt.length - 2));
     for(const r of json.table.rows){
         const cells = r.c.map(x => x ? String(x.v || '') : '');
-        if(normalizeNIK(cells[11]) === target || cells.find(col => normalizeNIK(col) === target)){
+        if(normalizeNIK(cells[0] || cells[1] || cells[2]) === target || cells.find(col => normalizeNIK(col) === target)){
             return {
-                nik: target, nama: cells[7] || '',
-                sistole: cells[38] || '120', diastole: cells[39] || '80',
-                bb: cells[41] || '60', tb: cells[42] || '165',
-                lp: cells[44] || '80', gula: cells[58] || '110'
+                nik: target, nama: cells[3] || '',
+                sistole: cells[15] || '120', diastole: cells[16] || '80',
+                bb: cells[17] || '60', tb: cells[18] || '165',
+                lp: cells[19] || '80', gula: cells[20] || '110'
             };
         }
     }
