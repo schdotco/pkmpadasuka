@@ -16,7 +16,7 @@ function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 ========================================================= */
 function saveBOT(data) { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); }
 function loadBOT()     { const raw = GM_getValue('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; }
-function clearBOT()    { GM_deleteValue('AUTO_SKRINING_DATA'); }
+function clearBOT() { GM_deleteValue('AUTO_SKRINING_DATA'); GM_deleteValue('CKG_MODE'); }
 
 function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
 function addCompleted(id) {
@@ -322,8 +322,11 @@ async function mainLoop(data){
 
         if(!nextItem){
             BOT_RUNNING = false;
+        
+            clearBOT();
+            clearCompleted();
+        
             updateStatus('SELESAI SEMUA TARGET.\nSilakan ganti NIK untuk pasien baru.');
-            // Bot berhenti, tetapi NIK tidak dihapus agar bisa dicek!
             break;
         }
 
