@@ -472,9 +472,6 @@ function createUI(){
 /* =========================================================
    INIT / AUTO RESUME
 ========================================================= */
-/* =========================================================
-   INIT / AUTO RESUME (REVISI: MENGGUNAKAN OBSERVER)
-========================================================= */
 setInterval(createUI, 1000);
 
 // Fungsi untuk menunggu elemen muncul
@@ -511,5 +508,5 @@ async function waitForElement(selector, timeout = 10000) {
     } else {
         updateStatus('GAGAL: Halaman tidak memuat form (Timeout)');
     }
-
+    
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
