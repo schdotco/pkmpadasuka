@@ -440,19 +440,47 @@ async function handleSkriningMandiri(data) {
         });
     });
 
-    // 6. AKTIVITAS FISIK (Isi & Pastikan terisi)
-    const activityQ = [
-        ...document.querySelectorAll(
-            '.sd-question, .sv-question, .sd-element, [data-name]'
-        )
-    ].find(q =>
-        (q.innerText || '').toLowerCase().includes('aktivitas fisik')
+// 6. AKTIVITAS FISIK (SEMUA JAWABAN = TIDAK)
+
+const aktivitasList = [
+    ...document.querySelectorAll(
+        '.sd-question, .sv-question, .sd-element, [data-name]'
+    )
+].filter(q =>
+    (q.innerText || '').toLowerCase().includes('aktivitas fisik')
+);
+
+for (const q of aktivitasList) {
+
+    updateStatus('Mengisi Aktivitas Fisik: Tidak');
+
+    const dropdown = q.querySelector(
+        '.sd-dropdown, .sv-dropdown'
     );
-    
-    if (activityQ) {
-        updateStatus('Mengisi Aktivitas Fisik...');
-        await pilihAktivitasFisikOpsi1();
+
+    if (!dropdown) continue;
+
+    dropdown.click();
+
+    await sleep(1000);
+
+    const options = [
+        ...document.querySelectorAll(
+            '.sd-list__item-body, .sv-list__item-body'
+        )
+    ];
+
+    const tidak = options.find(o =>
+        (o.innerText || '')
+            .toLowerCase()
+            .includes('tidak')
+    );
+
+    if (tidak) {
+        tidak.click();
+        await sleep(500);
     }
+}
 
     // 7. NAVIGASI (Cari tombol Lanjut atau Kirim)
     await sleep(2000);
