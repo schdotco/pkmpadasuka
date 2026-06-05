@@ -9,15 +9,6 @@
 
 function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
     
-/* ================= PENCEGAHAN ERROR LAUNCHER ================= */
-    // Menangkap jembatan GM_xmlhttpRequest dari Launcher
-    const fetchAPI = typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : window.GM_xmlhttpRequest;
-
-    if (!fetchAPI) {
-        alert("CRITICAL ERROR: Fungsi fetchAPI tidak terdeteksi! Script tidak bisa menarik data.");
-        return;
-    }
-    
 /* ================= MODE CKG UMUM ================= */
 
 const SHEETS = [{
@@ -122,7 +113,7 @@ async function cariData(nikInput){
     for(const source of SHEETS){
         for(const gid of source.gids){
             const csv = await new Promise(resolve => {
-                fetchAPI({
+                GM_xmlhttpRequest({
                     method: "GET", url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
                     timeout: 10000, onload: r => resolve(r.responseText || ""), onerror: () => resolve("")
                 });
