@@ -420,12 +420,6 @@ async function handleSkriningMandiri(data) {
     console.log("[DEBUG] Perkawinan:", p, "-> Kanker Leher Rahim:", isYes ? "YA" : "TIDAK");
     await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
 
-    // 4. KESEHATAN JIWA
-    await fillRadioSurveyJS('kesehatan jiwa', 'tidak sama sekali');
-
-    // TB
-    await fillRadioSurveyJS('faktor risiko tb', 'tidak');
-
     // 5. SAPU BERSIH (Isi semua radio yang kosong menjadi 'Tidak'/'Normal')
     const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
     questions.forEach(q => {
