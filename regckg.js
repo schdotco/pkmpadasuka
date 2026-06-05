@@ -128,6 +128,12 @@ async function cariData(nikInput){
                 continue;
 
             const rows = parseCSV(csv);
+            console.log("HEADER:", rows[0]);
+            console.log("ROW SAMPLE:", rows[1]);
+
+            for(let x=0;x<rows[0].length;x++){
+            console.log(x, rows[0][x]);
+            }
 
             let waD2 = "";
 
@@ -143,6 +149,9 @@ async function cariData(nikInput){
 
                 // NIK berada di kolom L (index 11)
                 const nikSheet = normalizeNIK(row[11]);
+                if(String(row[11]).includes("327314")){
+                console.log("RAW NIK:", row[11]);
+                }
 
                 if(nikSheet === target){
 
