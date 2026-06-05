@@ -1,5 +1,6 @@
 (function (GM_xmlhttpRequest) {
 'use strict';
+    const request = GM_xmlhttpRequest;
 
 function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
     
@@ -107,7 +108,7 @@ async function cariData(nikInput){
     for(const source of SHEETS){
         for(const gid of source.gids){
             const csv = await new Promise(resolve => {
-                GM_xmlhttpRequest({
+                request({
                     method: "GET", url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
                     timeout: 10000, onload: r => resolve(r.responseText || ""), onerror: () => resolve("")
                 });
