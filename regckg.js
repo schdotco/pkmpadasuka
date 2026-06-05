@@ -3,21 +3,21 @@
     const request = GM_xmlhttpRequest;
 
 function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
-
+    
 /* ================= MODE CKG UMUM ================= */
 
 const SHEETS = [{
-id: "1zOX229-nq8n0-jCSTMEL1r4CVqW_hYctcpo-5pgjY_E",
-gids: ["0"],
-colNama: 5,
-colTgl: 8,
-colWA: 20,
-colJK: 6,
-colPekerjaan: 22,
-colKelurahan: 17,
-colAlamat: 14,
-colMartial: 21,
-waStatis: true
+    id: "1zOX229-nq8n0-jCSTMEL1r4CVqW_hYctcpo-5pgjY_E",
+    gids: ["0"],
+    colNama: 5,
+    colTgl: 8,
+    colWA: 20,
+    colJK: 6,
+    colPekerjaan: 22,
+    colKelurahan: 17,
+    colAlamat: 14,
+    colMartial: 21,
+    waStatis: true
 }];
 
 console.log("MODE: CKG UMUM");
@@ -108,7 +108,6 @@ async function cariData(nikInput){
     for(const source of SHEETS){
         for(const gid of source.gids){
             const csv = await new Promise(resolve => {
-                GM_xmlhttpRequest({
                 request({
                     method: "GET", url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
                     timeout: 10000, onload: r => resolve(r.responseText || ""), onerror: () => resolve("")
@@ -145,103 +144,103 @@ async function cariData(nikInput){
 
 /* ================= ENGINE VUE DROPDOWN (REVISI KHUSUS) ================= */
 async function clickVueDropdown(placeholderKeyword, valueText) {
-console.log(`[DEBUG] Mencari kotak: "${placeholderKeyword}"`);
+    console.log(`[DEBUG] Mencari kotak: "${placeholderKeyword}"`);
 
-// 1. Cari kotak trigger berdasarkan placeholder
-const allDivs = Array.from(document.querySelectorAll('div'));
-const trigger = allDivs.find(el =>
-(el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
-el.className.includes('cursor-pointer') // Memastikan ini adalah kotak dropdown
-);
+    // 1. Cari kotak trigger berdasarkan placeholder
+    const allDivs = Array.from(document.querySelectorAll('div'));
+    const trigger = allDivs.find(el =>
+        (el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
+        el.className.includes('cursor-pointer') // Memastikan ini adalah kotak dropdown
+    );
 
-if (!trigger) {
-console.log(`[DEBUG] ❌ Kotak "${placeholderKeyword}" tidak ditemukan.`);
-return false;
-}
+    if (!trigger) {
+        console.log(`[DEBUG] ❌ Kotak "${placeholderKeyword}" tidak ditemukan.`);
+        return false;
+    }
 
-// Klik kotak untuk membuka menu
-trigger.click();
-await wait(1000);
+    // Klik kotak untuk membuka menu
+    trigger.click();
+    await wait(1000);
 
-// 2. Cari Opsi dengan metode "Scan Semua Teks"
-console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
-let optionFound = false;
+    // 2. Cari Opsi dengan metode "Scan Semua Teks"
+    console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
+    let optionFound = false;
 
-// Kita ambil semua elemen yang mungkin mengandung opsi
-const allOptions = Array.from(document.querySelectorAll('div'));
-const targetOption = allOptions.find(el =>
-(el.innerText || "").trim() === valueText &&
-el.className.includes('justify-between') // Sesuai dengan struktur inspect Anda
-);
+    // Kita ambil semua elemen yang mungkin mengandung opsi
+    const allOptions = Array.from(document.querySelectorAll('div'));
+    const targetOption = allOptions.find(el =>
+        (el.innerText || "").trim() === valueText &&
+        el.className.includes('justify-between') // Sesuai dengan struktur inspect Anda
+    );
 
-if (targetOption) {
-console.log(`[DEBUG] ✅ Opsi ditemukan! Melakukan klik...`);
-targetOption.scrollIntoView({ behavior: "smooth", block: "center" });
-await wait(300);
+    if (targetOption) {
+        console.log(`[DEBUG] ✅ Opsi ditemukan! Melakukan klik...`);
+        targetOption.scrollIntoView({ behavior: "smooth", block: "center" });
+        await wait(300);
 
-// Pemicu klik manual
-targetOption.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-targetOption.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-targetOption.click();
+        // Pemicu klik manual
+        targetOption.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        targetOption.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+        targetOption.click();
 
-optionFound = true;
-await wait(800);
-} else {
-console.log(`[DEBUG] ❌ Opsi "${valueText}" tidak ditemukan. Menutup dropdown.`);
-document.body.click();
-}
+        optionFound = true;
+        await wait(800);
+    } else {
+        console.log(`[DEBUG] ❌ Opsi "${valueText}" tidak ditemukan. Menutup dropdown.`);
+        document.body.click();
+    }
 
-return optionFound;
+    return optionFound;
 }
 
 /* ================= FUNGSI KHUSUS: STATUS PERNIKAHAN ================= */
 async function fillAndValidate(placeholderKeyword, valueText, isSearchable = false) {
-console.log(`[BOT] Memproses: ${placeholderKeyword} | Target: ${valueText}`);
+    console.log(`[BOT] Memproses: ${placeholderKeyword} | Target: ${valueText}`);
 
-// 1. Cari & Klik Trigger
-const triggers = Array.from(document.querySelectorAll('div, span'));
-const trigger = triggers.find(el =>
-(el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
-(el.className.includes('cursor-pointer') || el.closest('.cursor-pointer'))
-);
+    // 1. Cari & Klik Trigger
+    const triggers = Array.from(document.querySelectorAll('div, span'));
+    const trigger = triggers.find(el =>
+        (el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
+        (el.className.includes('cursor-pointer') || el.closest('.cursor-pointer'))
+    );
 
-if (!trigger) {
-console.error(`[BOT] ❌ Trigger "${placeholderKeyword}" tidak ditemukan!`);
-return false;
-}
+    if (!trigger) {
+        console.error(`[BOT] ❌ Trigger "${placeholderKeyword}" tidak ditemukan!`);
+        return false;
+    }
 
-await ultraClick(trigger.closest('.cursor-pointer') || trigger);
-await wait(1200); // Tunggu dropdwon terbuka
+    await ultraClick(trigger.closest('.cursor-pointer') || trigger);
+    await wait(1200); // Tunggu dropdwon terbuka
 
-// 2. Jika perlu cari (Pekerjaan)
-if (isSearchable) {
-const searchInput = document.querySelector('input[placeholder*="Cari"]');
-if (searchInput) {
-forceInject(searchInput, valueText);
-await wait(2000); // Wajib tunggu API filter website
-}
-}
+    // 2. Jika perlu cari (Pekerjaan)
+    if (isSearchable) {
+        const searchInput = document.querySelector('input[placeholder*="Cari"]');
+        if (searchInput) {
+            forceInject(searchInput, valueText);
+            await wait(2000); // Wajib tunggu API filter website
+        }
+    }
 
-// 3. Pilih Opsi
-const allDivs = Array.from(document.querySelectorAll('div'));
-const targetOption = allDivs.find(el => (el.innerText || "").trim() === valueText);
+    // 3. Pilih Opsi
+    const allDivs = Array.from(document.querySelectorAll('div'));
+    const targetOption = allDivs.find(el => (el.innerText || "").trim() === valueText);
 
-if (targetOption) {
-await ultraClick(targetOption);
-await wait(1000);
+    if (targetOption) {
+        await ultraClick(targetOption);
+        await wait(1000);
 
-// 4. VALIDASI (Penting!)
-// Mengecek apakah teks trigger sekarang sudah berubah menjadi valueText
-const triggerUpdated = triggers.find(el => (el.innerText || "").trim() === valueText);
-if (triggerUpdated) {
-console.log(`[BOT] ✅ Sukses tervalidasi: ${valueText}`);
-return true;
-} else {
-console.warn(`[BOT] ⚠️ Pilihan diklik, tapi sistem tidak merespon. Mencoba ulang...`);
-return false;
-}
-}
-return false;
+        // 4. VALIDASI (Penting!)
+        // Mengecek apakah teks trigger sekarang sudah berubah menjadi valueText
+        const triggerUpdated = triggers.find(el => (el.innerText || "").trim() === valueText);
+        if (triggerUpdated) {
+            console.log(`[BOT] ✅ Sukses tervalidasi: ${valueText}`);
+            return true;
+        } else {
+            console.warn(`[BOT] ⚠️ Pilihan diklik, tapi sistem tidak merespon. Mencoba ulang...`);
+            return false;
+        }
+    }
+    return false;
 }
 
 /* ================= ENGINE ALAMAT WILAYAH VUE (BARU) ================= */
@@ -284,11 +283,11 @@ async function setAlamatDomisiliVue() {
 }
 
 /* ================= EKSEKUSI HALAMAN 2 (VUE VERSION) ================= */
-async function eksekusiHalamanDua(data) {
-showLoading("⚡ MENGISI HALAMAN 2... ⚡");
+    async function eksekusiHalamanDua(data) {
+    showLoading("⚡ MENGISI HALAMAN 2... ⚡");
 
-// Beri jeda agar halaman selesai dimuat sepenuhnya
-await wait(2500);
+    // Beri jeda agar halaman selesai dimuat sepenuhnya
+    await wait(2500);
 
 /* ================= ISI STATUS PERNIKAHAN (VUE/TAILWIND LOGIC) ================= */
 console.log("[BOT] Memproses Status Pernikahan:", data.Martial);
@@ -297,91 +296,91 @@ let textToFindPernikahan = "";
 
 // Normalisasi data (Pastikan ejaannya sama persis dengan yang muncul di website)
 if (rawPernikahan.includes("MENIKAH") || rawPernikahan.includes("KAWIN")) {
-textToFindPernikahan = "Menikah";
+    textToFindPernikahan = "Menikah";
 } else if (rawPernikahan.includes("BELUM")) {
-textToFindPernikahan = "Belum Menikah";
+    textToFindPernikahan = "Belum Menikah";
 } else if (rawPernikahan.includes("CERAI HIDUP") || rawPernikahan.includes("CERAI_HIDUP")) {
-textToFindPernikahan = "Cerai Hidup";
+    textToFindPernikahan = "Cerai Hidup";
 } else if (rawPernikahan.includes("CERAI MATI") || rawPernikahan.includes("CERAI_MATI")) {
-textToFindPernikahan = "Cerai Mati";
+    textToFindPernikahan = "Cerai Mati";
 }
 
 if (textToFindPernikahan !== "") {
-// Cari container trigger
-const allElements = Array.from(document.querySelectorAll('span, div.cursor-pointer, label'));
-const triggerPernikahan = allElements.find(el => {
-const txt = (el.innerText || "").toLowerCase().trim();
-return txt === 'pilih status pernikahan' || txt === 'status pernikahan';
-});
+    // Cari container trigger
+    const allElements = Array.from(document.querySelectorAll('span, div.cursor-pointer, label'));
+    const triggerPernikahan = allElements.find(el => {
+        const txt = (el.innerText || "").toLowerCase().trim();
+        return txt === 'pilih status pernikahan' || txt === 'status pernikahan';
+    });
 
-if (triggerPernikahan) {
-// Gunakan klik yang sama dengan yang sukses di Jenis Kelamin
-const clickableTrigger = triggerPernikahan.closest('.cursor-pointer') || triggerPernikahan;
-await ultraClick(clickableTrigger);
-await wait(1000);
+    if (triggerPernikahan) {
+        // Gunakan klik yang sama dengan yang sukses di Jenis Kelamin
+        const clickableTrigger = triggerPernikahan.closest('.cursor-pointer') || triggerPernikahan;
+        await ultraClick(clickableTrigger);
+        await wait(1000);
 
-let optionFound = false;
-for (let i = 0; i < 15; i++) {
-// Cari elemen yang teksnya persis dengan textToFindPernikahan
-const possibleOptions = Array.from(document.querySelectorAll('*')).filter(el => {
-return (el.innerText || "").trim() === textToFindPernikahan && el.children.length === 0;
-});
+        let optionFound = false;
+        for (let i = 0; i < 15; i++) {
+            // Cari elemen yang teksnya persis dengan textToFindPernikahan
+            const possibleOptions = Array.from(document.querySelectorAll('*')).filter(el => {
+                return (el.innerText || "").trim() === textToFindPernikahan && el.children.length === 0;
+            });
 
-if (possibleOptions.length > 0) {
-const targetOption = possibleOptions[possibleOptions.length - 1];
-await ultraClick(targetOption);
-console.log("[BOT] Sukses mengklik Status Pernikahan:", textToFindPernikahan);
-optionFound = true;
-await wait(800);
-break;
-}
-await wait(400);
-}
-if (!optionFound) console.log("[BOT] Error: Opsi Status Pernikahan tidak muncul.");
-} else {
-console.log("[BOT] Error: Kotak 'Status Pernikahan' tidak ditemukan.");
-}
-}
-
-/* ================= 2. PEKERJAAN ================= */
-console.log("[BOT] Memproses Pekerjaan...");
-let jobTarget = (data.pekerjaan || "").trim();
-if(jobTarget) {
-await clickVueDropdown("pekerjaan", jobTarget, true, "Cari pekerjaan");
+            if (possibleOptions.length > 0) {
+                const targetOption = possibleOptions[possibleOptions.length - 1];
+                await ultraClick(targetOption);
+                console.log("[BOT] Sukses mengklik Status Pernikahan:", textToFindPernikahan);
+                optionFound = true;
+                await wait(800);
+                break;
+            }
+            await wait(400);
+        }
+        if (!optionFound) console.log("[BOT] Error: Opsi Status Pernikahan tidak muncul.");
+    } else {
+        console.log("[BOT] Error: Kotak 'Status Pernikahan' tidak ditemukan.");
+    }
 }
 
-// WAJIB: Berikan jeda setelah dropdown
-await wait(1500);
+    /* ================= 2. PEKERJAAN ================= */
+    console.log("[BOT] Memproses Pekerjaan...");
+    let jobTarget = (data.pekerjaan || "").trim();
+    if(jobTarget) {
+        await clickVueDropdown("pekerjaan", jobTarget, true, "Cari pekerjaan");
+    }
 
-/* ================= 3. ALAMAT DOMISILI ================= */
-console.log("[BOT] Memproses Domisili...");
-showLoading("⚡ MENCARI WILAYAH PADASUKA... ⚡");
-await setAlamatDomisiliVue();
+    // WAJIB: Berikan jeda setelah dropdown
+    await wait(1500);
 
-// WAJIB: Berikan jeda krusial setelah API wilayah selesai
-await wait(2000);
+    /* ================= 3. ALAMAT DOMISILI ================= */
+    console.log("[BOT] Memproses Domisili...");
+    showLoading("⚡ MENCARI WILAYAH PADASUKA... ⚡");
+    await setAlamatDomisiliVue();
 
-/* ================= 4. DETAIL DOMISILI ================= */
-console.log("[BOT] Mengisi Detail Alamat...");
-showLoading("⚡ MENYUNTIKKAN DETAIL ALAMAT... ⚡");
-let inpAlamat = document.getElementById('detail-domisili') || document.querySelector('textarea[placeholder*="Jl. Kenanga"]');
+    // WAJIB: Berikan jeda krusial setelah API wilayah selesai
+    await wait(2000);
 
-if(inpAlamat){
-inpAlamat.scrollIntoView({ behavior:"smooth", block:"center" });
-await wait(500);
+    /* ================= 4. DETAIL DOMISILI ================= */
+    console.log("[BOT] Mengisi Detail Alamat...");
+    showLoading("⚡ MENYUNTIKKAN DETAIL ALAMAT... ⚡");
+    let inpAlamat = document.getElementById('detail-domisili') || document.querySelector('textarea[placeholder*="Jl. Kenanga"]');
 
-let alamatTarget = data.alamat || "-";
-forceInject(inpAlamat, alamatTarget);
+    if(inpAlamat){
+        inpAlamat.scrollIntoView({ behavior:"smooth", block:"center" });
+        await wait(500);
 
-await wait(500);
-inpAlamat.dispatchEvent(new Event('input', { bubbles:true }));
-inpAlamat.dispatchEvent(new Event('change', { bubbles:true }));
-inpAlamat.blur();
-console.log("[BOT] Detail alamat terisi.");
-}
+        let alamatTarget = data.alamat || "-";
+        forceInject(inpAlamat, alamatTarget);
 
-hideLoading();
-console.log("[BOT] Halaman 2 selesai diproses.");
+        await wait(500);
+        inpAlamat.dispatchEvent(new Event('input', { bubbles:true }));
+        inpAlamat.dispatchEvent(new Event('change', { bubbles:true }));
+        inpAlamat.blur();
+        console.log("[BOT] Detail alamat terisi.");
+    }
+
+    hideLoading();
+    console.log("[BOT] Halaman 2 selesai diproses.");
 }
 
 /* ================= SISTEM SEMI AUTO-PILOT ================= */
