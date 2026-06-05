@@ -14,51 +14,58 @@ function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 /* =========================================================
    SESSION & DYNAMIC TRACKER
 ========================================================= */
-function saveBOT(data) { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); }
-function loadBOT()     { const raw = GM_getValue('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; }
-function clearBOT()    { GM_deleteValue('AUTO_SKRINING_DATA'); }
+      function saveBOT(data) { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); }
+    function loadBOT() { const raw = GM_getValue('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; }
+    function clearBOT() { GM_deleteValue('AUTO_SKRINING_DATA'); }
 
-function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
-function addCompleted(id) {
-    const arr = getCompleted();
-    if(!arr.includes(id)) arr.push(id);
-    GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr));
-}
-function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
+    function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
+    function addCompleted(id) {
+        const arr = getCompleted();
+        if (!arr.includes(id)) arr.push(id);
+        GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr));
+    }
+    function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
 
 /* =========================================================
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
 ========================================================= */
-async function cariData(nikInput){
-    const target = normalizeNIK(nikInput);
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
-
-    try {
-        const res = await fetch(url);
-        const txt = await res.text();
-        const json = JSON.parse(txt.substring(47, txt.length - 2));
-
-        for(const r of json.table.rows){
-            if (!r || !r.c) continue;
-
-            // Mengamankan NIK 16 digit agar tidak jadi format scientific
-            const cells = r.c.map(x => x ? String(x.f || x.v || '') : '');
-
-            // Cek index 3 (Kolom 4) atau sapu bersih seluruh kolom sebagai cadangan
-            const isMatch = (normalizeNIK(cells[3]) === target) || cells.some(col => normalizeNIK(col) === target);
-
-            if(isMatch){
-                return {
-                    nik: target,
-                    perkawinan: cells[14]  || 'Belum Kawin'
-                };
-            }
+function parseCSV(text) {
+        const rows = []; let row = []; let current = ""; let insideQuote = false;
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i]; const next = text[i + 1];
+            if (char === '"') { if (insideQuote && next === '"') { current += '"'; i++; } else { insideQuote = !insideQuote; } }
+            else if (char === ',' && !insideQuote) { row.push(current); current = ""; }
+            else if ((char === '\n' || char === '\r') && !insideQuote) { if (current || row.length) { row.push(current); rows.push(row); row = []; current = ""; } }
+            else { current += char; }
         }
-    } catch (e) {
-        console.error("Gagal membaca Spreadsheet:", e);
+        if (current || row.length) { row.push(current); rows.push(row); }
+        return rows;
     }
-    return null;
-}
+
+    async function cariData(nikInput) {
+        const target = normalizeNIK(nikInput);
+        // Menggunakan request yang sudah disuntikkan dari Launcher
+        return new Promise(resolve => {
+            request({
+                method: "GET", 
+                url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`,
+                timeout: 10000, 
+                onload: r => {
+                    const rows = parseCSV(r.responseText);
+                    for (let i = 1; i < rows.length; i++) {
+                        if (rows[i].some(col => normalizeNIK(col) === target)) {
+                            return resolve({
+                                nik: target,
+                                perkawinan: rows[i][14] || 'Belum Kawin'
+                            });
+                        }
+                    }
+                    resolve(null);
+                },
+                onerror: () => resolve(null)
+            });
+        });
+    }
 
 /* =========================================================
    DOM INTERACTOR (SURVEYJS SAFE)
@@ -326,81 +333,115 @@ function createUI(){
     `;
     document.head.appendChild(style); document.body.appendChild(box);
 
-    // Ambil Data NIK Lama (Agar Tidak Hilang)
-    const savedData = loadBOT();
-    if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
+// Ambil Data NIK Lama (Agar Tidak Hilang)
+const savedData = loadBOT();
+if(savedData && savedData.nik){
+    document.getElementById('nik-bot').value = savedData.nik;
+}
 
-function initUI(){
-    if(document.getElementById("ai-box")) return;
+/* ================= DRAGGABLE ================= */
 
-    const box = document.createElement("div");
-    box.id = "ai-box";
-    box.style = "position:fixed;top:150px;right:20px;background:#111;color:#fff;padding:15px;border-radius:12px;z-index:99999;width:270px;font-family:sans-serif;box-shadow:0 0 15px #00ff88; border: 2px solid #222;";
+const handle = document.getElementById('drag-handle');
 
-    box.innerHTML = `
-        <div id="dragHeader" style="text-align:center; margin-bottom:10px; cursor:move; background:#222; padding:8px; border-radius:8px; border:1px solid #444;" title="Klik dan tahan untuk menggeser bot">
-            <b style="color:#00ff88; font-size:16px;">BOT CKG V31</b><br>
-            <span style="font-size:10px; color:#aaa; letter-spacing:1px;">VUE TAILWIND FIX</span>
-        </div>
-        <div style="background:#222; padding:10px; border-radius:8px; text-align:center; margin-bottom:10px; border:1px solid #444;">
-            <b style="color:#ffcc00; font-size:11px;">⚡ TEMPEL/SCAN NIK DI SINI ⚡</b><br>
-            <input id="nikAI" placeholder="16 Digit NIK..." style="width:90%; margin-top:8px; padding:8px; border-radius:5px; background:#000; color:#00ff88; font-weight:bold; text-align:center; border:1px solid #00ff88; outline:none;">
-        </div>
-        <div id="infoAI" style="font-size:12px; line-height:1.5; color:#ccc;">
-            Status: <b style="color:#00ff88;">Siaga. Menunggu NIK...</b>
-        </div>
-    `;
-    document.body.appendChild(box);
+const savedPos = JSON.parse(
+    localStorage.getItem('skrining_ui_pos') || '{}'
+);
 
-    const dragHeader = document.getElementById("dragHeader");
-    let isDraggingBox = false;
-    let offsetX, offsetY;
+if(savedPos.left && savedPos.top){
+    box.style.left = savedPos.left;
+    box.style.top = savedPos.top;
+    box.style.right = 'auto';
+}
 
-    dragHeader.addEventListener('mousedown', function(e) {
-        isDraggingBox = true;
-        offsetX = e.clientX - box.getBoundingClientRect().left;
-        offsetY = e.clientY - box.getBoundingClientRect().top;
-        box.style.opacity = "0.8";
-    });
+let isDragging = false;
+let offsetX = 0;
+let offsetY = 0;
 
-    document.addEventListener('mousemove', function(e) {
-        if (isDraggingBox) {
-            box.style.right = 'auto';
-            box.style.bottom = 'auto';
-            box.style.left = (e.clientX - offsetX) + 'px';
-            box.style.top = (e.clientY - offsetY) + 'px';
-        }
-    });
+handle.addEventListener('mousedown', (e) => {
 
-    document.addEventListener('mouseup', function() {
-        if (isDraggingBox) {
-            isDraggingBox = false;
-            box.style.opacity = "1";
-        }
-    });
+    isDragging = true;
 
-    document.getElementById('run-bot').onclick = async ()=>{
-        if(BOT_RUNNING) return alert('BOT SEDANG BERJALAN');
-        const nik = document.getElementById('nik-bot').value;
-        if(!nik) return alert('Masukkan NIK');
+    const rect = box.getBoundingClientRect();
 
-        updateStatus('MENCARI NIK DI SPREADSHEET...');
-        const data = await cariData(nik);
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
 
-        if(!data) {
-            return updateStatus('NIK TIDAK DITEMUKAN DI GOOGLE SHEETS');
-        }
+    box.style.opacity = '0.85';
 
-        BOT_RUNNING = true;
-        saveBOT(data);
-        clearCompleted(); // Reset antrian tombol agar bot mulai ngeklik dari atas
+    e.preventDefault();
+});
 
-        updateStatus(`Data Ketemu!\nPerkawinan: ${data.perkawinan}`);
-        await sleep(1500);
+document.addEventListener('mousemove', (e) => {
 
-        await mainLoop(data);
-    };
-    document.getElementById('stop-bot').onclick = stopBOT;
+    if(!isDragging) return;
+
+    let left = e.clientX - offsetX;
+    let top = e.clientY - offsetY;
+
+    left = Math.max(
+        0,
+        Math.min(left, window.innerWidth - box.offsetWidth)
+    );
+
+    top = Math.max(
+        0,
+        Math.min(top, window.innerHeight - box.offsetHeight)
+    );
+
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+    box.style.right = 'auto';
+});
+
+document.addEventListener('mouseup', () => {
+
+    if(!isDragging) return;
+
+    isDragging = false;
+
+    box.style.opacity = '1';
+
+    localStorage.setItem(
+        'skrining_ui_pos',
+        JSON.stringify({
+            left: box.style.left,
+            top: box.style.top
+        })
+    );
+});
+
+/* ================= BUTTON ================= */
+
+document.getElementById('run-bot').onclick = async ()=>{
+
+    if(BOT_RUNNING) return alert('BOT SEDANG BERJALAN');
+
+    const nik = document.getElementById('nik-bot').value;
+
+    if(!nik) return alert('Masukkan NIK');
+
+    updateStatus('MENCARI NIK DI SPREADSHEET...');
+
+    const data = await cariData(nik);
+
+    if(!data){
+        return updateStatus('NIK TIDAK DITEMUKAN DI GOOGLE SHEETS');
+    }
+
+    BOT_RUNNING = true;
+
+    saveBOT(data);
+
+    clearCompleted();
+
+    updateStatus(`Data Ketemu!\nPerkawinan: ${data.perkawinan}`);
+
+    await sleep(1500);
+
+    await mainLoop(data);
+};
+
+document.getElementById('stop-bot').onclick = stopBOT;
 }
 
 /* =========================================================
