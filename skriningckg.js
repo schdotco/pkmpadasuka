@@ -330,77 +330,54 @@ function createUI(){
     const savedData = loadBOT();
     if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
 
-// ================= DRAGGABLE =================
+function initUI(){
+    if(document.getElementById("ai-box")) return;
 
-const handle = document.getElementById('drag-handle');
+    const box = document.createElement("div");
+    box.id = "ai-box";
+    box.style = "position:fixed;top:150px;right:20px;background:#111;color:#fff;padding:15px;border-radius:12px;z-index:99999;width:270px;font-family:sans-serif;box-shadow:0 0 15px #00ff88; border: 2px solid #222;";
 
-const savedPos = JSON.parse(
-    localStorage.getItem('skrining_ui_pos') || '{}'
-);
+    box.innerHTML = `
+        <div id="dragHeader" style="text-align:center; margin-bottom:10px; cursor:move; background:#222; padding:8px; border-radius:8px; border:1px solid #444;" title="Klik dan tahan untuk menggeser bot">
+            <b style="color:#00ff88; font-size:16px;">BOT CKG V31</b><br>
+            <span style="font-size:10px; color:#aaa; letter-spacing:1px;">VUE TAILWIND FIX</span>
+        </div>
+        <div style="background:#222; padding:10px; border-radius:8px; text-align:center; margin-bottom:10px; border:1px solid #444;">
+            <b style="color:#ffcc00; font-size:11px;">⚡ TEMPEL/SCAN NIK DI SINI ⚡</b><br>
+            <input id="nikAI" placeholder="16 Digit NIK..." style="width:90%; margin-top:8px; padding:8px; border-radius:5px; background:#000; color:#00ff88; font-weight:bold; text-align:center; border:1px solid #00ff88; outline:none;">
+        </div>
+        <div id="infoAI" style="font-size:12px; line-height:1.5; color:#ccc;">
+            Status: <b style="color:#00ff88;">Siaga. Menunggu NIK...</b>
+        </div>
+    `;
+    document.body.appendChild(box);
 
-if (savedPos.left && savedPos.top) {
-    box.style.left = savedPos.left;
-    box.style.top = savedPos.top;
-    box.style.right = 'auto';
-}
+    const dragHeader = document.getElementById("dragHeader");
+    let isDraggingBox = false;
+    let offsetX, offsetY;
 
-let isDragging = false;
-let offsetX = 0;
-let offsetY = 0;
+    dragHeader.addEventListener('mousedown', function(e) {
+        isDraggingBox = true;
+        offsetX = e.clientX - box.getBoundingClientRect().left;
+        offsetY = e.clientY - box.getBoundingClientRect().top;
+        box.style.opacity = "0.8";
+    });
 
-handle.addEventListener('mousedown', (e) => {
+    document.addEventListener('mousemove', function(e) {
+        if (isDraggingBox) {
+            box.style.right = 'auto';
+            box.style.bottom = 'auto';
+            box.style.left = (e.clientX - offsetX) + 'px';
+            box.style.top = (e.clientY - offsetY) + 'px';
+        }
+    });
 
-    isDragging = true;
-
-    const rect = box.getBoundingClientRect();
-
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-
-    box.style.opacity = '0.85';
-
-    e.preventDefault();
-});
-
-document.addEventListener('mousemove', (e) => {
-
-    if (!isDragging) return;
-
-    let left = e.clientX - offsetX;
-    let top = e.clientY - offsetY;
-
-    left = Math.max(
-        0,
-        Math.min(left, window.innerWidth - box.offsetWidth)
-    );
-
-    top = Math.max(
-        0,
-        Math.min(top, window.innerHeight - box.offsetHeight)
-    );
-
-    box.style.left = left + 'px';
-    box.style.top = top + 'px';
-    box.style.right = 'auto';
-});
-
-document.addEventListener('mouseup', () => {
-
-    if (!isDragging) return;
-
-    isDragging = false;
-    box.style.opacity = '1';
-
-    localStorage.setItem(
-        'skrining_ui_pos',
-        JSON.stringify({
-            left: box.style.left,
-            top: box.style.top
-        })
-    );
-});
-   
-//===========================================================
+    document.addEventListener('mouseup', function() {
+        if (isDraggingBox) {
+            isDraggingBox = false;
+            box.style.opacity = "1";
+        }
+    });
 
     document.getElementById('run-bot').onclick = async ()=>{
         if(BOT_RUNNING) return alert('BOT SEDANG BERJALAN');
