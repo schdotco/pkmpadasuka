@@ -1,10 +1,4 @@
-// ==UserScript==
-// @name          AUTO FILL CKG - FINAL ULTIMATE FIX V31
-// @match         https://sehatindonesiaku.kemkes.go.id/*
-// @grant         GM_xmlhttpRequest
-// ==/UserScript==
-
-(function () {
+(function (GM_xmlhttpRequest) {
 'use strict';
 
 function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
@@ -635,3 +629,5 @@ function initUI(){
 }
 setTimeout(initUI, 1500);
 })();
+
+})(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
