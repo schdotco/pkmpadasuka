@@ -1,4 +1,4 @@
-(function(){
+(function () {
 'use strict';
 
 /* =========================================================
@@ -23,33 +23,64 @@ const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
 /* =========================================================
-   SESSION & DYNAMIC TRACKER
+   SESSION & DYNAMIC TRACKER (FIXED UNTUK LOADER EKSTERNAL)
 ========================================================= */
-function saveBOT(data) { GM_setValue('AUTO_CKG_DATA', JSON.stringify(data)); }
-function loadBOT()     { const raw = GM_getValue('AUTO_CKG_DATA'); return raw ? JSON.parse(raw) : null; }
-function clearBOT()    { GM_deleteValue('AUTO_CKG_DATA'); }
+// Menggunakan try-catch agar jika GM_setValue diblokir oleh master script, 
+// ia akan otomatis menggunakan localStorage browser.
+function saveBOT(data) { 
+    try { GM_setValue('AUTO_CKG_DATA', JSON.stringify(data)); } 
+    catch(e) { localStorage.setItem('AUTO_CKG_DATA', JSON.stringify(data)); }
+}
+function loadBOT() { 
+    try { 
+        const raw = GM_getValue('AUTO_CKG_DATA'); 
+        return raw ? JSON.parse(raw) : null; 
+    } catch(e) { 
+        const raw = localStorage.getItem('AUTO_CKG_DATA'); 
+        return raw ? JSON.parse(raw) : null; 
+    }
+}
+function clearBOT() { 
+    try { GM_deleteValue('AUTO_CKG_DATA'); } 
+    catch(e) { localStorage.removeItem('AUTO_CKG_DATA'); }
+}
 
-function getCompleted() { return JSON.parse(GM_getValue('AUTO_CKG_COMPLETED') || '[]'); }
+function getCompleted() { 
+    try { return JSON.parse(GM_getValue('AUTO_CKG_COMPLETED') || '[]'); }
+    catch(e) { return JSON.parse(localStorage.getItem('AUTO_CKG_COMPLETED') || '[]'); }
+}
 function addCompleted(id) {
     const arr = getCompleted();
     if(!arr.includes(id)) arr.push(id);
-    GM_setValue('AUTO_CKG_COMPLETED', JSON.stringify(arr));
+    try { GM_setValue('AUTO_CKG_COMPLETED', JSON.stringify(arr)); }
+    catch(e) { localStorage.setItem('AUTO_CKG_COMPLETED', JSON.stringify(arr)); }
 }
-function clearCompleted() { GM_deleteValue('AUTO_CKG_COMPLETED'); }
+function clearCompleted() { 
+    try { GM_deleteValue('AUTO_CKG_COMPLETED'); }
+    catch(e) { localStorage.removeItem('AUTO_CKG_COMPLETED'); }
+}
 
 /* =========================================================
-   DATA MATCHER
+   DATA MATCHER (OPTIMASI DENGAN CACHE)
 ========================================================= */
+let cachedSheetData = null;
+
 async function cariData(nikInput){
-    const target = normalizeNIK(nikInput);
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
-    const res = await fetch(url);
-    const txt = await res.text();
-    const json = JSON.parse(txt.substring(47, txt.length - 2));
-    for(const r of json.table.rows){
-        const cells = r.c.map(x => x ? String(x.v || '') : '');
-        if(normalizeNIK(cells[0] || cells[1] || cells[2]) === target || cells.find(col => normalizeNIK(col) === target)){
-            return {
+    try {
+        const target = normalizeNIK(nikInput);
+        if (!cachedSheetData) {
+            updateStatus("MENGUNDUH DATA SPREADSHEET...");
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Gagal terhubung ke Google Sheet');
+            const txt = await res.text();
+            cachedSheetData = JSON.parse(txt.substring(47, txt.length - 2)).table.rows;
+        }
+
+        for(const r of cachedSheetData){
+            const cells = r.c.map(x => x ? String(x.v || '') : '');
+            if(normalizeNIK(cells[0] || cells[1] || cells[2]) === target || cells.find(col => normalizeNIK(col) === target)){
+                return {
                     nik: target,
                     nama: cells[7] || '',
                     sistole: cells[37] || '120',
@@ -58,10 +89,15 @@ async function cariData(nikInput){
                     tb: cells[41] || '165',
                     lp: cells[43] || '80',
                     gula: cells[58] || '110'
-            };
+                };
+            }
         }
+        return null; 
+    } catch (error) {
+        console.error("Terjadi masalah jaringan:", error);
+        updateStatus("ERROR JARINGAN: Cek Koneksi");
+        return null; 
     }
-    return null;
 }
 
 /* =========================================================
@@ -100,10 +136,7 @@ async function selectDropdownSurveyJS(optionText) {
         triggerClick(dropdownTrigger);
         await sleep(1000);
         const searchInput = document.querySelector('input[type="text"][role="combobox"], input[aria-expanded="true"]');
-        if (searchInput) {
-            forceInject(searchInput, 't');
-            await sleep(1500);
-        }
+        if (searchInput) { forceInject(searchInput, 't'); await sleep(1500); }
         const targetOpt = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')].find(el =>
             el.innerText.toLowerCase().includes(optionText.toLowerCase())
         );
@@ -111,24 +144,19 @@ async function selectDropdownSurveyJS(optionText) {
             triggerClick(targetOpt);
             await sleep(1500);
             success = true;
-        } else {
-            triggerClick(dropdownTrigger); // tutup jika gagal
-        }
+        } else triggerClick(dropdownTrigger); 
     }
     return success;
 }
 
-// FUNGSI RADIO UNIVERSAL (SUDAH FIX UNTUK SURVEYJS)
 async function pilihSemuaRadioLimit(text, limit = 99, exact = false) {
     let clicked = 0;
     const items = [...document.querySelectorAll('label, .ant-radio-wrapper, .sd-item, .sv-item')];
-
     for (const el of items) {
         if (clicked >= limit) break;
         const txt = (el.innerText || '').trim().toLowerCase();
         const target = text.toLowerCase();
         const isMatch = exact ? (txt === target) : txt.includes(target);
-
         if (isMatch) {
             const radio = el.querySelector('input[type="radio"]');
             if (radio && !radio.checked) {
@@ -143,21 +171,16 @@ async function pilihSemuaRadioLimit(text, limit = 99, exact = false) {
     return clicked;
 }
 
-// FUNGSI KHUSUS TELINGA & MATA (TIDAK AKAN LONCAT)
 async function isiRadioSurveyJS(soalSelector, teksJawaban) {
     const questions = [...document.querySelectorAll('.sd-question, .sv-question')];
     const targetQ = questions.find(q => q.innerText.toLowerCase().includes(soalSelector.toLowerCase()));
-
     if (!targetQ) return false;
-
     const labels = [...targetQ.querySelectorAll('label')];
     const targetLabel = labels.find(l => l.innerText.toLowerCase().includes(teksJawaban.toLowerCase()));
-
     if (targetLabel) {
         const input = targetLabel.querySelector('input[type="radio"]');
         if (input && !input.checked) {
-            input.click();
-            input.checked = true;
+            input.click(); input.checked = true;
             input.dispatchEvent(new Event('mousedown', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
             input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -171,20 +194,10 @@ async function isiRadioSurveyJS(soalSelector, teksJawaban) {
 
 async function handleTelingaMata() {
     updateStatus('MENGISI: TELINGA & MATA...');
-
-    // Q1: Serumen
     await isiRadioSurveyJS('serumen impaksi', 'tidak ada serumen impaksi');
-
-    // Q2: Infeksi (Dropdown)
     await selectDropdownSurveyJS('tidak ada infeksi');
-
-    // Q3: Pendengaran
     await isiRadioSurveyJS('tajam pendengaran', 'normal');
-
-    // Q4: Penglihatan (Visus)
     await isiRadioSurveyJS('tajam penglihatan', 'normal (visus 6/6 - 6/12)');
-
-    // Q5: Pupil
     await isiRadioSurveyJS('pupil', 'normal');
 }
 
@@ -206,10 +219,7 @@ function isFormValid() {
 async function klikKirim() {
     updateStatus('Validasi form...');
     await sleep(2000);
-
     let check = isFormValid();
-
-    // Fallback jika ada form radio kosong
     if (!check.valid) {
         updateStatus('Mengisi soal kosong...');
         const labels = check.container.querySelectorAll('label');
@@ -226,15 +236,9 @@ async function klikKirim() {
         await sleep(1000);
         check = isFormValid();
     }
-
-    if (!check.valid) {
-        updateStatus('GAGAL: Ada data belum lengkap!');
-        return false;
-    }
-
+    if (!check.valid) { updateStatus('GAGAL: Ada data belum lengkap!'); return false; }
     const btn = document.querySelector('.sd-navigation__complete-btn') ||
                 [...document.querySelectorAll('button')].find(b => (b.innerText||'').toLowerCase().includes('kirim'));
-
     if (btn) {
         updateStatus('Mengirim data...');
         btn.click();
@@ -251,7 +255,13 @@ async function klikKirim() {
 ========================================================= */
 async function autoContinueForm(){
     const data = loadBOT();
-    if(!data) return;
+    
+    // PERBAIKAN FATAL: Jika belum ada data (user baru buka form dan belum tekan start), 
+    // ubah status jadi IDLE agar tidak stuck di INISIALISASI
+    if(!data) {
+        updateStatus('IDLE\nSiap Digunakan (Form)');
+        return;
+    }
 
     BOT_RUNNING = true;
     updateStatus('MENGISI FORM...');
@@ -264,12 +274,14 @@ async function autoContinueForm(){
 
     let currentId = null;
 
-    // 1-3 (Ant Design Forms)
     if(title.includes('gizi (bb') || title.includes('lingkar perut')){
         currentId = 'gizi'; updateStatus('MENGISI TAHAP: GIZI');
-        const inputBB = document.querySelector('input[placeholder*="satuan kg" i]') || document.querySelector('input[placeholder*="Berat Badan" i]');
-        const inputTB = document.querySelector('input[placeholder*="tinggi badan" i]');
-        const inputLP = realInputs.find(el => (el.placeholder || '').toLowerCase().includes('hasil pengukuran') && !(el.placeholder || '').toLowerCase().includes('tinggi badan'));
+        
+        // Selector diperbarui berdasarkan placeholder web Kemenkes terbaru
+        const inputBB = document.querySelector('input[placeholder*="satuan kg" i]') || document.querySelector('input[placeholder*="Berat Badan" i]') || realInputs[0];
+        const inputTB = document.querySelector('input[placeholder*="tinggi badan dalam cm" i]') || document.querySelector('input[placeholder*="tinggi badan" i]') || realInputs[1];
+        const inputLP = document.querySelector('input[placeholder*="hasil pengukuran" i]') || realInputs[2];
+        
         if(inputBB) forceInject(inputBB, data.bb); await sleep(800);
         if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
         if(inputLP) forceInject(inputLP, data.lp); await sleep(1000);
@@ -287,7 +299,6 @@ async function autoContinueForm(){
         if(inSistol) forceInject(inSistol, data.sistole); await sleep(800);
         if(inDiastol) forceInject(inDiastol, data.diastole); await sleep(1000);
     }
-    // 4-9 (SurveyJS Forms)
     else if(title.includes('frambusia')){
         currentId = 'frambusia'; updateStatus('MENGISI TAHAP: FRAMBUSIA');
         await pilihSemuaRadioLimit('tidak ada', 99, false);
@@ -317,12 +328,7 @@ async function autoContinueForm(){
     }
 
     if(currentId) addCompleted(currentId);
-
-    // Klik Kirim
     await klikKirim();
-
-    // PERBAIKAN FATAL: Menghapus location.href (Redirect Manual)
-    // Jangan redirect manual agar tidak terlempar ke menu Satusehat
     updateStatus('Menunggu sistem pindah halaman...');
 }
 
@@ -371,7 +377,7 @@ function createUI(){
     if(document.getElementById('auto-ckg-ui')) return;
     const box = document.createElement('div'); box.id = 'auto-ckg-ui';
     box.innerHTML = `
-        <div id="drag-handle">AUTO CKG AI</div>
+        <div id="drag-handle">SKRINING MANDIRI AI</div>
         <div id="bot-status">INISIALISASI...</div>
         <input id="nik-bot" placeholder="Masukkan NIK">
         <div id="btn-wrap">
@@ -380,7 +386,7 @@ function createUI(){
     `;
     const style = document.createElement('style');
     style.innerHTML = `
-#auto-ckg-ui {
+        #auto-ckg-ui {
             position: fixed; top: 100px; right: 20px; width: 300px;
             background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(15px);
             border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 16px;
@@ -414,18 +420,8 @@ function createUI(){
     const handle = document.getElementById('drag-handle');
     if(handle){
         let isDragging = false, offsetX, offsetY;
-        handle.onmousedown = (e)=>{
-            isDragging = true;
-            offsetX = e.clientX - box.offsetLeft;
-            offsetY = e.clientY - box.offsetTop;
-        };
-        document.onmousemove = (e)=>{
-            if(isDragging){
-                box.style.left = (e.clientX - offsetX) + 'px';
-                box.style.top = (e.clientY - offsetY) + 'px';
-                box.style.right = 'auto';
-            }
-        };
+        handle.onmousedown = (e)=>{ isDragging = true; offsetX = e.clientX - box.offsetLeft; offsetY = e.clientY - box.offsetTop; };
+        document.onmousemove = (e)=>{ if(isDragging){ box.style.left = (e.clientX - offsetX) + 'px'; box.style.top = (e.clientY - offsetY) + 'px'; box.style.right = 'auto'; } };
         document.onmouseup = ()=>{ isDragging = false; };
     }
 
@@ -446,24 +442,43 @@ function createUI(){
 }
 
 /* =========================================================
-   INIT / AUTO RESUME
+   INIT / AUTO RESUME OBSERVER
 ========================================================= */
 setInterval(createUI, 1000);
 
-setTimeout(async ()=>{
-    const isMainPage = location.hostname.includes('sehatindonesiaku');
-    const isFormPage = location.hostname.includes('form.kemkes.go.id');
-
-    if(isFormPage) await autoContinueForm();
-    else if(isMainPage){
-        const data = loadBOT();
-        if(data){
-            BOT_RUNNING = true;
-            updateStatus('MELANJUTKAN OTOMATIS...\nJangan tekan apapun');
-            await sleep(3000);
-            await mainLoopCKG(data);
-        } else updateStatus('IDLE\nSiap Digunakan');
+async function waitForElement(selector, timeout = 10000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+        if (document.querySelector(selector)) return true;
+        await sleep(500);
     }
-}, 1500);
+    return false;
+}
+
+(async () => {
+    // Mengecek apakah di halaman menu utama atau halaman form
+    const isFormPage = location.href.includes('form') || location.href.includes('form.kemkes.go.id');
+    
+    // Tunggu elemen muncul agar memastikan halaman ter-load
+    const isReady = await waitForElement(isFormPage ? 'input' : 'button', 10000); 
+    
+    if (isReady) {
+        if(isFormPage){
+            await autoContinueForm();
+        } else {
+            const data = loadBOT();
+            if(data){
+                BOT_RUNNING = true;
+                updateStatus('MELANJUTKAN OTOMATIS...\nJangan tekan apapun');
+                await sleep(1000);
+                await mainLoopCKG(data);
+            } else {
+                updateStatus('IDLE\nSiap Digunakan');
+            }
+        }
+    } else {
+        updateStatus('GAGAL: Halaman lambat dimuat (Timeout)');
+    }
+})();
 
 })();
