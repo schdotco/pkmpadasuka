@@ -30,29 +30,38 @@ function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
 ========================================================= */
 async function cariData(nikInput) {
-        const target = normalizeNIK(nikInput);
-        return new Promise(resolve => {
-            request({
-                method: "GET",
-                url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`,
-                timeout: 10000,
-                onload: r => {
-                    const lines = r.responseText.split('\n');
-                    for (let i = 1; i < lines.length; i++) {
-                        const row = lines[i].split(',');
-                        if (row.some(col => normalizeNIK(col) === target)) {
-                            return resolve({
-                                nik: target,
-                                perkawinan: rows[i][26]?.trim() || 'Belum Menikah'
-                            });
-                        }
+    const target = normalizeNIK(nikInput);
+
+    return new Promise(resolve => {
+        request({
+            method: "GET",
+            url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`,
+            timeout: 10000,
+
+            onload: r => {
+
+                const rows = parseCSV(r.responseText);
+
+                for (let i = 1; i < rows.length; i++) {
+
+                    const nikSheet = normalizeNIK(rows[i][11]);
+
+                    if (nikSheet === target) {
+
+                        return resolve({
+                            nik: target,
+                            perkawinan: rows[i][26] || 'Belum Menikah'
+                        });
                     }
-                    resolve(null);
-                },
-                onerror: () => resolve(null)
-            });
+                }
+
+                resolve(null);
+            },
+
+            onerror: () => resolve(null)
         });
-    }
+    });
+}
 
 /* =========================================================
    DOM INTERACTOR (SURVEYJS SAFE)
