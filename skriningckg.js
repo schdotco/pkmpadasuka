@@ -111,84 +111,229 @@ async function cariData(nikInput) {
 ========================================================= */
 async function fillRadioSurveyJS(soalText, jawabanText) {
     try {
-        const questions = [...document.querySelectorAll('.sd-question, .sv-question')];
-        const targetQ = questions.find(q => (q.innerText||'').toLowerCase().includes(soalText.toLowerCase()));
+
+        const questions = [
+            ...document.querySelectorAll(
+                '.sd-question, .sv-question, .sd-element, [data-name]'
+            )
+        ];
+
+        const targetQ = questions.find(q => {
+            const qText = (q.innerText || '').toLowerCase();
+
+            return qText.includes(soalText.toLowerCase()) ||
+                   soalText.toLowerCase().includes(qText);
+        });
+
+        console.log(
+            '[DEBUG SOAL]',
+            soalText,
+            questions.map(x => (x.innerText || '').split('\n')[0]).slice(0, 20)
+        );
 
         if (!targetQ) {
             console.warn("Soal tidak ditemukan:", soalText);
             return false;
         }
 
-        // Temukan elemen wrapper item (biasanya .sd-item atau .sv-item)
         const items = [...targetQ.querySelectorAll('.sd-item, .sv-item')];
 
-        // Debug: Log semua opsi yang terdeteksi agar kita tahu isinya apa
         const opsiTersedia = items.map(i => i.innerText.trim());
         console.log("Opsi ditemukan di web (" + soalText + "):", opsiTersedia);
 
-        const targetItem = items.find(el => (el.innerText||'').toLowerCase().trim() === jawabanText.toLowerCase());
+        const targetItem = items.find(el =>
+            (el.innerText || '').toLowerCase().trim() ===
+            jawabanText.toLowerCase()
+        );
 
         if (targetItem) {
-            const input = targetItem.querySelector('input[type="radio"]');
+
+            const input = targetItem.querySelector(
+                'input[type="radio"]'
+            );
+
+            targetItem.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            targetItem.click();
+
             if (input) {
-                // Scroll agar terlihat
-                targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                // Urutan eksekusi wajib agar state SurveyJS terupdate
-                input.click();
                 input.checked = true;
-                input.dispatchEvent(new Event('mousedown', { bubbles: true }));
-                input.dispatchEvent(new Event('mouseup', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('click', { bubbles: true }));
 
-                console.log("[AI] Berhasil mengisi:", jawabanText);
-                await sleep(500);
-                return true;
+                input.dispatchEvent(
+                    new Event('input', { bubbles: true })
+                );
+
+                input.dispatchEvent(
+                    new Event('change', { bubbles: true })
+                );
             }
+
+            console.log('[AI] Berhasil mengisi:', jawabanText);
+
+            await sleep(500);
+
+            return true;
         }
-    } catch(e) { console.error("Error mengisi radio:", e); }
+
+    } catch(e) {
+        console.error("Error mengisi radio:", e);
+    }
+
     return false;
 }
 
 async function selectDropdownContext(soalText, optionText, typeChar = 't') {
     try {
-        const questions = [...document.querySelectorAll('.sd-question, .sv-question')];
-        const targetQ = questions.find(q => (q.innerText||'').toLowerCase().includes(soalText.toLowerCase()));
 
-        if (targetQ) {
-            const dropdown = targetQ.querySelector('.sd-dropdown, .sv-dropdown');
-            if (dropdown) {
-                dropdown.scrollIntoView({ behavior:'smooth', block:'center' });
-                dropdown.click();
-                await sleep(1000);
+        const questions = [
+            ...document.querySelectorAll(
+                '.sd-question, .sv-question, .sd-element, [data-name]'
+            )
+        ];
 
-                const search = document.querySelector('input[type="text"][role="combobox"], input[aria-expanded="true"]');
-                if (search && typeChar) {
-                    search.focus();
-                    search.value = typeChar;
-                    search.dispatchEvent(new Event('input', { bubbles: true }));
-                    search.dispatchEvent(new Event('change', { bubbles: true }));
-                    await sleep(1000);
-                }
+        const targetQ = questions.find(q => {
+            const qText = (q.innerText || '').toLowerCase();
 
-                const opts = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
-                const targetOpt = opts.find(el => (el.innerText||'').toLowerCase().includes(optionText.toLowerCase()));
-                if (targetOpt) {
-                    targetOpt.click();
-                    await sleep(500);
+            return qText.includes(soalText.toLowerCase()) ||
+                   soalText.toLowerCase().includes(qText);
+        });
 
-                    // --- TRIK TAB KEY: Memicu event blur agar form memvalidasi data ---
-                    document.activeElement.blur();
-                    console.log("[AI] Dropdown terisi & Blur dipicu (seperti TAB).");
-                    return true;
-                } else {
-                    dropdown.click();
-                }
-            }
+        console.log('[DEBUG CARI DROPDOWN]', soalText, !!targetQ);
+
+        if (!targetQ) {
+            console.warn('Dropdown tidak ditemukan:', soalText);
+            return false;
         }
-    } catch(e) { console.error(e); }
+
+        const dropdown = targetQ.querySelector(
+            '.sd-dropdown, .sv-dropdown'
+        );
+
+        if (!dropdown) {
+            console.warn('Elemen dropdown tidak ditemukan:', soalText);
+            return false;
+        }
+
+        dropdown.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+
+        dropdown.click();
+
+        await sleep(1000);
+
+        const search = document.querySelector(
+            'input[type="text"][role="combobox"], input[aria-expanded="true"]'
+        );
+
+        if (search && typeChar) {
+
+            search.focus();
+
+            search.value = typeChar;
+
+            search.dispatchEvent(
+                new Event('input', { bubbles: true })
+            );
+
+            search.dispatchEvent(
+                new Event('change', { bubbles: true })
+            );
+
+            await sleep(1000);
+        }
+
+        const opts = [
+            ...document.querySelectorAll(
+                '.sv-list__item-body, .sd-list__item-body'
+            )
+        ];
+
+        console.log(
+            '[DEBUG OPSI DROPDOWN]',
+            opts.map(x => x.innerText.trim())
+        );
+
+        const targetOpt = opts.find(el =>
+            (el.innerText || '')
+                .toLowerCase()
+                .includes(optionText.toLowerCase())
+        );
+
+        if (targetOpt) {
+
+            targetOpt.click();
+
+            await sleep(500);
+
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+
+            console.log(
+                '[AI] Dropdown terisi:',
+                optionText
+            );
+
+            return true;
+        }
+
+        console.warn(
+            '[AI] Opsi dropdown tidak ditemukan:',
+            optionText
+        );
+
+        dropdown.click();
+
+    } catch (e) {
+        console.error(
+            'Error selectDropdownContext:',
+            e
+        );
+    }
+
+    return false;
+}
+
+async function pilihAktivitasFisikOpsi1() {
+
+    const combo = document.querySelector(
+        '#sq_103i_0, .sd-dropdown__filter-string-input'
+    );
+
+    if (!combo) {
+        console.warn('Dropdown aktivitas fisik tidak ditemukan');
+        return false;
+    }
+
+    combo.click();
+
+    await sleep(1000);
+
+    const options = [
+        ...document.querySelectorAll(
+            '.sd-list__item-body, .sv-list__item-body'
+        )
+    ];
+
+    console.log(
+        '[OPSI AKTIVITAS]',
+        options.map(x => x.innerText.trim())
+    );
+
+    if (options.length > 0) {
+
+        options[0].click(); // pilih opsi nomor 1
+
+        await sleep(500);
+
+        return true;
+    }
+
     return false;
 }
 
@@ -225,12 +370,19 @@ async function handleSkriningMandiri(data) {
     // 4. KESEHATAN JIWA
     await fillRadioSurveyJS('kesehatan jiwa', 'tidak sama sekali');
 
+    // TB
+    await fillRadioSurveyJS('faktor risiko tb', 'tidak');
+
     // 5. SAPU BERSIH (Isi semua radio yang kosong menjadi 'Tidak'/'Normal')
-    const questions = document.querySelectorAll('.sd-question, .sv-question');
+    const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
     questions.forEach(q => {
         // PENTING: Tambahkan 'kanker leher rahim' di daftar pengecualian di bawah ini!
         let qText = (q.innerText||'').toLowerCase();
-        if (qText.match(/perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim/)) return;
+        if (
+    qText.match(
+        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim|faktor risiko tb/
+    )
+) return;
 
         q.querySelectorAll('label').forEach(l => {
             let txt = (l.innerText||'').toLowerCase().trim();
@@ -242,14 +394,17 @@ async function handleSkriningMandiri(data) {
     });
 
     // 6. AKTIVITAS FISIK (Isi & Pastikan terisi)
-const activityQ = [...document.querySelectorAll('.sd-question, .sv-question')].find(q => (q.innerText||'').toLowerCase().includes('aktivitas fisik'));
+    const activityQ = [
+        ...document.querySelectorAll(
+            '.sd-question, .sv-question, .sd-element, [data-name]'
+        )
+    ].find(q =>
+        (q.innerText || '').toLowerCase().includes('aktivitas fisik')
+    );
+    
     if (activityQ) {
-        // Cek apakah dropdown sudah berisi 'tidak'
-        const dropdown = activityQ.querySelector('.sd-dropdown, .sv-dropdown');
-        if (dropdown && !(dropdown.innerText||'').toLowerCase().includes('tidak')) {
-            updateStatus('Mengisi Aktivitas Fisik: Tidak...');
-            await selectDropdownContext('aktivitas fisik', 'tidak', 't');
-        }
+        updateStatus('Mengisi Aktivitas Fisik...');
+        await pilihAktivitasFisikOpsi1();
     }
 
     // 7. NAVIGASI (Cari tombol Lanjut atau Kirim)
