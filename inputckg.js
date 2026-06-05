@@ -276,11 +276,11 @@ async function autoContinueForm(){
 
     if(title.includes('gizi (bb') || title.includes('lingkar perut')){
         currentId = 'gizi'; updateStatus('MENGISI TAHAP: GIZI');
-        
-        // Selector diperbarui berdasarkan placeholder web Kemenkes terbaru
+      
+      // Menggunakan array find untuk mencegah tabrakan kata "hasil pengukuran" antara TB dan LP
         const inputBB = document.querySelector('input[placeholder*="satuan kg" i]') || document.querySelector('input[placeholder*="Berat Badan" i]') || realInputs[0];
-        const inputTB = document.querySelector('input[placeholder*="tinggi badan dalam cm" i]') || document.querySelector('input[placeholder*="tinggi badan" i]') || realInputs[1];
-        const inputLP = document.querySelector('input[placeholder*="hasil pengukuran" i]') || realInputs[2];
+        const inputTB = document.querySelector('input[placeholder*="tinggi badan" i]') || realInputs[1];
+        const inputLP = realInputs.find(el => (el.placeholder || '').toLowerCase().includes('hasil pengukuran') && !(el.placeholder || '').toLowerCase().includes('tinggi badan')) || realInputs[2];
         
         if(inputBB) forceInject(inputBB, data.bb); await sleep(800);
         if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
