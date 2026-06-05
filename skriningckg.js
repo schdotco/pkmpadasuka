@@ -350,13 +350,39 @@ function createUI(){
     const savedData = loadBOT();
     if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
 
-    const handle = document.getElementById('drag-handle');
-    if(handle){
-        let isDragging = false, offsetX, offsetY;
-        handle.onmousedown = (e)=>{ isDragging = true; offsetX = e.clientX - box.offsetLeft; offsetY = e.clientY - box.offsetTop; };
-        document.onmousemove = (e)=>{ if(isDragging){ box.style.left = (e.clientX - offsetX) + 'px'; box.style.top = (e.clientY - offsetY) + 'px'; box.style.right = 'auto'; } };
-        document.onmouseup = ()=>{ isDragging = false; };
-    }
+const handle = document.getElementById('drag-handle');
+
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+
+handle.addEventListener('pointerdown', (e) => {
+
+    isDragging = true;
+
+    const rect = box.getBoundingClientRect();
+
+    startX = e.clientX - rect.left;
+    startY = e.clientY - rect.top;
+
+    box.style.left = rect.left + 'px';
+    box.style.top = rect.top + 'px';
+    box.style.right = 'auto';
+
+    handle.setPointerCapture(e.pointerId);
+});
+
+document.addEventListener('pointermove', (e) => {
+
+    if (!isDragging) return;
+
+    box.style.left = (e.clientX - startX) + 'px';
+    box.style.top = (e.clientY - startY) + 'px';
+});
+
+document.addEventListener('pointerup', () => {
+    isDragging = false;
+});
 
     document.getElementById('run-bot').onclick = async ()=>{
         if(BOT_RUNNING) return alert('BOT SEDANG BERJALAN');
