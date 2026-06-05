@@ -350,7 +350,24 @@ function createUI(){
     const savedData = loadBOT();
     if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
 
+// ================= DRAGGABLE MODERN =================
+
 const handle = document.getElementById('drag-handle');
+
+const savedPos = JSON.parse(
+    localStorage.getItem('skrining_ui_pos') || '{}'
+);
+
+if (savedPos.left) {
+    box.style.left = savedPos.left;
+    box.style.top = savedPos.top;
+    box.style.right = 'auto';
+} else {
+    const rect = box.getBoundingClientRect();
+    box.style.left = rect.left + 'px';
+    box.style.top = rect.top + 'px';
+    box.style.right = 'auto';
+}
 
 let isDragging = false;
 let startX = 0;
@@ -365,23 +382,43 @@ handle.addEventListener('pointerdown', (e) => {
     startX = e.clientX - rect.left;
     startY = e.clientY - rect.top;
 
-    box.style.left = rect.left + 'px';
-    box.style.top = rect.top + 'px';
-    box.style.right = 'auto';
-
     handle.setPointerCapture(e.pointerId);
+
+    handle.style.cursor = 'grabbing';
 });
 
 document.addEventListener('pointermove', (e) => {
 
     if (!isDragging) return;
 
-    box.style.left = (e.clientX - startX) + 'px';
-    box.style.top = (e.clientY - startY) + 'px';
+    let left = e.clientX - startX;
+    let top = e.clientY - startY;
+
+    const maxLeft = window.innerWidth - box.offsetWidth;
+    const maxTop = window.innerHeight - box.offsetHeight;
+
+    left = Math.max(0, Math.min(left, maxLeft));
+    top = Math.max(0, Math.min(top, maxTop));
+
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
 });
 
 document.addEventListener('pointerup', () => {
+
+    if (!isDragging) return;
+
     isDragging = false;
+
+    handle.style.cursor = 'move';
+
+    localStorage.setItem(
+        'skrining_ui_pos',
+        JSON.stringify({
+            left: box.style.left,
+            top: box.style.top
+        })
+    );
 });
 
     document.getElementById('run-bot').onclick = async ()=>{
