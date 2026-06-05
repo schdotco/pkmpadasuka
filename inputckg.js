@@ -1,17 +1,6 @@
-// ==UserScript==
-// @name         AUTO CKG FINAL FIX FORM KEMENKES
-// @namespace    auto-ckg-final
-// @version      1007.0
-// @description  AUTO CKG FINAL - SURVEYJS FIX (9 TAHAPAN)
-// @match        https://sehatindonesiaku.kemkes.go.id/*
-// @match        https://form.kemkes.go.id/*
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM_deleteValue
-// ==/UserScript==
-
-(function(){
+(function (GM_xmlhttpRequest) {
 'use strict';
+    const request = GM_xmlhttpRequest;
 
 /* =========================================================
    CONFIG
@@ -474,4 +463,4 @@ setTimeout(async ()=>{
     }
 }, 1500);
 
-})();
+})(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
