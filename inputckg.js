@@ -5,8 +5,8 @@
 /* =========================================================
    CONFIG
 ========================================================= */
-const SHEET_ID = '1kDShNBXFk3QtrrGaEX0fTjmRd1zGjb0s9n21a_1oHSM';
-const GID = '250649365';
+const SHEET_ID = '15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY';
+const GID = '0';
 
 const TARGETS = [
     { id: 'gizi', txt: 'gizi (bb' },
