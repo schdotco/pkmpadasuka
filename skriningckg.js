@@ -349,8 +349,6 @@ updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.');
 }
 
 function createUI(){
-
-```
 if(document.getElementById('auto-ckg-ui')) return;
 
 const box = document.createElement('div');
