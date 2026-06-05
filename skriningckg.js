@@ -80,7 +80,10 @@ async function cariData(nikInput) {
 
             onload: r => {
 
-                const rows = parseCSV(r.responseText);
+            const rows = parseCSV(r.responseText);
+            
+            console.log("HEADER:", rows[0]);
+            console.log("ROW PERTAMA:", rows[1]);
 
                 for (let i = 1; i < rows.length; i++) {
 
