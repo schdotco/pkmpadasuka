@@ -39,24 +39,29 @@ function addCompleted(id) {
 function clearCompleted() { GM_deleteValue('AUTO_CKG_COMPLETED'); }
 
 /* =========================================================
-   DATA MATCHER
+   DATA MATCHER (OPTIMASI DENGAN CACHE)
 ========================================================= */
+let cachedSheetData = null; // Variabel global untuk menyimpan data sementara
+
 async function cariData(nikInput){
     try {
         const target = normalizeNIK(nikInput);
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
         
-        // Menambahkan timeout atau pengecekan respon
-        const res = await fetch(url);
-        
-        if (!res.ok) {
-            throw new Error('Gagal terhubung ke Google Sheet: ' + res.status);
+        // JIKA DATA BELUM ADA DI MEMORI, KITA DOWNLOAD
+        if (!cachedSheetData) {
+            updateStatus("MENGUNDUH DATA DARI SPREADSHEET (HANYA SEKALI)...");
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+            const res = await fetch(url);
+            
+            if (!res.ok) throw new Error('Gagal terhubung ke Google Sheet');
+            
+            const txt = await res.text();
+            // Simpan ke variabel global agar tidak perlu download lagi
+            cachedSheetData = JSON.parse(txt.substring(47, txt.length - 2)).table.rows;
         }
-        
-        const txt = await res.text();
-        const json = JSON.parse(txt.substring(47, txt.length - 2));
-        
-        for(const r of json.table.rows){
+
+        // CARI DI DATA YANG SUDAH TERSIMPAN
+        for(const r of cachedSheetData){
             const cells = r.c.map(x => x ? String(x.v || '') : '');
             if(normalizeNIK(cells[0] || cells[1] || cells[2]) === target || cells.find(col => normalizeNIK(col) === target)){
                 return {
@@ -71,11 +76,11 @@ async function cariData(nikInput){
                 };
             }
         }
-        return null; // Data tidak ketemu
+        return null; 
     } catch (error) {
         console.error("Terjadi masalah jaringan:", error);
         updateStatus("ERROR JARINGAN: Cek Koneksi / Reload Halaman");
-        return null; // Mengembalikan null agar script tidak crash
+        return null; 
     }
 }
 
