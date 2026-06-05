@@ -341,17 +341,9 @@ if(savedData && savedData.nik){
 
 /* ================= DRAGGABLE ================= */
 
+/* ================= DRAGGABLE ================= */
+
 const handle = document.getElementById('drag-handle');
-
-const savedPos = JSON.parse(
-    localStorage.getItem('skrining_ui_pos') || '{}'
-);
-
-if(savedPos.left && savedPos.top){
-    box.style.left = savedPos.left;
-    box.style.top = savedPos.top;
-    box.style.right = 'auto';
-}
 
 let isDragging = false;
 let offsetX = 0;
@@ -363,6 +355,11 @@ handle.addEventListener('mousedown', (e) => {
 
     const rect = box.getBoundingClientRect();
 
+    // ubah posisi awal dari right menjadi left
+    box.style.left = rect.left + 'px';
+    box.style.top = rect.top + 'px';
+    box.style.right = 'auto';
+
     offsetX = e.clientX - rect.left;
     offsetY = e.clientY - rect.top;
 
@@ -373,41 +370,16 @@ handle.addEventListener('mousedown', (e) => {
 
 document.addEventListener('mousemove', (e) => {
 
-    if(!isDragging) return;
+    if (!isDragging) return;
 
-    let left = e.clientX - offsetX;
-    let top = e.clientY - offsetY;
-
-    left = Math.max(
-        0,
-        Math.min(left, window.innerWidth - box.offsetWidth)
-    );
-
-    top = Math.max(
-        0,
-        Math.min(top, window.innerHeight - box.offsetHeight)
-    );
-
-    box.style.left = left + 'px';
-    box.style.top = top + 'px';
-    box.style.right = 'auto';
+    box.style.left = (e.clientX - offsetX) + 'px';
+    box.style.top = (e.clientY - offsetY) + 'px';
 });
 
 document.addEventListener('mouseup', () => {
 
-    if(!isDragging) return;
-
     isDragging = false;
-
     box.style.opacity = '1';
-
-    localStorage.setItem(
-        'skrining_ui_pos',
-        JSON.stringify({
-            left: box.style.left,
-            top: box.style.top
-        })
-    );
 });
 
 /* ================= BUTTON ================= */
