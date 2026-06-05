@@ -29,6 +29,46 @@ function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
 /* =========================================================
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
 ========================================================= */
+function parseCSV(text) {
+    const rows = [];
+    let row = [];
+    let current = "";
+    let insideQuote = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"') {
+            if (insideQuote && next === '"') {
+                current += '"';
+                i++;
+            } else {
+                insideQuote = !insideQuote;
+            }
+        } else if (char === ',' && !insideQuote) {
+            row.push(current);
+            current = "";
+        } else if ((char === '\n' || char === '\r') && !insideQuote) {
+            if (current || row.length) {
+                row.push(current);
+                rows.push(row);
+                row = [];
+                current = "";
+            }
+        } else {
+            current += char;
+        }
+    }
+
+    if (current || row.length) {
+        row.push(current);
+        rows.push(row);
+    }
+
+    return rows;
+}
+    
 async function cariData(nikInput) {
     const target = normalizeNIK(nikInput);
 
