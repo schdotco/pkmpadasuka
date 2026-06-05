@@ -463,19 +463,22 @@ function createUI(){
 setInterval(createUI, 1000);
 
 setTimeout(async ()=>{
-    const isMainPage = location.hostname.includes('sehatindonesiaku');
-    const isFormPage = location.hostname.includes('form.kemkes.go.id');
-
-    if(isFormPage) await autoContinueForm();
-    else if(isMainPage){
+    // Deteksi halaman secara lebih fleksibel melalui URL atau elemen di dalam halaman
+    const isFormPage = location.href.includes('form') || document.querySelector('input') !== null;
+    
+    if(isFormPage){
+        await autoContinueForm();
+    } else {
         const data = loadBOT();
         if(data){
             BOT_RUNNING = true;
             updateStatus('MELANJUTKAN OTOMATIS...\nJangan tekan apapun');
             await sleep(3000);
             await mainLoopCKG(data);
-        } else updateStatus('IDLE\nSiap Digunakan');
+        } else {
+            updateStatus('IDLE\nSiap Digunakan');
+        }
     }
-}, 1500);
+}, 2000); // Waktu tunggu dinaikkan sedikit menjadi 2 detik agar halaman web sempat dimuat
 
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
