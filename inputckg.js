@@ -13,15 +13,6 @@
 (function(){
 'use strict';
 
-   /* ================= PENCEGAHAN ERROR LAUNCHER ================= */
-    // Menangkap jembatan GM_xmlhttpRequest dari Launcher
-    const fetchAPI = typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : window.GM_xmlhttpRequest;
-
-    if (!fetchAPI) {
-        alert("CRITICAL ERROR: Fungsi fetchAPI tidak terdeteksi! Script tidak bisa menarik data.");
-        return;
-    }
-
 /* =========================================================
    CONFIG
 ========================================================= */
