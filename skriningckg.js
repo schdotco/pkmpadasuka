@@ -4,8 +4,8 @@
 /* =========================================================
    CONFIG SPREADSHEET
 ========================================================= */
-const SHEET_ID = '1kDShNBXFk3QtrrGaEX0fTjmRd1zGjb0s9n21a_1oHSM';
-const GID = '250649365';
+const SHEET_ID = '15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY';
+const GID = '0';
 
 const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
@@ -44,12 +44,12 @@ async function cariData(nikInput){
             const cells = r.c.map(x => x ? String(x.f || x.v || '') : '');
 
             // Cek index 3 (Kolom 4) atau sapu bersih seluruh kolom sebagai cadangan
-            const isMatch = (normalizeNIK(cells[3]) === target) || cells.some(col => normalizeNIK(col) === target);
+            const isMatch = (normalizeNIK(cells[11]) === target) || cells.some(col => normalizeNIK(col) === target);
 
             if(isMatch){
                 return {
                     nik: target,
-                    perkawinan: cells[14]  || 'Belum Kawin'
+                    perkawinan: cells[26]  || 'Belum Kawin'
                 };
             }
         }
@@ -167,13 +167,35 @@ async function handleSkriningMandiri(data) {
     // 2. DISABILITAS
     await fillRadioSurveyJS('disabilitas', 'non disabilitas');
 
-    // 3. KANKER LEHER RAHIM (LOGIKA KONDISIONAL)
-    // Jika menikah atau cerai, jawab YA. Selain itu TIDAK.
-    let p = (data.perkawinan || '').toLowerCase();
-    let isYes = p.includes('menikah') || p.includes('cerai') || (p.includes('kawin') && !p.includes('belum'));
-
-    console.log("[DEBUG] Perkawinan:", p, "-> Kanker Leher Rahim:", isYes ? "YA" : "TIDAK");
-    await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
+   // 3. KANKER LEHER RAHIM (LOGIKA KONDISIONAL)
+   
+   console.log("===== DEBUG DATA =====");
+   console.log(data);
+   console.log("PERKAWINAN =", data.perkawinan);
+   console.log("martial =", data.martial);
+   console.log("Martial =", data.Martial);
+   
+   let p = (
+       data.perkawinan ||
+       data.martial ||
+       data.Martial ||
+       ''
+   ).toLowerCase().trim();
+   
+   let isYes =
+       p.includes('menikah') ||
+       p.includes('kawin') ||
+       p.includes('cerai') ||
+       p.includes('janda') ||
+       p.includes('duda');
+   
+   console.log("[DEBUG] Status =", p);
+   console.log("[DEBUG] Kanker Leher Rahim =", isYes ? "YA" : "TIDAK");
+   
+   await fillRadioSurveyJS(
+       'kanker leher rahim',
+       isYes ? 'ya' : 'tidak'
+   );
 
     // 4. KESEHATAN JIWA
     await fillRadioSurveyJS('kesehatan jiwa', 'tidak sama sekali');
