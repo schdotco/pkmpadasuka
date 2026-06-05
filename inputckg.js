@@ -42,34 +42,41 @@ function clearCompleted() { GM_deleteValue('AUTO_CKG_COMPLETED'); }
    DATA MATCHER
 ========================================================= */
 async function cariData(nikInput){
-    const target = normalizeNIK(nikInput);
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
-    const res = await fetch(url);
-    const txt = await res.text();
-    const json = JSON.parse(txt.substring(47, txt.length - 2));
-    for(const r of json.table.rows){
-        const cells = r.c.map(x => x ? String(x.v || '') : '');
-        if(normalizeNIK(cells[0] || cells[1] || cells[2]) === target || cells.find(col => normalizeNIK(col) === target)){
-            return {
-                nik: target,
-
-                nama: cells[7] || '',          // H
-
-                sistole: cells[37] || '120',   // AL
-
-                diastole: cells[38] || '80',   // AM
-
-                bb: cells[40] || '60',         // AO
-
-                tb: cells[41] || '165',        // AP
-
-                lp: cells[43] || '80',         // AR
-
-                gula: cells[58] || '110'       // BG
-            };
+    try {
+        const target = normalizeNIK(nikInput);
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+        
+        // Menambahkan timeout atau pengecekan respon
+        const res = await fetch(url);
+        
+        if (!res.ok) {
+            throw new Error('Gagal terhubung ke Google Sheet: ' + res.status);
         }
+        
+        const txt = await res.text();
+        const json = JSON.parse(txt.substring(47, txt.length - 2));
+        
+        for(const r of json.table.rows){
+            const cells = r.c.map(x => x ? String(x.v || '') : '');
+            if(normalizeNIK(cells[0] || cells[1] || cells[2]) === target || cells.find(col => normalizeNIK(col) === target)){
+                return {
+                    nik: target,
+                    nama: cells[7] || '',
+                    sistole: cells[37] || '120',
+                    diastole: cells[38] || '80',
+                    bb: cells[40] || '60',
+                    tb: cells[41] || '165',
+                    lp: cells[43] || '80',
+                    gula: cells[58] || '110'
+                };
+            }
+        }
+        return null; // Data tidak ketemu
+    } catch (error) {
+        console.error("Terjadi masalah jaringan:", error);
+        updateStatus("ERROR JARINGAN: Cek Koneksi / Reload Halaman");
+        return null; // Mengembalikan null agar script tidak crash
     }
-    return null;
 }
 
 /* =========================================================
