@@ -472,25 +472,44 @@ function createUI(){
 /* =========================================================
    INIT / AUTO RESUME
 ========================================================= */
+/* =========================================================
+   INIT / AUTO RESUME (REVISI: MENGGUNAKAN OBSERVER)
+========================================================= */
 setInterval(createUI, 1000);
 
-setTimeout(async ()=>{
-    // Deteksi halaman secara lebih fleksibel melalui URL atau elemen di dalam halaman
-    const isFormPage = location.href.includes('form') || document.querySelector('input') !== null;
-    
-    if(isFormPage){
-        await autoContinueForm();
-    } else {
-        const data = loadBOT();
-        if(data){
-            BOT_RUNNING = true;
-            updateStatus('MELANJUTKAN OTOMATIS...\nJangan tekan apapun');
-            await sleep(3000);
-            await mainLoopCKG(data);
-        } else {
-            updateStatus('IDLE\nSiap Digunakan');
-        }
+// Fungsi untuk menunggu elemen muncul
+async function waitForElement(selector, timeout = 10000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+        const el = document.querySelector(selector);
+        if (el) return true;
+        await sleep(500); // Cek setiap setengah detik
     }
-}, 2000); // Waktu tunggu dinaikkan sedikit menjadi 2 detik agar halaman web sempat dimuat
+    return false;
+}
+
+// Jalankan auto-resume
+(async () => {
+    // Tunggu sampai ada elemen input di halaman (tanda form sudah siap)
+    const isReady = await waitForElement('input', 10000); 
+    
+    if (isReady) {
+        const isFormPage = location.href.includes('form');
+        if(isFormPage){
+            await autoContinueForm();
+        } else {
+            const data = loadBOT();
+            if(data){
+                BOT_RUNNING = true;
+                updateStatus('MELANJUTKAN OTOMATIS...\nJangan tekan apapun');
+                await sleep(1000);
+                await mainLoopCKG(data);
+            } else {
+                updateStatus('IDLE\nSiap Digunakan');
+            }
+        }
+    } else {
+        updateStatus('GAGAL: Halaman tidak memuat form (Timeout)');
+    }
 
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
