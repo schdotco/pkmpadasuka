@@ -118,12 +118,57 @@ async function fillRadioSurveyJS(soalText, jawabanText) {
             )
         ];
 
-        const targetQ = questions.find(q => {
-            const qText = (q.innerText || '').toLowerCase();
+        const allElements = [
+            ...document.querySelectorAll('*')
+        ];
+        
+const aliases = {
+    'faktor risiko tb': [
+        'faktor risiko tb',
+        'tuberkulosis',
+        'tb',
+        'batuk',
+        'kontak erat',
+        'kontak dengan penderita'
+    ],
+    
+    'kesehatan jiwa': [
+        'kesehatan jiwa',
+        'depresi',
+        'cemas',
+        'merasa sedih',
+        'minat melakukan aktivitas'
+    ],
 
-            return qText.includes(soalText.toLowerCase()) ||
-                   soalText.toLowerCase().includes(qText);
-        });
+    'kanker leher rahim': [
+        'kanker leher rahim',
+        'serviks',
+        'pap smear',
+        'iva'
+    ]
+};
+
+const keywords = aliases[soalText] || [soalText];
+
+const questionNode = allElements.find(el => {
+
+    const txt = (el.textContent || '').toLowerCase();
+
+    return keywords.some(k =>
+        txt.includes(k.toLowerCase())
+    );
+});
+        
+        if (!questionNode) {
+            console.warn('Soal tidak ditemukan:', soalText);
+            return false;
+        }
+        
+        const targetQ =
+            questionNode.closest('.sd-element') ||
+            questionNode.closest('[data-name]') ||
+            questionNode.closest('.sd-question') ||
+            questionNode;
 
         console.log(
             '[DEBUG SOAL]',
@@ -157,19 +202,27 @@ async function fillRadioSurveyJS(soalText, jawabanText) {
                 block: 'center'
             });
 
-            targetItem.click();
-
-            if (input) {
-                input.checked = true;
-
-                input.dispatchEvent(
-                    new Event('input', { bubbles: true })
-                );
-
-                input.dispatchEvent(
-                    new Event('change', { bubbles: true })
-                );
-            }
+        const radioDecorator =
+            targetItem.querySelector(
+                '.sd-radio__decorator, .sd-item__decorator'
+            );
+        
+        if (radioDecorator) {
+            radioDecorator.click();
+        }
+        
+        if (input) {
+        
+            input.checked = true;
+        
+            input.dispatchEvent(
+                new Event('input', { bubbles:true })
+            );
+        
+            input.dispatchEvent(
+                new Event('change', { bubbles:true })
+            );
+        }
 
             console.log('[AI] Berhasil mengisi:', jawabanText);
 
