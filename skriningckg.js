@@ -468,6 +468,4 @@ setTimeout(async ()=>{
     }
 }, 1500);
 
-})();
-
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
