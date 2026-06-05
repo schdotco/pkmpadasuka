@@ -42,22 +42,57 @@ function clearCompleted() { GM_deleteValue('AUTO_CKG_COMPLETED'); }
    DATA MATCHER
 ========================================================= */
 async function cariData(nikInput){
+
     const target = normalizeNIK(nikInput);
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+
+    const url =
+        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+
     const res = await fetch(url);
     const txt = await res.text();
-    const json = JSON.parse(txt.substring(47, txt.length - 2));
+
+    const json =
+        JSON.parse(
+            txt.substring(47, txt.length - 2)
+        );
+
     for(const r of json.table.rows){
-        const cells = r.c.map(x => x ? String(x.v || '') : '');
-        if(normalizeNIK(cells[0] || cells[1] || cells[2]) === target || cells.find(col => normalizeNIK(col) === target)){
+
+        const cells =
+            r.c.map(x =>
+                x ? String(x.v || '') : ''
+            );
+
+        const nikSheet = normalizeNIK(cells[11]); // L
+
+        if(nikSheet === target){
+
+            console.log('[MATCH FOUND]');
+            console.log(cells);
+
             return {
-                nik: target, nama: cells[3] || '',
-                sistole: cells[15] || '120', diastole: cells[16] || '80',
-                bb: cells[17] || '60', tb: cells[18] || '165',
-                lp: cells[19] || '80', gula: cells[20] || '110'
+
+                nik: target,
+
+                nama: cells[7] || '',          // H
+
+                sistole: cells[37] || '120',   // AL
+
+                diastole: cells[38] || '80',   // AM
+
+                bb: cells[40] || '60',         // AO
+
+                tb: cells[41] || '165',        // AP
+
+                lp: cells[43] || '80',         // AR
+
+                gula: cells[58] || '110'       // BG
             };
         }
     }
+
+    console.log('[DATA TIDAK DITEMUKAN]', target);
+
     return null;
 }
 
