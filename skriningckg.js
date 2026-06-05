@@ -1,17 +1,6 @@
-// ==UserScript==
-// @name         AUTO SKRINING MANDIRI ULTRA FINAL
-// @namespace    auto-skrining-mandiri
-// @version      3000.0
-// @description  BOT SKRINING MANDIRI - AUTO RESUME SEPERTI CKG, ANTI ERROR, AUTO NIK
-// @match        https://sehatindonesiaku.kemkes.go.id/*
-// @match        https://form.kemkes.go.id/*
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM_deleteValue
-// ==/UserScript==
-
-(function(){
+(function (GM_xmlhttpRequest) {
 'use strict';
+      const request = GM_xmlhttpRequest;
    
 /* =========================================================
    CONFIG SPREADSHEET
@@ -462,3 +451,5 @@ setTimeout(async ()=>{
 }, 1500);
 
 })();
+
+})(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
