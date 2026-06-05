@@ -5,17 +5,11 @@
 /* =========================================================
    CONFIG SPREADSHEET
 ========================================================= */
-const SHEETS = [{
-    id: "15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY",
-    gids: ["0"],
-    colNIK: 11
-    colMartial: 26,
-}];
+const SHEET_ID = '15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY';
+const GID = '0';
 
-console.log("MODE: CKG UMUM");
-
-let isProcessing = false;
-let loadingEl = null;
+const sleep = ms => new Promise(r => setTimeout(r,ms));
+function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
 /* =========================================================
    SESSION & DYNAMIC TRACKER
@@ -49,7 +43,7 @@ async function cariData(nikInput) {
                         if (row.some(col => normalizeNIK(col) === target)) {
                             return resolve({
                                 nik: target,
-                                perkawinan: row[26] || 'Belum Menikah'
+                                perkawinan: rows[i][26]?.trim() || 'Belum Menikah'
                             });
                         }
                     }
