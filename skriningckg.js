@@ -530,9 +530,8 @@ console.log('[AKTIVITAS] Dropdown ditemukan:', dropdowns.length);
 
 for (let i = 0; i < dropdowns.length; i++) {
 
-    const currentDropdown = [
-        ...document.querySelectorAll('.sd-dropdown, .sv-dropdown')
-    ][i];
+    const currentDropdown =
+        [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')][i];
 
     if (!currentDropdown) continue;
 
@@ -547,15 +546,27 @@ for (let i = 0; i < dropdowns.length; i++) {
 
     const opsiTidak = [
         ...document.querySelectorAll(
-            '.sv-list__item-body.sd-list__item-body'
+            'li.sv-list__item, li.sd-list__item'
         )
-    ].find(el =>
-        (el.innerText || '').trim().toLowerCase() === 'tidak'
+    ].filter(li =>
+        li.innerText.trim().toLowerCase() === 'tidak'
     );
 
-    if (opsiTidak) {
+    console.log(
+        '[AKTIVITAS] Opsi Tidak ditemukan:',
+        opsiTidak.length
+    );
 
-        opsiTidak.click();
+    if (opsiTidak[i]) {
+
+        opsiTidak[i].click();
+
+        opsiTidak[i].dispatchEvent(
+            new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true
+            })
+        );
 
         console.log(
             `[AKTIVITAS] Dropdown ${i + 1} berhasil diisi`
@@ -572,7 +583,8 @@ for (let i = 0; i < dropdowns.length; i++) {
         break;
     }
 }
-        console.log(
+
+console.log(
     '[AKTIVITAS SELESAI]',
     document.querySelectorAll('.sd-dropdown,.sv-dropdown').length
 );
