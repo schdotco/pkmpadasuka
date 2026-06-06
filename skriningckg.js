@@ -522,27 +522,35 @@ async function handleSkriningMandiri(data) {
 
 updateStatus('Mengisi Aktivitas Fisik...');
 
-const dropdowns = [
-    ...document.querySelectorAll('.sd-dropdown, .sv-dropdown')
-];
+for (let i = 0; i < 6; i++) {
 
-    console.log(
-    '[DROPDOWN]',
-    dropdowns.map(x => x.innerText)
-);
+    const dropdowns = [
+        ...document.querySelectorAll('.sd-dropdown, .sv-dropdown')
+    ];
 
-console.log('[AKTIVITAS] Jumlah dropdown:', dropdowns.length);
+    const target = dropdowns.find(dp => {
+        const txt = (dp.innerText || '').trim().toLowerCase();
 
-for (const dropdown of dropdowns) {
+        return (
+            txt === '' ||
+            txt === 'pilih' ||
+            txt.includes('select')
+        );
+    });
 
-    dropdown.scrollIntoView({
+    if (!target) {
+        console.log('[AKTIVITAS] Semua dropdown terisi');
+        break;
+    }
+
+    target.scrollIntoView({
         behavior: 'smooth',
         block: 'center'
     });
 
-    dropdown.click();
+    target.click();
 
-    await sleep(1000);
+    await sleep(1200);
 
     const opsiTidak = [
         ...document.querySelectorAll(
@@ -552,14 +560,16 @@ for (const dropdown of dropdowns) {
         (el.innerText || '').trim().toLowerCase() === 'tidak'
     );
 
-    if (opsiTidak) {
-
-        opsiTidak.click();
-
-        console.log('[AKTIVITAS] Tidak dipilih');
-
-        await sleep(1200);
+    if (!opsiTidak) {
+        console.warn('[AKTIVITAS] Opsi tidak ditemukan');
+        break;
     }
+
+    opsiTidak.click();
+
+    console.log('[AKTIVITAS] Dropdown ke-' + (i + 1) + ' terisi');
+
+    await sleep(1800);
 }
 
     // 7. NAVIGASI (Cari tombol Lanjut atau Kirim)
