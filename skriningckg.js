@@ -522,11 +522,18 @@ async function handleSkriningMandiri(data) {
 
 updateStatus('Mengisi Aktivitas Fisik...');
 
-const semuaDropdown = [
+const dropdowns = [
     ...document.querySelectorAll('.sd-dropdown, .sv-dropdown')
 ];
 
-for (const dropdown of semuaDropdown) {
+    console.log(
+    '[DROPDOWN]',
+    dropdowns.map(x => x.innerText)
+);
+
+console.log('[AKTIVITAS] Jumlah dropdown:', dropdowns.length);
+
+for (const dropdown of dropdowns) {
 
     dropdown.scrollIntoView({
         behavior: 'smooth',
@@ -539,14 +546,18 @@ for (const dropdown of semuaDropdown) {
 
     const opsiTidak = [
         ...document.querySelectorAll(
-            '.sd-list__item-body, .sv-list__item-body'
+            '.sv-list__item-body.sd-list__item-body'
         )
     ].find(el =>
-        (el.innerText || '').toLowerCase().includes('tidak')
+        (el.innerText || '').trim().toLowerCase() === 'tidak'
     );
 
     if (opsiTidak) {
+
         opsiTidak.click();
+
+        console.log('[AKTIVITAS] Tidak dipilih');
+
         await sleep(1200);
     }
 }
