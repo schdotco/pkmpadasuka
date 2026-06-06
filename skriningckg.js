@@ -138,10 +138,6 @@ const aliases = {
         'merasa sedih',
         'minat melakukan aktivitas'
     ],
-    for (const soal of kesehatanJiwa) {
-    await fillRadioSurveyJS(soal, 'tidak');
-    await sleep(300);
-}
 
     'kanker leher rahim': [
         'kanker leher rahim',
@@ -424,6 +420,18 @@ async function handleSkriningMandiri(data) {
     
     // 2. DISABILITAS
     await fillRadioSurveyJS('disabilitas', 'non disabilitas');
+
+    const kesehatanJiwa = [
+        'depresi',
+        'cemas',
+        'merasa sedih',
+        'minat melakukan aktivitas'
+    ];
+    
+    for (const soal of kesehatanJiwa) {
+        await fillRadioSurveyJS(soal, 'tidak');
+        await sleep(300);
+    }
 
     // 3. KANKER LEHER RAHIM (LOGIKA KONDISIONAL)
     // Jika menikah atau cerai, jawab YA. Selain itu TIDAK.
