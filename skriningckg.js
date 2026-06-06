@@ -390,6 +390,30 @@ async function pilihAktivitasFisikOpsi1() {
     return false;
 }
 
+async function isiSemuaRadioTidak() {
+
+    const items = [
+        ...document.querySelectorAll('.sd-item, .sv-item')
+    ];
+
+    for (const item of items) {
+
+        const txt = (item.innerText || '').toLowerCase().trim();
+
+        if (txt === 'tidak') {
+
+            const radio =
+                item.querySelector('.sd-radio__decorator') ||
+                item.querySelector('.sd-item__decorator');
+
+            if (radio) {
+                radio.click();
+                await sleep(200);
+            }
+        }
+    }
+}
+
 /* =========================================================
    CORE LOGIC SKRINING MANDIRI (REVISI STATUS PERKAWINAN)
 ========================================================= */
@@ -465,36 +489,33 @@ async function handleSkriningMandiri(data) {
 
 updateStatus('Mengisi Aktivitas Fisik...');
 
-for (let i = 0; i < 10; i++) {
+const semuaDropdown = [
+    ...document.querySelectorAll('.sd-dropdown, .sv-dropdown')
+];
 
-    const semuaDropdown = [
-        ...document.querySelectorAll('.sd-dropdown, .sv-dropdown')
-    ];
+for (const dropdown of semuaDropdown) {
 
-    const dropdownKosong = semuaDropdown.find(dp => {
-        const txt = (dp.innerText || '').toLowerCase();
-        return txt.includes('pilih') || txt.trim() === '';
+    dropdown.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
     });
 
-    if (!dropdownKosong) break;
+    dropdown.click();
 
-    dropdownKosong.click();
+    await sleep(1000);
 
-    await sleep(1200);
-
-    const tidak = [
+    const opsiTidak = [
         ...document.querySelectorAll(
             '.sd-list__item-body, .sv-list__item-body'
         )
     ].find(el =>
-        (el.innerText || '').toLowerCase().trim() === 'tidak'
+        (el.innerText || '').toLowerCase().includes('tidak')
     );
 
-    if (!tidak) break;
-
-    tidak.click();
-
-    await sleep(1800);
+    if (opsiTidak) {
+        opsiTidak.click();
+        await sleep(1200);
+    }
 }
 
     // 7. NAVIGASI (Cari tombol Lanjut atau Kirim)
