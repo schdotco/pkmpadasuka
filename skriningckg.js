@@ -414,6 +414,49 @@ async function isiSemuaRadioTidak() {
     }
 }
 
+async function isiKesehatanJiwa() {
+
+    const semuaPertanyaan = [
+        ...document.querySelectorAll('.sd-question, .sd-element')
+    ];
+
+    for (const q of semuaPertanyaan) {
+
+        const text = (q.innerText || '').toLowerCase();
+
+        if (
+            text.includes('2 minggu terakhir') ||
+            text.includes('kurang/tidak bersemangat') ||
+            text.includes('merasa murung') ||
+            text.includes('cemas') ||
+            text.includes('gelisah')
+        ) {
+
+            const pilihan = [
+                ...q.querySelectorAll('.sd-item, .sv-item')
+            ];
+
+            const tidakSamaSekali = pilihan.find(el =>
+                (el.innerText || '')
+                    .toLowerCase()
+                    .includes('tidak sama sekali')
+            );
+
+            if (tidakSamaSekali) {
+
+                const radio =
+                    tidakSamaSekali.querySelector('.sd-radio__decorator') ||
+                    tidakSamaSekali.querySelector('.sd-item__decorator');
+
+                if (radio) {
+                    radio.click();
+                    await sleep(300);
+                }
+            }
+        }
+    }
+}
+
 /* =========================================================
    CORE LOGIC SKRINING MANDIRI (REVISI STATUS PERKAWINAN)
 ========================================================= */
@@ -445,17 +488,7 @@ async function handleSkriningMandiri(data) {
     // 2. DISABILITAS
     await fillRadioSurveyJS('disabilitas', 'non disabilitas');
 
-    const kesehatanJiwa = [
-        'depresi',
-        'cemas',
-        'merasa sedih',
-        'minat melakukan aktivitas'
-    ];
-    
-    for (const soal of kesehatanJiwa) {
-        await fillRadioSurveyJS(soal, 'tidak');
-        await sleep(300);
-    }
+    await isiKesehatanJiwa();
 
     // 3. KANKER LEHER RAHIM (LOGIKA KONDISIONAL)
     // Jika menikah atau cerai, jawab YA. Selain itu TIDAK.
