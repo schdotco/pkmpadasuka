@@ -133,12 +133,15 @@ const aliases = {
     ],
     
     'kesehatan jiwa': [
-        'kesehatan jiwa',
         'depresi',
         'cemas',
         'merasa sedih',
         'minat melakukan aktivitas'
     ],
+    for (const soal of kesehatanJiwa) {
+    await fillRadioSurveyJS(soal, 'tidak');
+    await sleep(300);
+}
 
     'kanker leher rahim': [
         'kanker leher rahim',
