@@ -125,11 +125,9 @@ async function fillRadioSurveyJS(soalText, jawabanText) {
 const aliases = {
     'faktor risiko tb': [
         'faktor risiko tb',
-        'tuberkulosis',
-        'tb',
-        'batuk',
-        'kontak erat',
-        'kontak dengan penderita'
+        'Ya, lebih dari 2 minggu',
+        'Ya, kurang dari 2 minggu',
+        'Tidak batuk'
     ],
     
     'kesehatan jiwa': [
