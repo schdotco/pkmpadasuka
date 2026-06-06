@@ -89,6 +89,87 @@ async function ultraClick(el){
     return true;
 }
 
+async function waitAndClickText(text, timeout = 30000) {
+
+    const start = Date.now();
+
+    while (Date.now() - start < timeout) {
+
+        const el = Array.from(
+            document.querySelectorAll('*')
+        ).find(x =>
+            (x.innerText || "").trim() === text
+        );
+
+        if (el) {
+
+            const clickable =
+                el.closest('button') ||
+                el.closest('[role="button"]') ||
+                el.parentElement ||
+                el;
+
+            console.log("[BOT] Klik:", text);
+
+            await ultraClick(clickable);
+
+            return true;
+        }
+
+        await wait(500);
+    }
+
+    return false;
+}
+
+async function prosesVerifikasi() {
+
+    showLoading("⚡ VERIFIKASI PESERTA ⚡");
+
+    while (true) {
+
+        const pilihText = Array.from(
+            document.querySelectorAll('.tracking-wide')
+        ).find(el =>
+            (el.innerText || "").trim() === "Pilih"
+        );
+        
+        const pilihBtn =
+            pilihText?.closest('.flex.flex-row.justify-center.gap-2') ||
+            pilihText?.parentElement ||
+            pilihText;
+
+        if (pilihBtn) {
+            await ultraClick(pilihBtn);
+            break;
+        }
+
+        await wait(500);
+    }
+
+    console.log("[BOT] Tombol Pilih berhasil diklik");
+
+    while (true) {
+
+        const daftarBtn = Array.from(
+            document.querySelectorAll('button,div,span')
+        ).find(el =>
+            (el.innerText || "").includes("Daftarkan dengan NIK")
+        );
+
+        if (daftarBtn) {
+            await ultraClick(daftarBtn);
+            break;
+        }
+
+        await wait(500);
+    }
+
+    hideLoading();
+
+    console.log("[BOT] PENDAFTARAN SELESAI");
+}
+
 /* ================= TARIK DATA SPREADSHEET ================= */
 function parseCSV(text){
     const rows = []; let row = []; let current = ""; let insideQuote = false;
@@ -379,8 +460,39 @@ if (textToFindPernikahan !== "") {
         console.log("[BOT] Detail alamat terisi.");
     }
 
-    hideLoading();
-    console.log("[BOT] Halaman 2 selesai diproses.");
+hideLoading();
+console.log("[BOT] Halaman 2 selesai diproses.");
+
+showLoading("⚡ MENUNGGU TOMBOL SELANJUTNYA ⚡");
+
+let btnNext2 = null;
+
+while(true){
+
+    btnNext2 = Array.from(
+        document.querySelectorAll('button,div')
+    ).find(el =>
+        (el.innerText || "").trim() === "Selanjutnya"
+    );
+
+    if(
+        btnNext2 &&
+        !btnNext2.disabled &&
+        !btnNext2.classList.contains('disabled')
+    ){
+        break;
+    }
+
+    await wait(500);
+}
+
+await ultraClick(btnNext2);
+
+console.log("[BOT] Menuju halaman verifikasi...");
+
+await wait(4000);
+
+await prosesVerifikasi();
 }
 
 /* ================= SISTEM SEMI AUTO-PILOT ================= */
@@ -539,16 +651,33 @@ document.getElementById("infoAI").innerHTML = `
 
 /* ================= AUTO NEXT ================= */
 let btnLanjut = null;
+
 while(true){
-    btnLanjut = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Selanjutnya'));
-    if(btnLanjut && !btnLanjut.disabled && !btnLanjut.classList.contains('ant-btn-disabled')){
-        break;
-    }
-    await wait(500);
+
+    btnLanjut = Array.from(
+        document.querySelectorAll('button')
+    ).find(
+        b => b.innerText.includes('Selanjutnya')
+    );
+
+    if(
+        btnLanjut &&
+        !btnLanjut.disabled &&
+        !btnLanjut.classList.contains('ant-btn-disabled')
+    ){
+        break;
+    }
+
+    await wait(500);
 }
 
 await ultraClick(btnLanjut);
-await wait(4000);
+
+console.log("[BOT] Menunggu popup Lanjutkan...");
+
+await waitAndClickText("Lanjutkan", 20000);
+
+await wait(3000);
 
 /* ================= HALAMAN 2 ================= */
 await eksekusiHalamanDua(data);
