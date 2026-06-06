@@ -13,10 +13,10 @@ const SHEETS = [{
     colTgl: 8,
     colWA: 20,
     colJK: 6,
-    colPekerjaan: 22,
+    colPekerjaan: 24,
     colKelurahan: 17,
     colAlamat: 14,
-    colMartial: 21,
+    colMartial: 26,
     waStatis: true
 }];
 
