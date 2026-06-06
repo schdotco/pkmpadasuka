@@ -186,10 +186,11 @@ const questionNode = allElements.find(el => {
         const opsiTersedia = items.map(i => i.innerText.trim());
         console.log("Opsi ditemukan di web (" + soalText + "):", opsiTersedia);
 
-        const targetItem = items.find(el =>
-            (el.innerText || '').toLowerCase().trim() ===
-            jawabanText.toLowerCase()
-        );
+        const targetItem = items.find(el => {
+            const txt = (el.innerText || '').toLowerCase().trim();
+            return txt === jawabanText.toLowerCase() ||
+                   txt.includes(jawabanText.toLowerCase());
+        });
 
         if (targetItem) {
 
@@ -409,6 +410,15 @@ async function handleSkriningMandiri(data) {
 
         await fillRadioSurveyJS('status perkawinan', target);
     }
+    
+    // FAKTOR RISIKO TB
+    const tbFilled =
+        await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk') ||
+        await fillRadioSurveyJS('faktor risiko tb', 'tidak');
+    
+    console.log('[TB RESULT]', tbFilled);
+
+    
     // 2. DISABILITAS
     await fillRadioSurveyJS('disabilitas', 'non disabilitas');
 
@@ -427,7 +437,7 @@ async function handleSkriningMandiri(data) {
         let qText = (q.innerText||'').toLowerCase();
         if (
     qText.match(
-        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim|faktor risiko tb/
+        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim/
     )
 ) return;
 
@@ -442,44 +452,38 @@ async function handleSkriningMandiri(data) {
 
 // 6. AKTIVITAS FISIK (SEMUA JAWABAN = TIDAK)
 
-const aktivitasList = [
-    ...document.querySelectorAll(
-        '.sd-question, .sv-question, .sd-element, [data-name]'
-    )
-].filter(q =>
-    (q.innerText || '').toLowerCase().includes('aktivitas fisik')
-);
+updateStatus('Mengisi Aktivitas Fisik...');
 
-for (const q of aktivitasList) {
+for (let i = 0; i < 10; i++) {
 
-    updateStatus('Mengisi Aktivitas Fisik: Tidak');
+    const semuaDropdown = [
+        ...document.querySelectorAll('.sd-dropdown, .sv-dropdown')
+    ];
 
-    const dropdown = q.querySelector(
-        '.sd-dropdown, .sv-dropdown'
-    );
+    const dropdownKosong = semuaDropdown.find(dp => {
+        const txt = (dp.innerText || '').toLowerCase();
+        return txt.includes('pilih') || txt.trim() === '';
+    });
 
-    if (!dropdown) continue;
+    if (!dropdownKosong) break;
 
-    dropdown.click();
+    dropdownKosong.click();
 
-    await sleep(1000);
+    await sleep(1200);
 
-    const options = [
+    const tidak = [
         ...document.querySelectorAll(
             '.sd-list__item-body, .sv-list__item-body'
         )
-    ];
-
-    const tidak = options.find(o =>
-        (o.innerText || '')
-            .toLowerCase()
-            .includes('tidak')
+    ].find(el =>
+        (el.innerText || '').toLowerCase().trim() === 'tidak'
     );
 
-    if (tidak) {
-        tidak.click();
-        await sleep(500);
-    }
+    if (!tidak) break;
+
+    tidak.click();
+
+    await sleep(1800);
 }
 
     // 7. NAVIGASI (Cari tombol Lanjut atau Kirim)
