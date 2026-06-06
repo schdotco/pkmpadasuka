@@ -87,17 +87,9 @@ async function cariData(nikInput) {
 
                 for (let i = 1; i < rows.length; i++) {
 
-                if (
-                    rows[i].find(col =>
-                        normalizeNIK(col) === target
-                    )
-                ) {
+                    const nikSheet = normalizeNIK(rows[i][11]);
 
-                            console.log(
-                                "[NIK KETEMU]",
-                                i,
-                                rows[i]
-                            );
+                    if (nikSheet === target) {
 
                         return resolve({
                             nik: target,
@@ -105,11 +97,7 @@ async function cariData(nikInput) {
                         });
                     }
                 }
-            console.log("TARGET NIK :", target);
-            console.log(
-                "SEMUA NIK YANG DITEMUKAN:",
-                rows.slice(1,5).map(r => r[11])
-            );
+
                 resolve(null);
             },
 
@@ -137,9 +125,11 @@ async function fillRadioSurveyJS(soalText, jawabanText) {
 const aliases = {
     'faktor risiko tb': [
         'faktor risiko tb',
-        'Ya, lebih dari 2 minggu',
-        'Ya, kurang dari 2 minggu',
-        'Tidak batuk'
+        'tuberkulosis',
+        'tb',
+        'batuk',
+        'kontak erat',
+        'kontak dengan penderita'
     ],
     
     'kesehatan jiwa': [
@@ -196,11 +186,10 @@ const questionNode = allElements.find(el => {
         const opsiTersedia = items.map(i => i.innerText.trim());
         console.log("Opsi ditemukan di web (" + soalText + "):", opsiTersedia);
 
-        const targetItem = items.find(el => {
-            const txt = (el.innerText || '').toLowerCase().trim();
-            return txt === jawabanText.toLowerCase() ||
-                   txt.includes(jawabanText.toLowerCase());
-        });
+        const targetItem = items.find(el =>
+            (el.innerText || '').toLowerCase().trim() ===
+            jawabanText.toLowerCase()
+        );
 
         if (targetItem) {
 
@@ -420,15 +409,6 @@ async function handleSkriningMandiri(data) {
 
         await fillRadioSurveyJS('status perkawinan', target);
     }
-    
-    // FAKTOR RISIKO TB
-    const tbFilled =
-        await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk') ||
-        await fillRadioSurveyJS('faktor risiko tb', 'tidak');
-    
-    console.log('[TB RESULT]', tbFilled);
-
-    
     // 2. DISABILITAS
     await fillRadioSurveyJS('disabilitas', 'non disabilitas');
 
@@ -447,7 +427,7 @@ async function handleSkriningMandiri(data) {
         let qText = (q.innerText||'').toLowerCase();
         if (
     qText.match(
-        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim/
+        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim|faktor risiko tb/
     )
 ) return;
 
@@ -462,38 +442,44 @@ async function handleSkriningMandiri(data) {
 
 // 6. AKTIVITAS FISIK (SEMUA JAWABAN = TIDAK)
 
-updateStatus('Mengisi Aktivitas Fisik...');
+const aktivitasList = [
+    ...document.querySelectorAll(
+        '.sd-question, .sv-question, .sd-element, [data-name]'
+    )
+].filter(q =>
+    (q.innerText || '').toLowerCase().includes('aktivitas fisik')
+);
 
-for (let i = 0; i < 10; i++) {
+for (const q of aktivitasList) {
 
-    const semuaDropdown = [
-        ...document.querySelectorAll('.sd-dropdown, .sv-dropdown')
-    ];
+    updateStatus('Mengisi Aktivitas Fisik: Tidak');
 
-    const dropdownKosong = semuaDropdown.find(dp => {
-        const txt = (dp.innerText || '').toLowerCase();
-        return txt.includes('pilih') || txt.trim() === '';
-    });
+    const dropdown = q.querySelector(
+        '.sd-dropdown, .sv-dropdown'
+    );
 
-    if (!dropdownKosong) break;
+    if (!dropdown) continue;
 
-    dropdownKosong.click();
+    dropdown.click();
 
-    await sleep(1200);
+    await sleep(1000);
 
-    const tidak = [
+    const options = [
         ...document.querySelectorAll(
             '.sd-list__item-body, .sv-list__item-body'
         )
-    ].find(el =>
-        (el.innerText || '').toLowerCase().trim() === 'tidak'
+    ];
+
+    const tidak = options.find(o =>
+        (o.innerText || '')
+            .toLowerCase()
+            .includes('tidak')
     );
 
-    if (!tidak) break;
-
-    tidak.click();
-
-    await sleep(1800);
+    if (tidak) {
+        tidak.click();
+        await sleep(500);
+    }
 }
 
     // 7. NAVIGASI (Cari tombol Lanjut atau Kirim)
