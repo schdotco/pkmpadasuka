@@ -87,9 +87,17 @@ async function cariData(nikInput) {
 
                 for (let i = 1; i < rows.length; i++) {
 
-                    const nikSheet = normalizeNIK(rows[i][11]);
+                if (
+                    rows[i].find(col =>
+                        normalizeNIK(col) === target
+                    )
+                ) {
 
-                    if (nikSheet === target) {
+                            console.log(
+                                "[NIK KETEMU]",
+                                i,
+                                rows[i]
+                            );
 
                         return resolve({
                             nik: target,
@@ -97,7 +105,11 @@ async function cariData(nikInput) {
                         });
                     }
                 }
-
+            console.log("TARGET NIK :", target);
+            console.log(
+                "SEMUA NIK YANG DITEMUKAN:",
+                rows.slice(1,5).map(r => r[11])
+            );
                 resolve(null);
             },
 
