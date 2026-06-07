@@ -279,11 +279,10 @@ async function clickVueDropdown(placeholderKeyword, valueText) {
     
     await wait(1200);
 
-        console.log(
-        '[DEBUG] Tombol setelah buka dropdown:',
-        [...document.querySelectorAll('button')]
-            .map(x => x.innerText.trim())
-            .filter(Boolean)
+    console.log(
+        '[DEBUG MODAL]',
+        [...document.querySelectorAll('.modal-content')]
+            .map(x => x.innerText)
     );
 
     // 2. Cari Opsi dengan metode "Scan Semua Teks"
@@ -320,9 +319,9 @@ console.log(
 await wait(1200);
 
 const targetOption = [
-    ...document.querySelectorAll('*')
-].find(el =>
-    (el.innerText || '')
+    ...modal.querySelectorAll('button')
+].find(btn =>
+    btn.innerText
         .trim()
         .toLowerCase() ===
     valueText
@@ -332,18 +331,11 @@ const targetOption = [
 
 if (targetOption) {
 
-    console.log(
-        `[DEBUG] ✅ Opsi ditemukan: ${valueText}`
-    );
+    console.log(`[DEBUG] Klik ${valueText}`);
 
-    (
-        targetOption.closest('button') ||
-        targetOption
-    ).click();
+    await ultraClick(targetOption);
 
     optionFound = true;
-
-    await wait(1000);
 }
 
 return optionFound;
@@ -623,6 +615,15 @@ while(true){
         console.log("[BOT] Tombol Selanjutnya aktif");
 
         await ultraClick(btnNext2);
+
+        await wait(1500);
+
+        const modal = document.querySelector('.modal-content');
+        
+        if (!modal) {
+            console.log('[DEBUG] Modal pekerjaan tidak muncul');
+            return false;
+        }
 
         console.log("[BOT] Menuju halaman verifikasi");
 
