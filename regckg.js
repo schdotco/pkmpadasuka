@@ -318,26 +318,23 @@ console.log(
 
 await wait(1200);
 
-const targetOption = [
+const btn = [
     ...document.querySelectorAll('.modal-content button')
-].find(btn =>
-    btn.innerText
-        .trim()
-        .toLowerCase() ===
-    valueText
-        .trim()
-        .toLowerCase()
+].find(x =>
+    x.innerText.trim().toLowerCase() ===
+    valueText.trim().toLowerCase()
 );
 
-if (targetOption) {
+if (btn) {
 
-    console.log(`[DEBUG] Klik ${valueText}`);
+    console.log('[DEBUG] DITEMUKAN:', btn.innerText);
 
-    await ultraClick(targetOption);
+    btn.click();
+
+    await wait(500);
 
     optionFound = true;
 }
-
 return optionFound;
 }
 
