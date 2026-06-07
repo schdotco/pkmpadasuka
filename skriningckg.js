@@ -29,81 +29,59 @@ function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
 /* =========================================================
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
 ========================================================= */
-function parseCSV(text) {
-    const rows = [];
-    let row = [];
-    let current = "";
-    let insideQuote = false;
+let cachedSheetData = null;
 
-    for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        const next = text[i + 1];
+async function cariData(nikInput) {
 
-        if (char === '"') {
-            if (insideQuote && next === '"') {
-                current += '"';
-                i++;
-            } else {
-                insideQuote = !insideQuote;
-            }
-        } else if (char === ',' && !insideQuote) {
-            row.push(current);
-            current = "";
-        } else if ((char === '\n' || char === '\r') && !insideQuote) {
-            if (current || row.length) {
-                row.push(current);
-                rows.push(row);
-                row = [];
-                current = "";
-            }
-        } else {
-            current += char;
+    const target = normalizeNIK(nikInput);
+
+    if (!cachedSheetData) {
+
+        console.log('[CACHE MISS] Download spreadsheet');
+
+        const csv = await new Promise(resolve => {
+            request({
+                method: "GET",
+                url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`,
+                timeout: 10000,
+
+                onload: r => resolve(r.responseText || ""),
+                onerror: () => resolve("")
+            });
+        });
+
+        cachedSheetData = parseCSV(csv);
+
+        console.log(
+            '[CACHE READY]',
+            cachedSheetData.length,
+            'baris'
+        );
+    } else {
+
+        console.log('[CACHE HIT] Pakai data RAM');
+
+    }
+
+    const rows = cachedSheetData;
+
+    console.log("HEADER:", rows[0]);
+    console.log("ROW PERTAMA:", rows[1]);
+
+    for (let i = 1; i < rows.length; i++) {
+
+        const nikSheet = normalizeNIK(rows[i][11]);
+
+        if (nikSheet === target) {
+
+            return {
+                nik: target,
+                perkawinan: rows[i][26] || 'Belum Menikah'
+            };
         }
     }
 
-    if (current || row.length) {
-        row.push(current);
-        rows.push(row);
-    }
-
-    return rows;
-}
-    
-async function cariData(nikInput) {
-    const target = normalizeNIK(nikInput);
-
-    return new Promise(resolve => {
-        request({
-            method: "GET",
-            url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`,
-            timeout: 10000,
-
-            onload: r => {
-
-            const rows = parseCSV(r.responseText);
-            
-            console.log("HEADER:", rows[0]);
-            console.log("ROW PERTAMA:", rows[1]);
-
-                for (let i = 1; i < rows.length; i++) {
-
-                    const nikSheet = normalizeNIK(rows[i][11]);
-
-                    if (nikSheet === target) {
-
-                        return resolve({
-                            nik: target,
-                            perkawinan: rows[i][26] || 'Belum Menikah'
-                        });
-                    }
-                }
-
-                resolve(null);
-            },
-
-            onerror: () => resolve(null)
-        });
-    });
+    return null;
 }
 
 /* =========================================================
