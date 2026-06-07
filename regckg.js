@@ -372,12 +372,13 @@ let rawPernikahan = (data.Martial || "").trim().toUpperCase();
 let textToFindPernikahan = "";
 
 // Normalisasi data (Pastikan ejaannya sama persis dengan yang muncul di website)
-if (rawPernikahan.includes("MENIKAH") || rawPernikahan.includes("KAWIN")) {
-    textToFindPernikahan = "Menikah";
-} else if (rawPernikahan.includes("BELUM")) {
+if (rawPernikahan.includes("BELUM")) {
     textToFindPernikahan = "Belum Menikah";
-} else if (rawPernikahan.includes("CERAI HIDUP") || rawPernikahan.includes("CERAI_HIDUP")) {
-    textToFindPernikahan = "Cerai Hidup";
+} else if (rawPernikahan.includes("MENIKAH") || rawPernikahan.includes("KAWIN")) {
+    textToFindPernikahan = "Menikah";
+} else if (rawPernikahan.includes("CERAI HIDUP") || rawPernikahan.includes("CERAI_HIDUP") || rawPernikahan.includes("JANDA") || rawPernikahan.includes("DUDA")) {
+    // Janda/Duda otomatis diarahkan ke Cerai Hidup
+    textToFindPernikahan = "Cerai Hidup"; 
 } else if (rawPernikahan.includes("CERAI MATI") || rawPernikahan.includes("CERAI_MATI")) {
     textToFindPernikahan = "Cerai Mati";
 }
@@ -431,14 +432,69 @@ if (textToFindPernikahan !== "") {
     }
 }
 
-    /* ================= 2. PEKERJAAN ================= */
+/* ================= 2. PEKERJAAN ================= */
     console.log("[BOT] Memproses Pekerjaan...");
     let jobTarget = (data.pekerjaan || "").trim();
-    if(jobTarget) {
-        await clickVueDropdown("pekerjaan", jobTarget, true, "Cari pekerjaan");
+    
+    if (jobTarget) {
+        // 1. Cari Trigger/Kotak Dropdown Pekerjaan
+        const triggers = Array.from(document.querySelectorAll('div, span'));
+        const triggerPekerjaan = triggers.find(el => 
+            (el.innerText || "").toLowerCase().trim() === "pilih pekerjaan" ||
+            ((el.innerText || "").toLowerCase().trim().includes("pekerjaan") && el.className.includes('cursor-pointer'))
+        );
+
+        if (triggerPekerjaan) {
+            triggerPekerjaan.click();
+            await wait(1200); // Tunggu modal terbuka penuh
+
+            // 2. Aturan Pencarian: Jika >= 3 kata (suku kata), ambil kata pertama
+            const splitKata = jobTarget.split(/\s+/); // Pisahkan berdasarkan spasi
+            let kataPencarian = jobTarget;
+            
+            if (splitKata.length >= 3) {
+                kataPencarian = splitKata[0]; // Misal: "Ibu Rumah Tangga" menjadi "Ibu"
+                console.log(`[BOT] Job >= 3 kata. Disingkat menjadi: "${kataPencarian}" agar list mengecil.`);
+            }
+
+            // Injeksi teks ke kolom search di dalam modal
+            const searchInput = document.querySelector('.modal-content input[placeholder*="Cari"], input[placeholder*="Cari"]');
+            if (searchInput) {
+                console.log(`[BOT] Mengetik pencarian: ${kataPencarian}`);
+                forceInject(searchInput, kataPencarian);
+                await wait(1500); // Wajib tunggu Vue selesai memfilter list
+            }
+
+            // 3. Looping Pencarian Tombol Asli (Polling Fix)
+            let optionFound = false;
+            for (let i = 0; i < 20; i++) {
+                // Selector persis seperti test manual Anda yang berhasil
+                const btn = [...document.querySelectorAll('.modal-content button')].find(x => 
+                    (x.innerText || "").trim().toLowerCase() === jobTarget.toLowerCase()
+                );
+
+                if (btn) {
+                    console.log(`[DEBUG] DITEMUKAN & DIKLIK: ${btn.innerText}`);
+                    btn.click(); // Klik native sesuai temuan Anda
+                    optionFound = true;
+                    await wait(1200); // Tunggu modal menutup
+                    break;
+                }
+                await wait(400); // Ulangi pencarian tiap 400ms jika tombol belum dirender
+            }
+
+            // 4. Mencegah UI Nyangkut/Error (UI Ga Kebuka)
+            if (!optionFound) {
+                console.log(`[BOT] ❌ GAGAL: Opsi "${jobTarget}" tidak ditemukan di list.`);
+                document.body.click(); // Paksa klik area luar agar modal tertutup & tidak error menyangkut
+                await wait(800);
+            }
+        } else {
+            console.log("[BOT] ❌ Kotak 'Pekerjaan' tidak ditemukan.");
+        }
     }
 
-    // WAJIB: Berikan jeda setelah dropdown
+    // WAJIB: Jeda sebelum lanjut ke DOMISILI
     await wait(1500);
 
     /* ================= 3. ALAMAT DOMISILI ================= */
