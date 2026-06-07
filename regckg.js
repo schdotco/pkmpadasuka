@@ -509,6 +509,8 @@ while(true){
     await wait(1000);
 }
 
+}
+
 /* ================= SISTEM SEMI AUTO-PILOT ================= */
 async function autoPilotSikatHabis(data) {
     showLoading("⚡ AUTO-PILOT AKTIF ⚡<br><span style='font-size:14px;color:#fff;'>Mengisi NIK...</span>");
