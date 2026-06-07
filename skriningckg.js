@@ -462,7 +462,7 @@ async function isiKesehatanJiwa() {
 ========================================================= */
 async function handleSkriningMandiri(data) {
     updateStatus('Mengisi form...');
-    await sleep(1500);
+    await sleep(500);
 
 
     // 1. STATUS PERKAWINAN (SMART MAPPER)
@@ -572,7 +572,7 @@ for (let i = 0; i < dropdowns.length; i++) {
             `[AKTIVITAS] Dropdown ${i + 1} berhasil diisi`
         );
 
-        await sleep(1500);
+        await sleep(500);
 
     } else {
 
@@ -741,7 +741,7 @@ function createUI(){
         clearCompleted(); // Reset antrian tombol agar bot mulai ngeklik dari atas
 
         updateStatus(`Data Ketemu!\nPerkawinan: ${data.perkawinan}`);
-        await sleep(1500);
+        await sleep(500);
 
         await mainLoop(data);
     };
