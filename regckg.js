@@ -278,6 +278,13 @@ async function clickVueDropdown(placeholderKeyword, valueText) {
     
     await wait(1200);
 
+        console.log(
+        '[DEBUG] Tombol setelah buka dropdown:',
+        [...document.querySelectorAll('button')]
+            .map(x => x.innerText.trim())
+            .filter(Boolean)
+    );
+
     // 2. Cari Opsi dengan metode "Scan Semua Teks"
     console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
     let optionFound = false;
