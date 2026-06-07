@@ -346,6 +346,9 @@ if (targetOption) {
     await wait(1000);
 }
 
+return optionFound;
+}
+
 /* ================= FUNGSI KHUSUS: STATUS PERNIKAHAN ================= */
 async function fillAndValidate(placeholderKeyword, valueText, isSearchable = false) {
     console.log(`[BOT] Memproses: ${placeholderKeyword} | Target: ${valueText}`);
