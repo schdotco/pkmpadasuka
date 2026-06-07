@@ -286,10 +286,6 @@ async function clickVueDropdown(placeholderKeyword, valueText) {
     );
 
     // 2. Cari Opsi dengan metode "Scan Semua Teks"
-    console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
-    let optionFound = false;
-
-    // Kita ambil semua elemen yang mungkin mengandung opsi
 console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
 
 let optionFound = false;
