@@ -319,7 +319,7 @@ console.log(
 await wait(1200);
 
 const targetOption = [
-    ...modal.querySelectorAll('button')
+    ...document.querySelectorAll('.modal-content button')
 ].find(btn =>
     btn.innerText
         .trim()
