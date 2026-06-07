@@ -20,6 +20,7 @@ const SHEETS = [{
     waStatis: true
 }];
 
+    
 console.log("MODE: CKG UMUM");
 
 let isProcessing = false;
