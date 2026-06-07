@@ -20,7 +20,6 @@ const SHEETS = [{
     waStatis: true
 }];
 
-    
 console.log("MODE: CKG UMUM");
 
 let isProcessing = false;
@@ -181,65 +180,43 @@ function parseCSV(text){
     return rows;
 }
 
-let cachedSheetData = null;
-
 async function cariData(nikInput){
+    const target = normalizeNIK(nikInput);
+    for(const source of SHEETS){
+        for(const gid of source.gids){
+            const csv = await new Promise(resolve => {
+                request({
+                    method: "GET", url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
+                    timeout: 10000, onload: r => resolve(r.responseText || ""), onerror: () => resolve("")
+                });
+            });
 
-    const target = normalizeNIK(nikInput);
+            if(!csv || csv.trim()==="") continue;
+            const rows = parseCSV(csv);
+            let waD2 = (source.waStatis && rows[1]) ? normalizeNIK(rows[1][3]) : "";
 
-    if(!cachedSheetData){
-
-        console.log('[CACHE MISS] Download spreadsheet');
-
-        const source = SHEETS[0];
-        const gid = source.gids[0];
-
-        const csv = await new Promise(resolve => {
-            request({
-                method: "GET",
-                url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
-                timeout: 10000,
-                onload: r => resolve(r.responseText || ""),
-                onerror: () => resolve("")
-            });
-        });
-
-        cachedSheetData = parseCSV(csv);
-
-    } else {
-
-        console.log('[CACHE HIT] Pakai RAM');
-
-    }
-
-    const rows = cachedSheetData;
-    const source = SHEETS[0];
-
-    let waD2 = (source.waStatis && rows[1])
-        ? normalizeNIK(rows[1][3])
-        : "";
-
-    for(let i = 1; i < rows.length; i++){
-
-        const row = rows[i];
-
-        if(row.find(col => normalizeNIK(col) === target)){
-
-            return {
-                nik: target,
-                nama: (row[source.colNama] || "").trim(),
-                tgl: (row[source.colTgl] || "").trim(),
-                hp: waD2 || (row[source.colWA] || "").replace(/\D/g,''),
-                jk: (row[source.colJK] || "").trim(),
-                alamat: (row[source.colAlamat] || "").trim(),
-                pekerjaan: (row[source.colPekerjaan] || "").trim(),
-                kelurahan: (row[source.colKelurahan] || "").trim(),
-                Martial: (row[source.colMartial] || "").trim()
-            };
-        }
-    }
-
-    return null;
+            for(let i=1;i<rows.length;i++){
+                const row = rows[i];
+                if(row.find(col => normalizeNIK(col) === target)){
+                    return {
+                        nik: target,
+                        nama: (row[source.colNama] || "").trim(),
+                        tgl: (row[source.colTgl] || "").trim(),
+                        hp: waD2 || (row[source.colWA] || "").replace(/\D/g,''),
+                        jk: (row[source.colJK] || "").trim(),
+                        alamat: (row[source.colAlamat] || "").trim(),
+                        pekerjaan: (row[source.colPekerjaan] || "").trim(),
+                        kelurahan: (row[source.colKelurahan] || "").trim(),
+                        sekolah: (row[source.colSekolah] || "").trim(),
+                        disabilitas: (row[source.colDisabilitas] || "").trim(),
+                        Martial: (row[source.colMartial] || "").trim(),
+                        kelas: (row[source.colKelas] || "").trim()
+                    };
+                }
+            }
+        }
+    }
+    return null;
 }
 
 /* ================= ENGINE VUE DROPDOWN (REVISI KHUSUS) ================= */
@@ -247,95 +224,50 @@ async function clickVueDropdown(placeholderKeyword, valueText) {
     console.log(`[DEBUG] Mencari kotak: "${placeholderKeyword}"`);
 
     // 1. Cari kotak trigger berdasarkan placeholder
-    let trigger = null;
-    
-    if (placeholderKeyword.toLowerCase() === 'pekerjaan') {
-    
-        trigger = [
-            ...document.querySelectorAll('div')
-        ].find(el =>
-            (el.innerText || '').trim() === 'Pilih pekerjaan'
-        );
-    
-    } else {
-    
-        trigger = [
-            ...document.querySelectorAll('div')
-        ].find(el =>
-            (el.innerText || '')
-                .toLowerCase()
-                .includes(placeholderKeyword.toLowerCase())
-        );
-    }
-    
+    const allDivs = Array.from(document.querySelectorAll('div'));
+    const trigger = allDivs.find(el =>
+        (el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
+        el.className.includes('cursor-pointer') // Memastikan ini adalah kotak dropdown
+    );
+
     if (!trigger) {
         console.log(`[DEBUG] ❌ Kotak "${placeholderKeyword}" tidak ditemukan.`);
         return false;
     }
-    
-    await ultraClick(
-        trigger.closest('.cursor-pointer') || trigger
-    );
-    
-    await wait(1200);
 
-    console.log(
-        '[DEBUG MODAL]',
-        [...document.querySelectorAll('.modal-content')]
-            .map(x => x.innerText)
-    );
+    // Klik kotak untuk membuka menu
+    trigger.click();
+    await wait(1000);
 
     // 2. Cari Opsi dengan metode "Scan Semua Teks"
-console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
+    console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
+    let optionFound = false;
 
-let optionFound = false;
-
-const searchInput = document.querySelector(
-    'input[placeholder*="Cari pekerjaan"]'
-);
-
-if (searchInput) {
-
-    searchInput.focus();
-
-    forceInject(searchInput, valueText);
-
-    searchInput.dispatchEvent(
-        new KeyboardEvent('keyup', {
-            bubbles: true
-        })
+    // Kita ambil semua elemen yang mungkin mengandung opsi
+    const allOptions = Array.from(document.querySelectorAll('div'));
+    const targetOption = allOptions.find(el =>
+        (el.innerText || "").trim() === valueText &&
+        el.className.includes('justify-between') // Sesuai dengan struktur inspect Anda
     );
 
-    await wait(1500);
+    if (targetOption) {
+        console.log(`[DEBUG] ✅ Opsi ditemukan! Melakukan klik...`);
+        targetOption.scrollIntoView({ behavior: "smooth", block: "center" });
+        await wait(300);
 
-console.log(
-    '[DEBUG OPSI]',
-    [...document.querySelectorAll('button')]
-        .map(x => x.innerText.trim())
-        .filter(Boolean)
-);
-}
+        // Pemicu klik manual
+        targetOption.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        targetOption.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+        targetOption.click();
 
-await wait(1200);
+        optionFound = true;
+        await wait(800);
+    } else {
+        console.log(`[DEBUG] ❌ Opsi "${valueText}" tidak ditemukan. Menutup dropdown.`);
+        document.body.click();
+    }
 
-const btn = [
-    ...document.querySelectorAll('.modal-content button')
-].find(x =>
-    x.innerText.trim().toLowerCase() ===
-    valueText.trim().toLowerCase()
-);
-
-if (btn) {
-
-    console.log('[DEBUG] DITEMUKAN:', btn.innerText);
-
-    btn.click();
-
-    await wait(500);
-
-    optionFound = true;
-}
-return optionFound;
+    return optionFound;
 }
 
 /* ================= FUNGSI KHUSUS: STATUS PERNIKAHAN ================= */
@@ -465,32 +397,20 @@ if (textToFindPernikahan !== "") {
         await wait(1000);
 
         let optionFound = false;
-        
         for (let i = 0; i < 15; i++) {
-        
-            const targetOption = [
-                ...document.querySelectorAll(
-                    '.py-2.px-4.cursor-pointer'
-                )
-            ].find(el =>
-                (el.innerText || '').trim() ===
-                textToFindPernikahan
-            );
-        
-            if (targetOption) {
-        
+            // Cari elemen yang teksnya persis dengan textToFindPernikahan
+            const possibleOptions = Array.from(document.querySelectorAll('*')).filter(el => {
+                return (el.innerText || "").trim() === textToFindPernikahan && el.children.length === 0;
+            });
+
+            if (possibleOptions.length > 0) {
+                const targetOption = possibleOptions[possibleOptions.length - 1];
                 await ultraClick(targetOption);
-        
-                console.log(
-                    "[BOT] Status Pernikahan dipilih:",
-                    textToFindPernikahan
-                );
-        
+                console.log("[BOT] Sukses mengklik Status Pernikahan:", textToFindPernikahan);
                 optionFound = true;
-                await wait(1000);
+                await wait(800);
                 break;
             }
-        
             await wait(400);
         }
         if (!optionFound) console.log("[BOT] Error: Opsi Status Pernikahan tidak muncul.");
@@ -500,47 +420,11 @@ if (textToFindPernikahan !== "") {
 }
 
     /* ================= 2. PEKERJAAN ================= */
-console.log("[BOT] Memproses Pekerjaan...");
-
-let jobTarget = (data.pekerjaan || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\./g, ' ')
-    .replace(/\s+/g, ' ');
-
-const JOB_MAP = {
-    "IBU R TANGGA": "Ibu Rumah Tangga",
-    "IRT": "Ibu Rumah Tangga",
-    "IBU RUMAH TANGGA": "Ibu Rumah Tangga",
-
-    "WIRASWASTA": "Wirausaha/Pekerja Mandiri",
-    "PEDAGANG": "Pedagang",
-    "PETANI": "Petani / Pekebun",
-    "NELAYAN": "Nelayan / Perikanan",
-    "PNS": "ASN (Kantor Pemerintah)",
-    "ASN": "ASN (Kantor Pemerintah)",
-    "SWASTA": "Pegawai Swasta",
-    "PEGAWAI SWASTA": "Pegawai Swasta",
-    "BURUH": "Pekerja Pabrik / Buruh",
-    "MAHASISWA": "Mahasiswa",
-    "PELAJAR": "Pelajar"
-};
-
-jobTarget =
-    JOB_MAP[jobTarget] ||
-    jobTarget.split(' ')[0];
-
-console.log(
-    "[BOT] Target pekerjaan:",
-    jobTarget
-);
-
-if(jobTarget){
-    await clickVueDropdown(
-        "pekerjaan",
-        jobTarget
-    );
-}
+    console.log("[BOT] Memproses Pekerjaan...");
+    let jobTarget = (data.pekerjaan || "").trim();
+    if(jobTarget) {
+        await clickVueDropdown("pekerjaan", jobTarget, true, "Cari pekerjaan");
+    }
 
     // WAJIB: Berikan jeda setelah dropdown
     await wait(1500);
@@ -612,15 +496,6 @@ while(true){
         console.log("[BOT] Tombol Selanjutnya aktif");
 
         await ultraClick(btnNext2);
-
-        await wait(1500);
-
-        const modal = document.querySelector('.modal-content');
-        
-        if (!modal) {
-            console.log('[DEBUG] Modal pekerjaan tidak muncul');
-            return false;
-        }
 
         console.log("[BOT] Menuju halaman verifikasi");
 
