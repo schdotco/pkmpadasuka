@@ -309,22 +309,15 @@ if (searchInput) {
 
     await wait(1500);
 
-    console.log(
-        '[DEBUG] HASIL SEARCH:',
-        [...document.querySelectorAll(
-            '.py-2.px-4.cursor-pointer'
-        )].map(x => x.innerText.trim())
-    );
-}
-
-const targetOption = [
-    ...document.querySelectorAll('button')
-    console.log(
+console.log(
     '[DEBUG OPSI]',
     [...document.querySelectorAll('button')]
         .map(x => x.innerText.trim())
         .filter(Boolean)
 );
+
+const targetOption = [
+    ...document.querySelectorAll('button')
 ].find(el =>
     (el.innerText || '')
         .trim()
