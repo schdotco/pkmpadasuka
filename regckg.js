@@ -246,20 +246,37 @@ async function clickVueDropdown(placeholderKeyword, valueText) {
     console.log(`[DEBUG] Mencari kotak: "${placeholderKeyword}"`);
 
     // 1. Cari kotak trigger berdasarkan placeholder
-    const allDivs = Array.from(document.querySelectorAll('div'));
-    const trigger = allDivs.find(el =>
-        (el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
-        el.className.includes('cursor-pointer') // Memastikan ini adalah kotak dropdown
-    );
-
+    let trigger = null;
+    
+    if (placeholderKeyword.toLowerCase() === 'pekerjaan') {
+    
+        trigger = [
+            ...document.querySelectorAll('div')
+        ].find(el =>
+            (el.innerText || '').trim() === 'Pilih pekerjaan'
+        );
+    
+    } else {
+    
+        trigger = [
+            ...document.querySelectorAll('div')
+        ].find(el =>
+            (el.innerText || '')
+                .toLowerCase()
+                .includes(placeholderKeyword.toLowerCase())
+        );
+    }
+    
     if (!trigger) {
         console.log(`[DEBUG] ❌ Kotak "${placeholderKeyword}" tidak ditemukan.`);
         return false;
     }
-
-    // Klik kotak untuk membuka menu
-    trigger.click();
-    await wait(1000);
+    
+    await ultraClick(
+        trigger.closest('.cursor-pointer') || trigger
+    );
+    
+    await wait(1200);
 
     // 2. Cari Opsi dengan metode "Scan Semua Teks"
     console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
@@ -267,9 +284,12 @@ async function clickVueDropdown(placeholderKeyword, valueText) {
 
     // Kita ambil semua elemen yang mungkin mengandung opsi
     const allOptions = Array.from(document.querySelectorAll('div'));
-    const targetOption = allOptions.find(el =>
-        (el.innerText || "").trim() === valueText &&
-        el.className.includes('justify-between') // Sesuai dengan struktur inspect Anda
+    const targetOption = [
+        ...document.querySelectorAll(
+            'button, div.flex.items-center.justify-between'
+        )
+    ].find(el =>
+        (el.innerText || '').trim() === valueText
     );
 
     if (targetOption) {
@@ -419,20 +439,32 @@ if (textToFindPernikahan !== "") {
         await wait(1000);
 
         let optionFound = false;
+        
         for (let i = 0; i < 15; i++) {
-            // Cari elemen yang teksnya persis dengan textToFindPernikahan
-            const possibleOptions = Array.from(document.querySelectorAll('*')).filter(el => {
-                return (el.innerText || "").trim() === textToFindPernikahan && el.children.length === 0;
-            });
-
-            if (possibleOptions.length > 0) {
-                const targetOption = possibleOptions[possibleOptions.length - 1];
+        
+            const targetOption = [
+                ...document.querySelectorAll(
+                    '.py-2.px-4.cursor-pointer'
+                )
+            ].find(el =>
+                (el.innerText || '').trim() ===
+                textToFindPernikahan
+            );
+        
+            if (targetOption) {
+        
                 await ultraClick(targetOption);
-                console.log("[BOT] Sukses mengklik Status Pernikahan:", textToFindPernikahan);
+        
+                console.log(
+                    "[BOT] Status Pernikahan dipilih:",
+                    textToFindPernikahan
+                );
+        
                 optionFound = true;
-                await wait(800);
+                await wait(1000);
                 break;
             }
+        
             await wait(400);
         }
         if (!optionFound) console.log("[BOT] Error: Opsi Status Pernikahan tidak muncul.");
@@ -442,11 +474,41 @@ if (textToFindPernikahan !== "") {
 }
 
     /* ================= 2. PEKERJAAN ================= */
-    console.log("[BOT] Memproses Pekerjaan...");
-    let jobTarget = (data.pekerjaan || "").trim();
-    if(jobTarget) {
-        await clickVueDropdown("pekerjaan", jobTarget, true, "Cari pekerjaan");
-    }
+console.log("[BOT] Memproses Pekerjaan...");
+
+let jobTarget = (data.pekerjaan || "").trim();
+
+const JOB_MAP = {
+    "WIRASWASTA": "Wirausaha/Pekerja Mandiri",
+    "PEDAGANG": "Pedagang",
+    "PETANI": "Petani / Pekebun",
+    "NELAYAN": "Nelayan / Perikanan",
+    "PNS": "ASN (Kantor Pemerintah)",
+    "ASN": "ASN (Kantor Pemerintah)",
+    "SWASTA": "Pegawai Swasta",
+    "PEGAWAI SWASTA": "Pegawai Swasta",
+    "IRT": "Ibu Rumah Tangga",
+    "IBU RUMAH TANGGA": "Ibu Rumah Tangga",
+    "BURUH": "Pekerja Pabrik / Buruh",
+    "MAHASISWA": "Mahasiswa",
+    "PELAJAR": "Pelajar"
+};
+
+jobTarget =
+    JOB_MAP[(jobTarget || '').toUpperCase()]
+    || jobTarget;
+
+console.log(
+    "[BOT] Target pekerjaan:",
+    jobTarget
+);
+
+if(jobTarget){
+    await clickVueDropdown(
+        "pekerjaan",
+        jobTarget
+    );
+}
 
     // WAJIB: Berikan jeda setelah dropdown
     await wait(1500);
