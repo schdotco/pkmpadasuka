@@ -397,20 +397,32 @@ if (textToFindPernikahan !== "") {
         await wait(1000);
 
         let optionFound = false;
+        
         for (let i = 0; i < 15; i++) {
-            // Cari elemen yang teksnya persis dengan textToFindPernikahan
-            const possibleOptions = Array.from(document.querySelectorAll('*')).filter(el => {
-                return (el.innerText || "").trim() === textToFindPernikahan && el.children.length === 0;
-            });
-
-            if (possibleOptions.length > 0) {
-                const targetOption = possibleOptions[possibleOptions.length - 1];
+        
+            const targetOption = [
+                ...document.querySelectorAll(
+                    '.py-2.px-4.cursor-pointer'
+                )
+            ].find(el =>
+                (el.innerText || '').trim() ===
+                textToFindPernikahan
+            );
+        
+            if (targetOption) {
+        
                 await ultraClick(targetOption);
-                console.log("[BOT] Sukses mengklik Status Pernikahan:", textToFindPernikahan);
+        
+                console.log(
+                    "[BOT] Status Pernikahan dipilih:",
+                    textToFindPernikahan
+                );
+        
                 optionFound = true;
-                await wait(800);
+                await wait(1000);
                 break;
             }
+        
             await wait(400);
         }
         if (!optionFound) console.log("[BOT] Error: Opsi Status Pernikahan tidak muncul.");
