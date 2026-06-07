@@ -515,9 +515,17 @@ if (textToFindPernikahan !== "") {
     /* ================= 2. PEKERJAAN ================= */
 console.log("[BOT] Memproses Pekerjaan...");
 
-let jobTarget = (data.pekerjaan || "").trim();
+let jobTarget = (data.pekerjaan || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\./g, ' ')
+    .replace(/\s+/g, ' ');
 
 const JOB_MAP = {
+    "IBU R TANGGA": "Ibu Rumah Tangga",
+    "IRT": "Ibu Rumah Tangga",
+    "IBU RUMAH TANGGA": "Ibu Rumah Tangga",
+
     "WIRASWASTA": "Wirausaha/Pekerja Mandiri",
     "PEDAGANG": "Pedagang",
     "PETANI": "Petani / Pekebun",
@@ -526,16 +534,14 @@ const JOB_MAP = {
     "ASN": "ASN (Kantor Pemerintah)",
     "SWASTA": "Pegawai Swasta",
     "PEGAWAI SWASTA": "Pegawai Swasta",
-    "IRT": "Ibu Rumah Tangga",
-    "IBU RUMAH TANGGA": "Ibu Rumah Tangga",
     "BURUH": "Pekerja Pabrik / Buruh",
     "MAHASISWA": "Mahasiswa",
     "PELAJAR": "Pelajar"
 };
 
 jobTarget =
-    JOB_MAP[(jobTarget || '').toUpperCase()]
-    || jobTarget;
+    JOB_MAP[jobTarget] ||
+    jobTarget.split(' ')[0];
 
 console.log(
     "[BOT] Target pekerjaan:",
