@@ -317,17 +317,19 @@ console.log(
 );
 }
 
+const modalPekerjaan = document.querySelector(
+    '.modal-content'
+);
+
 const targetOption = [
-    ...document.querySelectorAll('button')
+    ...modalPekerjaan.querySelectorAll('*')
 ].find(el =>
     (el.innerText || '')
         .trim()
+        .toLowerCase() ===
+    valueText
+        .trim()
         .toLowerCase()
-        .includes(
-            valueText
-                .trim()
-                .toLowerCase()
-        )
 );
 
 if (targetOption) {
@@ -336,7 +338,14 @@ if (targetOption) {
         `[DEBUG] ✅ Opsi ditemukan: ${valueText}`
     );
 
-    await ultraClick(targetOption);
+    targetOption.click();
+    
+    targetOption.dispatchEvent(
+        new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true
+        })
+    );
 
     optionFound = true;
 
