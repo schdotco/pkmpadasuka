@@ -435,6 +435,60 @@ if (textToFindPernikahan !== "") {
 /* ================= 2. PEKERJAAN ================= */
     console.log("[BOT] Memproses Pekerjaan...");
     let jobTarget = (data.pekerjaan || "").trim();
+
+// --- NORMALISASI / MAPPING DATA PEKERJAAN ---
+    // (Sumber: Dropdown Internal -> Target: Portal CKG)
+    const jobUpper = jobTarget.toUpperCase();
+
+    // 1. Singkatan Belum Bekerja
+    if (jobUpper.includes("BLM.") || jobUpper.includes("TIDAK BEKERJA")) {
+        jobTarget = "Belum/Tidak Bekerja";
+    }
+    // 2. Singkatan Ibu Rumah Tangga
+    else if (jobUpper.includes("IBU R.TANGGA") || jobUpper.includes("IBU R")) {
+        jobTarget = "Ibu Rumah Tangga";
+    }
+    // 3. Pegawai Negeri / PNS
+    else if (jobUpper.includes("PEG. NEGERI") || jobUpper.includes("PNS")) {
+        jobTarget = "ASN (Kantor Pemerintah)";
+    }
+    // 4. Karyawan Swasta
+    else if (jobUpper.includes("KARYAWAN SWASTA")) {
+        jobTarget = "Pegawai Swasta";
+    }
+    // 5. Wiraswasta
+    else if (jobUpper.includes("WIRASWASTA")) {
+        jobTarget = "Wirausaha/Pekerja Mandiri";
+    }
+    // 6. Buruh
+    else if (jobUpper === "BURUH") {
+        jobTarget = "Pekerja Pabrik / Buruh";
+    }
+    // 7. Nelayan & Petani
+    else if (jobUpper.includes("NELAYAN")) {
+        jobTarget = "Nelayan / Perikanan";
+    }
+    else if (jobUpper.includes("PETANI")) {
+        jobTarget = "Petani / Pekebun";
+    }
+    // 8. TNI/POLRI (Di CKG dipisah, kita atur default ke TNI)
+    else if (jobUpper.includes("TNI/POLRI") || jobUpper.includes("TNI")) {
+        jobTarget = "TNI";
+    }
+    // 9. Purnawirawan (Pensiunan militer/polisi) diarahkan ke Pensiunan
+    else if (jobUpper.includes("PURNAWIRAWAN")) {
+        jobTarget = "Pensiunan";
+    }
+    // 10. Lain-lain & Profesional
+    else if (jobUpper.includes("LAIN-LAIN") || jobUpper === "PROFESIONAL") {
+        jobTarget = "Lainnya";
+    }
+
+    // Tampilkan log jika data berhasil diterjemahkan
+    if (jobTarget !== jobAsli) {
+        console.log(`[BOT] Mapping Pekerjaan: "${jobAsli}" diterjemahkan menjadi -> "${jobTarget}"`);
+    }
+    // ----------------------------------
     
     if (jobTarget) {
         // 1. Cari Trigger/Kotak Dropdown Pekerjaan
