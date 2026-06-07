@@ -136,13 +136,13 @@ async function selectDropdownSurveyJS(optionText) {
         triggerClick(dropdownTrigger);
         await sleep(1000);
         const searchInput = document.querySelector('input[type="text"][role="combobox"], input[aria-expanded="true"]');
-        if (searchInput) { forceInject(searchInput, 't'); await sleep(1500); }
+        if (searchInput) { forceInject(searchInput, 't'); await sleep(500); }
         const targetOpt = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')].find(el =>
             el.innerText.toLowerCase().includes(optionText.toLowerCase())
         );
         if (targetOpt) {
             triggerClick(targetOpt);
-            await sleep(1500);
+            await sleep(500);
             success = true;
         } else triggerClick(dropdownTrigger); 
     }
@@ -436,7 +436,7 @@ function createUI(){
 
         BOT_RUNNING = true; saveBOT(data); clearCompleted();
         updateStatus('MEMULAI BOT...');
-        await sleep(1500); await mainLoopCKG(data);
+        await sleep(500); await mainLoopCKG(data);
     };
     document.getElementById('stop-bot').onclick = stopBOT;
 }
