@@ -144,25 +144,25 @@ async function prosesVerifikasi() {
     console.log("[BOT] Tombol Pilih berhasil diklik");
 
     while (true) {
-
-        const daftarBtn = Array.from(
-            document.querySelectorAll('button,div,span')
-        ).find(el =>
-            (el.innerText || "").includes("Daftarkan dengan NIK")
+    
+        const daftarBtn = document.querySelector(
+            'button.btn-fill-primary-v2'
         );
-
-        if (daftarBtn) {
+    
+        if (
+            daftarBtn &&
+            daftarBtn.innerText.includes("Daftarkan dengan NIK")
+        ) {
+    
+            console.log("[BOT] Tombol Daftarkan ditemukan");
+    
             await ultraClick(daftarBtn);
+    
             break;
         }
-
+    
         await wait(500);
     }
-
-    hideLoading();
-
-    console.log("[BOT] PENDAFTARAN SELESAI");
-}
 
 /* ================= TARIK DATA SPREADSHEET ================= */
 function parseCSV(text){
