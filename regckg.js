@@ -317,16 +317,22 @@ if (searchInput) {
 }
 
 const targetOption = [
-    ...document.querySelectorAll(
-        '.py-2.px-4.cursor-pointer'
-    )
+    ...document.querySelectorAll('button')
+    console.log(
+    '[DEBUG OPSI]',
+    [...document.querySelectorAll('button')]
+        .map(x => x.innerText.trim())
+        .filter(Boolean)
+);
 ].find(el =>
     (el.innerText || '')
         .trim()
-        .toLowerCase() ===
-    valueText
-        .trim()
         .toLowerCase()
+        .includes(
+            valueText
+                .trim()
+                .toLowerCase()
+        )
 );
 
 if (targetOption) {
