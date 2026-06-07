@@ -124,8 +124,6 @@ async function waitAndClickText(text, timeout = 30000) {
 
 async function prosesVerifikasi() {
 
-    showLoading("⚡ VERIFIKASI PESERTA ⚡");
-
     while (true) {
 
         const pilihText = Array.from(
@@ -461,38 +459,54 @@ if (textToFindPernikahan !== "") {
     }
 
 hideLoading();
+
 console.log("[BOT] Halaman 2 selesai diproses.");
+console.log("[BOT] Menunggu user melengkapi data...");
 
-showLoading("⚡ MENUNGGU TOMBOL SELANJUTNYA ⚡");
-
-let btnNext2 = null;
+document.getElementById("infoAI").innerHTML += `
+<div style="
+    margin-top:8px;
+    padding:6px;
+    background:#222;
+    border-radius:5px;
+    color:#ffcc00;
+">
+⏳ Menunggu tombol Selanjutnya aktif...
+</div>
+`;
 
 while(true){
 
-    btnNext2 = Array.from(
-        document.querySelectorAll('button,div')
-    ).find(el =>
-        (el.innerText || "").trim() === "Selanjutnya"
-    );
+    const btnNext2 = Array.from(
+        document.querySelectorAll("button")
+    ).find(btn => {
 
-    if(
-        btnNext2 &&
-        !btnNext2.disabled &&
-        !btnNext2.classList.contains('disabled')
-    ){
+        const txt = (btn.innerText || "").trim();
+
+        return (
+            txt === "Selanjutnya" &&
+            !btn.disabled &&
+            btn.offsetParent !== null
+        );
+
+    });
+
+    if(btnNext2){
+
+        console.log("[BOT] Tombol Selanjutnya aktif");
+
+        await ultraClick(btnNext2);
+
+        console.log("[BOT] Menuju halaman verifikasi");
+
+        await wait(3000);
+
+        await prosesVerifikasi();
+
         break;
     }
 
-    await wait(500);
-}
-
-await ultraClick(btnNext2);
-
-console.log("[BOT] Menuju halaman verifikasi...");
-
-await wait(4000);
-
-await prosesVerifikasi();
+    await wait(1000);
 }
 
 /* ================= SISTEM SEMI AUTO-PILOT ================= */
