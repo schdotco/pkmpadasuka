@@ -475,6 +475,40 @@ async function isiKesehatanJiwa() {
     }
 }
 
+async function isiTetanusCatin() {
+
+    const judul = document.body.innerText.toLowerCase();
+
+    if (!judul.includes('riwayat imunisasi tetanus')) {
+        return false;
+    }
+
+    updateStatus('Mengisi Imunisasi Tetanus Catin...');
+
+    await selectDropdownContext(
+        'pernah mendapatkan imunisasi tetanus',
+        'pernah imunisasi tetanus tetapi tidak ingat berapa kali'
+    );
+
+    await sleep(1000);
+
+    const btnKirim =
+        document.querySelector('.sd-navigation__complete-btn') ||
+        [...document.querySelectorAll('button,input[type="button"]')]
+            .find(el =>
+                (el.value || el.innerText || '')
+                    .toLowerCase()
+                    .includes('kirim')
+            );
+
+    if (btnKirim) {
+        btnKirim.click();
+        await sleep(3000);
+    }
+
+    return true;
+}
+
 /* =========================================================
    CORE LOGIC SKRINING MANDIRI (REVISI STATUS PERKAWINAN)
 ========================================================= */
@@ -632,12 +666,28 @@ async function autoContinueForm(){
     await sleep(3000);
 
     while (BOT_RUNNING && location.host.includes("form.kemkes.go.id")) {
+    
         try {
-            await handleSkriningMandiri(data);
+    
+            if (
+                document.body.innerText
+                    .toLowerCase()
+                    .includes('riwayat imunisasi tetanus')
+            ) {
+    
+                await isiTetanusCatin();
+    
+            } else {
+    
+                await handleSkriningMandiri(data);
+    
+            }
+    
         } catch(e) {
             console.error("Error bypass:", e);
             updateStatus("Melewati error, mencoba ulang...");
         }
+    
         await sleep(2000);
     }
 }
