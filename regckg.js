@@ -164,6 +164,8 @@ async function prosesVerifikasi() {
         await wait(500);
     }
 
+}
+
 /* ================= TARIK DATA SPREADSHEET ================= */
 function parseCSV(text){
     const rows = []; let row = []; let current = ""; let insideQuote = false;
