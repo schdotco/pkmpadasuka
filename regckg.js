@@ -434,7 +434,8 @@ if (textToFindPernikahan !== "") {
 
 /* ================= 2. PEKERJAAN ================= */
     console.log("[BOT] Memproses Pekerjaan...");
-    let jobTarget = (data.pekerjaan || "").trim();
+    let jobTarget = (data.pekerjaan || data.Pekerjaan || "").trim();
+    let jobAsli = jobTarget;
 
 // --- NORMALISASI / MAPPING DATA PEKERJAAN ---
     // (Sumber: Dropdown Internal -> Target: Portal CKG)
