@@ -315,6 +315,7 @@ console.log(
         .map(x => x.innerText.trim())
         .filter(Boolean)
 );
+}
 
 const targetOption = [
     ...document.querySelectorAll('button')
