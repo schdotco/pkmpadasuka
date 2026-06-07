@@ -471,6 +471,8 @@ document.getElementById("infoAI").innerHTML += `
 </div>
 `;
 
+let counter = 0;
+        
 while(true){
 
     const btnNext2 = Array.from(
@@ -501,12 +503,6 @@ while(true){
 
         break;
     }
-
-        if(counter % 30 === 0){
-            console.log("[BOT] Masih menunggu tombol Selanjutnya aktif...");
-        }
-    
-        counter++;
 
     await wait(1000);
 }
