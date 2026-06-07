@@ -180,43 +180,65 @@ function parseCSV(text){
     return rows;
 }
 
+let cachedSheetData = null;
+
 async function cariData(nikInput){
-    const target = normalizeNIK(nikInput);
-    for(const source of SHEETS){
-        for(const gid of source.gids){
-            const csv = await new Promise(resolve => {
-                request({
-                    method: "GET", url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
-                    timeout: 10000, onload: r => resolve(r.responseText || ""), onerror: () => resolve("")
-                });
-            });
 
-            if(!csv || csv.trim()==="") continue;
-            const rows = parseCSV(csv);
-            let waD2 = (source.waStatis && rows[1]) ? normalizeNIK(rows[1][3]) : "";
+    const target = normalizeNIK(nikInput);
 
-            for(let i=1;i<rows.length;i++){
-                const row = rows[i];
-                if(row.find(col => normalizeNIK(col) === target)){
-                    return {
-                        nik: target,
-                        nama: (row[source.colNama] || "").trim(),
-                        tgl: (row[source.colTgl] || "").trim(),
-                        hp: waD2 || (row[source.colWA] || "").replace(/\D/g,''),
-                        jk: (row[source.colJK] || "").trim(),
-                        alamat: (row[source.colAlamat] || "").trim(),
-                        pekerjaan: (row[source.colPekerjaan] || "").trim(),
-                        kelurahan: (row[source.colKelurahan] || "").trim(),
-                        sekolah: (row[source.colSekolah] || "").trim(),
-                        disabilitas: (row[source.colDisabilitas] || "").trim(),
-                        Martial: (row[source.colMartial] || "").trim(),
-                        kelas: (row[source.colKelas] || "").trim()
-                    };
-                }
-            }
-        }
-    }
-    return null;
+    if(!cachedSheetData){
+
+        console.log('[CACHE MISS] Download spreadsheet');
+
+        const source = SHEETS[0];
+        const gid = source.gids[0];
+
+        const csv = await new Promise(resolve => {
+            request({
+                method: "GET",
+                url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
+                timeout: 10000,
+                onload: r => resolve(r.responseText || ""),
+                onerror: () => resolve("")
+            });
+        });
+
+        cachedSheetData = parseCSV(csv);
+
+    } else {
+
+        console.log('[CACHE HIT] Pakai RAM');
+
+    }
+
+    const rows = cachedSheetData;
+    const source = SHEETS[0];
+
+    let waD2 = (source.waStatis && rows[1])
+        ? normalizeNIK(rows[1][3])
+        : "";
+
+    for(let i = 1; i < rows.length; i++){
+
+        const row = rows[i];
+
+        if(row.find(col => normalizeNIK(col) === target)){
+
+            return {
+                nik: target,
+                nama: (row[source.colNama] || "").trim(),
+                tgl: (row[source.colTgl] || "").trim(),
+                hp: waD2 || (row[source.colWA] || "").replace(/\D/g,''),
+                jk: (row[source.colJK] || "").trim(),
+                alamat: (row[source.colAlamat] || "").trim(),
+                pekerjaan: (row[source.colPekerjaan] || "").trim(),
+                kelurahan: (row[source.colKelurahan] || "").trim(),
+                Martial: (row[source.colMartial] || "").trim()
+            };
+        }
+    }
+
+    return null;
 }
 
 /* ================= ENGINE VUE DROPDOWN (REVISI KHUSUS) ================= */
