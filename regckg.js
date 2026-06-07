@@ -317,12 +317,10 @@ console.log(
 );
 }
 
-const modalPekerjaan = document.querySelector(
-    '.modal-content'
-);
+await wait(1200);
 
 const targetOption = [
-    ...modalPekerjaan.querySelectorAll('*')
+    ...document.querySelectorAll('*')
 ].find(el =>
     (el.innerText || '')
         .trim()
@@ -338,27 +336,14 @@ if (targetOption) {
         `[DEBUG] ✅ Opsi ditemukan: ${valueText}`
     );
 
-    targetOption.click();
-    
-    targetOption.dispatchEvent(
-        new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true
-        })
-    );
+    (
+        targetOption.closest('button') ||
+        targetOption
+    ).click();
 
     optionFound = true;
 
     await wait(1000);
-
-} else {
-
-    console.log(
-        `[DEBUG] ❌ Opsi "${valueText}" tidak ditemukan`
-    );
-}
-
-    return optionFound;
 }
 
 /* ================= FUNGSI KHUSUS: STATUS PERNIKAHAN ================= */
