@@ -11,11 +11,18 @@ const TARGETS = [
     { id: 'gizi', txt: 'gizi (bb' },
     { id: 'gula', txt: 'gula darah' },
     { id: 'tensi', txt: 'tekanan darah' },
+
+    { id: 'pertumbuhan', txt: 'skrining pertumbuhan' },
+
     { id: 'frambusia', txt: 'frambusia' },
     { id: 'kusta', txt: 'kusta' },
     { id: 'skabies', txt: 'skabies' },
+
     { id: 'telinga_mata', txt: 'telinga dan mata' },
-    { id: 'karies', txt: 'karies' },
+
+    { id: 'karies', txt: 'pemeriksaan gigi' },
+    { id: 'karies', txt: 'skrining gigi' },
+
     { id: 'periodontal', txt: 'periodontal' }
 ];
 
@@ -192,6 +199,29 @@ async function isiRadioSurveyJS(soalSelector, teksJawaban) {
     return false;
 }
 
+async function handlePertumbuhanBalita(data){
+
+    updateStatus('MENGISI: PERTUMBUHAN BALITA...');
+
+    const tinggi =
+        document.querySelector(
+            'input[placeholder*="tinggi badan" i]'
+        );
+
+    if(tinggi){
+        forceInject(tinggi, data.tb || 110);
+        await sleep(1000);
+    }
+
+    // IMT/U = Gizi Baik
+    await selectDropdownSurveyJS('gizi baik');
+    await sleep(1500);
+
+    // Lingkar Kepala = Normal
+    await selectDropdownSurveyJS('normal');
+    await sleep(1500);
+}
+
 async function handleTelingaMata() {
     updateStatus('MENGISI: TELINGA & MATA...');
     await isiRadioSurveyJS('serumen impaksi', 'tidak ada serumen impaksi');
@@ -326,6 +356,13 @@ async function autoContinueForm(){
         await pilihSemuaRadioLimit('tidak', 2, true);
         await selectDropdownSurveyJS('tidak', 2);
     }
+
+   else if(title.includes('skrining pertumbuhan')){
+
+    currentId = 'pertumbuhan';
+
+    await handlePertumbuhanBalita(data);
+   }
 
     if(currentId) addCompleted(currentId);
     await klikKirim();
