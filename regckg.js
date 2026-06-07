@@ -290,31 +290,67 @@ async function clickVueDropdown(placeholderKeyword, valueText) {
     let optionFound = false;
 
     // Kita ambil semua elemen yang mungkin mengandung opsi
-    const allOptions = Array.from(document.querySelectorAll('div'));
-    const targetOption = [
-        ...document.querySelectorAll(
-            'button, div.flex.items-center.justify-between'
-        )
-    ].find(el =>
-        (el.innerText || '').trim() === valueText
+console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
+
+let optionFound = false;
+
+const searchInput = document.querySelector(
+    'input[placeholder*="Cari pekerjaan"]'
+);
+
+if (searchInput) {
+
+    searchInput.focus();
+
+    forceInject(searchInput, valueText);
+
+    searchInput.dispatchEvent(
+        new KeyboardEvent('keyup', {
+            bubbles: true
+        })
     );
 
-    if (targetOption) {
-        console.log(`[DEBUG] ✅ Opsi ditemukan! Melakukan klik...`);
-        targetOption.scrollIntoView({ behavior: "smooth", block: "center" });
-        await wait(300);
+    await wait(1500);
 
-        // Pemicu klik manual
-        targetOption.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-        targetOption.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-        targetOption.click();
+    console.log(
+        '[DEBUG] HASIL SEARCH:',
+        [...document.querySelectorAll(
+            '.py-2.px-4.cursor-pointer'
+        )].map(x => x.innerText.trim())
+    );
+}
 
-        optionFound = true;
-        await wait(800);
-    } else {
-        console.log(`[DEBUG] ❌ Opsi "${valueText}" tidak ditemukan. Menutup dropdown.`);
-        document.body.click();
-    }
+const targetOption = [
+    ...document.querySelectorAll(
+        '.py-2.px-4.cursor-pointer'
+    )
+].find(el =>
+    (el.innerText || '')
+        .trim()
+        .toLowerCase() ===
+    valueText
+        .trim()
+        .toLowerCase()
+);
+
+if (targetOption) {
+
+    console.log(
+        `[DEBUG] ✅ Opsi ditemukan: ${valueText}`
+    );
+
+    await ultraClick(targetOption);
+
+    optionFound = true;
+
+    await wait(1000);
+
+} else {
+
+    console.log(
+        `[DEBUG] ❌ Opsi "${valueText}" tidak ditemukan`
+    );
+}
 
     return optionFound;
 }
