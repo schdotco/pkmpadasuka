@@ -95,29 +95,25 @@ async function waitAndClickText(text, timeout = 30000) {
 
     while (Date.now() - start < timeout) {
 
-        const el = Array.from(
-            document.querySelectorAll('*')
-        ).find(x =>
-            (x.innerText || "").trim() === text
+        const btn = Array.from(
+            document.querySelectorAll('button')
+        ).find(btn =>
+            (btn.innerText || "").includes(text)
         );
 
-        if (el) {
+        if (btn) {
 
-            const clickable =
-                el.closest('button') ||
-                el.closest('[role="button"]') ||
-                el.parentElement ||
-                el;
+            console.log("[BOT] Klik tombol:", text);
 
-            console.log("[BOT] Klik:", text);
-
-            await ultraClick(clickable);
+            await ultraClick(btn);
 
             return true;
         }
 
         await wait(500);
     }
+
+    console.log("[BOT] Timeout:", text);
 
     return false;
 }
@@ -506,6 +502,12 @@ while(true){
         break;
     }
 
+        if(counter % 30 === 0){
+            console.log("[BOT] Masih menunggu tombol Selanjutnya aktif...");
+        }
+    
+        counter++;
+
     await wait(1000);
 }
 
@@ -691,9 +693,25 @@ await ultraClick(btnLanjut);
 
 console.log("[BOT] Menunggu popup Lanjutkan...");
 
-await waitAndClickText("Lanjutkan", 20000);
+while(true){
 
-await wait(3000);
+    const lanjutBtn = Array.from(
+        document.querySelectorAll('button.btn-fill-primary')
+    ).find(btn =>
+        (btn.innerText || "").includes("Lanjutkan")
+    );
+
+    if(lanjutBtn){
+
+        console.log("[BOT] Popup validasi ditemukan");
+
+        await ultraClick(lanjutBtn);
+
+        break;
+    }
+
+    await wait(500);
+}
 
 /* ================= HALAMAN 2 ================= */
 await eksekusiHalamanDua(data);
