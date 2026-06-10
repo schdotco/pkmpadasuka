@@ -207,6 +207,8 @@ async function handleTelingaMata(data) {
     await sleep(500);
 
     // ===== LOGIKA MATA =====
+   console.log('[MATA]', JSON.stringify(data.mata));
+   updateStatus('MATA: ' + JSON.stringify(data.mata));
     if ((data.mata || '').toLowerCase() === 'ya') {
 
         // Pertanyaan nomor 4
