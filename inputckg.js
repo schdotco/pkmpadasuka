@@ -90,7 +90,7 @@ async function cariData(nikInput){
                     tb: cells[41] || '165',
                     lp: cells[43] || '80',
                     gula: cells[58] || '110',
-                    mata: cells[71] || 'Tidak',
+                    mata: cells[70] || 'Tidak',
                 };
             }
         }
