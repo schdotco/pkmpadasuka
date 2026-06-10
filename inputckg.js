@@ -245,13 +245,33 @@ async function handleTelingaMata(data) {
 ========================================================= */
 function isFormValid() {
     const questions = document.querySelectorAll('.sd-question, .sv-question');
+
     for (let q of questions) {
+
+        const pertanyaan = q.innerText.toLowerCase();
+
+        // Abaikan validasi untuk pertanyaan ini
+        if (
+            pertanyaan.includes('pinhole') ||
+            pertanyaan.includes('funduskopi')
+        ) {
+            continue;
+        }
+
         const radios = q.querySelectorAll('input[type="radio"]');
+
         if (radios.length > 0) {
             const hasSelected = Array.from(radios).some(r => r.checked);
-            if (!hasSelected) return { valid: false, container: q };
+
+            if (!hasSelected) {
+                return {
+                    valid: false,
+                    container: q
+                };
+            }
         }
     }
+
     return { valid: true };
 }
 
