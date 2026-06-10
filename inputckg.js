@@ -16,7 +16,8 @@ const TARGETS = [
     { id: 'skabies', txt: 'skabies' },
     { id: 'telinga_mata', txt: 'telinga dan mata' },
     { id: 'karies', txt: 'karies' },
-    { id: 'periodontal', txt: 'periodontal' }
+    { id: 'periodontal', txt: 'periodontal' },
+    { id: 'mata', txt: 'mata' }
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r,ms));
@@ -88,7 +89,8 @@ async function cariData(nikInput){
                     bb: cells[40] || '60',
                     tb: cells[41] || '165',
                     lp: cells[43] || '80',
-                    gula: cells[58] || '110'
+                    gula: cells[58] || '110',
+                    mata: cells[71] || 'Tidak',
                 };
             }
         }
@@ -192,12 +194,47 @@ async function isiRadioSurveyJS(soalSelector, teksJawaban) {
     return false;
 }
 
-async function handleTelingaMata() {
+async function handleTelingaMata(data) {
     updateStatus('MENGISI: TELINGA & MATA...');
+
     await isiRadioSurveyJS('serumen impaksi', 'tidak ada serumen impaksi');
+    await sleep(500);
+
     await selectDropdownSurveyJS('tidak ada infeksi');
+    await sleep(500);
+
     await isiRadioSurveyJS('tajam pendengaran', 'normal');
-    await isiRadioSurveyJS('tajam penglihatan', 'normal (visus 6/6 - 6/12)');
+    await sleep(500);
+
+    // ===== LOGIKA MATA =====
+    if ((data.mata || '').toLowerCase() === 'ya') {
+
+        // Pertanyaan nomor 4
+        await isiRadioSurveyJS(
+            'tajam penglihatan',
+            'curiga gangguan penglihatan'
+        );
+
+        // Tunggu pertanyaan nomor 5 muncul
+        await sleep(1500);
+
+        // Pertanyaan nomor 5
+        await isiRadioSurveyJS(
+            'hasil pemeriksaan visus',
+            'gangguan penglihatan ringan'
+        );
+
+    } else {
+
+        // Pertanyaan nomor 4
+        await isiRadioSurveyJS(
+            'tajam penglihatan',
+            'normal (visus 6/6 - 6/12)'
+        );
+    }
+
+    await sleep(500);
+
     await isiRadioSurveyJS('pupil', 'normal');
 }
 
@@ -314,7 +351,7 @@ async function autoContinueForm(){
     }
     else if(title.includes('telinga dan mata')){
         currentId = 'telinga_mata';
-        await handleTelingaMata();
+        await handleTelingaMata(data);
     }
     else if(title.includes('karies')){
         currentId = 'karies'; updateStatus('MENGISI TAHAP: KARIES');
