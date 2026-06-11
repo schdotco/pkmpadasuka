@@ -557,7 +557,7 @@ async function handleSkriningMandiri(data) {
         let qText = (q.innerText||'').toLowerCase();
         if (
     qText.match(
-        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim/
+        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim|faktor risiko tb|tuberkulosis|batuk/
     )
 ) return;
 
