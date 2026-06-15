@@ -183,6 +183,16 @@ const aliases = {
         'pap smear',
         'iva'
     ],
+
+        'gejala kanker paru': [
+        'batuk dalam jangka waktu yang lama',
+        'batuk berdarah',
+        'sesak napas',
+        'nyeri dada',
+        'leher bengkak',
+        'benjolan pada leher',
+        'tidak sembuh-sembuh'
+    ]
 };
 
 const keywords = aliases[soalText] || [soalText];
@@ -198,6 +208,10 @@ const questionNode = allElements.find(el => {
         
         if (!questionNode) {
             console.warn('Soal tidak ditemukan:', soalText);
+                console.log(
+        [...document.querySelectorAll('.sd-question')]
+            .map(q => q.innerText)
+    );
             return false;
         }
         
@@ -603,6 +617,10 @@ async function handleSkriningMandiri(data) {
         'riwayat penyakit tbc atau ppok',
         'tidak'
     );
+    await fillRadioSurveyJS(
+    'gejala kanker paru',
+    'tidak'
+    );
 
     // 5. SAPU BERSIH (Isi semua radio yang kosong menjadi 'Tidak'/'Normal')
     const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
@@ -611,7 +629,7 @@ async function handleSkriningMandiri(data) {
         let qText = (q.innerText||'').toLowerCase();
         if (
     qText.match(
-        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim|faktor risiko tb|tuberkulosis|batuk/
+        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim|faktor risiko tb|tuberkulosis/
     )
 ) return;
 
