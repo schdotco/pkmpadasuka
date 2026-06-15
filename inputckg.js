@@ -114,16 +114,27 @@ function triggerClick(el){
     el.click();
 }
 
-function forceInject(element, value){
-    if(!element) return;
-    value = String(value);
-    element.scrollIntoView({ behavior:'smooth', block:'center' });
-    element.focus();
-    const setter = Object.getOwnPropertyDescriptor(element.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, 'value').set;
-    if(setter) setter.call(element, value); else element.value = value;
-    if (element._valueTracker) element._valueTracker.setValue('');
+function forceInject(element, value) {
+    if (!element) return;
+    
+    // 1. Dapatkan "native setter" untuk input agar framework tidak curiga
+    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+    
+    // 2. Terapkan nilai menggunakan setter asli
+    nativeSetter.call(element, value);
+    
+    // 3. (PENTING untuk React/SurveyJS) Hapus tracker jika ada
+    if (element._valueTracker) {
+        element._valueTracker.setValue('');
+    }
+    
+    // 4. Kirim event agar framework melakukan validasi dan update state
     element.dispatchEvent(new Event('input', { bubbles: true }));
     element.dispatchEvent(new Event('change', { bubbles: true }));
+    
+    // 5. Trigger BLUR (Seringkali validasi berjalan saat kursor keluar dari kolom)
+    element.dispatchEvent(new Event('blur', { bubbles: true }));
+    
     element.blur();
 }
 
