@@ -240,6 +240,7 @@ const questionNode = allElements.find(el => {
         const targetItem = items.find(el => {
             const txt = (el.innerText || '').toLowerCase().trim();
             return txt === jawabanText.toLowerCase() ||
+                if (txt === target) return true;
                    txt.includes(jawabanText.toLowerCase());
         });
 
@@ -558,9 +559,9 @@ async function handleSkriningMandiri(data) {
 
     if (data.perkawinan && data.perkawinan !== 'Data Kosong') {
         let p = data.perkawinan.toLowerCase();
-        let target = 'menikah'; 
+        let target = 'Menikah'; 
 
-        if (p.includes('belum')) target = 'belum menikah';
+        if (p.includes('Belum')) target = 'Belum Menikah';
         else if (p.includes('cerai')) target = 'cerai'; 
         
         // Debug di UI
