@@ -548,20 +548,28 @@ async function isiTetanusCatin() {
 ========================================================= */
 async function handleSkriningMandiri(data) {
     updateStatus('Mengisi form...');
-    await sleep(500);
+    await sleep(1000);
 
 
     // 1. STATUS PERKAWINAN (SMART MAPPER)
-    if (data.perkawinan) {
+    console.log("Raw Data:", data.perkawinan); // Cek console
+    updateStatus('Status di Sheet: ' + data.perkawinan); 
+    await sleep(1000); // PAUSE lagi biar Anda sempat baca
+
+    if (data.perkawinan && data.perkawinan !== 'Data Kosong') {
         let p = data.perkawinan.toLowerCase();
-        let target = 'menikah'; // Default sesuaikan dengan hasil Console
+        let target = 'menikah'; 
 
         if (p.includes('belum')) target = 'belum menikah';
-        else if (p.includes('cerai hidup')) target = 'cerai hidup';
-        else if (p.includes('cerai mati')) target = 'cerai mati';
-
-        console.log("DEBUG - Target yang dicari di website:", target);
+        else if (p.includes('cerai')) target = 'cerai'; 
+        
+        // Debug di UI
+        updateStatus('Mengisi: ' + target);
         await fillRadioSurveyJS('status perkawinan', target);
+        await sleep(1000);
+    } else {
+        updateStatus('Data Perkawinan Kosong!');
+        await sleep(2000);
     }
     
     // FAKTOR RISIKO TB
