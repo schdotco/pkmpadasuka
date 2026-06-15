@@ -12,6 +12,25 @@ const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
 /* =========================================================
+   HELPER MAPPING JAWABAN MEROKOK
+========================================================= */
+function jawabanMerokok(v){
+
+    const text =
+        String(v || '')
+        .toLowerCase()
+        .trim();
+
+    return (
+        text.includes('ya') ||
+        text.includes('rokok') ||
+        text.includes('perokok')
+    )
+        ? 'ya'
+        : 'tidak';
+}
+
+/* =========================================================
    SESSION & DYNAMIC TRACKER
 ========================================================= */
 function saveBOT(data) { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); }
@@ -116,7 +135,8 @@ async function cariData(nikInput) {
 
             return {
                 nik: target,
-                perkawinan: rows[i][26] || 'Belum Menikah'
+                perkawinan: rows[i][26] || 'Belum Menikah',
+                merokok: (rows[i][71] || '').trim(),
             };
         }
     }
@@ -162,7 +182,7 @@ const aliases = {
         'serviks',
         'pap smear',
         'iva'
-    ]
+    ],
 };
 
 const keywords = aliases[soalText] || [soalText];
@@ -549,6 +569,40 @@ async function handleSkriningMandiri(data) {
 
     console.log("[DEBUG] Perkawinan:", p, "-> Kanker Leher Rahim:", isYes ? "YA" : "TIDAK");
     await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
+
+   // 4. Merokok
+    const statusMerokok =
+    jawabanMerokok(data.merokok);
+
+        await fillRadioSurveyJS(
+        'merokok dalam setahun terakhir',
+        statusMerokok
+    );
+    
+    await fillRadioSurveyJS(
+        'riwayat merokok dalam 15 tahun terakhir',
+        statusMerokok
+    );
+    
+    await fillRadioSurveyJS(
+        'menghirup asap rokok',
+        'tidak'
+    );
+    
+    await fillRadioSurveyJS(
+        'kanker paru pada keluarga',
+        'tidak'
+    );
+    
+    await fillRadioSurveyJS(
+        'batuk dalam jangka waktu yang lama',
+        'tidak'
+    );
+    
+    await fillRadioSurveyJS(
+        'riwayat penyakit tbc atau ppok',
+        'tidak'
+    );
 
     // 5. SAPU BERSIH (Isi semua radio yang kosong menjadi 'Tidak'/'Normal')
     const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
