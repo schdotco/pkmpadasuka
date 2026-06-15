@@ -241,7 +241,6 @@ const questionNode = allElements.find(el => {
             const txt = (el.innerText || '').toLowerCase().trim();
             return txt === jawabanText.toLowerCase() ||
                 if (txt === target) return true;
-                   txt.includes(jawabanText.toLowerCase());
         });
 
         if (targetItem) {
