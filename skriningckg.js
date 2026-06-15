@@ -241,6 +241,8 @@ const questionNode = allElements.find(el => {
             const txt = (el.innerText || '').toLowerCase().trim();
             return txt === jawabanText.toLowerCase() ||
                 if (txt === target) return true;
+            if (target === 'menikah' && txt === 'belum menikah') return false;
+            return txt.includes(target);
         });
 
         if (targetItem) {
