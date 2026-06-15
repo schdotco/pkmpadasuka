@@ -560,6 +560,7 @@ async function handleSkriningMandiri(data) {
         else if (p.includes('cerai hidup')) target = 'cerai hidup';
         else if (p.includes('cerai mati')) target = 'cerai mati';
 
+        console.log("DEBUG - Target yang dicari di website:", target);
         await fillRadioSurveyJS('status perkawinan', target);
     }
     
