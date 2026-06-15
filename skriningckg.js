@@ -622,22 +622,34 @@ async function handleSkriningMandiri(data) {
     'tidak'
     );
 
-    // 5. SAPU BERSIH (Isi semua radio yang kosong menjadi 'Tidak'/'Normal')
+// 5. SAPU BERSIH (Isi radio yang KOSONG menjadi 'Tidak'/'Normal'/'Tidak ada')
     const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
     questions.forEach(q => {
-        // PENTING: Tambahkan 'kanker leher rahim' di daftar pengecualian di bawah ini!
-        let qText = (q.innerText||'').toLowerCase();
-        if (
-    qText.match(
-        /perkawinan|disabilitas|kesehatan jiwa|aktivitas fisik|kanker leher rahim|faktor risiko tb|tuberkulosis/
-    )
-) return;
+        // Cek apakah pertanyaan ini sudah dijawab sebelumnya (ada radio yang checked)
+        let isAnswered = false;
+        q.querySelectorAll('input[type="radio"]').forEach(radio => {
+            if (radio.checked) isAnswered = true;
+        });
 
+        // Jika sudah dijawab (oleh logika merokok, tb, dll), lewati!
+        if (isAnswered) return;
+
+        // Pengecualian tambahan untuk form yang memang harus dilewati/punya logika dropdown sendiri
+        let qText = (q.innerText||'').toLowerCase();
+        if (qText.match(/aktivitas fisik/)) return; 
+
+        // Jika belum dijawab, sapu bersih dengan opsi default
         q.querySelectorAll('label').forEach(l => {
             let txt = (l.innerText||'').toLowerCase().trim();
             if (txt === 'tidak' || txt === 'normal' || txt === 'tidak ada') {
                 let i = l.querySelector('input[type="radio"]');
-                if (i && !i.checked) { i.click(); i.checked = true; }
+                if (i && !i.checked) { 
+                    i.click(); 
+                    i.checked = true; 
+                    // Pastikan trigger event agar SurveyJS mendeteksi perubahan
+                    i.dispatchEvent(new Event('input', { bubbles:true }));
+                    i.dispatchEvent(new Event('change', { bubbles:true }));
+                }
             }
         });
     });
