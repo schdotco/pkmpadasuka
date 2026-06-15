@@ -320,20 +320,6 @@ async function klikKirim() {
         return false;
     }
 }
-   
-    if (!check.valid) { updateStatus('GAGAL: Ada data belum lengkap!'); return false; }
-    const btn = document.querySelector('.sd-navigation__complete-btn') ||
-                [...document.querySelectorAll('button')].find(b => (b.innerText||'').toLowerCase().includes('kirim'));
-    if (btn) {
-        updateStatus('Mengirim data...');
-        btn.click();
-        await sleep(4000);
-        return true;
-    } else {
-        updateStatus('Tombol kirim tidak ketemu!');
-        return false;
-    }
-}
 
 /* =========================================================
    FORM FILLER LOGIC
