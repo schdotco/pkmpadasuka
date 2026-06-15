@@ -239,10 +239,15 @@ const questionNode = allElements.find(el => {
 
         const targetItem = items.find(el => {
             const txt = (el.innerText || '').toLowerCase().trim();
-            return txt === jawabanText.toLowerCase() ||
-                if (txt === target) return true;
-            if (target === 'menikah' && txt === 'belum menikah') return false;
-            return txt.includes(target);
+            const target = jawabanText.toLowerCase().trim();
+
+            // 1. Logika Pencegahan: Jika mencari 'menikah' tapi teksnya 'belum menikah', tolak!
+            if (target === 'menikah' && txt === 'belum menikah') {
+                return false;
+            }
+
+            // 2. Pencocokan: Kembalikan true jika sama persis ATAU mengandung kata tersebut
+            return txt === target || txt.includes(target);
         });
 
         if (targetItem) {
