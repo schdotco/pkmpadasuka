@@ -17,7 +17,6 @@ const TARGETS = [
     { id: 'telinga_mata', txt: 'telinga dan mata' },
     { id: 'karies', txt: 'karies' },
     { id: 'periodontal', txt: 'periodontal' },
-    { id: 'mata', txt: 'mata' }
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r,ms));
@@ -154,14 +153,26 @@ async function selectDropdownSurveyJS(optionText) {
 async function pilihSemuaRadioLimit(text, limit = 99, exact = false) {
     let clicked = 0;
     const items = [...document.querySelectorAll('label, .ant-radio-wrapper, .sd-item, .sv-item')];
+    
     for (const el of items) {
         if (clicked >= limit) break;
         const txt = (el.innerText || '').trim().toLowerCase();
         const target = text.toLowerCase();
         const isMatch = exact ? (txt === target) : txt.includes(target);
+        
         if (isMatch) {
             const radio = el.querySelector('input[type="radio"]');
-            if (radio && !radio.checked) {
+            
+            // CEK TUMPANG TINDIH: Cari tahu apakah soal ini sudah dijawab
+            const questionContainer = el.closest('.sd-question, .sv-question, [role="radiogroup"]');
+            let isQuestionAnswered = false;
+            if (questionContainer) {
+                const allRadiosInQuestion = questionContainer.querySelectorAll('input[type="radio"]');
+                isQuestionAnswered = Array.from(allRadiosInQuestion).some(r => r.checked);
+            }
+
+            // Hanya klik jika soal belum dijawab sama sekali
+            if (radio && !isQuestionAnswered) {
                 radio.click();
                 radio.dispatchEvent(new Event('change', { bubbles: true }));
                 radio.dispatchEvent(new Event('input', { bubbles: true }));
@@ -279,22 +290,37 @@ async function klikKirim() {
     updateStatus('Validasi form...');
     await sleep(2000);
     let check = isFormValid();
-    if (!check.valid) {
+   while (!check.valid) {
         updateStatus('Mengisi soal kosong...');
         const labels = check.container.querySelectorAll('label');
         for (let l of labels) {
-            if (l.innerText.toLowerCase().includes('normal') || l.innerText.toLowerCase().includes('tidak')) {
+            let labelText = l.innerText.toLowerCase();
+            if (labelText.includes('normal') || labelText.includes('tidak')) {
                 const input = l.querySelector('input[type="radio"]');
-                if (input) {
+                if (input && !input.checked) {
                     input.click();
                     input.dispatchEvent(new Event('change', { bubbles: true }));
                     await sleep(800);
+                    break; // Keluar dari loop label jika sudah mengklik satu jawaban
                 }
             }
         }
         await sleep(1000);
-        check = isFormValid();
+        check = isFormValid(); // Cek ulang, jika masih ada soal kosong lain, loop berjalan lagi
+   }
+   const btn = document.querySelector('.sd-navigation__complete-btn') ||
+                [...document.querySelectorAll('button')].find(b => (b.innerText||'').toLowerCase().includes('kirim'));
+    if (btn) {
+        updateStatus('Mengirim data...');
+        btn.click();
+        await sleep(4000);
+        return true;
+    } else {
+        updateStatus('Tombol kirim tidak ketemu!');
+        return false;
     }
+}
+   
     if (!check.valid) { updateStatus('GAGAL: Ada data belum lengkap!'); return false; }
     const btn = document.querySelector('.sd-navigation__complete-btn') ||
                 [...document.querySelectorAll('button')].find(b => (b.innerText||'').toLowerCase().includes('kirim'));
