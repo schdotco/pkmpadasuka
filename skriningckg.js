@@ -554,107 +554,79 @@ async function isiTetanusCatin() {
    CORE LOGIC SKRINING MANDIRI (REVISI STATUS PERKAWINAN)
 ========================================================= */
 async function handleSkriningMandiri(data) {
-    updateStatus('Mengisi form...');
-    await sleep(1000);
+    // Deteksi teks apa saja yang ada di halaman ini
+    const pageText = document.body.innerText.toLowerCase();
 
+    // 1. STATUS PERKAWINAN (Hanya jalan jika ada kata 'perkawinan' di layar)
+    if (pageText.includes('status perkawinan')) {
+        updateStatus('Status di Sheet: ' + data.perkawinan); 
+        await sleep(1000); 
 
-    // 1. STATUS PERKAWINAN (SMART MAPPER)
-    console.log("Raw Data:", data.perkawinan); // Cek console
-    updateStatus('Status di Sheet: ' + data.perkawinan); 
-    await sleep(1000); // PAUSE lagi biar Anda sempat baca
+        if (data.perkawinan && data.perkawinan !== 'Data Kosong') {
+            let p = data.perkawinan.toLowerCase();
+            let target = 'Menikah'; 
 
-    if (data.perkawinan && data.perkawinan !== 'Data Kosong') {
-        let p = data.perkawinan.toLowerCase();
-        let target = 'Menikah'; 
-
-        if (p.includes('Belum')) target = 'Belum Menikah';
-        else if (p.includes('cerai')) target = 'cerai'; 
-        
-        // Debug di UI
-        updateStatus('Mengisi: ' + target);
-        await fillRadioSurveyJS('status perkawinan', target);
-        await sleep(1000);
-    } else {
-        updateStatus('Data Perkawinan Kosong!');
-        await sleep(2000);
+            // PERBAIKAN: Gunakan huruf kecil karena p sudah di-toLowerCase()
+            if (p.includes('belum')) target = 'Belum Menikah';
+            else if (p.includes('cerai')) target = 'Cerai'; // Sesuaikan label web jika beda
+            
+            updateStatus('Mengisi: ' + target);
+            await fillRadioSurveyJS('status perkawinan', target);
+            await sleep(1000);
+        } else {
+            updateStatus('Data Perkawinan Kosong!');
+            await sleep(1000);
+        }
     }
     
     // FAKTOR RISIKO TB
-    const tbFilled =
-        await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk') ||
+    if (pageText.includes('faktor risiko tb') || pageText.includes('tuberkulosis')) {
+        await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk');
         await fillRadioSurveyJS('faktor risiko tb', 'tidak');
-    
-    console.log('[TB RESULT]', tbFilled);
-
+    }
     
     // 2. DISABILITAS
-    await fillRadioSurveyJS('disabilitas', 'non disabilitas');
+    if (pageText.includes('disabilitas')) {
+        await fillRadioSurveyJS('disabilitas', 'non disabilitas');
+    }
 
-    await isiKesehatanJiwa();
+    // KESEHATAN JIWA
+    if (pageText.includes('2 minggu terakhir') || pageText.includes('kesehatan jiwa')) {
+        await isiKesehatanJiwa();
+    }
 
-    // 3. KANKER LEHER RAHIM (LOGIKA KONDISIONAL)
-    // Jika menikah atau cerai, jawab YA. Selain itu TIDAK.
-    let p = (data.perkawinan || '').toLowerCase();
-    let isYes = p.includes('menikah') || p.includes('cerai') || (p.includes('kawin') && !p.includes('belum'));
+    // 3. KANKER LEHER RAHIM
+    if (pageText.includes('kanker leher rahim')) {
+        let p = (data.perkawinan || '').toLowerCase();
+        let isYes = p.includes('menikah') || p.includes('cerai') || (p.includes('kawin') && !p.includes('belum'));
+        await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
+    }
 
-    console.log("[DEBUG] Perkawinan:", p, "-> Kanker Leher Rahim:", isYes ? "YA" : "TIDAK");
-    await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
+    // 4. MEROKOK & KANKER
+    if (pageText.includes('merokok') || pageText.includes('kanker paru')) {
+        const statusMerokok = jawabanMerokok(data.merokok);
+        await fillRadioSurveyJS('merokok dalam setahun terakhir', statusMerokok);
+        await fillRadioSurveyJS('riwayat merokok dalam 15 tahun terakhir', statusMerokok);
+        await fillRadioSurveyJS('menghirup asap rokok', 'tidak');
+        await fillRadioSurveyJS('kanker paru pada keluarga', 'tidak');
+        await fillRadioSurveyJS('batuk dalam jangka waktu yang lama', 'tidak');
+        await fillRadioSurveyJS('riwayat penyakit tbc atau ppok', 'tidak');
+        await fillRadioSurveyJS('gejala kanker paru', 'tidak');
+    }
 
-   // 4. Merokok
-    const statusMerokok =
-    jawabanMerokok(data.merokok);
-
-        await fillRadioSurveyJS(
-        'merokok dalam setahun terakhir',
-        statusMerokok
-    );
-    
-    await fillRadioSurveyJS(
-        'riwayat merokok dalam 15 tahun terakhir',
-        statusMerokok
-    );
-    
-    await fillRadioSurveyJS(
-        'menghirup asap rokok',
-        'tidak'
-    );
-    
-    await fillRadioSurveyJS(
-        'kanker paru pada keluarga',
-        'tidak'
-    );
-    
-    await fillRadioSurveyJS(
-        'batuk dalam jangka waktu yang lama',
-        'tidak'
-    );
-    
-    await fillRadioSurveyJS(
-        'riwayat penyakit tbc atau ppok',
-        'tidak'
-    );
-    await fillRadioSurveyJS(
-    'gejala kanker paru',
-    'tidak'
-    );
-
-// 5. SAPU BERSIH (Isi radio yang KOSONG menjadi 'Tidak'/'Normal'/'Tidak ada')
+    // 5. SAPU BERSIH (Isi radio yang KOSONG menjadi default)
     const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
     questions.forEach(q => {
-        // Cek apakah pertanyaan ini sudah dijawab sebelumnya (ada radio yang checked)
         let isAnswered = false;
         q.querySelectorAll('input[type="radio"]').forEach(radio => {
             if (radio.checked) isAnswered = true;
         });
 
-        // Jika sudah dijawab (oleh logika merokok, tb, dll), lewati!
         if (isAnswered) return;
 
-        // Pengecualian tambahan untuk form yang memang harus dilewati/punya logika dropdown sendiri
         let qText = (q.innerText||'').toLowerCase();
         if (qText.match(/aktivitas fisik/)) return; 
 
-        // Jika belum dijawab, sapu bersih dengan opsi default
         q.querySelectorAll('label').forEach(l => {
             let txt = (l.innerText||'').toLowerCase().trim();
             if (txt === 'tidak' || txt === 'normal' || txt === 'tidak ada') {
@@ -662,7 +634,6 @@ async function handleSkriningMandiri(data) {
                 if (i && !i.checked) { 
                     i.click(); 
                     i.checked = true; 
-                    // Pastikan trigger event agar SurveyJS mendeteksi perubahan
                     i.dispatchEvent(new Event('input', { bubbles:true }));
                     i.dispatchEvent(new Event('change', { bubbles:true }));
                 }
@@ -670,79 +641,32 @@ async function handleSkriningMandiri(data) {
         });
     });
 
-// 6. AKTIVITAS FISIK (SEMUA JAWABAN = TIDAK)
+    // 6. AKTIVITAS FISIK
+    if (pageText.includes('aktivitas fisik')) {
+        updateStatus('Mengisi Aktivitas Fisik...');
+        const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
+        for (let i = 0; i < dropdowns.length; i++) {
+            const currentDropdown = dropdowns[i];
+            if (!currentDropdown) continue;
+            currentDropdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            currentDropdown.click();
+            await sleep(1200);
 
-updateStatus('Mengisi Aktivitas Fisik...');
+            const opsiTidak = [...document.querySelectorAll('li.sv-list__item, li.sd-list__item')]
+                .filter(li => li.innerText.trim().toLowerCase() === 'tidak');
 
-const dropdowns = [
-    ...document.querySelectorAll('.sd-dropdown, .sv-dropdown')
-];
-
-console.log('[AKTIVITAS] Dropdown ditemukan:', dropdowns.length);
-
-for (let i = 0; i < dropdowns.length; i++) {
-
-    const currentDropdown =
-        [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')][i];
-
-    if (!currentDropdown) continue;
-
-    currentDropdown.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-    });
-
-    currentDropdown.click();
-
-    await sleep(1200);
-
-    const opsiTidak = [
-        ...document.querySelectorAll(
-            'li.sv-list__item, li.sd-list__item'
-        )
-    ].filter(li =>
-        li.innerText.trim().toLowerCase() === 'tidak'
-    );
-
-    console.log(
-        '[AKTIVITAS] Opsi Tidak ditemukan:',
-        opsiTidak.length
-    );
-
-    if (opsiTidak[i]) {
-
-        opsiTidak[i].click();
-
-        opsiTidak[i].dispatchEvent(
-            new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true
-            })
-        );
-
-        console.log(
-            `[AKTIVITAS] Dropdown ${i + 1} berhasil diisi`
-        );
-
-        await sleep(500);
-
-    } else {
-
-        console.warn(
-            `[AKTIVITAS] Dropdown ${i + 1} gagal menemukan opsi Tidak`
-        );
-
-        break;
+            if (opsiTidak[i]) {
+                opsiTidak[i].click();
+                opsiTidak[i].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                await sleep(500);
+            } else {
+                break;
+            }
+        }
     }
-}
-
-console.log(
-    '[AKTIVITAS SELESAI]',
-    document.querySelectorAll('.sd-dropdown,.sv-dropdown').length
-);
 
     // 7. NAVIGASI (Cari tombol Lanjut atau Kirim)
-    await sleep(2000);
+    await sleep(1500); // Waktu jeda dipersingkat karena bot sudah tahu apa yang harus diklik
     const btnNext = document.querySelector('.sd-navigation__next-btn, .sd-navigation__complete-btn') ||
                     [...document.querySelectorAll('button')].find(b => (b.innerText||'').toLowerCase().match(/lanjut|kirim/));
 
