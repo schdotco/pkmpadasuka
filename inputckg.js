@@ -17,6 +17,8 @@ const TARGETS = [
     { id: 'telinga_mata', txt: 'telinga dan mata' },
     { id: 'karies', txt: 'karies' },
     { id: 'periodontal', txt: 'periodontal' },
+    { id: 'puma', txt: 'puma' }, 
+    { id: 'kanker_paru', txt: 'kanker paru' }
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r,ms));
@@ -490,7 +492,8 @@ async function mainLoopCKG(data){
     const nextItem = getNextTarget();
     if(!nextItem){
         clearBOT(); clearCompleted(); BOT_RUNNING = false;
-        updateStatus('SELESAI SEMUA 9 PEMERIKSAAN');
+        // Teks "9" dihapus agar dinamis menyesuaikan jumlah target
+        updateStatus('SELESAI SEMUA PEMERIKSAAN'); 
         alert('BOT SUKSES INPUT SEMUA PEMERIKSAAN');
         return;
     }
