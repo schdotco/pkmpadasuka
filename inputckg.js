@@ -429,7 +429,7 @@ async function autoContinueForm(){
         await isiRadioSurveyJS('spirometri', 'tidak');
         await sleep(500);
     }
-else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('kanker paru'))) {
+    else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('kanker paru'))) {
         currentId = 'kanker_paru'; 
         updateStatus('MENGISI TAHAP: KANKER PARU');
         await sleep(2000);
@@ -474,17 +474,28 @@ else if(title.includes('skrining kanker paru') && (title.includes('riwayat merok
 ========================================================= */
 function getNextTarget(){
     const completed = getCompleted();
-    const btns = [...document.querySelectorAll('button')].filter(btn => (btn.innerText || '').toLowerCase().includes('input data'));
+    // Cari tombol "Input Data"
+    const btns = [...document.querySelectorAll('button')].filter(btn => 
+        (btn.innerText || '').toLowerCase().includes('input data')
+    );
+
     for(let btn of btns){
-        let parent = btn.parentElement;
-        for(let i=0; i<10; i++){
-            if(!parent) break;
-            const txt = (parent.innerText || '').replace(/\s+/g,' ').trim().toLowerCase();
-            const found = TARGETS.find(t => txt.includes(t.txt));
-            if(found && !completed.includes(found.id)){
+        // Mencari container yang memuat informasi nama pemeriksaan (lebih luas dari parentElement)
+        let container = btn.closest('tr') || btn.closest('.row') || btn.parentElement;
+        if (!container) continue;
+
+        const txt = (container.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        
+        console.log("Mendeteksi baris:", txt); // DEBUG: Lihat di console (F12) apa yang dilihat bot
+
+        // Cari di daftar TARGETS
+        const found = TARGETS.find(t => txt.includes(t.txt.toLowerCase()));
+
+        if(found) {
+            console.log("Target ditemukan:", found.id);
+            if(!completed.includes(found.id)) {
                 return { btn: btn, id: found.id, title: found.txt };
-            } else if(found) break;
-            parent = parent.parentElement;
+            }
         }
     }
     return null;
