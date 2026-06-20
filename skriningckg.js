@@ -630,16 +630,34 @@ async function handleSkriningMandiri(data) {
         await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
     }
 
-    // 4. MEROKOK & KANKER
+// 4. MEROKOK & KANKER
     if (pageText.includes('merokok') || pageText.includes('kanker paru')) {
         const statusMerokok = jawabanMerokok(data.merokok);
+        
+        // --- FORM RISIKO KANKER PARU ---
+        // Pertanyaan 1, 2, dan 3 disesuaikan dengan status merokok pasien
         await fillRadioSurveyJS('merokok dalam setahun terakhir', statusMerokok);
         await fillRadioSurveyJS('riwayat merokok dalam 15 tahun terakhir', statusMerokok);
-        await fillRadioSurveyJS('menghirup asap rokok', 'tidak');
+        await fillRadioSurveyJS('menghirup asap rokok', statusMerokok); 
+        
+        // Sisa soal kanker paru agar tidak tersangkut (default aman)
         await fillRadioSurveyJS('kanker paru pada keluarga', 'tidak');
         await fillRadioSurveyJS('batuk dalam jangka waktu yang lama', 'tidak');
         await fillRadioSurveyJS('riwayat penyakit tbc atau ppok', 'tidak');
         await fillRadioSurveyJS('gejala kanker paru', 'tidak');
+
+        // --- FORM PERILAKU MEROKOK ---
+        // Pertanyaan 1: Apakah anda merokok / terpapar asap rokok...
+        await fillRadioSurveyJS('terpapar asap rokok', statusMerokok);
+        
+        // Pertanyaan 2: Jenis rokok (Otomatis pilih konvensional)
+        await fillRadioSurveyJS('jenis rokok', 'konvensional');
+        
+        // Pertanyaan 3 dan 4 (Jumlah & Sejak kapan) sengaja dilewati 
+        // sehingga tidak akan diisi atau diabaikan jika sudah ada isinya.
+        
+        // Pertanyaan 5: Apakah ada anggota keluarga yang merokok?
+        await fillRadioSurveyJS('keluarga yang merokok', statusMerokok);
     }
 
     // 7. SAPU BERSIH (Isi radio yang KOSONG menjadi default)
