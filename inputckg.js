@@ -106,14 +106,27 @@ async function cariData(nikInput){
 /* =========================================================
    DOM INTERACTOR CORE
 ========================================================= */
-function triggerClick(el){
-    if(!el) return;
-    el.scrollIntoView({ behavior:'smooth', block:'center' });
-    const rect = el.getBoundingClientRect();
-    ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(type=>{
-        el.dispatchEvent(new MouseEvent(type,{ bubbles:true, cancelable:true, clientX: rect.left + 5, clientY: rect.top + 5 }));
-    });
-    el.click();
+function triggerClick(el) {
+    if (!el) return;
+    
+    // Pastikan tombol terlihat
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Memberikan delay pendek agar elemen siap diklik
+    setTimeout(() => {
+        // Klik menggunakan berbagai metode
+        el.click(); 
+        
+        // Dispatch mouse event untuk memastikan framework mendeteksi interaksi
+        const mouseEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+        el.dispatchEvent(mouseEvent);
+        
+        console.log("Mencoba mengeklik tombol:", el.innerText);
+    }, 500);
 }
 
 function forceInject(element, value) {
