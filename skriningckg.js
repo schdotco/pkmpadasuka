@@ -137,6 +137,10 @@ async function cariData(nikInput) {
                 nik: target,
                 perkawinan: rows[i][26] || 'Belum Menikah',
                 merokok: (rows[i][71] || '').trim(),
+                jiwa1: (rows[i][72] || '').trim(), // Kolom BU
+                jiwa2: (rows[i][73] || '').trim(), // Kolom BV
+                jiwa3: (rows[i][74] || '').trim(), // Kolom BW
+                jiwa4: (rows[i][75] || '').trim()  // Kolom BX
             };
         }
     }
@@ -473,39 +477,47 @@ async function isiSemuaRadioTidak() {
     }
 }
 
-async function isiKesehatanJiwa() {
-
+async function isiKesehatanJiwa(data) {
     const semuaPertanyaan = [
         ...document.querySelectorAll('.sd-question, .sd-element')
     ];
 
     for (const q of semuaPertanyaan) {
-
         const text = (q.innerText || '').toLowerCase();
+        let jawabanSheet = '';
 
-        if (
-            text.includes('2 minggu terakhir') ||
-            text.includes('kurang/tidak bersemangat') ||
-            text.includes('merasa murung') ||
-            text.includes('cemas') ||
-            text.includes('gelisah')
-        ) {
+        // 1. Soal Jiwa 1 (BU): Minat / Semangat
+        if (text.includes('minat') || text.includes('kurang/tidak bersemangat')) {
+            jawabanSheet = data.jiwa1;
+        }
+        // 2. Soal Jiwa 2 (BV): Murung / Sedih / Putus asa
+        else if (text.includes('murung') || text.includes('sedih') || text.includes('putus asa')) {
+            jawabanSheet = data.jiwa2;
+        }
+        // 3. Soal Jiwa 3 (BW): Cemas / Gugup / Tegang
+        else if (text.includes('cemas') || text.includes('gugup') || text.includes('tegang')) {
+            jawabanSheet = data.jiwa3;
+        }
+        // 4. Soal Jiwa 4 (BX): Gelisah / Khawatir / Mengendalikan
+        else if (text.includes('gelisah') || text.includes('khawatir') || text.includes('mengendalikan')) {
+            jawabanSheet = data.jiwa4;
+        }
 
+        // Eksekusi klik jika data jawaban ditemukan dari Sheet
+        if (jawabanSheet) {
             const pilihan = [
                 ...q.querySelectorAll('.sd-item, .sv-item')
             ];
 
-            const tidakSamaSekali = pilihan.find(el =>
-                (el.innerText || '')
-                    .toLowerCase()
-                    .includes('tidak sama sekali')
+            // Cari opsi radio yang teksnya sesuai dengan isi Sheet (misal: "Tidak sama sekali")
+            const targetPilihan = pilihan.find(el =>
+                (el.innerText || '').toLowerCase().includes(jawabanSheet.toLowerCase())
             );
 
-            if (tidakSamaSekali) {
-
+            if (targetPilihan) {
                 const radio =
-                    tidakSamaSekali.querySelector('.sd-radio__decorator') ||
-                    tidakSamaSekali.querySelector('.sd-item__decorator');
+                    targetPilihan.querySelector('.sd-radio__decorator') ||
+                    targetPilihan.querySelector('.sd-item__decorator');
 
                 if (radio) {
                     radio.click();
@@ -592,7 +604,7 @@ async function handleSkriningMandiri(data) {
 
     // KESEHATAN JIWA
     if (pageText.includes('2 minggu terakhir') || pageText.includes('kesehatan jiwa')) {
-        await isiKesehatanJiwa();
+        await isiKesehatanJiwa(data); // <-- Tambahkan parameter 'data' di dalam kurung ini
     }
 
     // 3. KANKER LEHER RAHIM
@@ -614,7 +626,7 @@ async function handleSkriningMandiri(data) {
         await fillRadioSurveyJS('gejala kanker paru', 'tidak');
     }
 
-    // 5. SAPU BERSIH (Isi radio yang KOSONG menjadi default)
+    // 7. SAPU BERSIH (Isi radio yang KOSONG menjadi default)
     const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
     questions.forEach(q => {
         let isAnswered = false;
