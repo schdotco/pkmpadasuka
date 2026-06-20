@@ -469,29 +469,33 @@ async function autoContinueForm() {
 /* =========================================================
    TRACKER ROUTER
 ========================================================= */
-function getNextTarget(){
+function getNextTarget() {
     const completed = getCompleted();
-    // Cari tombol "Input Data"
-    const btns = [...document.querySelectorAll('button')].filter(btn => 
-        (btn.innerText || '').toLowerCase().includes('input data')
-    );
+    
+    // Cari semua elemen yang mungkin diklik: button, div, atau link (a)
+    // yang mengandung teks "input data"
+    const allClickables = [...document.querySelectorAll('button, div, a, span')].filter(el => {
+        const txt = (el.innerText || '').toLowerCase().trim();
+        // Pastikan elemen tersebut terlihat (bukan display:none)
+        return txt === 'input data' && el.offsetParent !== null;
+    });
 
-    for(let btn of btns){
-        // Mencari container yang memuat informasi nama pemeriksaan (lebih luas dari parentElement)
-        let container = btn.closest('tr') || btn.closest('.row') || btn.parentElement;
+    for (let el of allClickables) {
+        // Mencari container/baris yang memuat informasi nama pemeriksaan
+        let container = el.closest('tr') || el.closest('.row') || el.parentElement;
         if (!container) continue;
 
-        const txt = (container.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        const rowText = (container.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
         
-        console.log("Mendeteksi baris:", txt); // DEBUG: Lihat di console (F12) apa yang dilihat bot
+        // Debugging: Lihat apa yang dibaca bot di Console
+        console.log("Mendeteksi baris:", rowText);
 
-        // Cari di daftar TARGETS
-        const found = TARGETS.find(t => txt.includes(t.txt.toLowerCase()));
+        const found = TARGETS.find(t => rowText.includes(t.txt.toLowerCase()));
 
-        if(found) {
+        if (found) {
             console.log("Target ditemukan:", found.id);
-            if(!completed.includes(found.id)) {
-                return { btn: btn, id: found.id, title: found.txt };
+            if (!completed.includes(found.id)) {
+                return { btn: el, id: found.id, title: found.txt };
             }
         }
     }
