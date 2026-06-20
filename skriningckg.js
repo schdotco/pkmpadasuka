@@ -478,6 +478,12 @@ async function isiSemuaRadioTidak() {
 }
 
 async function isiKesehatanJiwa(data) {
+    // 1. Fallback keamanan agar script tidak crash jika data lama masih tersimpan
+    const j1 = data.jiwa1 || '';
+    const j2 = data.jiwa2 || '';
+    const j3 = data.jiwa3 || '';
+    const j4 = data.jiwa4 || '';
+
     const semuaPertanyaan = [
         ...document.querySelectorAll('.sd-question, .sd-element')
     ];
@@ -486,42 +492,52 @@ async function isiKesehatanJiwa(data) {
         const text = (q.innerText || '').toLowerCase();
         let jawabanSheet = '';
 
-        // 1. Soal Jiwa 1 (BU): Minat / Semangat
-        if (text.includes('minat') || text.includes('kurang/tidak bersemangat')) {
-            jawabanSheet = data.jiwa1;
-        }
-        // 2. Soal Jiwa 2 (BV): Murung / Sedih / Putus asa
-        else if (text.includes('murung') || text.includes('sedih') || text.includes('putus asa')) {
-            jawabanSheet = data.jiwa2;
-        }
-        // 3. Soal Jiwa 3 (BW): Cemas / Gugup / Tegang
-        else if (text.includes('cemas') || text.includes('gugup') || text.includes('tegang')) {
-            jawabanSheet = data.jiwa3;
-        }
-        // 4. Soal Jiwa 4 (BX): Gelisah / Khawatir / Mengendalikan
-        else if (text.includes('gelisah') || text.includes('khawatir') || text.includes('mengendalikan')) {
-            jawabanSheet = data.jiwa4;
+        // 2. Deteksi Soal
+        if (text.includes('bersemangat')) {
+            jawabanSheet = j1;
+        } 
+        else if (text.includes('murung') || text.includes('putus asa')) {
+            jawabanSheet = j2;
+        } 
+        else if (text.includes('gugup') || text.includes('cemas')) {
+            jawabanSheet = j3;
+        } 
+        else if (text.includes('khawatir') || text.includes('mengendalikan')) {
+            jawabanSheet = j4;
         }
 
-        // Eksekusi klik jika data jawaban ditemukan dari Sheet
-        if (jawabanSheet) {
-            const pilihan = [
-                ...q.querySelectorAll('.sd-item, .sv-item')
-            ];
+        // 3. Eksekusi Pencarian Jawaban
+        if (jawabanSheet.trim() !== '') {
+            let kataKunci = '';
+            const teksJawaban = jawabanSheet.toLowerCase();
+            
+            // Konversi teks dari Spreadsheet menjadi 4 kata kunci paten
+            if (teksJawaban.includes('tidak')) kataKunci = 'tidak';
+            else if (teksJawaban.includes('kurang')) kataKunci = 'kurang';
+            else if (teksJawaban.includes('lebih')) kataKunci = 'lebih';
+            else if (teksJawaban.includes('hampir')) kataKunci = 'hampir';
 
-            // Cari opsi radio yang teksnya sesuai dengan isi Sheet (misal: "Tidak sama sekali")
-            const targetPilihan = pilihan.find(el =>
-                (el.innerText || '').toLowerCase().includes(jawabanSheet.toLowerCase())
-            );
+            // Jika kata kunci berhasil didapatkan, cari radio button-nya
+            if (kataKunci !== '') {
+                const pilihan = [
+                    ...q.querySelectorAll('.sd-item, .sv-item')
+                ];
 
-            if (targetPilihan) {
-                const radio =
-                    targetPilihan.querySelector('.sd-radio__decorator') ||
-                    targetPilihan.querySelector('.sd-item__decorator');
+                // Cari opsi di web yang mengandung kata kunci paten tersebut
+                const targetPilihan = pilihan.find(el =>
+                    (el.innerText || '').toLowerCase().includes(kataKunci)
+                );
 
-                if (radio) {
-                    radio.click();
-                    await sleep(300);
+                if (targetPilihan) {
+                    const radio =
+                        targetPilihan.querySelector('.sd-radio__decorator') ||
+                        targetPilihan.querySelector('.sd-item__decorator') ||
+                        targetPilihan.querySelector('input[type="radio"]');
+
+                    if (radio) {
+                        radio.click();
+                        await sleep(400); // Jeda klik
+                    }
                 }
             }
         }
