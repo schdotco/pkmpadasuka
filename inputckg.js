@@ -502,16 +502,29 @@ function getNextTarget(){
 }
 
 async function mainLoopCKG(data){
-    const nextItem = getNextTarget();
+    updateStatus('MENCARI ANTRIAN...');
+    await sleep(2000); // Beri waktu halaman bernapas
+    
+    let nextItem = getNextTarget();
+    
+    // --- TAMBAHAN: RE-TRY LOGIC ---
+    // Jika tombol tidak ketemu, coba tunggu sekali lagi (mungkin halaman masih loading)
+    if(!nextItem) {
+        console.warn("Tombol tidak ketemu, mencoba scan ulang dalam 2 detik...");
+        await sleep(2000);
+        nextItem = getNextTarget();
+    }
+    // ------------------------------
+
     if(!nextItem){
         clearBOT(); clearCompleted(); BOT_RUNNING = false;
-        // Teks "9" dihapus agar dinamis menyesuaikan jumlah target
         updateStatus('SELESAI SEMUA PEMERIKSAAN'); 
         alert('BOT SUKSES INPUT SEMUA PEMERIKSAAN');
         return;
     }
+    
     updateStatus('MEMBUKA TARGET:\n' + nextItem.title.toUpperCase());
-    await sleep(2000);
+    await sleep(1000);
     triggerClick(nextItem.btn);
 }
 
