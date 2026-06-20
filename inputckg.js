@@ -408,25 +408,7 @@ async function autoContinueForm() {
         await pilihSemuaRadioLimit('tidak', 2, true);
         await selectDropdownSurveyJS('tidak', 2);
     }
-   else if(title.includes('puma') || title.includes('ppok')){
-        currentId = 'puma'; updateStatus('MENGISI TAHAP: PPOK (PUMA)');
-
-        // Mengecek apakah data merokok mengandung kata 'ya' atau 'rokok'
-        let isPerokok = (data.merokok || '').toLowerCase().includes('ya') || 
-                        (data.merokok || '').toLowerCase().includes('rokok');
-
-        // 1. Riwayat merokok (Pilih 'Iya' atau 'Tidak')
-        await isiRadioSurveyJS('mempunyai riwayat merokok', isPerokok ? 'iya' : 'tidak');
-        await sleep(400);
-
-        // 2-5. Jawab otomatis Tidak
-        await isiRadioSurveyJS('napas pendek', 'tidak');
-        await isiRadioSurveyJS('mempunyai dahak', 'tidak');
-        await isiRadioSurveyJS('batuk saat sedang tidak menderita', 'tidak');
-        await isiRadioSurveyJS('spirometri', 'tidak');
-        await sleep(500);
-    }
-    else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('skrining kanker paru'))) {
+       else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('skrining kanker paru'))) {
         currentId = 'kanker_paru'; 
         updateStatus('MENGISI TAHAP: KANKER PARU');
         await sleep(2000);
@@ -446,13 +428,13 @@ async function autoContinueForm() {
         }
 
         // 4. Tempat kerja zat karsinogenik
-        await isiRadioSurveyJS('zat karsinogenik', 'tidak tempat kerja');
+        await isiRadioSurveyJS('zat karsinogenik', 'Tidak tempat kerja mengandung zat karsinogenik');
 
         // 5. Berpotensi tinggi
-        await isiRadioSurveyJS('berpotensi tinggi', 'tidak memiliki tempat tinggal');
+        await isiRadioSurveyJS('berpotensi tinggi', 'Tidak memiliki tempat tinggal berpotensi tinggi');
 
         // 6. Rumah tidak sehat (Khusus ini teksnya "memiliki lingkungan dalam rumah yang sehat")
-        await isiRadioSurveyJS('dalam rumah yang tidak sehat', 'lingkungan dalam rumah yang sehat');
+        await isiRadioSurveyJS('dalam rumah yang tidak sehat', 'Memiliki lingkungan dalam rumah yang sehat');
 
         // 7. Paru kronik
         await isiRadioSurveyJS('penyakit paru kronik', 'tidak pernah didiagnosis penyakit paru kronik');
@@ -460,6 +442,25 @@ async function autoContinueForm() {
         // 8. Foto Torax akan diabaikan (Jangan diisi apa-apa)
         await sleep(500);
     }
+   else if(title.includes('puma') || title.includes('ppok')){
+        currentId = 'puma'; updateStatus('MENGISI TAHAP: PPOK (PUMA)');
+
+        // Mengecek apakah data merokok mengandung kata 'ya' atau 'rokok'
+        let isPerokok = (data.merokok || '').toLowerCase().includes('ya') || 
+                        (data.merokok || '').toLowerCase().includes('rokok');
+
+        // 1. Riwayat merokok (Pilih 'Iya' atau 'Tidak')
+        await isiRadioSurveyJS('mempunyai riwayat merokok', isPerokok ? 'iya' : 'tidak');
+        await sleep(400);
+
+        // 2-5. Jawab otomatis Tidak
+        await isiRadioSurveyJS('napas pendek', 'tidak');
+        await isiRadioSurveyJS('mempunyai dahak', 'tidak');
+        await isiRadioSurveyJS('batuk saat sedang tidak menderita', 'tidak');
+        await isiRadioSurveyJS('spirometri', 'tidak');
+        await sleep(500);
+    }
+
 
     if(currentId) addCompleted(currentId);
     await klikKirim();
