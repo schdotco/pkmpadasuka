@@ -102,7 +102,7 @@ async function cariData(nikInput) {
             request({
                 method: "GET",
                 url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`,
-                timeout: 10000,
+                timeout: 30000,
 
                 onload: r => resolve(r.responseText || ""),
                 onerror: () => resolve("")
@@ -632,32 +632,65 @@ async function handleSkriningMandiri(data) {
 
 // 4. MEROKOK & KANKER
     if (pageText.includes('merokok') || pageText.includes('kanker paru')) {
-        const statusMerokok = jawabanMerokok(data.merokok);
+        const statusMerokok = jawabanMerokok(data.merokok); // Akan bernilai 'ya' atau 'tidak'
         
-        // --- FORM RISIKO KANKER PARU ---
-        // Pertanyaan 1, 2, dan 3 disesuaikan dengan status merokok pasien
-        await fillRadioSurveyJS('merokok dalam setahun terakhir', statusMerokok);
-        await fillRadioSurveyJS('riwayat merokok dalam 15 tahun terakhir', statusMerokok);
-        await fillRadioSurveyJS('menghirup asap rokok', statusMerokok); 
+        const semuaPertanyaan = [...document.querySelectorAll('.sd-question, .sd-element')];
         
-        // Sisa soal kanker paru agar tidak tersangkut (default aman)
-        await fillRadioSurveyJS('kanker paru pada keluarga', 'tidak');
-        await fillRadioSurveyJS('batuk dalam jangka waktu yang lama', 'tidak');
-        await fillRadioSurveyJS('riwayat penyakit tbc atau ppok', 'tidak');
-        await fillRadioSurveyJS('gejala kanker paru', 'tidak');
+        for (const q of semuaPertanyaan) {
+            const text = (q.innerText || '').toLowerCase();
+            let targetJawaban = '';
 
-        // --- FORM PERILAKU MEROKOK ---
-        // Pertanyaan 1: Apakah anda merokok / terpapar asap rokok...
-        await fillRadioSurveyJS('terpapar asap rokok', statusMerokok);
-        
-        // Pertanyaan 2: Jenis rokok (Otomatis pilih konvensional)
-        await fillRadioSurveyJS('jenis rokok', 'konvensional');
-        
-        // Pertanyaan 3 dan 4 (Jumlah & Sejak kapan) sengaja dilewati 
-        // sehingga tidak akan diisi atau diabaikan jika sudah ada isinya.
-        
-        // Pertanyaan 5: Apakah ada anggota keluarga yang merokok?
-        await fillRadioSurveyJS('keluarga yang merokok', statusMerokok);
+            // -- Kanker Paru 1 & Perilaku Merokok 1 --
+            if (text.includes('setahun terakhir')) {
+                targetJawaban = statusMerokok;
+            } 
+            // -- Kanker Paru 2 --
+            else if (text.includes('15 tahun terakhir')) {
+                targetJawaban = statusMerokok;
+            } 
+            // -- Kanker Paru 3 & Perilaku Merokok 5 --
+            else if (text.includes('menghirup asap rokok') || text.includes('terpapar asap rokok')) {
+                targetJawaban = statusMerokok;
+            } 
+            // -- Perilaku Merokok 2 --
+            else if (text.includes('jenis rokok apa yang dikonsumsi')) {
+                targetJawaban = 'konvensional';
+            }
+            // -- Sisa Kanker Paru (Default: Tidak) --
+            else if (text.includes('kanker paru pada keluarga') || 
+                     text.includes('batuk dalam jangka waktu') || 
+                     text.includes('tbc atau ppok')) {
+                targetJawaban = 'tidak';
+            }
+
+            // Eksekusi Klik Target
+            if (targetJawaban !== '') {
+                const pilihan = [...q.querySelectorAll('.sd-item, .sv-item')];
+                const targetPilihan = pilihan.find(el => 
+                    (el.innerText || '').toLowerCase().includes(targetJawaban)
+                );
+                
+                if (targetPilihan) {
+                    const radio = targetPilihan.querySelector('.sd-radio__decorator') ||
+                                  targetPilihan.querySelector('.sd-item__decorator') ||
+                                  targetPilihan.querySelector('input[type="radio"]');
+
+                    if (radio) {
+                        radio.click();
+                        
+                        // Pengaman ganda agar tidak di-overwrite oleh fitur Sapu Bersih
+                        const inputAsli = targetPilihan.querySelector('input[type="radio"]');
+                        if (inputAsli) {
+                            inputAsli.checked = true;
+                            inputAsli.dispatchEvent(new Event('input', { bubbles:true }));
+                            inputAsli.dispatchEvent(new Event('change', { bubbles:true }));
+                        }
+                        
+                        await sleep(300); 
+                    }
+                }
+            }
+        }
     }
 
     // 7. SAPU BERSIH (Isi radio yang KOSONG menjadi default)
@@ -898,15 +931,36 @@ setTimeout(async ()=>{
     if(isFormPage) {
         await autoContinueForm();
     } else if (isMainPage) {
+        
+        // 1. Cek apakah ada data pasien yang belum selesai dikerjakan
         const data = loadBOT();
         if(data){
             BOT_RUNNING = true;
             updateStatus('MELANJUTKAN OTOMATIS...\nMencari Form Berikutnya');
+            
+            // Langsung eksekusi tugas utama tanpa harus menunggu download CSV
             await sleep(3000);
             await mainLoop(data);
         } else {
+            // Tampilan default agar pop-up langsung aktif tanpa nge-freeze
             updateStatus('IDLE\nMasukkan NIK lalu klik START');
         }
+
+        // --- 2. FITUR PRE-LOAD BACKGROUND SEJATI ---
+        if (!cachedSheetData) {
+            // Kita TIDAK memakai 'await' di sini.
+            // Script akan men-download diam-diam di balik layar (paralel).
+            cariData('000').then(() => {
+                // Begitu download selesai, cek apakah bot sedang jalan.
+                // Jika sedang santai (tidak ada pasien diproses), update statusnya.
+                if (!BOT_RUNNING) {
+                    updateStatus('Database Siap (Cache Penuh)!\nMasukkan NIK lalu klik START');
+                }
+            }).catch(err => {
+                console.error("Gagal mendownload background data:", err);
+            });
+        }
+        // ---------------------------------------------------
     }
 }, 1500);
 
