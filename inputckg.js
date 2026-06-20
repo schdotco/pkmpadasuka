@@ -18,7 +18,7 @@ const TARGETS = [
     { id: 'karies', txt: 'karies' },
     { id: 'periodontal', txt: 'periodontal' },
     { id: 'puma', txt: 'puma' }, 
-    { id: 'kanker_paru', txt: 'kanker paru' }
+    { id: 'kanker_paru', txt: 'skrining kanker paru' }
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r,ms));
@@ -429,15 +429,17 @@ async function autoContinueForm(){
         await isiRadioSurveyJS('spirometri', 'tidak');
         await sleep(500);
     }
-    else if(title.includes('skrining kanker paru')){
-        currentId = 'kanker_paru'; updateStatus('MENGISI TAHAP: KANKER PARU');
+else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('kanker paru'))) {
+        currentId = 'kanker_paru'; 
+        updateStatus('MENGISI TAHAP: KANKER PARU');
+        await sleep(2000);
 
         let isPerokok = (data.merokok || '').toLowerCase().includes('ya') || 
                         (data.merokok || '').toLowerCase().includes('rokok');
 
         // 1 & 2. Pilih yang ada teks Tidak
-        await isiRadioSurveyJS('didiagnosis/menderita kanker', 'tidak pernah didiagnosis');
-        await isiRadioSurveyJS('ada keluarga', 'tidak ada keluarga');
+        await isiRadioSurveyJS('didiagnosis atau menderita kanker', 'tidak pernah didiagnosis');
+        await isiRadioSurveyJS('ada anggota keluarga yang menderita kanker', 'tidak ada keluarga');
 
         // 3. Riwayat merokok/paparan asap
         if (isPerokok) {
