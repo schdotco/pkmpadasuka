@@ -338,19 +338,16 @@ async function klikKirim() {
 /* =========================================================
    FORM FILLER LOGIC
 ========================================================= */
-async function autoContinueForm(){
+async function autoContinueForm() {
     const data = loadBOT();
-    
-    // PERBAIKAN FATAL: Jika belum ada data (user baru buka form dan belum tekan start), 
-    // ubah status jadi IDLE agar tidak stuck di INISIALISASI
-    if(!data) {
-        updateStatus('IDLE\nSiap Digunakan (Form)');
+    if (!data) {
+        updateStatus('IDLE\nSiap Digunakan');
         return;
     }
 
     BOT_RUNNING = true;
     updateStatus('MENGISI FORM...');
-    await sleep(3500);
+    await sleep(4000);
 
     const title = document.body.innerText.toLowerCase();
     const realInputs = [...document.querySelectorAll('input')].filter(el =>
@@ -429,7 +426,7 @@ async function autoContinueForm(){
         await isiRadioSurveyJS('spirometri', 'tidak');
         await sleep(500);
     }
-    else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('kanker paru'))) {
+    else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('skrining kanker paru'))) {
         currentId = 'kanker_paru'; 
         updateStatus('MENGISI TAHAP: KANKER PARU');
         await sleep(2000);
