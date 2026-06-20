@@ -106,27 +106,14 @@ async function cariData(nikInput){
 /* =========================================================
    DOM INTERACTOR CORE
 ========================================================= */
-function triggerClick(el) {
-    if (!el) return;
-    
-    // Pastikan tombol terlihat
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    
-    // Memberikan delay pendek agar elemen siap diklik
-    setTimeout(() => {
-        // Klik menggunakan berbagai metode
-        el.click(); 
-        
-        // Dispatch mouse event untuk memastikan framework mendeteksi interaksi
-        const mouseEvent = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true
-        });
-        el.dispatchEvent(mouseEvent);
-        
-        console.log("Mencoba mengeklik tombol:", el.innerText);
-    }, 500);
+function triggerClick(el){
+    if(!el) return;
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+    const rect = el.getBoundingClientRect();
+    ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(type=>{
+        el.dispatchEvent(new MouseEvent(type,{ bubbles:true, cancelable:true, clientX: rect.left + 5, clientY: rect.top + 5 }));
+    });
+    el.click();
 }
 
 function forceInject(element, value) {
@@ -482,34 +469,19 @@ async function autoContinueForm() {
 /* =========================================================
    TRACKER ROUTER
 ========================================================= */
-function getNextTarget() {
+function getNextTarget(){
     const completed = getCompleted();
-    
-    // Cari semua elemen yang mungkin diklik: button, div, atau link (a)
-    // yang mengandung teks "input data"
-    const allClickables = [...document.querySelectorAll('button, div, a, span')].filter(el => {
-        const txt = (el.innerText || '').toLowerCase().trim();
-        // Pastikan elemen tersebut terlihat (bukan display:none)
-        return txt === 'input data' && el.offsetParent !== null;
-    });
-
-    for (let el of allClickables) {
-        // Mencari container/baris yang memuat informasi nama pemeriksaan
-        let container = el.closest('tr') || el.closest('.row') || el.parentElement;
-        if (!container) continue;
-
-        const rowText = (container.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
-        
-        // Debugging: Lihat apa yang dibaca bot di Console
-        console.log("Mendeteksi baris:", rowText);
-
-        const found = TARGETS.find(t => rowText.includes(t.txt.toLowerCase()));
-
-        if (found) {
-            console.log("Target ditemukan:", found.id);
-            if (!completed.includes(found.id)) {
-                return { btn: el, id: found.id, title: found.txt };
-            }
+    const btns = [...document.querySelectorAll('button')].filter(btn => (btn.innerText || '').toLowerCase().includes('input data'));
+    for(let btn of btns){
+        let parent = btn.parentElement;
+        for(let i=0; i<10; i++){
+            if(!parent) break;
+            const txt = (parent.innerText || '').replace(/\s+/g,' ').trim().toLowerCase();
+            const found = TARGETS.find(t => txt.includes(t.txt));
+            if(found && !completed.includes(found.id)){
+                return { btn: btn, id: found.id, title: found.txt };
+            } else if(found) break;
+            parent = parent.parentElement;
         }
     }
     return null;
