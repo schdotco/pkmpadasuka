@@ -824,30 +824,43 @@ function getNextTarget(){
     return null;
 }
 
-async function mainLoop(data){
+async function mainLoop(data) {
+    updateStatus('MENCARI ANTRIAN...');
+
+    // Pastikan loop hanya jalan jika BOT_RUNNING = true
     while (BOT_RUNNING && location.hostname.includes('sehatindonesiaku')) {
+        
+        // GUNAKAN 'let' supaya nilainya bisa diupdate di dalam loop
+        let nextItem = null;
+
+        // --- RE-TRY LOGIC ---
+        // Mencoba mencari tombol hingga 3 kali
         for (let i = 0; i < 3; i++) {
-            nextItem = getNextTarget();
+            nextItem = getNextTarget(); // Sekarang aman karena let
             if (nextItem) break; 
-            console.log("Tombol belum muncul, mencoba lagi dalam 2 detik...");
+            
+            console.log("Tombol belum muncul, mencoba lagi (percobaan " + (i+1) + ")...");
             await sleep(2000);
         }
 
-        if(!nextItem){
+        // Jika setelah 3 kali tetap tidak ketemu
+        if (!nextItem) {
             BOT_RUNNING = false;
-        
             clearBOT();
             clearCompleted();
-        
             updateStatus('SELESAI SEMUA TARGET.\nSilakan ganti NIK untuk pasien baru.');
+            alert('Semua antrian pemeriksaan selesai!');
             break;
         }
 
         updateStatus('MEMBUKA TARGET:\n' + nextItem.title.toUpperCase());
-        addCompleted(nextItem.id); // Tandai sudah diklik
-        await sleep(15000);
+        addCompleted(nextItem.id); 
+        
+        // Klik tombol
         nextItem.btn.click();
-        await sleep(4000);
+        
+        // Tunggu form muncul
+        await sleep(5000); 
     }
 }
 
