@@ -840,10 +840,10 @@ await eksekusiHalamanDua(data);
 
 /* ================= UI KONTROL & DRAGGABLE LOGIC ================= */
 function initUI(){
-    if(document.getElementById("ai-box")) return;
+    if(document.getElementById("reg-ckg-ai-box")) return;
 
     const box = document.createElement("div");
-    box.id = "ai-box";
+    box.id = "reg-ckg-ai-box";
     box.style = "position:fixed;top:150px;right:20px;background:#111;color:#fff;padding:15px;border-radius:12px;z-index:99999;width:270px;font-family:sans-serif;box-shadow:0 0 15px #00ff88; border: 2px solid #222;";
 
     box.innerHTML = `
