@@ -89,25 +89,6 @@ async function ultraClick(el){
     return true;
 }
 
-async function waitAndClickText(text, timeout = 30000) {
-    const start = Date.now();
-    while (Date.now() - start < timeout) {
-        const btn = Array.from(
-            document.querySelectorAll('button')
-        ).find(btn =>
-            (btn.innerText || "").includes(text)
-        );
-        if (btn) {
-            console.log("[BOT] Klik tombol:", text);
-            await ultraClick(btn);
-            return true;
-        }
-        await wait(500);
-    }
-    console.log("[BOT] Timeout:", text);
-    return false;
-}
-
 async function prosesVerifikasi() {
     while (true) {
         const pilihText = Array.from(
@@ -200,91 +181,6 @@ async function cariData(nikInput){
     return null;
 }
 
-/* ================= ENGINE VUE DROPDOWN (REVISI KHUSUS) ================= */
-async function clickVueDropdown(placeholderKeyword, valueText) {
-    console.log(`[DEBUG] Mencari kotak: "${placeholderKeyword}"`);
-    const allDivs = Array.from(document.querySelectorAll('div'));
-    const trigger = allDivs.find(el =>
-        (el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
-        el.className.includes('cursor-pointer')
-    );
-
-    if (!trigger) {
-        console.log(`[DEBUG] ❌ Kotak "${placeholderKeyword}" tidak ditemukan.`);
-        return false;
-    }
-
-    trigger.click();
-    await wait(1000);
-
-    console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
-    let optionFound = false;
-    const allOptions = Array.from(document.querySelectorAll('div'));
-    const targetOption = allOptions.find(el =>
-        (el.innerText || "").trim() === valueText &&
-        el.className.includes('justify-between')
-    );
-
-    if (targetOption) {
-        console.log(`[DEBUG] ✅ Opsi ditemukan! Melakukan klik...`);
-        targetOption.scrollIntoView({ behavior: "smooth", block: "center" });
-        await wait(300);
-        targetOption.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-        targetOption.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-        targetOption.click();
-        optionFound = true;
-        await wait(800);
-    } else {
-        console.log(`[DEBUG] ❌ Opsi "${valueText}" tidak ditemukan. Menutup dropdown.`);
-        document.body.click();
-    }
-
-    return optionFound;
-}
-
-/* ================= FUNGSI KHUSUS: STATUS PERNIKAHAN ================= */
-async function fillAndValidate(placeholderKeyword, valueText, isSearchable = false) {
-    console.log(`[BOT] Memproses: ${placeholderKeyword} | Target: ${valueText}`);
-    const triggers = Array.from(document.querySelectorAll('div, span'));
-    const trigger = triggers.find(el =>
-        (el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
-        (el.className.includes('cursor-pointer') || el.closest('.cursor-pointer'))
-    );
-
-    if (!trigger) {
-        console.error(`[BOT] ❌ Trigger "${placeholderKeyword}" tidak ditemukan!`);
-        return false;
-    }
-
-    await ultraClick(trigger.closest('.cursor-pointer') || trigger);
-    await wait(1200); 
-
-    if (isSearchable) {
-        const searchInput = document.querySelector('input[placeholder*="Cari"]');
-        if (searchInput) {
-            forceInject(searchInput, valueText);
-            await wait(2000); 
-        }
-    }
-
-    const allDivs = Array.from(document.querySelectorAll('div'));
-    const targetOption = allDivs.find(el => (el.innerText || "").trim() === valueText);
-
-    if (targetOption) {
-        await ultraClick(targetOption);
-        await wait(1000);
-        const triggerUpdated = triggers.find(el => (el.innerText || "").trim() === valueText);
-        if (triggerUpdated) {
-            console.log(`[BOT] ✅ Sukses tervalidasi: ${valueText}`);
-            return true;
-        } else {
-            console.warn(`[BOT] ⚠️ Pilihan diklik, tapi sistem tidak merespon. Mencoba ulang...`);
-            return false;
-        }
-    }
-    return false;
-}
-
 /* ================= ENGINE ALAMAT WILAYAH VUE (BARU) ================= */
 async function setAlamatDomisiliVue() {
     console.log("[BOT] Menyetel Alamat Domisili Otomatis...");
@@ -329,7 +225,7 @@ async function setAlamatDomisiliVue() {
 
     await wait(2500);
 
-/* ================= ISI STATUS PERNIKAHAN (VUE/TAILWIND LOGIC) ================= */
+/* ================= ISI STATUS PERNIKAHAN ================= */
 console.log("[BOT] Memproses Status Pernikahan:", data.Martial);
 let rawPernikahan = (data.Martial || "").trim().toUpperCase();
 let textToFindPernikahan = "";
@@ -357,32 +253,15 @@ if (textToFindPernikahan !== "") {
         await wait(1000);
 
         let optionFound = false;
-        
         for (let i = 0; i < 15; i++) {
-        
-            const targetOption = [
-                ...document.querySelectorAll(
-                    '.py-2.px-4.cursor-pointer'
-                )
-            ].find(el =>
-                (el.innerText || '').trim() ===
-                textToFindPernikahan
-            );
-        
+            const targetOption = [...document.querySelectorAll('.py-2.px-4.cursor-pointer')].find(el => (el.innerText || '').trim() === textToFindPernikahan);
             if (targetOption) {
-        
                 await ultraClick(targetOption);
-        
-                console.log(
-                    "[BOT] Status Pernikahan dipilih:",
-                    textToFindPernikahan
-                );
-        
+                console.log("[BOT] Status Pernikahan dipilih:", textToFindPernikahan);
                 optionFound = true;
                 await wait(1000);
                 break;
             }
-        
             await wait(400);
         }
         if (!optionFound) console.log("[BOT] Error: Opsi Status Pernikahan tidak muncul.");
@@ -395,46 +274,19 @@ if (textToFindPernikahan !== "") {
     console.log("[BOT] Memproses Pekerjaan...");
     let jobTarget = (data.pekerjaan || data.Pekerjaan || "").trim();
     let jobAsli = jobTarget;
-
     const jobUpper = jobTarget.toUpperCase();
 
-    if (jobUpper.includes("BLM.") || jobUpper.includes("TIDAK BEKERJA")) {
-        jobTarget = "Belum/Tidak Bekerja";
-    }
-    else if (jobUpper.includes("IBU R.TANGGA") || jobUpper.includes("IBU R")) {
-        jobTarget = "Ibu Rumah Tangga";
-    }
-    else if (jobUpper.includes("PEG. NEGERI") || jobUpper.includes("PNS")) {
-        jobTarget = "ASN (Kantor Pemerintah)";
-    }
-    else if (jobUpper.includes("KARYAWAN SWASTA")) {
-        jobTarget = "Pegawai Swasta";
-    }
-    else if (jobUpper.includes("WIRASWASTA")) {
-        jobTarget = "Wirausaha/Pekerja Mandiri";
-    }
-    else if (jobUpper === "BURUH") {
-        jobTarget = "Pekerja Pabrik / Buruh";
-    }
-    else if (jobUpper.includes("NELAYAN")) {
-        jobTarget = "Nelayan / Perikanan";
-    }
-    else if (jobUpper.includes("PETANI")) {
-        jobTarget = "Petani / Pekebun";
-    }
-    else if (jobUpper.includes("TNI/POLRI") || jobUpper.includes("TNI")) {
-        jobTarget = "TNI";
-    }
-    else if (jobUpper.includes("PURNAWIRAWAN")) {
-        jobTarget = "Pensiunan";
-    }
-    else if (jobUpper.includes("LAIN-LAIN") || jobUpper === "PROFESIONAL") {
-        jobTarget = "Lainnya";
-    }
-
-    if (jobTarget !== jobAsli) {
-        console.log(`[BOT] Mapping Pekerjaan: "${jobAsli}" diterjemahkan menjadi -> "${jobTarget}"`);
-    }
+    if (jobUpper.includes("BLM.") || jobUpper.includes("TIDAK BEKERJA")) jobTarget = "Belum/Tidak Bekerja";
+    else if (jobUpper.includes("IBU R.TANGGA") || jobUpper.includes("IBU R")) jobTarget = "Ibu Rumah Tangga";
+    else if (jobUpper.includes("PEG. NEGERI") || jobUpper.includes("PNS")) jobTarget = "ASN (Kantor Pemerintah)";
+    else if (jobUpper.includes("KARYAWAN SWASTA")) jobTarget = "Pegawai Swasta";
+    else if (jobUpper.includes("WIRASWASTA")) jobTarget = "Wirausaha/Pekerja Mandiri";
+    else if (jobUpper === "BURUH") jobTarget = "Pekerja Pabrik / Buruh";
+    else if (jobUpper.includes("NELAYAN")) jobTarget = "Nelayan / Perikanan";
+    else if (jobUpper.includes("PETANI")) jobTarget = "Petani / Pekebun";
+    else if (jobUpper.includes("TNI/POLRI") || jobUpper.includes("TNI")) jobTarget = "TNI";
+    else if (jobUpper.includes("PURNAWIRAWAN")) jobTarget = "Pensiunan";
+    else if (jobUpper.includes("LAIN-LAIN") || jobUpper === "PROFESIONAL") jobTarget = "Lainnya";
     
     if (jobTarget) {
         const triggers = Array.from(document.querySelectorAll('div, span'));
@@ -449,27 +301,18 @@ if (textToFindPernikahan !== "") {
 
             const splitKata = jobTarget.split(/\s+/); 
             let kataPencarian = jobTarget;
-            
-            if (splitKata.length >= 3) {
-                kataPencarian = splitKata[0]; 
-                console.log(`[BOT] Job >= 3 kata. Disingkat menjadi: "${kataPencarian}" agar list mengecil.`);
-            }
+            if (splitKata.length >= 3) kataPencarian = splitKata[0]; 
 
             const searchInput = document.querySelector('.modal-content input[placeholder*="Cari"], input[placeholder*="Cari"]');
             if (searchInput) {
-                console.log(`[BOT] Mengetik pencarian: ${kataPencarian}`);
                 forceInject(searchInput, kataPencarian);
                 await wait(1500); 
             }
 
             let optionFound = false;
             for (let i = 0; i < 20; i++) {
-                const btn = [...document.querySelectorAll('.modal-content button')].find(x => 
-                    (x.innerText || "").trim().toLowerCase() === jobTarget.toLowerCase()
-                );
-
+                const btn = [...document.querySelectorAll('.modal-content button')].find(x => (x.innerText || "").trim().toLowerCase() === jobTarget.toLowerCase());
                 if (btn) {
-                    console.log(`[DEBUG] DITEMUKAN & DIKLIK: ${btn.innerText}`);
                     btn.click(); 
                     optionFound = true;
                     await wait(1200); 
@@ -477,24 +320,15 @@ if (textToFindPernikahan !== "") {
                 }
                 await wait(400); 
             }
-
-            if (!optionFound) {
-                console.log(`[BOT] ❌ GAGAL: Opsi "${jobTarget}" tidak ditemukan di list.`);
-                document.body.click(); 
-                await wait(800);
-            }
-        } else {
-            console.log("[BOT] ❌ Kotak 'Pekerjaan' tidak ditemukan.");
+            if (!optionFound) { document.body.click(); await wait(800); }
         }
     }
-
     await wait(1500);
 
     /* ================= 3. ALAMAT DOMISILI ================= */
     console.log("[BOT] Memproses Domisili...");
     showLoading("⚡ MENCARI WILAYAH PADASUKA... ⚡");
     await setAlamatDomisiliVue();
-
     await wait(2000);
 
     /* ================= 4. DETAIL DOMISILI ================= */
@@ -505,78 +339,30 @@ if (textToFindPernikahan !== "") {
     if(inpAlamat){
         inpAlamat.scrollIntoView({ behavior:"smooth", block:"center" });
         await wait(500);
-
         let alamatTarget = data.alamat || "-";
         forceInject(inpAlamat, alamatTarget);
-
         await wait(500);
         inpAlamat.dispatchEvent(new Event('input', { bubbles:true }));
         inpAlamat.dispatchEvent(new Event('change', { bubbles:true }));
         inpAlamat.blur();
-        console.log("[BOT] Detail alamat terisi.");
     }
 
-    /* ================= INFO UI (PERBAIKAN SYNTAX) ================= */
     hideLoading();
-    const info = document.getElementById("infoAI");
-
-    if (info) {
-        info.innerHTML = `
-        <div style="background:#00ff88; color:#000; padding:8px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:8px;">
-            ✅ HALAMAN 1 OTOMATIS
-        </div>
-        <div style="background:#222; border:1px solid #555; padding:8px; border-radius:5px; font-size:12px; line-height:1.7;">
-            <b>📌 DATA TERISI:</b><br><br>
-            • Nama: <b style="color:#00ff88;">${data.nama || '-'}</b><br>
-            • Tgl: <b style="color:#00ff88;">${data.tgl || '-'}</b><br>
-            • JK: <b style="color:#00ff88;">${data.jk || '-'}</b><br>
-            • Status: <b style="color:#00ff88;">${data.Martial || '-'}</b><br>
-            • Pekerjaan: <b style="color:#00ff88;">${data.pekerjaan || '-'}</b><br>
-            • Kelurahan: <b style="color:#00ff88;">Padasuka (HARDCODE)</b><br>
-            • Alamat: <div style="color:#00ff88; margin-top:3px; background:#111; padding:6px; border-radius:5px; border:1px solid #333; word-break:break-word; max-height:65px; overflow:auto;">${data.alamat || '-'}</div>
-        </div>
-        <div style="margin-top:8px; font-size:11px; color:#aaa; text-align:center;">
-            Bot memantau tombol <b>'Selanjutnya'</b>...
-        </div>
-        `;
-    }
-
-    let counter = 0;
             
     while(true){
-
-        const btnNext2 = Array.from(
-            document.querySelectorAll("button")
-        ).find(btn => {
-
+        const btnNext2 = Array.from(document.querySelectorAll("button")).find(btn => {
             const txt = (btn.innerText || "").trim();
-
-            return (
-                txt === "Selanjutnya" &&
-                !btn.disabled &&
-                btn.offsetParent !== null
-            );
-
+            return (txt === "Selanjutnya" && !btn.disabled && btn.offsetParent !== null);
         });
 
         if(btnNext2){
-
-            console.log("[BOT] Tombol Selanjutnya aktif");
-
             await ultraClick(btnNext2);
-
-            console.log("[BOT] Menuju halaman verifikasi");
-
             await wait(3000);
-
             await prosesVerifikasi();
-
             break;
         }
-
         await wait(1000);
     }
-
 }
 
 /* ================= SISTEM SEMI AUTO-PILOT ================= */
@@ -608,16 +394,13 @@ async function autoPilotSikatHabis(data) {
     let inpWA = getInput("whatsapp") || getInput("telepon");
     if (inpWA) forceInject(inpWA, cleanHP);
 
-    /* ================= ISI JK (VUE/TAILWIND DROPDOWN) ================= */
+    /* ================= ISI JK ================= */
     console.log("[BOT] Memproses Jenis Kelamin:", data.jk);
     let rawJK = (data.jk || "").trim().toUpperCase();
     let textToFindJK = "";
 
-    if (rawJK.includes("LAKI") || rawJK === "L" || rawJK === "LK") {
-        textToFindJK = "Laki-laki";
-    } else if (rawJK.includes("PEREM") || rawJK === "P" || rawJK === "PR" || rawJK.includes("WANITA")) {
-        textToFindJK = "Perempuan";
-    }
+    if (rawJK.includes("LAKI") || rawJK === "L" || rawJK === "LK") textToFindJK = "Laki-laki";
+    else if (rawJK.includes("PEREM") || rawJK === "P" || rawJK === "PR" || rawJK.includes("WANITA")) textToFindJK = "Perempuan";
 
     if (textToFindJK !== "") {
         const allElements = Array.from(document.querySelectorAll('span, div.cursor-pointer, label'));
@@ -639,22 +422,17 @@ async function autoPilotSikatHabis(data) {
 
                 if (possibleOptions.length > 0) {
                     const targetOption = possibleOptions[possibleOptions.length - 1];
-
                     await ultraClick(targetOption);
-                    console.log("[BOT] Sukses mengklik Jenis Kelamin:", textToFindJK);
                     optionFound = true;
                     await wait(800);
                     break;
                 }
                 await wait(400); 
             }
-            if (!optionFound) console.log("[BOT] Error: Opsi dropdown Jenis Kelamin tidak muncul di layar.");
-        } else {
-            console.log("[BOT] Error: Kotak 'Jenis Kelamin' tidak ditemukan di formulir.");
         }
     }
 
-    /* ================= ISI TANGGAL (VUE2-DATEPICKER) ================= */
+    /* ================= ISI TANGGAL ================= */
     let tglRaw = data.tgl || "";
     if (tglRaw.trim() !== "") {
         let parts = tglRaw.split(/[-/]/);
@@ -708,47 +486,21 @@ async function autoPilotSikatHabis(data) {
 
     /* ================= AUTO NEXT ================= */
     let btnLanjut = null;
-
     while(true){
-
-        btnLanjut = Array.from(
-            document.querySelectorAll('button')
-        ).find(
-            b => b.innerText.includes('Selanjutnya')
-        );
-
-        if(
-            btnLanjut &&
-            !btnLanjut.disabled &&
-            !btnLanjut.classList.contains('ant-btn-disabled')
-        ){
+        btnLanjut = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Selanjutnya'));
+        if(btnLanjut && !btnLanjut.disabled && !btnLanjut.classList.contains('ant-btn-disabled')){
             break;
         }
-
         await wait(500);
     }
-
     await ultraClick(btnLanjut);
 
-    console.log("[BOT] Menunggu popup Lanjutkan...");
-
     while(true){
-
-        const lanjutBtn = Array.from(
-            document.querySelectorAll('button.btn-fill-primary')
-        ).find(btn =>
-            (btn.innerText || "").includes("Lanjutkan")
-        );
-
+        const lanjutBtn = Array.from(document.querySelectorAll('button.btn-fill-primary')).find(btn => (btn.innerText || "").includes("Lanjutkan"));
         if(lanjutBtn){
-
-            console.log("[BOT] Popup validasi ditemukan");
-
             await ultraClick(lanjutBtn);
-
             break;
         }
-
         await wait(500);
     }
 
@@ -761,28 +513,20 @@ async function autoPilotSikatHabis(data) {
 
 /* ================= FUNGSI BARU: PENYELESAIAN & TIKET ================= */
 async function tuntaskanRegistrasiDanKonfirmasi() {
-    console.log("[BOT] Menunggu popup Berhasil Daftar (Tiket)...");
-    
-    // Sistem Looping Pintar: Bot akan berdiam memantau layar sampai popup tiket muncul
     let tiketEl = null;
     while(true){
         tiketEl = Array.from(document.querySelectorAll('div')).find(el => (el.innerText || "").includes("No. Tiket:"));
         if(tiketEl) break;
-        await wait(1000); // Cek layar setiap 1 detik
+        await wait(1000); 
     }
     
-    console.log("[BOT] Proses: Mengambil tiket & konfirmasi kehadiran...");
-    
-    // 1. Ambil nomor tiket menggunakan Regex
     const match = tiketEl.innerText.match(/No\. Tiket:\s*([A-Z0-9-]+)/);
     const kodeTiket = match ? match[1] : null;
     
-    // 2. Klik Tutup Popup Pendaftaran
     const btnTutup = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Tutup"));
     if (btnTutup) await ultraClick(btnTutup);
     await wait(1000);
 
-    // 3. Masukkan tiket ke kolom pencarian & Enter
     const inpTiket = document.getElementById("searchNik");
     if (inpTiket && kodeTiket) {
         forceInject(inpTiket, kodeTiket);
@@ -790,7 +534,6 @@ async function tuntaskanRegistrasiDanKonfirmasi() {
         await wait(2000);
     }
 
-    // 4. Mencegah error jika web loading lambat: Cari tombol Konfirmasi berulang kali hingga 5 detik
     let btnKonfirmasi = null;
     for(let i=0; i<10; i++){
         btnKonfirmasi = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Konfirmasi Hadir"));
@@ -800,7 +543,6 @@ async function tuntaskanRegistrasiDanKonfirmasi() {
     if (btnKonfirmasi) await ultraClick(btnKonfirmasi);
     await wait(1500);
 
-    // 5. Centang Verify & Klik Hadir
     const checkbox = document.getElementById("verify");
     if (checkbox) await ultraClick(checkbox);
     
@@ -808,7 +550,6 @@ async function tuntaskanRegistrasiDanKonfirmasi() {
     if (btnHadirFinal) await ultraClick(btnHadirFinal);
     await wait(2000);
 
-    // 6. Klik Periksa Skrining Mandiri
     let btnSkrining = null;
     for(let i=0; i<10; i++){
         btnSkrining = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Periksa Skrining Mandiri"));
@@ -834,21 +575,45 @@ window.runRegisterCKG = async function(nik){
     isProcessing = true;
 
     try {
+        console.log("[BOT] Menunggu halaman memuat kolom NIK secara sempurna...");
+        let inpPortal = null;
+        
+        // -------------------------------------------------------------
+        // PERBAIKAN: Sistem Pengecekan Cerdas (Smart Waiter)
+        // Tunggu maksimal 15 detik sampai elemen NIK muncul di layar
+        // -------------------------------------------------------------
+        for(let i = 0; i < 15; i++){
+            // 1. Coba cari input dengan attribut nama 'NIK' atau placeholder 'NIK'
+            inpPortal = document.querySelector('input[name="NIK"], input[placeholder*="NIK" i], input.ant-input');
+            
+            // Cek apakah elemen itu ada dan benar-benar terlihat di layar (offsetParent !== null)
+            if (inpPortal && inpPortal.offsetParent !== null) {
+                break; // Ketemu! Hentikan loop.
+            }
+            
+            await wait(1000); // Tunggu 1 detik sebelum cek lagi
+        }
 
-        const inpPortal =
-            document.querySelector('input[name="NIK"]');
+        // Fallback (Jaga-jaga): Jika masih gagal, cari input teks apapun yang aktif
+        if (!inpPortal || inpPortal.offsetParent === null) {
+            const semuaInputText = Array.from(document.querySelectorAll('input[type="text"], input:not([type="hidden"])'));
+            inpPortal = semuaInputText.find(el => !el.disabled && el.offsetParent !== null);
+        }
 
-        if (!inpPortal)
-            throw new Error("Kolom NIK tidak ditemukan");
+        if (!inpPortal) {
+            throw new Error("Kolom NIK tidak ditemukan. Halaman mungkin error atau koneksi internet terputus.");
+        }
 
+        console.log("[BOT] Kolom NIK Ditemukan! Menginjeksi data...");
         forceInject(inpPortal, val);
 
-        await wait(500);
+        await wait(1000);
 
         const btnCek = Array.from(
-            document.querySelectorAll('.tracking-wide')
+            document.querySelectorAll('.tracking-wide, button')
         ).find(el =>
-            (el.innerText || '').includes('Cek NIK')
+            (el.innerText || '').toLowerCase().includes('cek nik') ||
+            (el.innerText || '').toLowerCase().includes('cari')
         );
 
         if (btnCek) {
@@ -857,17 +622,14 @@ window.runRegisterCKG = async function(nik){
             );
         }
 
-        await wait(2500);
+        await wait(3000);
 
         const isDataDitemukan =
-            document.body.innerText.includes(
-                'Data Peserta ditemukan'
-            );
+            document.body.innerText.includes('Data Peserta ditemukan') ||
+            document.body.innerText.includes('sudah terdaftar');
 
         if (isDataDitemukan) {
-            console.log(
-                '[BOT] NIK sudah terdaftar.'
-            );
+            console.log('[BOT] NIK sudah terdaftar sebelumnya.');
             return false;
         }
 
@@ -884,21 +646,12 @@ window.runRegisterCKG = async function(nik){
             return true;
         }
 
-        console.log(
-            '[BOT] Data tidak ditemukan.'
-        );
-
+        console.log('[BOT] Data tidak ditemukan di Spreadsheet.');
         return false;
 
     } catch (err) {
-
-        console.log(
-            '[BOT ERROR]',
-            err
-        );
-
+        console.log('[BOT ERROR]', err);
         return false;
-
     } finally {
         isProcessing = false;
     }
