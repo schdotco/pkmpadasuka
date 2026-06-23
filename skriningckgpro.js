@@ -524,7 +524,7 @@ async function mainLoop(data) {
             clearBOT();
             clearCompleted();
             updateStatus('SELESAI SEMUA TARGET.\nSilakan ganti NIK untuk pasien baru.');
-            alert('Semua antrian pemeriksaan selesai!');
+            // alert('Semua antrian pemeriksaan selesai!'); // Alert dimatikan agar tidak mengganggu UI
             break;
         }
 
@@ -536,84 +536,23 @@ async function mainLoop(data) {
 }
 
 /* =========================================================
-   UI MODERN & DRAGGABLE
+   PENGGANTI UI LAMA (HANYA MENCETAK LOG DI CONSOLE)
 ========================================================= */
-function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
-function stopBOT(){ BOT_RUNNING = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); }
+// Fungsi diubah untuk mencetak status ke Console, bukan UI box.
+function updateStatus(text){ 
+    console.log("[SKRINING BOT] " + text); 
+}
 
-function createUI(){
-    if(document.getElementById('auto-ckg-ui')) return;
-    const box = document.createElement('div'); box.id = 'auto-ckg-ui';
-    box.innerHTML = `
-        <div id="drag-handle">SKRINING MANDIRI PADASUKA</div>
-        <div id="bot-status">INISIALISASI...</div>
-        <input id="nik-bot" placeholder="Masukkan NIK">
-        <div id="btn-wrap">
-            <button id="run-bot">START</button><button id="stop-bot">BATAL</button>
-        </div>
-    `;
-    const style = document.createElement('style');
-    style.innerHTML = `
-        #auto-ckg-ui {
-            position: fixed; top: 100px; right: 20px; width: 300px;
-            background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px);
-            border: 1px solid rgba(0, 200, 255, 0.5); border-radius: 16px;
-            z-index: 999999999; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            font-family: 'Segoe UI', sans-serif; color: white; cursor: default;
-        }
-        #drag-handle { padding: 5px; text-align: center; font-weight: bold; color: #00c8ff; cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333; }
-        #bot-status { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; min-height: 50px; margin-bottom: 10px; color: #00c8ff; font-size: 13px; text-align: center; white-space: pre-wrap; }
-        #nik-bot { width: 100%; box-sizing: border-box; padding: 10px; border: none; border-radius: 8px; background: #333; color: white; margin-bottom: 10px; }
-        #btn-wrap { display: flex; gap: 8px; }
-        #run-bot, #stop-bot { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        #run-bot { background: #00c8ff; color: #000; }
-        #run-bot:hover { background: #009acc; }
-        #stop-bot { background: #ff4444; color: white; }
-    `;
-    document.head.appendChild(style); document.body.appendChild(box);
-
-    const savedData = loadBOT();
-    if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
-
-    const handle = document.getElementById('drag-handle');
-    if(handle){
-        let isDragging = false, offsetX, offsetY;
-        handle.onmousedown = (e)=>{ isDragging = true; offsetX = e.clientX - box.offsetLeft; offsetY = e.clientY - box.offsetTop; };
-        document.onmousemove = (e)=>{ if(isDragging){ box.style.left = (e.clientX - offsetX) + 'px'; box.style.top = (e.clientY - offsetY) + 'px'; box.style.right = 'auto'; } };
-        document.onmouseup = ()=>{ isDragging = false; };
-    }
-
-    document.getElementById('run-bot').onclick = async ()=>{
-        if(BOT_RUNNING) return alert('BOT SEDANG BERJALAN');
-        const nik = document.getElementById('nik-bot').value;
-        if(!nik) return alert('Masukkan NIK');
-
-        updateStatus('MENCARI NIK DI SPREADSHEET...');
-        const data = await cariData(nik);
-
-        if(!data) {
-            return updateStatus('NIK TIDAK DITEMUKAN DI GOOGLE SHEETS...');
-        }
-
-        BOT_RUNNING = true;
-        saveBOT(data);
-        clearCompleted(); 
-
-        updateStatus(`Data Ketemu!\nPerkawinan: ${data.perkawinan}`);
-        await sleep(500);
-
-        // EKSEKUSI BYPASS JIKA USER KLIK START SAAT POP-UP MUNCUL
-        await bypassPengaturanPelayanan();
-
-        await mainLoop(data);
-    };
-    document.getElementById('stop-bot').onclick = stopBOT;
+function stopBOT(){ 
+    BOT_RUNNING = false; 
+    clearBOT(); 
+    clearCompleted(); 
+    updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); 
 }
 
 /* =========================================================
    INIT / PINTU UTAMA
 ========================================================= */
-setInterval(createUI, 1000);
 
 setTimeout(async ()=>{
     const isFormPage = location.hostname.includes('form.kemkes.go.id');
@@ -623,8 +562,26 @@ setTimeout(async ()=>{
         await autoContinueForm();
     } else if (isMainPage) {
         
-      // 1. Cek apakah ada data pasien yang belum selesai dikerjakan
-        const data = loadBOT();
+        // Cek data bot yang disiapkan oleh modul regckg atau script lain
+        let data = loadBOT();
+        
+        // JEMBATAN KE MASTER UI LAUNCHER:
+        // Jika tidak ada data Skrining tersimpan, tapi Launcher menyuruh bot berjalan...
+        const isMasterRunning = GM_getValue('BOT_RUNNING_STATE', false);
+        const masterNIK = GM_getValue('MASTER_NIK_INPUT', '');
+
+        if (!data && isMasterRunning && masterNIK.length >= 16) {
+            updateStatus('Mendapat instruksi dari Master UI. Mengunduh data...');
+            data = await cariData(masterNIK);
+            if(data) {
+                saveBOT(data);
+                clearCompleted();
+            } else {
+                updateStatus('Data NIK Master tidak ditemukan di spreadsheet Skrining.');
+            }
+        }
+
+        // Jika data berhasil diamankan (baik dari resume maupun dari Master UI)
         if(data){
             BOT_RUNNING = true;
             updateStatus('MELANJUTKAN OTOMATIS...\nMenyiapkan Pelayanan');
@@ -638,15 +595,14 @@ setTimeout(async ()=>{
             updateStatus('Mencari Form Berikutnya...');
             await mainLoop(data);
         } else {
-            // Tampilan default agar pop-up langsung aktif tanpa nge-freeze
-            updateStatus('IDLE\nMasukkan NIK lalu klik START');
+            updateStatus('IDLE / Menunggu perintah atau data dari Master UI');
         }
 
-        // --- 2. FITUR PRE-LOAD BACKGROUND SEJATI ---
+        // --- FITUR PRE-LOAD BACKGROUND SEJATI ---
         if (!cachedSheetData) {
             cariData('000').then(() => {
                 if (!BOT_RUNNING) {
-                    updateStatus('Database Siap (Cache Penuh)!\nMasukkan NIK lalu klik START');
+                    updateStatus('Database Siap (Cache Penuh)!');
                 }
             }).catch(err => {
                 console.error("Gagal mendownload background data:", err);
@@ -656,4 +612,4 @@ setTimeout(async ()=>{
     }
 }, 1500);
 
-})(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null); 
+})(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
