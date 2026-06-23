@@ -212,7 +212,6 @@ async function handleTelingaMata(data) {
     await isiRadioSurveyJS('tajam pendengaran', 'normal');
     await sleep(500);
 
-    // ===== LOGIKA MATA =====
    console.log('[MATA]', JSON.stringify(data.mata));
    updateStatus('MATA: ' + JSON.stringify(data.mata));
     if ((data.mata || '').toLowerCase() === 'ya') {
@@ -295,7 +294,7 @@ async function klikKirim() {
 async function autoContinueForm() {
     const data = loadBOT();
     if (!data) {
-        updateStatus('IDLE\nSiap Digunakan');
+        updateStatus('IDLE / Siap Digunakan');
         return;
     }
 
@@ -360,7 +359,7 @@ async function autoContinueForm() {
         await pilihSemuaRadioLimit('tidak', 2, true);
         await selectDropdownSurveyJS('tidak', 2);
     }
-       else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('skrining kanker paru'))) {
+    else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('skrining kanker paru'))) {
         currentId = 'kanker_paru'; 
         updateStatus('MENGISI TAHAP: KANKER PARU');
         await sleep(2000);
@@ -383,7 +382,7 @@ async function autoContinueForm() {
         await isiRadioSurveyJS('penyakit paru kronik', 'tidak pernah didiagnosis penyakit paru kronik');
         await sleep(500);
     }
-   else if(title.includes('puma') || title.includes('ppok')){
+    else if(title.includes('puma') || title.includes('ppok')){
         currentId = 'puma'; updateStatus('MENGISI TAHAP: PPOK (PUMA)');
 
         let isPerokok = (data.merokok || '').toLowerCase().includes('ya') || 
@@ -411,7 +410,6 @@ function getNextTarget(){
     const completed = getCompleted();
     const btns = [...document.querySelectorAll('button')].filter(btn => {
         const text = (btn.innerText || '').toLowerCase();
-        // REVISI: Tambahkan deteksi tombol "mulai pemeriksaan"
         return text.includes('input data') || text.includes('mulai pemeriksaan');
     });
     
@@ -445,7 +443,7 @@ async function mainLoopCKG(data){
     if(!nextItem){
         clearBOT(); clearCompleted(); BOT_RUNNING = false;
         updateStatus('SELESAI SEMUA PEMERIKSAAN'); 
-        alert('BOT SUKSES INPUT SEMUA PEMERIKSAAN');
+        // alert('BOT SUKSES INPUT SEMUA PEMERIKSAAN'); // Alert dimatikan agar mode Auto-Pilot berjalan lancar tanpa terhenti
         return;
     }
     
@@ -455,15 +453,13 @@ async function mainLoopCKG(data){
     // 1. Klik Tombol "Input Data" / "Mulai Pemeriksaan"
     triggerClick(nextItem.btn);
 
-    // 2. --- TAMBAHAN BARU: BYPASS POP-UP KONFIRMASI TANGGAL ---
+    // 2. --- BYPASS POP-UP KONFIRMASI TANGGAL ---
     updateStatus('Konfirmasi Tanggal...');
     for(let i=0; i<15; i++){
         await sleep(500);
         const modalText = document.body.innerText.toLowerCase();
         
-        // Deteksi apakah pop up benar-benar muncul
         if(modalText.includes("konfirmasi tanggal pemeriksaan")) {
-            // Cari tombol Simpan di dalam Pop-up
             const btnSimpan = Array.from(document.querySelectorAll('button')).find(b => 
                 (b.innerText || "").trim() === "Simpan" && 
                 b.offsetParent !== null
@@ -472,97 +468,31 @@ async function mainLoopCKG(data){
             if(btnSimpan){
                 btnSimpan.click();
                 console.log("[BOT] Tanggal Pemeriksaan berhasil dikonfirmasi.");
-                break; // Keluar dari loop pencarian pop-up
+                break; 
             }
         }
     }
-    // ----------------------------------------------------------
 }
 
 /* =========================================================
-   UI MODERN & DRAGGABLE
+   PENGGANTI UI (HANYA MENCETAK LOG DI CONSOLE)
 ========================================================= */
 let BOT_RUNNING = false;
-function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
-function stopBOT(){ BOT_RUNNING = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN. DATA DIRESET.'); }
 
-function createUI(){
-    if(document.getElementById('auto-ckg-ui')) return;
-    const box = document.createElement('div'); box.id = 'auto-ckg-ui';
-    box.innerHTML = `
-        <div id="drag-handle">INPUT CKG PADASUKA</div>
-        <div id="bot-status">INISIALISASI...</div>
-        <input id="nik-bot" placeholder="Masukkan NIK">
-        <div id="btn-wrap">
-            <button id="run-bot">START</button><button id="stop-bot">BATAL</button>
-        </div>
-    `;
-    const style = document.createElement('style');
-    style.innerHTML = `
-        #auto-ckg-ui {
-            position: fixed; top: 100px; right: 20px; width: 300px;
-            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(15px);
-            border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 16px;
-            z-index: 999999999; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            font-family: 'Segoe UI', sans-serif; color: white; cursor: default;
-        }
-        #drag-handle {
-            padding: 5px; text-align: center; font-weight: bold; color: #00ff88;
-            cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333;
-        }
-        #bot-status {
-            background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px;
-            min-height: 50px; margin-bottom: 10px; color: #00ff88;
-            font-size: 13px; text-align: center; white-space: pre-wrap;
-        }
-        #nik-bot {
-            width: 100%; box-sizing: border-box; padding: 10px; border: none;
-            border-radius: 8px; background: #333; color: white; margin-bottom: 10px;
-        }
-        #btn-wrap { display: flex; gap: 8px; }
-        #run-bot, #stop-bot {
-            flex: 1; border: none; padding: 10px; border-radius: 8px;
-            font-weight: bold; cursor: pointer; transition: 0.2s;
-        }
-        #run-bot { background: #00ff88; color: #000; }
-        #run-bot:hover { background: #00cc6a; }
-        #stop-bot { background: #ff4444; color: white; }
-    `;
-    document.head.appendChild(style); document.body.appendChild(box);
+function updateStatus(text){ 
+    console.log("[INPUT CKG BOT] " + text); 
+}
 
-    const handle = document.getElementById('drag-handle');
-    if(handle){
-        let isDragging = false, offsetX, offsetY;
-        handle.onmousedown = (e)=>{ isDragging = true; offsetX = e.clientX - box.offsetLeft; offsetY = e.clientY - box.offsetTop; };
-        document.onmousemove = (e)=>{ if(isDragging){ box.style.left = (e.clientX - offsetX) + 'px'; box.style.top = (e.clientY - offsetY) + 'px'; box.style.right = 'auto'; } };
-        document.onmouseup = ()=>{ isDragging = false; };
-    }
-
-    // Ambil Data NIK Lama
-    const savedData = loadBOT();
-    if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
-
-    document.getElementById('run-bot').onclick = async ()=>{
-        if(BOT_RUNNING) return alert('BOT SEDANG BERJALAN');
-        const nik = document.getElementById('nik-bot').value;
-        if(!nik) return alert('Masukkan NIK');
-
-        updateStatus('MENGAMBIL DATA SPREADSHEET...');
-        const data = await cariData(nik);
-        if(!data) return updateStatus('DATA TIDAK DITEMUKAN');
-
-        BOT_RUNNING = true; saveBOT(data); clearCompleted();
-        updateStatus('MEMULAI BOT...');
-        await sleep(500); await mainLoopCKG(data);
-    };
-    document.getElementById('stop-bot').onclick = stopBOT;
+function stopBOT(){ 
+    BOT_RUNNING = false; 
+    clearBOT(); 
+    clearCompleted(); 
+    updateStatus('BOT DIHENTIKAN. DATA DIRESET.'); 
 }
 
 /* =========================================================
-   INIT / AUTO RESUME OBSERVER
+   INIT / PINTU UTAMA & JEMBATAN MASTER UI
 ========================================================= */
-setInterval(createUI, 1000);
-
 async function waitForElement(selector, timeout = 10000) {
     const start = Date.now();
     while (Date.now() - start < timeout) {
@@ -580,24 +510,48 @@ async function waitForElement(selector, timeout = 10000) {
         if(isFormPage){
             await autoContinueForm();
         } else {
-            const data = loadBOT();
+            let data = loadBOT();
+
+            // JEMBATAN KE MASTER UI LAUNCHER:
+            let isMasterRunning = false;
+            let masterNIK = '';
+            try {
+                isMasterRunning = GM_getValue('BOT_RUNNING_STATE', false);
+                masterNIK = GM_getValue('MASTER_NIK_INPUT', '');
+            } catch(e) {}
+
+            // Jika Master UI aktif dan menyuruh bot bekerja tapi data belum ada
+            if (!data && isMasterRunning && masterNIK.length >= 16) {
+                updateStatus('Mendapat instruksi dari Master UI. Mengunduh data...');
+                data = await cariData(masterNIK);
+                if (data) {
+                    saveBOT(data);
+                    clearCompleted();
+                } else {
+                    updateStatus('Data NIK Master tidak ditemukan di spreadsheet Input CKG.');
+                }
+            }
+
+            // Jika data berhasil diamankan (dari Resume atau dari Master UI)
             if(data){
                 BOT_RUNNING = true;
                 updateStatus('MELANJUTKAN OTOMATIS...\nJangan tekan apapun');
                 await sleep(1000);
                 await mainLoopCKG(data);
             } else {
-                updateStatus('IDLE\nSiap Digunakan');
+                updateStatus('IDLE / Menunggu perintah atau data dari Master UI');
 
+                // --- FITUR PRE-LOAD BACKGROUND SEJATI ---
                 if (!cachedSheetData) {
                     cariData('000').then(() => {
                         if (!BOT_RUNNING) {
-                            updateStatus('Database Siap (Cache Penuh)!\nMasukkan NIK lalu klik START');
+                            updateStatus('Database Siap (Cache Penuh)!');
                         }
                     }).catch(err => {
                         console.error("Gagal pre-load data dari background:", err);
                     });
                 }
+                // ----------------------------------------
             }
         }
     } else {
