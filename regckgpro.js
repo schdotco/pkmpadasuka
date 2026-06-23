@@ -516,58 +516,66 @@ if (textToFindPernikahan !== "") {
         console.log("[BOT] Detail alamat terisi.");
     }
 
-hideLoading();
+    /* ================= INFO UI (PERBAIKAN SYNTAX) ================= */
+    hideLoading();
+    const info = document.getElementById("infoAI");
 
-console.log("[BOT] Halaman 2 selesai diproses.");
-console.log("[BOT] Menunggu user melengkapi data...");
-
-document.getElementById("infoAI").innerHTML += `
-<div style="
-    margin-top:8px;
-    padding:6px;
-    background:#222;
-    border-radius:5px;
-    color:#ffcc00;
-">
-⏳ Menunggu tombol Selanjutnya aktif...
-</div>
-`;
-
-let counter = 0;
-        
-while(true){
-
-    const btnNext2 = Array.from(
-        document.querySelectorAll("button")
-    ).find(btn => {
-
-        const txt = (btn.innerText || "").trim();
-
-        return (
-            txt === "Selanjutnya" &&
-            !btn.disabled &&
-            btn.offsetParent !== null
-        );
-
-    });
-
-    if(btnNext2){
-
-        console.log("[BOT] Tombol Selanjutnya aktif");
-
-        await ultraClick(btnNext2);
-
-        console.log("[BOT] Menuju halaman verifikasi");
-
-        await wait(3000);
-
-        await prosesVerifikasi();
-
-        break;
+    if (info) {
+        info.innerHTML = `
+        <div style="background:#00ff88; color:#000; padding:8px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:8px;">
+            ✅ HALAMAN 1 OTOMATIS
+        </div>
+        <div style="background:#222; border:1px solid #555; padding:8px; border-radius:5px; font-size:12px; line-height:1.7;">
+            <b>📌 DATA TERISI:</b><br><br>
+            • Nama: <b style="color:#00ff88;">${data.nama || '-'}</b><br>
+            • Tgl: <b style="color:#00ff88;">${data.tgl || '-'}</b><br>
+            • JK: <b style="color:#00ff88;">${data.jk || '-'}</b><br>
+            • Status: <b style="color:#00ff88;">${data.Martial || '-'}</b><br>
+            • Pekerjaan: <b style="color:#00ff88;">${data.pekerjaan || '-'}</b><br>
+            • Kelurahan: <b style="color:#00ff88;">Padasuka (HARDCODE)</b><br>
+            • Alamat: <div style="color:#00ff88; margin-top:3px; background:#111; padding:6px; border-radius:5px; border:1px solid #333; word-break:break-word; max-height:65px; overflow:auto;">${data.alamat || '-'}</div>
+        </div>
+        <div style="margin-top:8px; font-size:11px; color:#aaa; text-align:center;">
+            Bot memantau tombol <b>'Selanjutnya'</b>...
+        </div>
+        `;
     }
 
-    await wait(1000);
-}
+    let counter = 0;
+            
+    while(true){
+
+        const btnNext2 = Array.from(
+            document.querySelectorAll("button")
+        ).find(btn => {
+
+            const txt = (btn.innerText || "").trim();
+
+            return (
+                txt === "Selanjutnya" &&
+                !btn.disabled &&
+                btn.offsetParent !== null
+            );
+
+        });
+
+        if(btnNext2){
+
+            console.log("[BOT] Tombol Selanjutnya aktif");
+
+            await ultraClick(btnNext2);
+
+            console.log("[BOT] Menuju halaman verifikasi");
+
+            await wait(3000);
+
+            await prosesVerifikasi();
+
+            break;
+        }
+
+        await wait(1000);
+    }
 
 }
 
@@ -697,77 +705,57 @@ async function autoPilotSikatHabis(data) {
         }
     }
 
-/* ================= INFO UI ================= */
-hideLoading();
-document.getElementById("infoAI").innerHTML = `
-    <div style="background:#00ff88; color:#000; padding:8px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:8px;">
-        ✅ HALAMAN 1 OTOMATIS
-    </div>
-    <div style="background:#222; border:1px solid #555; padding:8px; border-radius:5px; font-size:12px; line-height:1.7;">
-        <b>📌 DATA TERISI:</b><br><br>
-        • Nama: <b style="color:#00ff88;">${data.nama || '-'}</b><br>
-        • Tgl: <b style="color:#00ff88;">${data.tgl || '-'}</b><br>
-        • JK: <b style="color:#00ff88;">${data.jk || '-'}</b><br>
-        • Status: <b style="color:#00ff88;">${data.Martial || '-'}</b><br>
-        • Pekerjaan: <b style="color:#00ff88;">${data.pekerjaan || '-'}</b><br>
-        • Kelurahan: <b style="color:#00ff88;">Padasuka (HARDCODE)</b><br>
-        • Alamat: <div style="color:#00ff88; margin-top:3px; background:#111; padding:6px; border-radius:5px; border:1px solid #333; word-break:break-word; max-height:65px; overflow:auto;">${data.alamat || '-'}</div>
-    </div>
-    <div style="margin-top:8px; font-size:11px; color:#aaa; text-align:center;">
-        Bot memantau tombol <b>'Selanjutnya'</b>...
-    </div>
-`;
 
-/* ================= AUTO NEXT ================= */
-let btnLanjut = null;
+    /* ================= AUTO NEXT ================= */
+    let btnLanjut = null;
 
-while(true){
+    while(true){
 
-    btnLanjut = Array.from(
-        document.querySelectorAll('button')
-    ).find(
-        b => b.innerText.includes('Selanjutnya')
-    );
+        btnLanjut = Array.from(
+            document.querySelectorAll('button')
+        ).find(
+            b => b.innerText.includes('Selanjutnya')
+        );
 
-    if(
-        btnLanjut &&
-        !btnLanjut.disabled &&
-        !btnLanjut.classList.contains('ant-btn-disabled')
-    ){
-        break;
+        if(
+            btnLanjut &&
+            !btnLanjut.disabled &&
+            !btnLanjut.classList.contains('ant-btn-disabled')
+        ){
+            break;
+        }
+
+        await wait(500);
     }
 
-    await wait(500);
-}
+    await ultraClick(btnLanjut);
 
-await ultraClick(btnLanjut);
+    console.log("[BOT] Menunggu popup Lanjutkan...");
 
-console.log("[BOT] Menunggu popup Lanjutkan...");
+    while(true){
 
-while(true){
+        const lanjutBtn = Array.from(
+            document.querySelectorAll('button.btn-fill-primary')
+        ).find(btn =>
+            (btn.innerText || "").includes("Lanjutkan")
+        );
 
-    const lanjutBtn = Array.from(
-        document.querySelectorAll('button.btn-fill-primary')
-    ).find(btn =>
-        (btn.innerText || "").includes("Lanjutkan")
-    );
+        if(lanjutBtn){
 
-    if(lanjutBtn){
+            console.log("[BOT] Popup validasi ditemukan");
 
-        console.log("[BOT] Popup validasi ditemukan");
+            await ultraClick(lanjutBtn);
 
-        await ultraClick(lanjutBtn);
+            break;
+        }
 
-        break;
+        await wait(500);
     }
-
-    await wait(500);
-}
 
     /* ================= HALAMAN 2 ================= */
     await eksekusiHalamanDua(data);
 
-    /* ================= PENYELESAIAN (PENAMBAHAN BARU) ================= */
+    /* ================= PENYELESAIAN ================= */
     await tuntaskanRegistrasiDanKonfirmasi();
 }
 
@@ -836,98 +824,100 @@ async function tuntaskanRegistrasiDanKonfirmasi() {
 
 
 /* ================= UI KONTROL & DRAGGABLE LOGIC ================= */
-function initUI(){
-    if(document.getElementById("reg-ckg-ai-box")) return;
+window.runRegisterCKG = async function(nik){
 
-    const box = document.createElement("div");
-    box.id = "reg-ckg-ai-box";
-    box.style = "position:fixed;top:150px;right:20px;background:#111;color:#fff;padding:15px;border-radius:12px;z-index:99999;width:270px;font-family:sans-serif;box-shadow:0 0 15px #00ff88; border: 2px solid #222;";
+    let val = String(nik || '').replace(/\D/g,'');
 
-    box.innerHTML = `
-        <div id="dragHeader" style="text-align:center; margin-bottom:10px; cursor:move; background:#222; padding:8px; border-radius:8px; border:1px solid #444;" title="Klik dan tahan untuk menggeser bot">
-            <b style="color:#00ff88; font-size:16px;">Register CKG</b><br>
-            <span style="font-size:10px; color:#aaa; letter-spacing:1px;">UPTD Puskesmas Padasuka</span>
-        </div>
-        <div style="background:#222; padding:10px; border-radius:8px; text-align:center; margin-bottom:10px; border:1px solid #444;">
-            <b style="color:#ffcc00; font-size:11px;">⚡ TEMPEL/SCAN NIK DI SINI ⚡</b><br>
-            <input id="nikAI" placeholder="16 Digit NIK..." style="width:90%; margin-top:8px; padding:8px; border-radius:5px; background:#000; color:#00ff88; font-weight:bold; text-align:center; border:1px solid #00ff88; outline:none;">
-        </div>
-        <div id="infoAI" style="font-size:12px; line-height:1.5; color:#ccc;">
-            Status: <b style="color:#00ff88;">Siaga. Menunggu NIK...</b>
-        </div>
-    `;
-    document.body.appendChild(box);
+    if (val.length !== 16) return false;
+    if (isProcessing) return false;
 
-    const dragHeader = document.getElementById("dragHeader");
-    let isDraggingBox = false;
-    let offsetX, offsetY;
+    isProcessing = true;
 
-    dragHeader.addEventListener('mousedown', function(e) {
-        isDraggingBox = true;
-        offsetX = e.clientX - box.getBoundingClientRect().left;
-        offsetY = e.clientY - box.getBoundingClientRect().top;
-        box.style.opacity = "0.8";
-    });
+    try {
 
-    document.addEventListener('mousemove', function(e) {
-        if (isDraggingBox) {
-            box.style.right = 'auto';
-            box.style.bottom = 'auto';
-            box.style.left = (e.clientX - offsetX) + 'px';
-            box.style.top = (e.clientY - offsetY) + 'px';
+        const inpPortal =
+            document.querySelector('input[name="NIK"]');
+
+        if (!inpPortal)
+            throw new Error("Kolom NIK tidak ditemukan");
+
+        forceInject(inpPortal, val);
+
+        await wait(500);
+
+        const btnCek = Array.from(
+            document.querySelectorAll('.tracking-wide')
+        ).find(el =>
+            (el.innerText || '').includes('Cek NIK')
+        );
+
+        if (btnCek) {
+            await ultraClick(
+                btnCek.closest('button') || btnCek
+            );
         }
-    });
 
-    document.addEventListener('mouseup', function() {
-        if (isDraggingBox) {
-            isDraggingBox = false;
-            box.style.opacity = "1";
+        await wait(2500);
+
+        const isDataDitemukan =
+            document.body.innerText.includes(
+                'Data Peserta ditemukan'
+            );
+
+        if (isDataDitemukan) {
+            console.log(
+                '[BOT] NIK sudah terdaftar.'
+            );
+            return false;
         }
-    });
 
-    document.getElementById("nikAI").addEventListener('input', async (e) => {
-        let val = e.target.value.replace(/\D/g, '');
-        if (val.length === 16 && !isProcessing) {
-            isProcessing = true;
-            document.getElementById("infoAI").innerHTML = `<b style="color:#ffcc00;">Memvalidasi NIK: ${val}...</b>`;
+        const data = await cariData(val);
 
-            try {
-                // 1. Injeksi NIK ke kolom portal
-                const inpPortal = document.querySelector('input[name="NIK"]');
-                if (!inpPortal) throw new Error("Kolom NIK tidak ditemukan");
-                forceInject(inpPortal, val);
-                await wait(500);
-
-                // 2. Klik tombol Cek NIK
-                const btnCek = Array.from(document.querySelectorAll('.tracking-wide')).find(el => el.innerText.includes("Cek NIK"));
-                if (btnCek) await ultraClick(btnCek.closest('button') || btnCek);
-                await wait(2500); // Tunggu respon API Dukcapil
-
-                // 3. CEK STATUS: Apakah data ditemukan atau belum?
-                const isDataDitemukan = document.body.innerText.includes("Data Peserta ditemukan");
-                
-                if (isDataDitemukan) {
-                    console.log("[BOT] NIK sudah terdaftar. Skip ke data selanjutnya!");
-                    document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">NIK ${val} SUDAH TERDAFTAR!<br>Silakan ganti NIK lain.</b>`;
-                } else {
-                    console.log("[BOT] NIK belum terdaftar. Menjalankan bot...");
-                    let data = await cariData(val);
-                    if (data) {
-                        await autoPilotSikatHabis(data);
-                    } else {
-                        document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">Data ${val} tidak di Spreadsheet!</b>`;
-                    }
-                }
-            } catch (err) {
-                console.log("[BOT ERROR]", err);
-                document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">Error cek NIK!</b>`;
-            } finally {
-                e.target.value = "";
-                isProcessing = false;
-            }
+        if (data) {
+            // SIMPAN DATA UNTUK MODULE SKRINING (Jembatan Data)
+            try { 
+                GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); 
+                GM_setValue('AUTO_CKG_DATA', JSON.stringify(data)); 
+            } catch(e) {}
+            
+            await autoPilotSikatHabis(data);
+            return true;
         }
-    });
-}
-setTimeout(initUI, 1500);
+
+        console.log(
+            '[BOT] Data tidak ditemukan.'
+        );
+
+        return false;
+
+    } catch (err) {
+
+        console.log(
+            '[BOT ERROR]',
+            err
+        );
+
+        return false;
+
+    } finally {
+        isProcessing = false;
+    }
+};
+
+/* ================= JEMBATAN KE MASTER UI (OTOMATIS RUN) ================= */
+setTimeout(() => {
+    try {
+        const isBotActive = GM_getValue('BOT_RUNNING_STATE', false);
+        const masterNIK = GM_getValue('MASTER_NIK_INPUT', '');
+        
+        // Jika Master Launcher mengirim NIK dan Bot statusnya aktif, langsung eksekusi
+        if (isBotActive && masterNIK.length >= 16) {
+            console.log("[BOT] Terhubung dengan Master UI! Otomatis memproses NIK:", masterNIK);
+            window.runRegisterCKG(masterNIK);
+        }
+    } catch (e) {
+        console.log("[BOT] Jembatan Master UI tidak aktif/terjadi error:", e);
+    }
+}, 2500); // Tunggu website selesai loading (2.5 detik)
 
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
