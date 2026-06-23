@@ -575,33 +575,40 @@ window.runRegisterCKG = async function(nik){
     isProcessing = true;
 
     try {
+        console.log("[BOT] Memulai proses...");
+        
+        // --- TAMBAHAN: AUTO KLIK TOMBOL "DAFTAR BARU" ---
+        // Mencari tombol yang mengandung teks "Daftar Baru"
+        const daftarBaruBtn = Array.from(document.querySelectorAll('div, button, span')).find(el => 
+            (el.innerText || "").trim() === "Daftar Baru" && 
+            el.offsetParent !== null // Harus terlihat di layar
+        );
+
+        if (daftarBaruBtn) {
+            console.log("[BOT] Tombol 'Daftar Baru' ditemukan, mengklik sekarang...");
+            await ultraClick(daftarBaruBtn);
+            await wait(2000); // Tunggu sampai kolom NIK muncul setelah klik
+        } else {
+            console.log("[BOT] Tombol 'Daftar Baru' tidak ditemukan, mungkin sudah terbuka.");
+        }
+        // ------------------------------------------------
+
         console.log("[BOT] Menunggu halaman memuat kolom NIK secara sempurna...");
         let inpPortal = null;
         
-        // -------------------------------------------------------------
-        // PERBAIKAN: Sistem Pengecekan Cerdas (Smart Waiter)
-        // Tunggu maksimal 15 detik sampai elemen NIK muncul di layar
-        // -------------------------------------------------------------
+        // Sistem Pengecekan Cerdas (Smart Waiter)
         for(let i = 0; i < 15; i++){
-            // 1. Coba cari input dengan attribut nama 'NIK' atau placeholder 'NIK'
+            // Mencari input NIK
             inpPortal = document.querySelector('input[name="NIK"], input[placeholder*="NIK" i], input.ant-input');
             
-            // Cek apakah elemen itu ada dan benar-benar terlihat di layar (offsetParent !== null)
             if (inpPortal && inpPortal.offsetParent !== null) {
-                break; // Ketemu! Hentikan loop.
+                break; 
             }
-            
-            await wait(1000); // Tunggu 1 detik sebelum cek lagi
-        }
-
-        // Fallback (Jaga-jaga): Jika masih gagal, cari input teks apapun yang aktif
-        if (!inpPortal || inpPortal.offsetParent === null) {
-            const semuaInputText = Array.from(document.querySelectorAll('input[type="text"], input:not([type="hidden"])'));
-            inpPortal = semuaInputText.find(el => !el.disabled && el.offsetParent !== null);
+            await wait(1000); 
         }
 
         if (!inpPortal) {
-            throw new Error("Kolom NIK tidak ditemukan. Halaman mungkin error atau koneksi internet terputus.");
+            throw new Error("Kolom NIK tidak ditemukan setelah klik Daftar Baru.");
         }
 
         console.log("[BOT] Kolom NIK Ditemukan! Menginjeksi data...");
@@ -636,7 +643,6 @@ window.runRegisterCKG = async function(nik){
         const data = await cariData(val);
 
         if (data) {
-            // SIMPAN DATA UNTUK MODULE SKRINING (Jembatan Data)
             try { 
                 GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); 
                 GM_setValue('AUTO_CKG_DATA', JSON.stringify(data)); 
