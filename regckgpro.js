@@ -144,36 +144,38 @@ function parseCSV(text){
 
 async function cariData(nikInput){
     const target = normalizeNIK(nikInput);
-    try {
-        // Gunakan API Google Visualization yang lebih stabil untuk data JSON
-        const url = `https://docs.google.com/spreadsheets/d/${SHEETS[0].id}/gviz/tq?tqx=out:json&tq&gid=${SHEETS[0].gids[0]}`;
-        const res = await fetch(url);
-        const txt = await res.text();
-        const json = JSON.parse(txt.substring(47, txt.length - 2));
-        const rows = json.table.rows;
+    console.log("[BOT] Mencari NIK:", target, "di Spreadsheet...");
+    
+    // Pastikan data spreadsheet tersedia
+    if (!cachedSheetData) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    if (!cachedSheetData) {
+        console.error("[BOT] cachedSheetData kosong! Spreadsheet belum terdownload.");
+        return null;
+    }
 
-        for(let r of rows){
-            const row = r.c.map(c => c ? String(c.v || "") : "");
-            // Cek NIK (Asumsi NIK di kolom index 0 atau 1)
-            if(normalizeNIK(row[0]) === target || normalizeNIK(row[1]) === target){
-                return {
-                        nik: target,
-                        nama: (row[source.colNama] || "").trim(),
-                        tgl: (row[source.colTgl] || "").trim(),
-                        hp: waD2 || (row[source.colWA] || "").replace(/\D/g,''),
-                        jk: (row[source.colJK] || "").trim(),
-                        alamat: (row[source.colAlamat] || "").trim(),
-                        pekerjaan: (row[source.colPekerjaan] || "").trim(),
-                        kelurahan: (row[source.colKelurahan] || "").trim(),
-                        sekolah: (row[source.colSekolah] || "").trim(),
-                        disabilitas: (row[source.colDisabilitas] || "").trim(),
-                        Martial: (row[source.colMartial] || "").trim(),
-                        kelas: (row[source.colKelas] || "").trim()
-};
-            }
+    for(const r of cachedSheetData){
+        const cells = r.c.map(x => x ? String(x.v || '') : '');
+        // Mencari NIK di kolom yang relevan
+        if(normalizeNIK(cells[0]) === target || normalizeNIK(cells[1]) === target || normalizeNIK(cells[11]) === target){
+            console.log("[BOT] Data ditemukan untuk NIK:", target);
+            return {
+                nik: target,
+                nama: cells[7] || '',
+                tgl: cells[8] || '',
+                hp: cells[20] || '',
+                jk: cells[6] || '',
+                alamat: cells[14] || '',
+                pekerjaan: cells[22] || '',
+                kelurahan: cells[17] || '',
+                Martial: cells[21] || ''
+            };
         }
-    } catch(e) { console.error("Gagal ambil data:", e); }
-    return null;
+    }
+    console.warn("[BOT] NIK tidak ditemukan di data spreadsheet.");
+    return null; 
 }
 
 /* ================= ENGINE ALAMAT WILAYAH VUE (BARU) ================= */
@@ -561,113 +563,72 @@ async function tuntaskanRegistrasiDanKonfirmasi() {
 
 /* ================= UI KONTROL & DRAGGABLE LOGIC ================= */
 window.runRegisterCKG = async function(nik){
-
     let val = String(nik || '').replace(/\D/g,'');
-
-    if (val.length !== 16) return false;
+    if (val.length !== 16) {
+        console.error("[BOT] NIK tidak valid:", val);
+        return false;
+    }
     if (isProcessing) return false;
-
     isProcessing = true;
 
     try {
-        console.log("[BOT] Memulai proses...");
-        
-    // --- REVISI: AUTO KLIK DAFTAR BARU (PRESISI SESUAI HTML) ---
-        // Kita targetkan <button> yang di dalamnya mengandung teks "Daftar Baru"
-        const daftarBaruBtn = Array.from(document.querySelectorAll('button')).find(btn => 
-            btn.innerText.includes("Daftar Baru") && 
-            btn.offsetParent !== null // Memastikan tombol terlihat
+        console.log("[BOT] Mencari tombol Daftar Baru...");
+        const daftarBaruBtn = Array.from(document.querySelectorAll('button, div')).find(el => 
+            (el.innerText || "").trim().includes("Daftar Baru") && el.offsetParent !== null
         );
 
         if (daftarBaruBtn) {
-            console.log("[BOT] Menemukan tombol Daftar Baru. Mengeksekusi klik...");
-            
-            // 1. Fokus ke elemen
-            daftarBaruBtn.scrollIntoView({ behavior: 'instant', block: 'center' });
-            await wait(500);
-            
-            // 2. Klik Native (Paling aman, tidak akan memicu error MouseEvent)
+            console.log("[BOT] Tombol Daftar Baru ditemukan. Mengklik...");
             daftarBaruBtn.click();
-            
-            // 3. Fallback: Trigger event click sederhana jika click() native tidak cukup
-            const event = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true
-            });
-            daftarBaruBtn.dispatchEvent(event);
-            
-            console.log("[BOT] Klik terkirim. Menunggu form NIK muncul...");
-            await wait(3000); // Tunggu sistem merender kolom NIK
-        } else {
-            console.log("[BOT] Tombol 'Daftar Baru' tidak ditemukan.");
+            await wait(2000); // Tunggu form muncul
         }
 
-        // ------------------------------------------------
-
-        console.log("[BOT] Menunggu halaman memuat kolom NIK secara sempurna...");
+        console.log("[BOT] Menunggu kolom NIK muncul...");
         let inpPortal = null;
         
-        // Sistem Pengecekan Cerdas (Smart Waiter)
-        for(let i = 0; i < 15; i++){
-            // Mencari input NIK
-            inpPortal = document.querySelector('input[name="NIK"], input[placeholder*="NIK" i], input.ant-input');
-            
-            if (inpPortal && inpPortal.offsetParent !== null) {
-                break; 
-            }
-            await wait(1000); 
+        // Loop tunggu kolom NIK sampai 10 detik
+        for(let i = 0; i < 10; i++){
+            // Mencari input dengan placeholder NIK atau class ant-input
+            inpPortal = document.querySelector('input[placeholder*="NIK" i], input[name="nik" i], .ant-input');
+            if (inpPortal && inpPortal.offsetParent !== null) break;
+            await wait(1000);
         }
 
         if (!inpPortal) {
-            throw new Error("Kolom NIK tidak ditemukan setelah klik Daftar Baru.");
+            throw new Error("Kolom NIK gagal muncul setelah 10 detik.");
         }
 
-        console.log("[BOT] Kolom NIK Ditemukan! Menginjeksi data...");
+        console.log("[BOT] Kolom NIK ditemukan, mengisi data:", val);
         forceInject(inpPortal, val);
-
         await wait(1000);
 
-        const btnCek = Array.from(
-            document.querySelectorAll('.tracking-wide, button')
-        ).find(el =>
-            (el.innerText || '').toLowerCase().includes('cek nik') ||
-            (el.innerText || '').toLowerCase().includes('cari')
+        // Cari tombol Cari/Cek
+        const btnCek = Array.from(document.querySelectorAll('button')).find(el => 
+            (el.innerText || "").toLowerCase().includes("cek") || 
+            (el.innerText || "").toLowerCase().includes("cari")
         );
 
         if (btnCek) {
-            await ultraClick(
-                btnCek.closest('button') || btnCek
-            );
+            console.log("[BOT] Mengklik tombol Cari/Cek...");
+            btnCek.click();
+        } else {
+            console.warn("[BOT] Tombol Cari/Cek tidak ditemukan.");
         }
 
         await wait(3000);
 
-        const isDataDitemukan =
-            document.body.innerText.includes('Data Peserta ditemukan') ||
-            document.body.innerText.includes('sudah terdaftar');
-
-        if (isDataDitemukan) {
-            console.log('[BOT] NIK sudah terdaftar sebelumnya.');
+        // Ambil data
+        const data = await cariData(val);
+        if (data) {
+            await autoPilotSikatHabis(data);
+            return true;
+        } else {
+            console.error("[BOT] Gagal melanjutkan: Data Spreadsheet tidak ada.");
             return false;
         }
 
-        const data = await cariData(val);
-
-        if (data) {
-            try { 
-                GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); 
-                GM_setValue('AUTO_CKG_DATA', JSON.stringify(data)); 
-            } catch(e) {}
-            
-            await autoPilotSikatHabis(data);
-            return true;
-        }
-
-        console.log('[BOT] Data tidak ditemukan di Spreadsheet.');
-        return false;
-
     } catch (err) {
-        console.log('[BOT ERROR]', err);
+        console.error("[BOT ERROR]", err);
         return false;
     } finally {
         isProcessing = false;
