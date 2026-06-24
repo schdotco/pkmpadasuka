@@ -573,14 +573,17 @@ window.runRegisterCKG = async function(nik){
 
     try {
         console.log("[BOT] Mencari tombol Daftar Baru...");
-        const daftarBaruBtn = Array.from(document.querySelectorAll('button, div')).find(el => 
-            (el.innerText || "").trim().includes("Daftar Baru") && el.offsetParent !== null
+        // Kita cari spesifik <button> yang membungkus teks "Daftar Baru"
+        const daftarBaruBtn = Array.from(document.querySelectorAll('button')).find(btn => 
+            (btn.innerText || "").includes("Daftar Baru") && btn.offsetParent !== null
         );
 
         if (daftarBaruBtn) {
-            console.log("[BOT] Tombol Daftar Baru ditemukan. Mengklik...");
-            daftarBaruBtn.click();
-            await wait(2000); // Tunggu form muncul
+            console.log("[BOT] Tombol Daftar Baru ditemukan. Mengklik menggunakan ultraClick...");
+            await ultraClick(daftarBaruBtn); // Menggunakan ultraClick bawaan script yang lebih ampuh
+            await wait(2500); // Tunggu form muncul
+        } else {
+            console.log("[BOT] Tombol Daftar Baru tidak ditemukan atau sudah terbuka.");
         }
 
         console.log("[BOT] Menunggu kolom NIK muncul...");
