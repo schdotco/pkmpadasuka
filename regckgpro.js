@@ -129,51 +129,53 @@ async function prosesVerifikasi() {
 }
 
 /* ================= TARIK DATA SPREADSHEET ================= */
-function parseCSV(text){
-    const rows = []; let row = []; let current = ""; let insideQuote = false;
-    for(let i=0;i<text.length;i++){
-        const char = text[i]; const next = text[i+1];
-        if(char === '"'){ if(insideQuote && next === '"'){ current += '"'; i++; }else{ insideQuote = !insideQuote; } }
-        else if(char === ',' && !insideQuote){ row.push(current); current = ""; }
-        else if((char === '\n' || char === '\r') && !insideQuote){ if(current || row.length){ row.push(current); rows.push(row); row = []; current = ""; } }
-        else{ current += char; }
-    }
-    if(current || row.length){ row.push(current); rows.push(row); }
-    return rows;
-}
+/* ================= TARIK DATA SPREADSHEET ================= */
+// Variabel untuk menyimpan data agar tidak perlu download berulang-ulang
+let cachedSheetData = null; 
 
 async function cariData(nikInput){
     const target = normalizeNIK(nikInput);
     console.log("[BOT] Mencari NIK:", target, "di Spreadsheet...");
     
-    // Pastikan data spreadsheet tersedia
-    if (!cachedSheetData) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    
-    if (!cachedSheetData) {
-        console.error("[BOT] cachedSheetData kosong! Spreadsheet belum terdownload.");
-        return null;
+    try {
+        // Jika data belum ada di memori, bot akan mendownloadnya dari Google Sheets
+        if (!cachedSheetData) {
+            console.log("[BOT] Mengunduh database dari Google Sheets...");
+            const url = `https://docs.google.com/spreadsheets/d/${SHEETS[0].id}/gviz/tq?tqx=out:json&tq&gid=${SHEETS[0].gids[0]}`;
+            const res = await fetch(url);
+            const txt = await res.text();
+            
+            // Membaca format JSON dari Google Visualization API
+            const json = JSON.parse(txt.substring(47, txt.length - 2));
+            cachedSheetData = json.table.rows;
+            console.log("[BOT] Database berhasil diunduh. Total baris:", cachedSheetData.length);
+        }
+
+        // Mulai mencocokkan NIK di dalam data yang sudah didownload
+        for(const r of cachedSheetData){
+            // Memetakan sel data menjadi array string
+            const row = r.c.map(x => x ? String(x.v || '') : '');
+            
+            // Cek apakah NIK cocok (Asumsi NIK ada di kolom index 0, 1, atau 11)
+            if(normalizeNIK(row[0]) === target || normalizeNIK(row[1]) === target || normalizeNIK(row[11]) === target){
+                console.log("[BOT] Data ditemukan untuk NIK:", target);
+                return {
+                    nik: target,
+                    nama: row[SHEETS[0].colNama] || '',
+                    tgl: row[SHEETS[0].colTgl] || '',
+                    hp: row[SHEETS[0].colWA] || '',
+                    jk: row[SHEETS[0].colJK] || '',
+                    alamat: row[SHEETS[0].colAlamat] || '',
+                    pekerjaan: row[SHEETS[0].colPekerjaan] || '',
+                    kelurahan: row[SHEETS[0].colKelurahan] || '',
+                    Martial: row[SHEETS[0].colMartial] || ''
+                };
+            }
+        }
+    } catch (e) {
+        console.error("[BOT ERROR] Gagal mengunduh atau membaca data Spreadsheet:", e);
     }
 
-    for(const r of cachedSheetData){
-        const cells = r.c.map(x => x ? String(x.v || '') : '');
-        // Mencari NIK di kolom yang relevan
-        if(normalizeNIK(cells[0]) === target || normalizeNIK(cells[1]) === target || normalizeNIK(cells[11]) === target){
-            console.log("[BOT] Data ditemukan untuk NIK:", target);
-            return {
-                nik: target,
-                nama: cells[7] || '',
-                tgl: cells[8] || '',
-                hp: cells[20] || '',
-                jk: cells[6] || '',
-                alamat: cells[14] || '',
-                pekerjaan: cells[22] || '',
-                kelurahan: cells[17] || '',
-                Martial: cells[21] || ''
-            };
-        }
-    }
     console.warn("[BOT] NIK tidak ditemukan di data spreadsheet.");
     return null; 
 }
