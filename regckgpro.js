@@ -28,10 +28,13 @@ let loadingEl = null;
 function showLoading(text){
     if(loadingEl) { loadingEl.querySelector('#loadText').innerHTML = text; return; }
     loadingEl = document.createElement("div");
-    // Menambahkan pointer-events: none agar klik bisa menembus overlay
     loadingEl.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;color:#00ff88;font-size:20px;font-weight:bold;text-align:center;flex-direction:column;pointer-events:none;";
     loadingEl.innerHTML = `<div style="background:#111;padding:30px;border-radius:12px;border:3px solid #00ff88;box-shadow:0 0 20px #00ff88;"><span id="loadText">${text}</span><br><br><div style="margin:auto;border:6px solid #333;border-top:6px solid #00ff88;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;"></div></div>`;
     document.body.appendChild(loadingEl);
+}
+
+function hideLoading(){ 
+    if(loadingEl){ loadingEl.remove(); loadingEl = null; } 
 }
 /* ================= LOGIKA DATA & SAFE CLICK ================= */
 const normalizeNIK = v => String(v || "").replace(/\D/g, '');
