@@ -572,33 +572,36 @@ window.runRegisterCKG = async function(nik){
     try {
         console.log("[BOT] Memulai proses...");
         
-    // --- REVISI: AUTO KLIK DAFTAR BARU (LEBIH STABIL) ---
-        const daftarBaruBtn = Array.from(document.querySelectorAll('div, button, span')).find(el => 
-            (el.innerText || "").trim() === "Daftar Baru" && 
-            el.offsetParent !== null
+    // --- REVISI: AUTO KLIK DAFTAR BARU (PRESISI SESUAI HTML) ---
+        // Kita targetkan <button> yang di dalamnya mengandung teks "Daftar Baru"
+        const daftarBaruBtn = Array.from(document.querySelectorAll('button')).find(btn => 
+            btn.innerText.includes("Daftar Baru") && 
+            btn.offsetParent !== null // Memastikan tombol terlihat
         );
 
         if (daftarBaruBtn) {
-            console.log("[BOT] Menemukan tombol 'Daftar Baru'. Mengklik...");
+            console.log("[BOT] Menemukan tombol Daftar Baru. Mengeksekusi klik...");
             
-            // 1. Fokuskan pandangan
+            // 1. Fokus ke elemen
             daftarBaruBtn.scrollIntoView({ behavior: 'instant', block: 'center' });
             await wait(500);
             
-            // 2. Klik Native (Cara paling aman tanpa memicu Error MouseEvent)
+            // 2. Klik Native (Paling aman, tidak akan memicu error MouseEvent)
             daftarBaruBtn.click();
             
-            // 3. Fallback: Klik manual via event sederhana jika .click() gagal
+            // 3. Fallback: Trigger event click sederhana jika click() native tidak cukup
             const event = new MouseEvent('click', {
                 bubbles: true,
                 cancelable: true
             });
             daftarBaruBtn.dispatchEvent(event);
             
-            await wait(3000); // Tunggu form NIK muncul
+            console.log("[BOT] Klik terkirim. Menunggu form NIK muncul...");
+            await wait(3000); // Tunggu sistem merender kolom NIK
         } else {
-            console.log("[BOT] Tombol 'Daftar Baru' tidak ditemukan atau sudah terbuka.");
+            console.log("[BOT] Tombol 'Daftar Baru' tidak ditemukan.");
         }
+
         // ------------------------------------------------
 
         console.log("[BOT] Menunggu halaman memuat kolom NIK secara sempurna...");
