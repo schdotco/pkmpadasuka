@@ -572,18 +572,32 @@ window.runRegisterCKG = async function(nik){
     try {
         console.log("[BOT] Memulai proses...");
         
-        // --- TAMBAHAN: AUTO KLIK TOMBOL "DAFTAR BARU" ---
-        // Mencari tombol yang mengandung teks "Daftar Baru"
-        const daftarBaruBtn = Array.from(document.querySelectorAll('button, div')).find(el => 
-            (el.innerText || "").trim().includes("Daftar Baru")
+    // --- REVISI: AUTO KLIK DAFTAR BARU (LEBIH STABIL) ---
+        const daftarBaruBtn = Array.from(document.querySelectorAll('div, button, span')).find(el => 
+            (el.innerText || "").trim() === "Daftar Baru" && 
+            el.offsetParent !== null
         );
 
         if (daftarBaruBtn) {
-            console.log("[BOT] Mengklik Daftar Baru via Event Listener...");
-            // Trigger klik yang lebih mendalam
-            daftarBaruBtn.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, view: window}));
-            daftarBaruBtn.click(); 
-            await wait(3000); // Tunggu lebih lama
+            console.log("[BOT] Menemukan tombol 'Daftar Baru'. Mengklik...");
+            
+            // 1. Fokuskan pandangan
+            daftarBaruBtn.scrollIntoView({ behavior: 'instant', block: 'center' });
+            await wait(500);
+            
+            // 2. Klik Native (Cara paling aman tanpa memicu Error MouseEvent)
+            daftarBaruBtn.click();
+            
+            // 3. Fallback: Klik manual via event sederhana jika .click() gagal
+            const event = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true
+            });
+            daftarBaruBtn.dispatchEvent(event);
+            
+            await wait(3000); // Tunggu form NIK muncul
+        } else {
+            console.log("[BOT] Tombol 'Daftar Baru' tidak ditemukan atau sudah terbuka.");
         }
         // ------------------------------------------------
 
