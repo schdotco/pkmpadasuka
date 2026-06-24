@@ -144,23 +144,19 @@ function parseCSV(text){
 
 async function cariData(nikInput){
     const target = normalizeNIK(nikInput);
-    for(const source of SHEETS){
-        for(const gid of source.gids){
-            const csv = await new Promise(resolve => {
-                request({
-                    method: "GET", url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
-                    timeout: 10000, onload: r => resolve(r.responseText || ""), onerror: () => resolve("")
-                });
-            });
+    try {
+        // Gunakan API Google Visualization yang lebih stabil untuk data JSON
+        const url = `https://docs.google.com/spreadsheets/d/${SHEETS[0].id}/gviz/tq?tqx=out:json&tq&gid=${SHEETS[0].gids[0]}`;
+        const res = await fetch(url);
+        const txt = await res.text();
+        const json = JSON.parse(txt.substring(47, txt.length - 2));
+        const rows = json.table.rows;
 
-            if(!csv || csv.trim()==="") continue;
-            const rows = parseCSV(csv);
-            let waD2 = (source.waStatis && rows[1]) ? normalizeNIK(rows[1][3]) : "";
-
-            for(let i=1;i<rows.length;i++){
-                const row = rows[i];
-                if(row.find(col => normalizeNIK(col) === target)){
-                    return {
+        for(let r of rows){
+            const row = r.c.map(c => c ? String(c.v || "") : "");
+            // Cek NIK (Asumsi NIK di kolom index 0 atau 1)
+            if(normalizeNIK(row[0]) === target || normalizeNIK(row[1]) === target){
+                return {
                         nik: target,
                         nama: (row[source.colNama] || "").trim(),
                         tgl: (row[source.colTgl] || "").trim(),
@@ -173,11 +169,10 @@ async function cariData(nikInput){
                         disabilitas: (row[source.colDisabilitas] || "").trim(),
                         Martial: (row[source.colMartial] || "").trim(),
                         kelas: (row[source.colKelas] || "").trim()
-                    };
-                }
+};
             }
         }
-    }
+    } catch(e) { console.error("Gagal ambil data:", e); }
     return null;
 }
 
@@ -579,17 +574,16 @@ window.runRegisterCKG = async function(nik){
         
         // --- TAMBAHAN: AUTO KLIK TOMBOL "DAFTAR BARU" ---
         // Mencari tombol yang mengandung teks "Daftar Baru"
-        const daftarBaruBtn = Array.from(document.querySelectorAll('div, button, span')).find(el => 
-            (el.innerText || "").trim() === "Daftar Baru" && 
-            el.offsetParent !== null // Harus terlihat di layar
+        const daftarBaruBtn = Array.from(document.querySelectorAll('button, div')).find(el => 
+            (el.innerText || "").trim().includes("Daftar Baru")
         );
 
         if (daftarBaruBtn) {
-            console.log("[BOT] Tombol 'Daftar Baru' ditemukan, mengklik sekarang...");
-            await ultraClick(daftarBaruBtn);
-            await wait(2000); // Tunggu sampai kolom NIK muncul setelah klik
-        } else {
-            console.log("[BOT] Tombol 'Daftar Baru' tidak ditemukan, mungkin sudah terbuka.");
+            console.log("[BOT] Mengklik Daftar Baru via Event Listener...");
+            // Trigger klik yang lebih mendalam
+            daftarBaruBtn.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, view: window}));
+            daftarBaruBtn.click(); 
+            await wait(3000); // Tunggu lebih lama
         }
         // ------------------------------------------------
 
