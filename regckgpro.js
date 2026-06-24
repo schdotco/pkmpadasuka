@@ -128,56 +128,57 @@ async function prosesVerifikasi() {
     }
 }
 
-/* ================= TARIK DATA SPREADSHEET ================= */
-/* ================= TARIK DATA SPREADSHEET ================= */
-// Variabel untuk menyimpan data agar tidak perlu download berulang-ulang
-let cachedSheetData = null; 
+/* ================= TARIK DATA SPREADSHEET (ASLI) ================= */
+function parseCSV(text){
+    const rows = []; let row = []; let current = ""; let insideQuote = false;
+    for(let i=0;i<text.length;i++){
+        const char = text[i]; const next = text[i+1];
+        if(char === '"'){ if(insideQuote && next === '"'){ current += '"'; i++; }else{ insideQuote = !insideQuote; } }
+        else if(char === ',' && !insideQuote){ row.push(current); current = ""; }
+        else if((char === '\n' || char === '\r') && !insideQuote){ if(current || row.length){ row.push(current); rows.push(row); row = []; current = ""; } }
+        else{ current += char; }
+    }
+    if(current || row.length){ row.push(current); rows.push(row); }
+    return rows;
+}
 
 async function cariData(nikInput){
     const target = normalizeNIK(nikInput);
-    console.log("[BOT] Mencari NIK:", target, "di Spreadsheet...");
-    
-    try {
-        // Jika data belum ada di memori, bot akan mendownloadnya dari Google Sheets
-        if (!cachedSheetData) {
-            console.log("[BOT] Mengunduh database dari Google Sheets...");
-            const url = `https://docs.google.com/spreadsheets/d/${SHEETS[0].id}/gviz/tq?tqx=out:json&tq&gid=${SHEETS[0].gids[0]}`;
-            const res = await fetch(url);
-            const txt = await res.text();
-            
-            // Membaca format JSON dari Google Visualization API
-            const json = JSON.parse(txt.substring(47, txt.length - 2));
-            cachedSheetData = json.table.rows;
-            console.log("[BOT] Database berhasil diunduh. Total baris:", cachedSheetData.length);
-        }
+    for(const source of SHEETS){
+        for(const gid of source.gids){
+            const csv = await new Promise(resolve => {
+                request({
+                    method: "GET", url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
+                    timeout: 10000, onload: r => resolve(r.responseText || ""), onerror: () => resolve("")
+                });
+            });
 
-        // Mulai mencocokkan NIK di dalam data yang sudah didownload
-        for(const r of cachedSheetData){
-            // Memetakan sel data menjadi array string
-            const row = r.c.map(x => x ? String(x.v || '') : '');
-            
-            // Cek apakah NIK cocok (Asumsi NIK ada di kolom index 0, 1, atau 11)
-            if(normalizeNIK(row[0]) === target || normalizeNIK(row[1]) === target || normalizeNIK(row[11]) === target){
-                console.log("[BOT] Data ditemukan untuk NIK:", target);
-                return {
-                    nik: target,
-                    nama: row[SHEETS[0].colNama] || '',
-                    tgl: row[SHEETS[0].colTgl] || '',
-                    hp: row[SHEETS[0].colWA] || '',
-                    jk: row[SHEETS[0].colJK] || '',
-                    alamat: row[SHEETS[0].colAlamat] || '',
-                    pekerjaan: row[SHEETS[0].colPekerjaan] || '',
-                    kelurahan: row[SHEETS[0].colKelurahan] || '',
-                    Martial: row[SHEETS[0].colMartial] || ''
-                };
+            if(!csv || csv.trim()==="") continue;
+            const rows = parseCSV(csv);
+            let waD2 = (source.waStatis && rows[1]) ? normalizeNIK(rows[1][3]) : "";
+
+            for(let i=1;i<rows.length;i++){
+                const row = rows[i];
+                if(row.find(col => normalizeNIK(col) === target)){
+                    return {
+                        nik: target,
+                        nama: (row[source.colNama] || "").trim(),
+                        tgl: (row[source.colTgl] || "").trim(),
+                        hp: waD2 || (row[source.colWA] || "").replace(/\D/g,''),
+                        jk: (row[source.colJK] || "").trim(),
+                        alamat: (row[source.colAlamat] || "").trim(),
+                        pekerjaan: (row[source.colPekerjaan] || "").trim(),
+                        kelurahan: (row[source.colKelurahan] || "").trim(),
+                        sekolah: (row[source.colSekolah] || "").trim(),
+                        disabilitas: (row[source.colDisabilitas] || "").trim(),
+                        Martial: (row[source.colMartial] || "").trim(),
+                        kelas: (row[source.colKelas] || "").trim()
+                    };
+                }
             }
         }
-    } catch (e) {
-        console.error("[BOT ERROR] Gagal mengunduh atau membaca data Spreadsheet:", e);
     }
-
-    console.warn("[BOT] NIK tidak ditemukan di data spreadsheet.");
-    return null; 
+    return null;
 }
 
 /* ================= ENGINE ALAMAT WILAYAH VUE (BARU) ================= */
@@ -562,14 +563,10 @@ async function tuntaskanRegistrasiDanKonfirmasi() {
     }
 }
 
-
 /* ================= UI KONTROL & DRAGGABLE LOGIC ================= */
 window.runRegisterCKG = async function(nik){
     let val = String(nik || '').replace(/\D/g,'');
-    if (val.length !== 16) {
-        console.error("[BOT] NIK tidak valid:", val);
-        return false;
-    }
+    if (val.length !== 16) return false;
     if (isProcessing) return false;
     isProcessing = true;
 
@@ -580,28 +577,20 @@ window.runRegisterCKG = async function(nik){
         let daftarBaruBtn = null;
         const elements = document.querySelectorAll('div, button, span');
         for (let el of elements) {
-            // Cek text murni di dalam tag tersebut
             if ((el.innerText || el.textContent || "").trim() === "Daftar Baru") {
-                // Ambil parent button-nya, atau gunakan elemen itu sendiri
                 daftarBaruBtn = el.closest('button') || el;
                 if (daftarBaruBtn.offsetParent !== null) {
-                    break; // Tombol ketemu dan tampil di layar
+                    break;
                 }
             }
         }
 
         if (daftarBaruBtn) {
             console.log("[BOT] Tombol Daftar Baru ditemukan. Memaksa Klik Native...");
-            
-            // Menggunakan klik native bawaan JS.
-            // Cara ini langsung men-trigger Event DOM tanpa menggunakan koordinat XY,
-            // sehingga elemen <rect class="mask target"> di atasnya TIDAK akan menghalangi klik.
+            // .click() langsung menembus <rect class="mask target"> yang menghalangi pointer
             daftarBaruBtn.click();
-            
-            // Fallback memicu Event jika click() murni diblokir kerangka Vue
             daftarBaruBtn.dispatchEvent(new Event('click', { bubbles: true }));
-            
-            await wait(2500); // Tunggu form NIK muncul
+            await wait(2500); 
         } else {
             console.log("[BOT] Tombol Daftar Baru tidak ditemukan atau form sudah terbuka.");
         }
@@ -612,7 +601,6 @@ window.runRegisterCKG = async function(nik){
         
         // Loop tunggu kolom NIK sampai 10 detik
         for(let i = 0; i < 10; i++){
-            // Mencari input dengan placeholder NIK atau class ant-input
             inpPortal = document.querySelector('input[placeholder*="NIK" i], input[name="nik" i], .ant-input');
             if (inpPortal && inpPortal.offsetParent !== null) break;
             await wait(1000);
@@ -626,7 +614,6 @@ window.runRegisterCKG = async function(nik){
         forceInject(inpPortal, val);
         await wait(1000);
 
-        // Cari tombol Cari/Cek
         const btnCek = Array.from(document.querySelectorAll('button')).find(el => 
             (el.innerText || "").toLowerCase().includes("cek") || 
             (el.innerText || "").toLowerCase().includes("cari")
@@ -635,19 +622,22 @@ window.runRegisterCKG = async function(nik){
         if (btnCek) {
             console.log("[BOT] Mengklik tombol Cari/Cek...");
             btnCek.click();
-        } else {
-            console.warn("[BOT] Tombol Cari/Cek tidak ditemukan.");
         }
 
         await wait(3000);
 
-        // Ambil data
+        // Menggunakan kembali fungsi Asli cariData()
         const data = await cariData(val);
         if (data) {
+            try { 
+                GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); 
+                GM_setValue('AUTO_CKG_DATA', JSON.stringify(data)); 
+            } catch(e) {}
+            
             await autoPilotSikatHabis(data);
             return true;
         } else {
-            console.error("[BOT] Gagal melanjutkan: Data Spreadsheet tidak ada.");
+            console.log('[BOT] Data tidak ditemukan di Spreadsheet.');
             return false;
         }
 
@@ -665,7 +655,6 @@ setTimeout(() => {
         const isBotActive = GM_getValue('BOT_RUNNING_STATE', false);
         const masterNIK = GM_getValue('MASTER_NIK_INPUT', '');
         
-        // Jika Master Launcher mengirim NIK dan Bot statusnya aktif, langsung eksekusi
         if (isBotActive && masterNIK.length >= 16) {
             console.log("[BOT] Terhubung dengan Master UI! Otomatis memproses NIK:", masterNIK);
             window.runRegisterCKG(masterNIK);
@@ -673,6 +662,6 @@ setTimeout(() => {
     } catch (e) {
         console.log("[BOT] Jembatan Master UI tidak aktif/terjadi error:", e);
     }
-}, 2500); // Tunggu website selesai loading (2.5 detik)
+}, 2500); 
 
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
