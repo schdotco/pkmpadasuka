@@ -69,6 +69,36 @@ function getInput(keyword){
     return null;
 }
 
+async function clickThroughOverlay(element) {
+    if (!element) return;
+    
+    // Ambil koordinat tombol
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    
+    // Cari elemen apa yang ada di posisi kursor tersebut
+    const topElement = document.elementFromPoint(x, y);
+    
+    // Jika elemen teratas BUKAN tombol kita (berarti terhalang mask), matikan pointer-nya
+    let originalPointerEvents = '';
+    if (topElement && topElement !== element && !element.contains(topElement)) {
+        console.log("[BOT] Terdeteksi overlay, menembus overlay...");
+        originalPointerEvents = topElement.style.pointerEvents;
+        topElement.style.pointerEvents = 'none'; // Overlay jadi tidak bisa diklik
+    }
+    
+    // Klik tombol
+    element.click();
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    
+    // Kembalikan kondisi overlay (jika tadi dimatikan)
+    await wait(100);
+    if (originalPointerEvents !== '') {
+        topElement.style.pointerEvents = originalPointerEvents;
+    }
+}
+
 async function ultraClick(el){
     if(!el) return false;
     const rect = el.getBoundingClientRect();
@@ -635,6 +665,7 @@ window.runRegisterCKG = async function(nik){
             const mouseEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
             btnTarget.dispatchEvent(mouseEvent);
             
+            await clickThroughOverlay(btnTarget);
             await wait(3000); // Tunggu sistem merender pop-up kolom NIK
         } else {
             console.log("[BOT] Tombol Daftar Baru tidak ditemukan di layar visual.");
