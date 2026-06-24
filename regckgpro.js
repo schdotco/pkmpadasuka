@@ -571,52 +571,41 @@ window.runRegisterCKG = async function(nik){
     isProcessing = true;
 
     try {
-        console.log("[BOT] Memulai proses, menonaktifkan overlay yang menghalangi klik...");
+        console.log("[BOT] Memulai proses, mencari tombol Daftar Baru...");
         
-        // --- BOM KLIK & PENEMBUS OVERLAY ---
-        // 1. Lumpuhkan semua "kaca transparan" (mask/overlay) agar ultraClick bisa tembus
-        document.querySelectorAll('rect.mask, .mask, [class*="overlay"], [class*="driver"]').forEach(el => {
-            try { 
-                el.style.pointerEvents = 'none'; 
-                el.style.display = 'none'; 
-            } catch(e) {}
-        });
-        await wait(500);
+        // --- BOM KLIK ABSOLUT: Mengatasi tombol siluman dan proteksi Vue ---
+        // Kita cari semua tombol yang mengandung teks "Daftar Baru"
+        const semuaTombol = Array.from(document.querySelectorAll('button')).filter(btn => 
+            (btn.innerText || "").includes("Daftar Baru") && 
+            btn.offsetWidth > 0 && btn.offsetHeight > 0 // Memastikan tombol BENAR-BENAR ada fisiknya di layar
+        );
 
-        let textNode = null;
-        let daftarBaruBtn = null;
-        
-        // 2. Cari elemen teks-nya dan elemen button pembungkusnya
-        const elements = document.querySelectorAll('div, span');
-        for (let el of elements) {
-            if ((el.innerText || "").trim() === "Daftar Baru") {
-                textNode = el;
-                // Ambil bungkusnya, entah itu <button> atau div.bg-primaryColor
-                daftarBaruBtn = el.closest('button') || el.closest('.bg-primaryColor') || el;
-                if (daftarBaruBtn.offsetParent !== null) {
-                    break;
-                }
-            }
-        }
+        if (semuaTombol.length > 0) {
+            // Kita ambil tombol TERAKHIR di struktur DOM yang memenuhi syarat 
+            // (biasanya ini adalah versi desktop/layar penuh yang sedang aktif)
+            const btnTarget = semuaTombol[semuaTombol.length - 1];
+            console.log("[BOT] Tombol Daftar Baru (Visual Aktif) ditemukan! Mengeksekusi Bom Klik...");
 
-        if (daftarBaruBtn) {
-            console.log("[BOT] Tombol Daftar Baru ditemukan. Melakukan BOM KLIK berlapis...");
-            
-            // Lapis 1: ultraClick (karena overlay sudah dilumpuhkan di atas, ini pasti mengenai tombol)
-            await ultraClick(daftarBaruBtn);
-            
-            // Lapis 2: Native JS click ke bungkus terluar
-            daftarBaruBtn.click();
-            
-            // Lapis 3: Native JS click langsung ke teks putihnya
-            if(textNode) textNode.click();
-            
-            // Lapis 4: Pancing Event Listener Vue
-            daftarBaruBtn.dispatchEvent(new Event('click', { bubbles: true }));
+            // 1. Gulir layar ke arah tombol
+            btnTarget.scrollIntoView({ behavior: 'instant', block: 'center' });
+            await wait(500);
 
-            await wait(3000); 
+            // 2. Klik SETIAP elemen yang ada di dalam tombol (Ikon Plus, Text 'Daftar Baru', dll)
+            const anakElemen = btnTarget.querySelectorAll('*');
+            anakElemen.forEach(el => {
+                try { el.click(); } catch(e){}
+            });
+
+            // 3. Klik tombol utamanya
+            btnTarget.click();
+
+            // 4. Trigger mouse event palsu untuk mengelabui proteksi *isTrusted*
+            const mouseEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+            btnTarget.dispatchEvent(mouseEvent);
+            
+            await wait(3000); // Tunggu sistem merender pop-up kolom NIK
         } else {
-            console.log("[BOT] Tombol Daftar Baru tidak ditemukan atau form sudah terbuka.");
+            console.log("[BOT] Tombol Daftar Baru tidak ditemukan di layar visual.");
         }
         // -----------------------------------------------------------
 
