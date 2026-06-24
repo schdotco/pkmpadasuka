@@ -571,14 +571,28 @@ window.runRegisterCKG = async function(nik){
     isProcessing = true;
 
     try {
-        console.log("[BOT] Mencari tombol Daftar Baru...");
+        console.log("[BOT] Memulai proses, menonaktifkan overlay yang menghalangi klik...");
         
-        // --- PERBAIKAN: MENEMBUS LAYER MASK/OVERLAY SECARA NATIVE ---
+        // --- BOM KLIK & PENEMBUS OVERLAY ---
+        // 1. Lumpuhkan semua "kaca transparan" (mask/overlay) agar ultraClick bisa tembus
+        document.querySelectorAll('rect.mask, .mask, [class*="overlay"], [class*="driver"]').forEach(el => {
+            try { 
+                el.style.pointerEvents = 'none'; 
+                el.style.display = 'none'; 
+            } catch(e) {}
+        });
+        await wait(500);
+
+        let textNode = null;
         let daftarBaruBtn = null;
-        const elements = document.querySelectorAll('div, button, span');
+        
+        // 2. Cari elemen teks-nya dan elemen button pembungkusnya
+        const elements = document.querySelectorAll('div, span');
         for (let el of elements) {
-            if ((el.innerText || el.textContent || "").trim() === "Daftar Baru") {
-                daftarBaruBtn = el.closest('button') || el;
+            if ((el.innerText || "").trim() === "Daftar Baru") {
+                textNode = el;
+                // Ambil bungkusnya, entah itu <button> atau div.bg-primaryColor
+                daftarBaruBtn = el.closest('button') || el.closest('.bg-primaryColor') || el;
                 if (daftarBaruBtn.offsetParent !== null) {
                     break;
                 }
@@ -586,11 +600,21 @@ window.runRegisterCKG = async function(nik){
         }
 
         if (daftarBaruBtn) {
-            console.log("[BOT] Tombol Daftar Baru ditemukan. Memaksa Klik Native...");
-            // .click() langsung menembus <rect class="mask target"> yang menghalangi pointer
+            console.log("[BOT] Tombol Daftar Baru ditemukan. Melakukan BOM KLIK berlapis...");
+            
+            // Lapis 1: ultraClick (karena overlay sudah dilumpuhkan di atas, ini pasti mengenai tombol)
+            await ultraClick(daftarBaruBtn);
+            
+            // Lapis 2: Native JS click ke bungkus terluar
             daftarBaruBtn.click();
+            
+            // Lapis 3: Native JS click langsung ke teks putihnya
+            if(textNode) textNode.click();
+            
+            // Lapis 4: Pancing Event Listener Vue
             daftarBaruBtn.dispatchEvent(new Event('click', { bubbles: true }));
-            await wait(2500); 
+
+            await wait(3000); 
         } else {
             console.log("[BOT] Tombol Daftar Baru tidak ditemukan atau form sudah terbuka.");
         }
