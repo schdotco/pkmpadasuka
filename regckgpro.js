@@ -544,25 +544,23 @@ async function autoPilotSikatHabis(data) {
 
 /* ================= FUNGSI BARU: PENYELESAIAN & TIKET ================= */
 async function tuntaskanRegistrasiDanKonfirmasi() {
-    console.log("[BOT] Masuk ke tahap final: Tandai Hadir...");
+    console.log("[BOT] Memproses Konfirmasi Kehadiran (Sistem Validasi State)...");
     
-    // 1. Cari elemen tiket
+    // 1. Cari & Input Tiket
     let tiketEl = null;
-    while(true){
+    for(let i=0; i<10; i++){
         tiketEl = Array.from(document.querySelectorAll('div')).find(el => (el.innerText || "").includes("No. Tiket:"));
         if(tiketEl) break;
         await wait(1000); 
     }
     
-    const match = tiketEl.innerText.match(/No\. Tiket:\s*([A-Z0-9-]+)/);
+    const match = tiketEl?.innerText.match(/No\. Tiket:\s*([A-Z0-9-]+)/);
     const kodeTiket = match ? match[1] : null;
     
-    // 2. Tutup modal/overlay jika ada
     const btnTutup = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Tutup"));
     if (btnTutup) await ultraClick(btnTutup);
     await wait(1000);
 
-    // 3. Masukkan kode tiket untuk verifikasi
     const inpTiket = document.getElementById("searchNik");
     if (inpTiket && kodeTiket) {
         forceInject(inpTiket, kodeTiket);
@@ -570,7 +568,7 @@ async function tuntaskanRegistrasiDanKonfirmasi() {
         await wait(2000);
     }
 
-    // 4. Klik Konfirmasi Hadir
+    // 2. Klik Konfirmasi Hadir
     let btnKonfirmasi = null;
     for(let i=0; i<10; i++){
         btnKonfirmasi = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Konfirmasi Hadir"));
@@ -580,49 +578,55 @@ async function tuntaskanRegistrasiDanKonfirmasi() {
     if (btnKonfirmasi) await ultraClick(btnKonfirmasi);
     await wait(2000);
 
-    // 5. PENYEMPURNAAN CHECKBOX (Sesuai image_be1342.jpg)
-    console.log("[BOT] Mencoba mencentang persetujuan...");
+    // 3. BOM KLIK CHECKBOX VERSI 2 (Native Setter & Keyboard Event)
+    console.log("[BOT] Menjalankan simulasi centang yang dipaksa...");
     const checkbox = document.getElementById("verify") || document.querySelector('input[type="checkbox"]');
+    
     if (checkbox) {
-        checkbox.checked = true;
-        // Trigger event agar Vue tahu checkbox sudah dicentang
-        checkbox.dispatchEvent(new Event('click', { bubbles: true }));
-        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-        checkbox.dispatchEvent(new Event('input', { bubbles: true }));
+        // Fokuskan elemen
+        checkbox.focus();
+        
+        // Paksa properti 'checked' secara native (bukan cuma visual)
+        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked').set;
+        nativeSetter.call(checkbox, true);
+        
+        // Pemicu event beruntun agar React/Vue mendeteksi perubahan
+        ['click', 'input', 'change', 'blur'].forEach(evt => {
+            checkbox.dispatchEvent(new Event(evt, { bubbles: true }));
+        });
+        
+        // Simulasi tombol SPASI (Seringkali menjadi trigger validasi form)
+        checkbox.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+        checkbox.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', bubbles: true }));
+        
+        console.log("[BOT] Checkbox telah dipaksa centang.");
     }
     
-    // JEDA LEBIH LAMA agar tombol Hadir menjadi aktif
-    await wait(2500); 
+    await wait(2000); // Jeda sistem memproses validasi
     
-    // 6. Klik tombol Hadir hanya jika sudah tidak disabled
+    // 4. KLIK HADIR (DENGAN LOOP KONTROL)
     let btnHadirFinal = null;
-    for(let i=0; i<15; i++){
+    for(let i=0; i<20; i++){
         btnHadirFinal = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Hadir"));
         
-        // Cek apakah tombol ditemukan DAN sudah tidak disabled
-        if (btnHadirFinal && !btnHadirFinal.disabled) {
-            console.log("[BOT] Tombol Hadir aktif, mengklik sekarang...");
-            await ultraClick(btnHadirFinal);
-            break;
-        } else {
-            console.log("[BOT] Menunggu tombol Hadir aktif...");
+        if (btnHadirFinal) {
+            // Kita cek tombol, jika masih disabled/ada class disabled, kita klik lagi checkboxnya
+            if (btnHadirFinal.disabled || btnHadirFinal.classList.contains('ant-btn-disabled')) {
+                console.log("[BOT] Tombol Hadir masih terkunci, mencoba centang ulang...");
+                if (checkbox) checkbox.click(); // Klik lagi sebagai cadangan
+            } else {
+                console.log("[BOT] Tombol Hadir sudah aktif! Klik!");
+                await ultraClick(btnHadirFinal);
+                break;
+            }
         }
         await wait(1000); 
     }
     await wait(2000);
 
-    // 7. Skrining mandiri
-    let btnSkrining = null;
-    for(let i=0; i<10; i++){
-        btnSkrining = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Periksa Skrining Mandiri"));
-        if(btnSkrining) break;
-        await wait(1000);
-    }
-    
-    if (btnSkrining) {
-        await ultraClick(btnSkrining);
-        console.log("[BOT] Registrasi tuntas, berpindah ke modul Skrining!");
-    }
+    // 5. Skrining mandiri
+    const btnSkrining = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Periksa Skrining Mandiri"));
+    if (btnSkrining) await ultraClick(btnSkrining);
 }
 
 /* ================= UI KONTROL & DRAGGABLE LOGIC ================= */
