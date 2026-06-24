@@ -544,7 +544,7 @@ async function autoPilotSikatHabis(data) {
 
 /* ================= FUNGSI BARU: PENYELESAIAN & TIKET ================= */
 async function tuntaskanRegistrasiDanKonfirmasi() {
-    console.log("[BOT] Memproses Konfirmasi Kehadiran (Sistem Validasi State)...");
+    console.log("[BOT] Tahap Final: Membuka tombol Hadir...");
     
     // 1. Cari & Input Tiket
     let tiketEl = null;
@@ -578,53 +578,50 @@ async function tuntaskanRegistrasiDanKonfirmasi() {
     if (btnKonfirmasi) await ultraClick(btnKonfirmasi);
     await wait(2000);
 
-    // 3. BOM KLIK CHECKBOX VERSI 2 (Native Setter & Keyboard Event)
-    console.log("[BOT] Menjalankan simulasi centang yang dipaksa...");
+    // 3. FORCE VALIDATION CHECKBOX
+    // Kita lakukan 3 langkah: Update DOM, Trigger Event, dan Force Setter
+    console.log("[BOT] Memaksa validasi checkbox...");
     const checkbox = document.getElementById("verify") || document.querySelector('input[type="checkbox"]');
     
     if (checkbox) {
-        // Fokuskan elemen
-        checkbox.focus();
+        // A. Force Property Checked secara Native (Bypass UI)
+        const nativeCheckboxSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked').set;
+        nativeCheckboxSetter.call(checkbox, true);
         
-        // Paksa properti 'checked' secara native (bukan cuma visual)
-        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked').set;
-        nativeSetter.call(checkbox, true);
-        
-        // Pemicu event beruntun agar React/Vue mendeteksi perubahan
+        // B. Trigger Rangkaian Event yang didengar oleh Vue/React
         ['click', 'input', 'change', 'blur'].forEach(evt => {
-            checkbox.dispatchEvent(new Event(evt, { bubbles: true }));
+            checkbox.dispatchEvent(new Event(evt, { bubbles: true, cancelable: true }));
         });
         
-        // Simulasi tombol SPASI (Seringkali menjadi trigger validasi form)
-        checkbox.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
-        checkbox.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', bubbles: true }));
-        
-        console.log("[BOT] Checkbox telah dipaksa centang.");
+        // C. Jeda agar website memproses perubahan state
+        await wait(1500);
     }
     
-    await wait(2000); // Jeda sistem memproses validasi
-    
-    // 4. KLIK HADIR (DENGAN LOOP KONTROL)
+    // 4. KLIK HADIR DENGAN LOOP PENGECEKAN
+    // Bot akan terus mengecek apakah tombol sudah aktif atau masih disabled
     let btnHadirFinal = null;
-    for(let i=0; i<20; i++){
+    for(let i=0; i<15; i++){
         btnHadirFinal = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Hadir"));
         
         if (btnHadirFinal) {
-            // Kita cek tombol, jika masih disabled/ada class disabled, kita klik lagi checkboxnya
-            if (btnHadirFinal.disabled || btnHadirFinal.classList.contains('ant-btn-disabled')) {
-                console.log("[BOT] Tombol Hadir masih terkunci, mencoba centang ulang...");
-                if (checkbox) checkbox.click(); // Klik lagi sebagai cadangan
-            } else {
-                console.log("[BOT] Tombol Hadir sudah aktif! Klik!");
+            // Cek apakah class disabled masih ada atau atribut disabled masih true
+            const isDisabled = btnHadirFinal.disabled || btnHadirFinal.classList.contains('ant-btn-disabled') || btnHadirFinal.classList.contains('disabled');
+            
+            if (!isDisabled) {
+                console.log("[BOT] Tombol Hadir aktif! Mengklik...");
                 await ultraClick(btnHadirFinal);
                 break;
+            } else {
+                console.log(`[BOT] Tombol masih disabled (percobaan ${i+1}/15)...`);
+                // Jika masih disabled, coba klik checkbox-nya lagi sebagai "pancingan"
+                if (checkbox) checkbox.click();
             }
         }
         await wait(1000); 
     }
     await wait(2000);
 
-    // 5. Skrining mandiri
+    // 5. Skrining
     const btnSkrining = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes("Periksa Skrining Mandiri"));
     if (btnSkrining) await ultraClick(btnSkrining);
 }
