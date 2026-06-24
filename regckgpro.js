@@ -573,18 +573,37 @@ window.runRegisterCKG = async function(nik){
 
     try {
         console.log("[BOT] Mencari tombol Daftar Baru...");
-        // Kita cari spesifik <button> yang membungkus teks "Daftar Baru"
-        const daftarBaruBtn = Array.from(document.querySelectorAll('button')).find(btn => 
-            (btn.innerText || "").includes("Daftar Baru") && btn.offsetParent !== null
-        );
+        
+        // --- PERBAIKAN: MENEMBUS LAYER MASK/OVERLAY SECARA NATIVE ---
+        let daftarBaruBtn = null;
+        const elements = document.querySelectorAll('div, button, span');
+        for (let el of elements) {
+            // Cek text murni di dalam tag tersebut
+            if ((el.innerText || el.textContent || "").trim() === "Daftar Baru") {
+                // Ambil parent button-nya, atau gunakan elemen itu sendiri
+                daftarBaruBtn = el.closest('button') || el;
+                if (daftarBaruBtn.offsetParent !== null) {
+                    break; // Tombol ketemu dan tampil di layar
+                }
+            }
+        }
 
         if (daftarBaruBtn) {
-            console.log("[BOT] Tombol Daftar Baru ditemukan. Mengklik menggunakan ultraClick...");
-            await ultraClick(daftarBaruBtn); // Menggunakan ultraClick bawaan script yang lebih ampuh
-            await wait(2500); // Tunggu form muncul
+            console.log("[BOT] Tombol Daftar Baru ditemukan. Memaksa Klik Native...");
+            
+            // Menggunakan klik native bawaan JS.
+            // Cara ini langsung men-trigger Event DOM tanpa menggunakan koordinat XY,
+            // sehingga elemen <rect class="mask target"> di atasnya TIDAK akan menghalangi klik.
+            daftarBaruBtn.click();
+            
+            // Fallback memicu Event jika click() murni diblokir kerangka Vue
+            daftarBaruBtn.dispatchEvent(new Event('click', { bubbles: true }));
+            
+            await wait(2500); // Tunggu form NIK muncul
         } else {
-            console.log("[BOT] Tombol Daftar Baru tidak ditemukan atau sudah terbuka.");
+            console.log("[BOT] Tombol Daftar Baru tidak ditemukan atau form sudah terbuka.");
         }
+        // -----------------------------------------------------------
 
         console.log("[BOT] Menunggu kolom NIK muncul...");
         let inpPortal = null;
