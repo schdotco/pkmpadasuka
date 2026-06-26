@@ -740,3 +740,5 @@ async function waitForElement(selector, timeout = 10000) {
         updateStatus('GAGAL: Halaman lambat dimuat (Timeout)');
     }
 })();
+
+})();
