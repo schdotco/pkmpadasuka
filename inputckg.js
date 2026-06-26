@@ -352,48 +352,38 @@ async function handleTelingaMata(data) {
 }
 
 /* =========================================================
-   KLIK KIRIM & VALIDASI
+   KLIK KIRIM & VALIDASI (ANTI INFINITE LOOP)
 ========================================================= */
 function isFormValid() {
     const questions = document.querySelectorAll('.sd-question, .sv-question');
-
     for (let q of questions) {
         const pertanyaan = q.innerText.toLowerCase();
-
-        // Abaikan validasi untuk pertanyaan ini (Foto Torax ditambahkan)
-        if (
-            pertanyaan.includes('pinhole') ||
-            pertanyaan.includes('funduskopi') ||
-            pertanyaan.includes('foto torax') ||
-            pertanyaan.includes('foto toraks')
-        ) {
+        // Abaikan validasi untuk pertanyaan ini
+        if (pertanyaan.includes('pinhole') || pertanyaan.includes('funduskopi') ||
+            pertanyaan.includes('foto torax') || pertanyaan.includes('foto toraks')) {
             continue;
         }
 
         const radios = q.querySelectorAll('input[type="radio"]');
-
         if (radios.length > 0) {
             const hasSelected = Array.from(radios).some(r => r.checked);
-
-            if (!hasSelected) {
-                return {
-                    valid: false,
-                    container: q
-                };
-            }
+            if (!hasSelected) return { valid: false, container: q };
         }
     }
-
     return { valid: true };
 }
 
 async function klikKirim() {
     updateStatus('Validasi form...');
     await sleep(2000);
+    
     let check = isFormValid();
-   while (!check.valid) {
+    
+    while (!check.valid) {
         updateStatus('Mengisi soal kosong...');
         const labels = check.container.querySelectorAll('label');
+        let foundDefaultAnswer = false; // Penanda apakah opsi default ketemu
+
         for (let l of labels) {
             let labelText = l.innerText.toLowerCase();
             if (labelText.includes('normal') || labelText.includes('tidak')) {
@@ -402,15 +392,26 @@ async function klikKirim() {
                     input.click();
                     input.dispatchEvent(new Event('change', { bubbles: true }));
                     await sleep(800);
-                    break; // Keluar dari loop label jika sudah mengklik satu jawaban
+                    foundDefaultAnswer = true;
+                    break; 
                 }
             }
         }
+
+        // PROTEKSI INFINITE LOOP: Jika opsi "Normal/Tidak" tidak ada di soal tersebut
+        if (!foundDefaultAnswer) {
+            console.warn("[WARNING] Soal wajib kosong tapi tidak ada opsi default (Normal/Tidak).");
+            updateStatus('Terjebak soal wajib.\nSilakan isi manual lalu klik Kirim.');
+            return false; // Hentikan loop paksa
+        }
+
         await sleep(1000);
-        check = isFormValid(); // Cek ulang, jika masih ada soal kosong lain, loop berjalan lagi
-   }
-   const btn = document.querySelector('.sd-navigation__complete-btn') ||
+        check = isFormValid(); 
+    }
+
+    const btn = document.querySelector('.sd-navigation__complete-btn') ||
                 [...document.querySelectorAll('button')].find(b => (b.innerText||'').toLowerCase().includes('kirim'));
+    
     if (btn) {
         updateStatus('Mengirim data...');
         btn.click();
@@ -433,8 +434,15 @@ async function autoContinueForm() {
     }
 
     BOT_RUNNING = true;
-    updateStatus('MENGISI FORM...');
-    await sleep(4000);
+    updateStatus('MENUNGGU FORM DIMUAT...');
+    
+    // TUNGGU SAMPAI KERANGKA SOAL MUNCUL (Maksimal tunggu 10 detik)
+    for(let i = 0; i < 10; i++) {
+        if(document.querySelector('.sd-question, .sv-question, input')) break;
+        await sleep(1000);
+    }
+    // Beri ekstra nafas 1 detik agar animasi framework selesai
+    await sleep(1000); 
 
     const title = document.body.innerText.toLowerCase();
     const realInputs = [...document.querySelectorAll('input')].filter(el =>
@@ -731,6 +739,4 @@ async function waitForElement(selector, timeout = 10000) {
     } else {
         updateStatus('GAGAL: Halaman lambat dimuat (Timeout)');
     }
-})();
-   
 })();
