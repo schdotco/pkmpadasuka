@@ -5,7 +5,7 @@
    CONFIG
 ========================================================= */
 const SHEET_ID = '15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY';
-const GID = '0';
+const GIDS = ['0', '846804574'];
 
 const TARGETS = [
     { id: 'gizi', txt: 'gizi (bb' },
@@ -65,23 +65,108 @@ function clearCompleted() {
 /* =========================================================
    DATA MATCHER (OPTIMASI DENGAN CACHE)
 ========================================================= */
+function parseCSV(text) {
+    if (!text) return [];
+    const rows = [];
+    let row = [];
+    let current = "";
+    let insideQuote = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"') {
+            if (insideQuote && next === '"') {
+                current += '"';
+                i++;
+            } else {
+                insideQuote = !insideQuote;
+            }
+        } else if (char === ',' && !insideQuote) {
+            row.push(current);
+            current = "";
+        } else if ((char === '\n' || char === '\r') && !insideQuote) {
+            if (current || row.length) {
+                row.push(current);
+                rows.push(row);
+                row = [];
+                current = "";
+            }
+        } else {
+            current += char;
+        }
+    }
+
+    if (current || row.length) {
+        row.push(current);
+        rows.push(row);
+    }
+
+    return rows;
+}
+
 let cachedSheetData = null;
 
-async function cariData(nikInput){
+async function cariData(nikInput) {
     try {
         const target = normalizeNIK(nikInput);
+        
         if (!cachedSheetData) {
             updateStatus("MENGUNDUH DATA SPREADSHEET...");
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('Gagal terhubung ke Google Sheet');
-            const txt = await res.text();
-            cachedSheetData = JSON.parse(txt.substring(47, txt.length - 2)).table.rows;
+            cachedSheetData = [];
+
+            // Looping ke semua GID yang ada di array GIDS
+            for (const gid of GIDS) {
+                console.log('Download sheet gid:', gid);
+                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+                
+                // Menggunakan fetch bawaan browser agar tidak bergantung pada library eksternal
+                const res = await fetch(url);
+                if (!res.ok) {
+                    console.warn(`[WARNING] Gagal terhubung ke GID: ${gid}`);
+                    continue;
+                }
+                
+                const csvText = await res.text();
+                if (!csvText) {
+                    console.warn(`[WARNING] Data CSV kosong pada GID: ${gid}`);
+                    continue;
+                }
+
+                const rows = parseCSV(csvText);
+
+                if (rows && rows.length > 1) {
+                    if (cachedSheetData.length === 0) {
+                        cachedSheetData = cachedSheetData.concat(rows);
+                    } else {
+                        // Buang header untuk sheet kedua dan seterusnya
+                        cachedSheetData = cachedSheetData.concat(rows.slice(1));
+                    }
+                }
+            }
+
+            console.log('[CACHE READY]', cachedSheetData.length, 'baris dari', GIDS.length, 'sheet');
         }
 
-        for(const r of cachedSheetData){
-            const cells = r.c.map(x => x ? String(x.v || '') : '');
-            if(normalizeNIK(cells[0] || cells[1] || cells[2]) === target || cells.find(col => normalizeNIK(col) === target)){
+        const rows = cachedSheetData;
+        if (!rows || rows.length < 2) return null;
+
+        // Loop data untuk mencari NIK
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            
+            // Defensif: pastikan baris memiliki data minimal (misal 10 kolom) agar tidak error saat dipanggil
+            if (!row || row.length < 10) continue; 
+            
+            // Ubah semua cell jadi string murni (menghindari error array undefined)
+            const cells = row.map(col => String(col || '').trim());
+            
+            // Pencarian NIK persis seperti logika aslimu
+            const foundNik = normalizeNIK(cells[0] || cells[1] || cells[2]) === target || 
+                             cells.find(col => normalizeNIK(col) === target);
+
+            if (foundNik) {
                 return {
                     nik: target,
                     nama: cells[7] || '',
@@ -92,9 +177,11 @@ async function cariData(nikInput){
                     lp: cells[43] || '80',
                     gula: cells[58] || '110',
                     mata: cells[70] || 'Tidak',
+                    merokok: cells[71] || '' // Wajib ditambahkan agar skrining kanker & PUMA bekerja
                 };
             }
         }
+        
         return null; 
     } catch (error) {
         console.error("Terjadi masalah jaringan:", error);
