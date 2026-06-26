@@ -6,7 +6,7 @@
    CONFIG SPREADSHEET
 ========================================================= */
 const SHEET_ID = '15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY';
-const GID = '0';
+const GIDS = ['0', '846804574'];
 
 const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
@@ -102,8 +102,6 @@ async function cariData(nikInput) {
             request({
                 method: "GET",
                 url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`,
-                timeout: 30000,
-
                 onload: r => resolve(r.responseText || ""),
                 onerror: () => resolve("")
             });
