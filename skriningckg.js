@@ -101,16 +101,28 @@ async function cariData(nikInput) {
 
         for (const gid of GIDS) {
             console.log('Download sheet gid:', gid);
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+            let csv = "";
 
-            const csv = await new Promise(resolve => {
-                request({
-                    method: "GET",
-                    url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`,
-                    timeout: 30000,
-                    onload: r => resolve(r.responseText || ""),
-                    onerror: () => resolve("")
+            // Fallback cerdas: Coba pakai GM_xmlhttpRequest, jika gagal/tidak di-grant, pakai fetch
+            if (typeof request === 'function') {
+                csv = await new Promise(resolve => {
+                    request({
+                        method: "GET",
+                        url: url,
+                        timeout: 30000,
+                        onload: r => resolve(r.responseText || ""),
+                        onerror: () => resolve("")
+                    });
                 });
-            });
+            } else {
+                try {
+                    const res = await fetch(url);
+                    if (res.ok) csv = await res.text();
+                } catch (e) {
+                    console.warn(`Fetch gagal untuk GID: ${gid}`, e);
+                }
+            }
 
             // PROTEKSI: Lewati proses parsing jika download gagal/kosong
             if (!csv) {
@@ -122,10 +134,8 @@ async function cariData(nikInput) {
 
             if (rows && rows.length > 1) {
                 if (cachedSheetData.length === 0) {
-                    // Pakai concat, BUKAN assignment langsung agar aman dari mutasi referensi
                     cachedSheetData = cachedSheetData.concat(rows);
                 } else {
-                    // Pakai concat, BUKAN spread operator (...array) untuk mencegah crash memori
                     cachedSheetData = cachedSheetData.concat(rows.slice(1));
                 }
             }
@@ -147,13 +157,10 @@ async function cariData(nikInput) {
     // PROTEKSI: Pastikan array rows valid dan punya data selain header
     if (!rows || rows.length < 2) return null;
 
-    console.log("HEADER:", rows[0]);
-    console.log("ROW PERTAMA:", rows[1]);
-
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
 
-        // PROTEKSI: Jika ada baris "sampah" atau kolom tidak sampai index 11, lewati
+        // PROTEKSI: Jika ada baris "sampah" atau kolom tidak cukup panjang
         if (!row || row.length < 12) continue;
 
         const nikSheet = normalizeNIK(row[11]);
@@ -782,7 +789,7 @@ async function handleSkriningMandiri(data) {
 }
 
 /* =========================================================
-   FORM LOOP ROUTER
+   FORM LOOP ROUTER (FIXED)
 ========================================================= */
 let BOT_RUNNING = false;
 
@@ -795,32 +802,33 @@ async function autoContinueForm(){
     await sleep(3000);
 
     while (BOT_RUNNING && location.host.includes("form.kemkes.go.id")) {
-    
         try {
-    
-            if (
-                document.body.innerText
-                    .toLowerCase()
-                    .includes('riwayat imunisasi tetanus')
-            ) {
-    
-                await isiTetanusCatin();
-    
-            } else {
-    
-                await handleSkriningMandiri(data);
-    
+            // DEFENSIVE CHECK: Tunggu sampai kerangka soal SurveyJS benar-benar muncul di layar
+            const formReady = document.querySelector('.sd-question, .sv-question, .sd-element');
+            
+            if (!formReady) {
+                updateStatus('Menunggu form dimuat...');
+                await sleep(1500);
+                continue; // Jangan lanjut ke bawah, putar ulang loop sampai form muncul
             }
-    
+
+            // Setelah form dipastikan muncul, baru kita baca teks halamannya
+            const pageText = document.body.innerText.toLowerCase();
+
+            if (pageText.includes('riwayat imunisasi tetanus')) {
+                await isiTetanusCatin();
+            } else {
+                await handleSkriningMandiri(data);
+            }
+
         } catch(e) {
             console.error("Error bypass:", e);
             updateStatus("Melewati error, mencoba ulang...");
         }
-    
+
         await sleep(2000);
     }
 }
-
 /* =========================================================
    DASHBOARD TRACKER (FITUR UTAMA CKG)
 ========================================================= */
