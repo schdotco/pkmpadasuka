@@ -49,6 +49,9 @@ function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
 ========================================================= */
 function parseCSV(text) {
+    // PROTEKSI: Jika teks kosong atau gagal load, kembalikan array kosong
+    if (!text) return [];
+
     const rows = [];
     let row = [];
     let current = "";
@@ -87,58 +90,83 @@ function parseCSV(text) {
 
     return rows;
 }
-    
+
 let cachedSheetData = null;
 
 async function cariData(nikInput) {
-
     const target = normalizeNIK(nikInput);
 
     if (!cachedSheetData) {
+        cachedSheetData = [];
 
-        console.log('[CACHE MISS] Download spreadsheet');
+        for (const gid of GIDS) {
+            console.log('Download sheet gid:', gid);
 
-        const csv = await new Promise(resolve => {
-            request({
-                method: "GET",
-                url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`,
-                onload: r => resolve(r.responseText || ""),
-                onerror: () => resolve("")
+            const csv = await new Promise(resolve => {
+                request({
+                    method: "GET",
+                    url: `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`,
+                    timeout: 30000,
+                    onload: r => resolve(r.responseText || ""),
+                    onerror: () => resolve("")
+                });
             });
-        });
 
-        cachedSheetData = parseCSV(csv);
+            // PROTEKSI: Lewati proses parsing jika download gagal/kosong
+            if (!csv) {
+                console.warn(`[WARNING] Data CSV kosong pada GID: ${gid}`);
+                continue;
+            }
+
+            const rows = parseCSV(csv);
+
+            if (rows && rows.length > 1) {
+                if (cachedSheetData.length === 0) {
+                    // Pakai concat, BUKAN assignment langsung agar aman dari mutasi referensi
+                    cachedSheetData = cachedSheetData.concat(rows);
+                } else {
+                    // Pakai concat, BUKAN spread operator (...array) untuk mencegah crash memori
+                    cachedSheetData = cachedSheetData.concat(rows.slice(1));
+                }
+            }
+        }
 
         console.log(
             '[CACHE READY]',
             cachedSheetData.length,
-            'baris'
+            'baris dari',
+            GIDS.length,
+            'sheet'
         );
     } else {
-
         console.log('[CACHE HIT] Pakai data RAM');
-
     }
 
     const rows = cachedSheetData;
+
+    // PROTEKSI: Pastikan array rows valid dan punya data selain header
+    if (!rows || rows.length < 2) return null;
 
     console.log("HEADER:", rows[0]);
     console.log("ROW PERTAMA:", rows[1]);
 
     for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
 
-        const nikSheet = normalizeNIK(rows[i][11]);
+        // PROTEKSI: Jika ada baris "sampah" atau kolom tidak sampai index 11, lewati
+        if (!row || row.length < 12) continue;
+
+        const nikSheet = normalizeNIK(row[11]);
 
         if (nikSheet === target) {
-
             return {
                 nik: target,
-                perkawinan: rows[i][26] || 'Belum Menikah',
-                merokok: (rows[i][71] || '').trim(),
-                jiwa1: (rows[i][72] || '').trim(), // Kolom BU
-                jiwa2: (rows[i][73] || '').trim(), // Kolom BV
-                jiwa3: (rows[i][74] || '').trim(), // Kolom BW
-                jiwa4: (rows[i][75] || '').trim()  // Kolom BX
+                perkawinan: row[26] || 'Belum Menikah',
+                merokok: (row[71] || '').trim(),
+                jiwa1: (row[72] || '').trim(), // Kolom BU
+                jiwa2: (row[73] || '').trim(), // Kolom BV
+                jiwa3: (row[74] || '').trim(), // Kolom BW
+                jiwa4: (row[75] || '').trim()  // Kolom BX
             };
         }
     }
