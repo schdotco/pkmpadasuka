@@ -8,15 +8,15 @@ function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
 
 const SHEETS = [{
     id: "1zOX229-nq8n0-jCSTMEL1r4CVqW_hYctcpo-5pgjY_E",
-    gids: ["0"],
+    gids: ["484052211"],
     colNama: 5,
     colTgl: 8,
-    colWA: 20,
+    colWA: 23,
     colJK: 6,
-    colPekerjaan: 22,
-    colKelurahan: 17,
-    colAlamat: 14,
-    colMartial: 21,
+    colPekerjaan: 12,
+    colKelurahan: 20,
+    colAlamat: 17,
+    colMartial: 13,
     waStatis: true
 }];
 
