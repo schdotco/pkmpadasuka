@@ -157,7 +157,7 @@ async function cariData(nikInput) {
     // PROTEKSI: Pastikan array rows valid dan punya data selain header
     if (!rows || rows.length < 2) return null;
 
-    for (let i = 1; i < rows.length; i++) {
+    for (let i = rows.length - 1; i >= 1; i--) {
         const row = rows[i];
 
         // PROTEKSI: Jika ada baris "sampah" atau kolom tidak cukup panjang
