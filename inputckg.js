@@ -622,7 +622,7 @@ function createUI(){
     const box = document.createElement('div'); box.id = 'auto-ckg-ui';
     box.innerHTML = `
         <div id="drag-handle">INPUT CKG PADASUKA</div>
-        <div id="bot-status">INISIALISASI...</div>
+        <div id="bot-status">Menyiapkan Database, Jangan Klik Start !...</div>
         <input id="nik-bot" placeholder="Masukkan NIK">
         <div id="btn-wrap">
             <button id="run-bot">START</button><button id="stop-bot">BATAL</button>
@@ -727,7 +727,7 @@ async function waitForElement(selector, timeout = 10000) {
                         // Setelah unduhan selesai, pastikan user belum klik START. 
                         // Jika belum, beri tahu bahwa database sudah siap (cache penuh).
                         if (!BOT_RUNNING) {
-                            updateStatus('Database Siap (Cache Penuh)!\nMasukkan NIK lalu klik START');
+                            updateStatus('Database Siap !\nKlik START');
                         }
                     }).catch(err => {
                         console.error("Gagal pre-load data dari background:", err);
