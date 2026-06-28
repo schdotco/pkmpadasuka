@@ -995,7 +995,7 @@ setTimeout(async ()=>{
             await mainLoop(data);
         } else {
             // Tampilan default agar pop-up langsung aktif tanpa nge-freeze
-            updateStatus('IDLE\nMasukkan NIK lalu klik START');
+            updateStatus('Menyiapkan Data\nMasukkan NIK lalu Tunggu sampai Database siap sebelum klik START');
         }
 
         // --- 2. FITUR PRE-LOAD BACKGROUND SEJATI ---
@@ -1006,7 +1006,7 @@ setTimeout(async ()=>{
                 // Begitu download selesai, cek apakah bot sedang jalan.
                 // Jika sedang santai (tidak ada pasien diproses), update statusnya.
                 if (!BOT_RUNNING) {
-                    updateStatus('Database Siap (Cache Penuh)!\nMasukkan NIK lalu klik START');
+                    updateStatus('Database Siap !\nklik START');
                 }
             }).catch(err => {
                 console.error("Gagal mendownload background data:", err);
