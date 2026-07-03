@@ -9,6 +9,7 @@ const GIDS = ['0', '846804574'];
 
 const TARGETS = [
     { id: 'gizi', txt: 'gizi (bb' },
+    { id: 'faktor_gula', txt: 'faktor risiko gula darah' }, 
     { id: 'gula', txt: 'gula darah' },
     { id: 'tensi', txt: 'tekanan darah' },
     { id: 'frambusia', txt: 'frambusia' },
@@ -462,6 +463,11 @@ async function autoContinueForm() {
         if(inputBB) forceInject(inputBB, data.bb); await sleep(800);
         if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
         if(inputLP) forceInject(inputLP, data.lp); await sleep(1000);
+    }
+   else if(title.includes('faktor risiko gula darah')){
+        currentId = 'faktor_gula'; updateStatus('MENGISI TAHAP: FAKTOR RISIKO GULA');
+        await pilihSemuaRadioLimit('tidak', 99, true); 
+        await sleep(800);
     }
     else if(title.includes('gula darah')){
         currentId = 'gula'; updateStatus('MENGISI TAHAP: GULA DARAH');
