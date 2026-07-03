@@ -461,19 +461,32 @@ async function autoContinueForm(){
 
     BOT_RUNNING = true;
     updateStatus('MEMULAI PENGISIAN...');
-    await sleep(3000);
+    await sleep(2000);
 
     while (BOT_RUNNING && location.host.includes("form.kemkes.go.id")) {
         try {
-            if (document.body.innerText.toLowerCase().includes('riwayat imunisasi tetanus')) {
+            // Adaptive Check: Melonggarkan deteksi agar tidak stuck jika class berubah (ala versi Pro)
+            const formReady = document.querySelector('input[type="radio"], input[type="text"], .sd-question, .sv-question, .sd-element');
+            
+            if (!formReady) {
+                updateStatus('Menunggu form dimuat...');
+                await sleep(1500);
+                continue; 
+            }
+
+            const pageText = document.body.innerText.toLowerCase();
+
+            if (pageText.includes('riwayat imunisasi tetanus')) {
                 await isiTetanusCatin();
             } else {
                 await handleSkriningMandiri(data);
             }
+
         } catch(e) {
             console.error("Error bypass:", e);
             updateStatus("Melewati error, mencoba ulang...");
         }
+
         await sleep(2000);
     }
 }
