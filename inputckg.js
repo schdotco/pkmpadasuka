@@ -358,12 +358,10 @@ function isFormValid() {
     const questions = document.querySelectorAll('.sd-question, .sv-question');
     for (let q of questions) {
         const pertanyaan = q.innerText.toLowerCase();
-        // Abaikan validasi untuk pertanyaan ini
         if (pertanyaan.includes('pinhole') || pertanyaan.includes('funduskopi') ||
             pertanyaan.includes('foto torax') || pertanyaan.includes('foto toraks')) {
             continue;
         }
-
         const radios = q.querySelectorAll('input[type="radio"]');
         if (radios.length > 0) {
             const hasSelected = Array.from(radios).some(r => r.checked);
@@ -374,19 +372,24 @@ function isFormValid() {
 }
 
 async function klikKirim() {
-    updateStatus('Validasi form...');
-    await sleep(2000);
+    updateStatus('Validasi Form & Adaptasi Parameter Baru...');
+    await sleep(1500);
     
     let check = isFormValid();
+    let retryCount = 0; // Proteksi agar tidak terjebak selamanya
     
-    while (!check.valid) {
-        updateStatus('Mengisi soal kosong...');
+    while (!check.valid && retryCount < 5) {
+        updateStatus('Sapu Bersih Soal Kosong...');
         const labels = check.container.querySelectorAll('label');
-        let foundDefaultAnswer = false; // Penanda apakah opsi default ketemu
+        let foundDefaultAnswer = false; 
 
         for (let l of labels) {
-            let labelText = l.innerText.toLowerCase();
-            if (labelText.includes('normal') || labelText.includes('tidak')) {
+            let txt = (l.innerText || '').toLowerCase().trim();
+            // Penambahan opsi default khusus untuk pertanyaan anak/balita yang dinamis
+            if (txt === 'tidak' || txt === 'normal' || txt === 'tidak ada' || 
+                txt === 'sesuai' || txt === 'baik' || txt === 'negatif' || 
+                txt === 'tidak ditemukan') {
+                
                 const input = l.querySelector('input[type="radio"]');
                 if (input && !input.checked) {
                     input.click();
@@ -398,15 +401,15 @@ async function klikKirim() {
             }
         }
 
-        // PROTEKSI INFINITE LOOP: Jika opsi "Normal/Tidak" tidak ada di soal tersebut
         if (!foundDefaultAnswer) {
-            console.warn("[WARNING] Soal wajib kosong tapi tidak ada opsi default (Normal/Tidak).");
-            updateStatus('Terjebak soal wajib.\nSilakan isi manual lalu klik Kirim.');
-            return false; // Hentikan loop paksa
+            console.warn("[WARNING] Ditemukan soal dinamis balita/anak tanpa opsi default yang dikenali.");
+            updateStatus('Terjebak soal spesifik usia.\nSilakan pilih manual lalu klik Kirim.');
+            return false; 
         }
 
         await sleep(1000);
         check = isFormValid(); 
+        retryCount++;
     }
 
     const btn = document.querySelector('.sd-navigation__complete-btn') ||
@@ -415,7 +418,7 @@ async function klikKirim() {
     if (btn) {
         updateStatus('Mengirim data...');
         btn.click();
-        await sleep(4000);
+        await sleep(3000);
         return true;
     } else {
         updateStatus('Tombol kirim tidak ketemu!');
