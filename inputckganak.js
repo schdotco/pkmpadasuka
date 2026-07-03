@@ -286,28 +286,32 @@ async function isiRadioSurveyJS(soalSelector, teksJawaban) {
     return false;
 }
 
-async function handleTelingaMata(data) {
-    updateStatus('MENGISI: TELINGA & MATA...');
+async function handleTelingaMataAnak(data) {
+    updateStatus('MENGISI: SKRINING TELINGA & MATA ANAK...');
 
-    await isiRadioSurveyJS('serumen impaksi', 'tidak ada serumen impaksi');
-    await sleep(500);
+    // 1. Tes Daya Dengar
+    // Opsi: 'Sesuai Umur' atau 'Ada kemungkinan penyimpangan'
+    await selectDropdownSurveyJS('Sesuai Umur');
+    await sleep(800);
 
-    await selectDropdownSurveyJS('tidak ada infeksi');
-    await sleep(500);
+    // 2. Tes Daya Lihat
+    // Opsi: 'Daya lihat anak baik' atau 'Daya lihat anak kurang'
+    await selectDropdownSurveyJS('Daya lihat anak baik');
+    await sleep(800);
 
-    await isiRadioSurveyJS('tajam pendengaran', 'normal');
-    await sleep(500);
+    // 3. Serumen Impaksi (Pertanyaan 3)
+    // Berdasarkan inspect: Opsi biasanya 'Tidak ditemukan' atau serupa
+    await selectDropdownSurveyJS('Tidak ditemukan');
+    await sleep(800);
 
-    if ((data.mata || '').toLowerCase() === 'ya') {
-        await isiRadioSurveyJS('tajam penglihatan', 'curiga gangguan penglihatan');
-        await sleep(1500);
-        await isiRadioSurveyJS('hasil pemeriksaan visus', 'gangguan penglihatan ringan');
-    } else {
-        await isiRadioSurveyJS('tajam penglihatan', 'normal (visus 6/6 - 6/12)');
-    }
+    // 4. Infeksi Telinga (Pertanyaan 4)
+    await selectDropdownSurveyJS('Tidak ditemukan');
+    await sleep(800);
 
-    await sleep(500);
-    await isiRadioSurveyJS('pupil', 'normal');
+    // 5. Kelainan Mata (Pertanyaan 5 - Pertanyaan panjang)
+    // Opsi: 'Tidak ditemukan'
+    await selectDropdownSurveyJS('Tidak ditemukan');
+    await sleep(800);
 }
 
 /* =========================================================
@@ -445,9 +449,10 @@ async function autoContinueForm() {
         currentId = 'skabies'; updateStatus('MENGISI TAHAP: SKABIES');
         await selectDropdownSurveyJS('tidak ada');
     }
-    else if(title.includes('telinga dan mata')){
+   else if(title.includes('telinga dan mata')){
         currentId = 'telinga_mata';
-        await handleTelingaMata(data);
+        // Gunakan fungsi baru khusus anak
+        await handleTelingaMataAnak(data); 
     }
     else if(title.includes('karies') || title.includes('pemeriksaan gigi')){
         currentId = 'gigi'; updateStatus('MENGISI TAHAP: GIGI ANAK');
