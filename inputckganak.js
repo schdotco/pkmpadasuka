@@ -301,26 +301,26 @@ async function handleTelingaMataAnak(data) {
     // 1. Tes Daya Dengar
     // Opsi: 'Sesuai Umur' atau 'Ada kemungkinan penyimpangan'
     await selectDropdownSurveyJS('Sesuai Umur');
-    await sleep(800);
+    await sleep(1000);
 
     // 2. Tes Daya Lihat
     // Opsi: 'Daya lihat anak baik' atau 'Daya lihat anak kurang'
     await selectDropdownSurveyJS('Daya lihat anak baik');
-    await sleep(800);
+    await sleep(1000);
 
     // 3. Serumen Impaksi (Pertanyaan 3)
     // Berdasarkan inspect: Opsi biasanya 'Tidak ditemukan' atau serupa
     await selectDropdownSurveyJS('Tidak ditemukan');
-    await sleep(800);
+    await sleep(1000);
 
     // 4. Infeksi Telinga (Pertanyaan 4)
     await selectDropdownSurveyJS('Tidak ditemukan');
-    await sleep(800);
+    await sleep(1000);
 
     // 5. Kelainan Mata (Pertanyaan 5 - Pertanyaan panjang)
     // Opsi: 'Tidak ditemukan'
     await selectDropdownSurveyJS('Tidak ditemukan');
-    await sleep(800);
+    await sleep(1000);
 }
 
 /* =========================================================
