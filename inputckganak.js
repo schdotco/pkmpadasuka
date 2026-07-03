@@ -216,20 +216,29 @@ function forceInject(element, value) {
 ========================================================= */
 async function selectDropdownSurveyJS(optionText) {
     let success = false;
+    // Mencari trigger dengan selector yang lebih spesifik
     const dropdownTrigger = document.querySelector('.sd-dropdown, .sv-dropdown');
+    
     if (dropdownTrigger) {
-        triggerClick(dropdownTrigger);
-        await sleep(1000);
-        const searchInput = document.querySelector('input[type="text"][role="combobox"], input[aria-expanded="true"]');
-        if (searchInput) { forceInject(searchInput, 't'); await sleep(500); }
-        const targetOpt = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')].find(el =>
-            el.innerText.toLowerCase().includes(optionText.toLowerCase())
+        // Klik menggunakan metode sederhana agar tidak memicu error scroll internal SurveyJS
+        dropdownTrigger.click();
+        await sleep(1200); // Tunggu lebih lama agar animasi dropdown selesai
+
+        // Cari opsi berdasarkan teks di dalam list
+        const allOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
+        const targetOpt = allOptions.find(el => 
+            (el.innerText || '').toLowerCase().includes(optionText.toLowerCase())
         );
+
         if (targetOpt) {
-            triggerClick(targetOpt);
-            await sleep(500);
+            // Gunakan .click() murni daripada triggerClick yang kompleks untuk menghindari konflik scroll
+            targetOpt.click(); 
+            await sleep(800);
             success = true;
-        } else triggerClick(dropdownTrigger); 
+        } else {
+            // Jika gagal, tutup dropdown
+            dropdownTrigger.click();
+        }
     }
     return success;
 }
