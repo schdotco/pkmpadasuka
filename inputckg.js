@@ -462,7 +462,7 @@ async function autoContinueForm() {
         
         if(inputBB) forceInject(inputBB, data.bb); await sleep(800);
         if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
-        if(inputLP) forceInject(inputLP, data.lp); await sleep(1000);
+        if(inputLP) forceInject(inputLP, data.lp); await sleep(800);
     }
    else if(title.includes('faktor risiko gula darah')){
         currentId = 'faktor_gula'; updateStatus('MENGISI TAHAP: FAKTOR RISIKO GULA');
