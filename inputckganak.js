@@ -2,29 +2,23 @@
 'use strict';
 
 /* =========================================================
-   CONFIG - VERSI KHUSUS ANAK / REMAJA
+   CONFIG - VERSI KHUSUS ANAK / REMAJA (FIXED TARGETS)
 ========================================================= */
 const SHEET_ID = '15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY';
 const GIDS = ['0', '846804574'];
 
+// TARGETS dioptimalkan agar ADAPTIF dan sangat presisi dengan nama menu di ASIK
 const TARGETS = [
-    { id: 'gizi_anak', txt: 'gizi anak' },
-    { id: 'gizi', txt: 'gizi (bb' },
-    { id: 'gula', txt: 'pemeriksaan gula darah anak' },
-    { id: 'tensi', txt: 'tekanan darah' },
-    { id: 'anemia', txt: 'anemia' },
-    { id: 'tb', txt: 'tuberkulosis' },
+    { id: 'gizi', txt: 'gizi anak' },
+    { id: 'tensi', txt: 'tekanan darah anak' },
+    { id: 'gula', txt: 'gula darah anak' },
+    { id: 'tb', txt: 'x-ray tb' },
     { id: 'frambusia', txt: 'frambusia' },
     { id: 'kusta', txt: 'kusta' },
     { id: 'skabies', txt: 'skabies' },
     { id: 'telinga_mata', txt: 'telinga dan mata' },
     { id: 'gigi', txt: 'pemeriksaan gigi' },
-    { id: 'karies', txt: 'karies' },
-    { id: 'jasmani', txt: 'kebugaran jasmani' },
-    { id: 'talasemia', txt: 'talasemia' },
-    { id: 'malaria', txt: 'malaria' },
-    { id: 'hepatitis', txt: 'hepatitis' },
-    { id: 'co', txt: 'kadar co' }
+    { id: 'jasmani', txt: 'kebugaran jasmani' }
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r,ms));
@@ -120,9 +114,7 @@ async function cariData(nikInput) {
             cachedSheetData = [];
 
             for (const gid of GIDS) {
-                console.log('Download sheet gid:', gid);
                 const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
-                
                 const res = await fetch(url);
                 if (!res.ok) { continue; }
                 const csvText = await res.text();
@@ -201,8 +193,6 @@ function forceInject(element, value) {
 /* =========================================================
    SURVEYJS ENGINE: RADIO & DROPDOWN MULTIPLE
 ========================================================= */
-
-// Fungsi lama: Berguna jika dropdown di halaman hanya ada 1 (misal: Kusta/Skabies)
 async function selectDropdownSurveyJS(optionText) {
     let success = false;
     const dropdownTrigger = document.querySelector('.sd-dropdown, .sv-dropdown');
@@ -226,34 +216,30 @@ async function selectDropdownSurveyJS(optionText) {
     return success;
 }
 
-// FUNGSI BARU: Mencari pertanyaan spesifik lalu mengeklik dropdown di bawahnya
 async function isiDropdownSurveyJS(soalSelector, optionText) {
     let success = false;
     const questions = [...document.querySelectorAll('.sd-question, .sv-question')];
     
-    // Cari kotak pertanyaan yang mengandung teks soalSelector
     const targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(soalSelector.toLowerCase()));
     if (!targetQ) return false;
 
-    // Cari dropdown HANYA di dalam kotak pertanyaan tersebut
     const dropdownTrigger = targetQ.querySelector('.sd-dropdown, .sv-dropdown');
     
     if (dropdownTrigger) {
-        dropdownTrigger.click(); // Buka dropdown
-        await sleep(1200); // Tunggu animasi UI selesai
+        dropdownTrigger.click(); 
+        await sleep(1200); 
 
-        // Cari opsi dari popup list yang muncul di document
         const allOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
         const targetOpt = allOptions.find(el => 
             (el.innerText || '').toLowerCase().includes(optionText.toLowerCase())
         );
 
         if (targetOpt) {
-            targetOpt.click(); // Klik opsi
+            targetOpt.click(); 
             await sleep(800);
             success = true;
         } else {
-            dropdownTrigger.click(); // Tutup dropdown jika tidak ketemu agar tidak macet
+            dropdownTrigger.click(); 
         }
     }
     return success;
@@ -293,11 +279,9 @@ async function pilihSemuaRadioLimit(text, limit = 99, exact = false) {
 async function handleTelingaMataAnak(data) {
     updateStatus('MENGISI: SKRINING TELINGA & MATA ANAK...');
 
-    // 1. Tes Daya Dengar
     await isiDropdownSurveyJS('daya dengar', 'sesuai umur');
     await sleep(800);
 
-    // 2. Tes Daya Lihat
     if ((data.mata || '').toLowerCase() === 'ya') {
         await isiDropdownSurveyJS('daya lihat', 'anak kurang');
     } else {
@@ -305,18 +289,12 @@ async function handleTelingaMataAnak(data) {
     }
     await sleep(800);
 
-    // 3. Serumen Impaksi 
-    // Berdasarkan gambar: "Tidak ada serumen impaksi"
     await isiDropdownSurveyJS('serumen impaksi', 'tidak ada serumen');
     await sleep(800);
 
-    // 4. Infeksi Telinga
-    // Berdasarkan gambar: "Tidak ada infeksi telinga"
     await isiDropdownSurveyJS('infeksi telinga', 'tidak ada infeksi');
     await sleep(800);
 
-    // 5. Kelainan Mata
-    // Berdasarkan gambar: Opsi yang benar adalah "Normal"
     if ((data.mata || '').toLowerCase() === 'ya') {
         await isiDropdownSurveyJS('selaput mata merah', 'curiga kelainan');
     } else {
@@ -396,7 +374,7 @@ async function klikKirim() {
 }
 
 /* =========================================================
-   FORM FILLER LOGIC
+   FORM FILLER LOGIC (ADAPTIF 10 TARGET UTAMA)
 ========================================================= */
 async function autoContinueForm() {
     const data = loadBOT();
@@ -421,8 +399,8 @@ async function autoContinueForm() {
 
     let currentId = null;
 
-    if(title.includes('gizi (bb') || title.includes('lingkar perut') || title.includes('gizi anak')){
-        currentId = 'gizi_anak'; updateStatus('MENGISI TAHAP: GIZI ANAK');
+    if(title.includes('gizi anak') || title.includes('imt/u')){
+        currentId = 'gizi'; updateStatus('MENGISI TAHAP: GIZI ANAK');
         const inputBB = document.querySelector('input[placeholder*="satuan kg" i]') || document.querySelector('input[placeholder*="Berat Badan" i]') || realInputs[0];
         const inputTB = document.querySelector('input[placeholder*="tinggi badan" i]') || realInputs[1];
         const inputLP = realInputs.find(el => (el.placeholder || '').toLowerCase().includes('hasil pengukuran') && !(el.placeholder || '').toLowerCase().includes('tinggi badan')) || realInputs[2];
@@ -431,27 +409,28 @@ async function autoContinueForm() {
         if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
         if(inputLP) forceInject(inputLP, data.lp); await sleep(1000);
     }
-   else if(title.includes('pemeriksaan gula darah anak')){
+    else if(title.includes('gula darah anak')){
         currentId = 'gula'; updateStatus('MENGISI TAHAP: PEMERIKSAAN GULA ANAK');
-        
-        // 1. Pilih radio button 'Tidak' untuk riwayat diabetes
         await pilihSemuaRadioLimit('tidak', 99, true); 
         await sleep(800);
-        
-        // 2. Cari input kotak angka dan masukkan nilai gula darah dari excel
         const inputGula = document.querySelector('input[placeholder*="Isi sesuai hasil" i]') || realInputs[0];
-        if (inputGula) {
-            forceInject(inputGula, data.gula);
-        }
+        if (inputGula) forceInject(inputGula, data.gula);
         await sleep(800);
     }
-    else if(title.includes('tekanan darah')){
-        currentId = 'tensi'; updateStatus('MENGISI TAHAP: TEKANAN DARAH');
+    else if(title.includes('tekanan darah anak')){
+        currentId = 'tensi'; updateStatus('MENGISI TAHAP: TEKANAN DARAH ANAK');
         await pilihSemuaRadioLimit('tidak', 99, true); await sleep(800);
         const inSistol = document.querySelector('input[placeholder*="Sistolik" i]') || realInputs[0];
         const inDiastol = document.querySelector('input[placeholder*="Diastolik" i]') || realInputs[1];
         if(inSistol) forceInject(inSistol, data.sistole); await sleep(800);
         if(inDiastol) forceInject(inDiastol, data.diastole); await sleep(1000);
+    }
+    else if(title.includes('x-ray tb')){
+        currentId = 'tb'; updateStatus('MENGISI TAHAP: TUBERKULOSIS ANAK');
+        await pilihSemuaRadioLimit('tidak batuk', 1, false); 
+        await sleep(800);
+        await pilihSemuaRadioLimit('tidak', 99, true); 
+        await sleep(800);
     }
     else if(title.includes('frambusia')){
         currentId = 'frambusia'; updateStatus('MENGISI TAHAP: FRAMBUSIA');
@@ -466,29 +445,45 @@ async function autoContinueForm() {
         currentId = 'skabies'; updateStatus('MENGISI TAHAP: SKABIES');
         await selectDropdownSurveyJS('tidak ada');
     }
-// RUTE BARU: SKRINING TB ANAK
-    else if(title.includes('x-ray tb') || title.includes('skrining x-ray')){
-        currentId = 'tb'; updateStatus('MENGISI TAHAP: TUBERKULOSIS ANAK');
-        
-        // 1. Pilih opsi "Tidak batuk" khusus untuk soal nomor 1
-        await pilihSemuaRadioLimit('tidak batuk', 1, false); 
-        await sleep(800);
-        
-        // 2. Pilih opsi "Tidak" untuk soal nomor 2 sampai 6
-        await pilihSemuaRadioLimit('tidak', 99, true); 
-        await sleep(800);
-    }
-   else if(title.includes('telinga dan mata')){
+    else if(title.includes('telinga dan mata')){
         currentId = 'telinga_mata';
-        // Fungsi spesifik Telinga Mata Anak menggunakan Dropdown Selector
         await handleTelingaMataAnak(data); 
     }
-    else if(title.includes('karies') || title.includes('pemeriksaan gigi')){
+    else if(title.includes('pemeriksaan gigi')){
         currentId = 'gigi'; updateStatus('MENGISI TAHAP: GIGI ANAK');
         await pilihSemuaRadioLimit('tidak', 1, true);
         await selectDropdownSurveyJS('tidak', 1);
     }
+   else if(title.includes('kebugaran jasmani')){
+        currentId = 'jasmani'; updateStatus('MENGISI TAHAP: KEBUGARAN JASMANI');
+        
+        // 1. Ambil data BB dan TB, ubah menjadi angka (float)
+        let bb = parseFloat(data.bb) || 0;
+        let tb = parseFloat(data.tb) || 0;
+        
+        // 2. Kalkulator IMT penentu Kebugaran
+        let hasilKebugaran = 'Baik'; // Jawaban default aman
+
+        if (bb > 0 && tb > 0) {
+            let imt = bb / ((tb / 100) * (tb / 100)); // Rumus IMT
+            
+            if (imt >= 18.5 && imt <= 22.9) {
+                hasilKebugaran = 'Baik';
+            } else if ((imt >= 17.0 && imt < 18.5) || (imt > 22.9 && imt <= 24.9)) {
+                hasilKebugaran = 'Cukup';
+            } else if ((imt >= 16.0 && imt < 17.0) || (imt > 24.9 && imt <= 29.9)) {
+                hasilKebugaran = 'Kurang';
+            } else if (imt < 16.0 || imt > 29.9) {
+                hasilKebugaran = 'Kurang sekali';
+            }
+        }
+        
+        // 3. Eksekusi klik dropdown sesuai hasil kalkulasi
+        await isiDropdownSurveyJS('kebugaran jasmani', hasilKebugaran);
+        await sleep(800);
+    }
     
+    // Fallback dinamis jika ada form yang tidak masuk route IF di atas (seperti Kebugaran Jasmani)
     if (!currentId) {
         const foundTarget = TARGETS.find(t => title.includes(t.txt));
         if (foundTarget) {
@@ -497,9 +492,8 @@ async function autoContinueForm() {
         }
     }
 
-   if(currentId) addCompleted(currentId);
+    if(currentId) addCompleted(currentId);
     
-    // PERBAIKAN BUG: Hanya ubah status ke "Menunggu" jika klikKirim sukses me-return true
     let kirimSukses = await klikKirim();
     if (kirimSukses) {
         updateStatus('Menunggu sistem pindah halaman...');
