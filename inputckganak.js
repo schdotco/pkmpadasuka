@@ -431,9 +431,18 @@ async function autoContinueForm() {
         if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
         if(inputLP) forceInject(inputLP, data.lp); await sleep(1000);
     }
-    else if(title.includes('pemeriksaan gula darah anak')){
-        currentId = 'gula'; updateStatus('MENGISI TAHAP: PEMERIKSAAN GULA');
+   else if(title.includes('pemeriksaan gula darah anak')){
+        currentId = 'gula'; updateStatus('MENGISI TAHAP: PEMERIKSAAN GULA ANAK');
+        
+        // 1. Pilih radio button 'Tidak' untuk riwayat diabetes
         await pilihSemuaRadioLimit('tidak', 99, true); 
+        await sleep(800);
+        
+        // 2. Cari input kotak angka dan masukkan nilai gula darah dari excel
+        const inputGula = document.querySelector('input[placeholder*="Isi sesuai hasil" i]') || realInputs[0];
+        if (inputGula) {
+            forceInject(inputGula, data.gula);
+        }
         await sleep(800);
     }
     else if(title.includes('tekanan darah')){
