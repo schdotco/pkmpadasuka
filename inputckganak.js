@@ -297,7 +297,7 @@ async function handleTelingaMataAnak(data) {
     await isiDropdownSurveyJS('daya dengar', 'sesuai umur');
     await sleep(800);
 
-    // 2. Tes Daya Lihat (Jika di data excel dicatat ada kelainan mata)
+    // 2. Tes Daya Lihat
     if ((data.mata || '').toLowerCase() === 'ya') {
         await isiDropdownSurveyJS('daya lihat', 'anak kurang');
     } else {
@@ -306,16 +306,22 @@ async function handleTelingaMataAnak(data) {
     await sleep(800);
 
     // 3. Serumen Impaksi 
-    // Menggunakan kata 'tidak' untuk klik opsi 'Tidak ditemukan'
-    await isiDropdownSurveyJS('serumen impaksi', 'tidak');
+    // Berdasarkan gambar: "Tidak ada serumen impaksi"
+    await isiDropdownSurveyJS('serumen impaksi', 'tidak ada serumen');
     await sleep(800);
 
     // 4. Infeksi Telinga
-    await isiDropdownSurveyJS('infeksi telinga', 'tidak');
+    // Berdasarkan gambar: "Tidak ada infeksi telinga"
+    await isiDropdownSurveyJS('infeksi telinga', 'tidak ada infeksi');
     await sleep(800);
 
     // 5. Kelainan Mata
-    await isiDropdownSurveyJS('selaput mata merah', 'tidak');
+    // Berdasarkan gambar: Opsi yang benar adalah "Normal"
+    if ((data.mata || '').toLowerCase() === 'ya') {
+        await isiDropdownSurveyJS('selaput mata merah', 'curiga kelainan');
+    } else {
+        await isiDropdownSurveyJS('selaput mata merah', 'normal');
+    }
     await sleep(800);
 }
 
