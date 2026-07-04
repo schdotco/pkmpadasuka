@@ -7,7 +7,6 @@
 const SHEET_ID = '15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY';
 const GIDS = ['0', '846804574'];
 
-// Daftar target disesuaikan khusus dengan urutan dan menu Anak/Remaja
 const TARGETS = [
     { id: 'gizi_anak', txt: 'gizi anak' },
     { id: 'gizi', txt: 'gizi (bb' },
@@ -32,7 +31,7 @@ const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
 /* =========================================================
-   SESSION & DYNAMIC TRACKER (FIXED UNTUK LOADER EKSTERNAL)
+   SESSION & DYNAMIC TRACKER
 ========================================================= */
 function saveBOT(data) { 
     try { GM_setValue('AUTO_CKG_ANAK_DATA', JSON.stringify(data)); } 
@@ -68,7 +67,7 @@ function clearCompleted() {
 }
 
 /* =========================================================
-   DATA MATCHER (OPTIMASI DENGAN CACHE)
+   DATA MATCHER
 ========================================================= */
 function parseCSV(text) {
     if (!text) return [];
@@ -107,7 +106,6 @@ function parseCSV(text) {
         row.push(current);
         rows.push(row);
     }
-
     return rows;
 }
 
@@ -126,19 +124,11 @@ async function cariData(nikInput) {
                 const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
                 
                 const res = await fetch(url);
-                if (!res.ok) {
-                    console.warn(`[WARNING] Gagal terhubung ke GID: ${gid}`);
-                    continue;
-                }
-                
+                if (!res.ok) { continue; }
                 const csvText = await res.text();
-                if (!csvText) {
-                    console.warn(`[WARNING] Data CSV kosong pada GID: ${gid}`);
-                    continue;
-                }
+                if (!csvText) { continue; }
 
                 const rows = parseCSV(csvText);
-
                 if (rows && rows.length > 1) {
                     if (cachedSheetData.length === 0) {
                         cachedSheetData = cachedSheetData.concat(rows);
@@ -147,7 +137,6 @@ async function cariData(nikInput) {
                     }
                 }
             }
-            console.log('[CACHE READY]', cachedSheetData.length, 'baris dari', GIDS.length, 'sheet');
         }
 
         const rows = cachedSheetData;
@@ -176,10 +165,8 @@ async function cariData(nikInput) {
                 };
             }
         }
-        
         return null; 
     } catch (error) {
-        console.error("Terjadi masalah jaringan:", error);
         updateStatus("ERROR JARINGAN: Cek Koneksi");
         return null; 
     }
@@ -212,32 +199,61 @@ function forceInject(element, value) {
 }
 
 /* =========================================================
-   SURVEYJS DROPDOWN & RADIO ENGINE
+   SURVEYJS ENGINE: RADIO & DROPDOWN MULTIPLE
 ========================================================= */
+
+// Fungsi lama: Berguna jika dropdown di halaman hanya ada 1 (misal: Kusta/Skabies)
 async function selectDropdownSurveyJS(optionText) {
     let success = false;
-    // Mencari trigger dengan selector yang lebih spesifik
     const dropdownTrigger = document.querySelector('.sd-dropdown, .sv-dropdown');
-    
     if (dropdownTrigger) {
-        // Klik menggunakan metode sederhana agar tidak memicu error scroll internal SurveyJS
         dropdownTrigger.click();
-        await sleep(1200); // Tunggu lebih lama agar animasi dropdown selesai
+        await sleep(1200); 
 
-        // Cari opsi berdasarkan teks di dalam list
         const allOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
         const targetOpt = allOptions.find(el => 
             (el.innerText || '').toLowerCase().includes(optionText.toLowerCase())
         );
 
         if (targetOpt) {
-            // Gunakan .click() murni daripada triggerClick yang kompleks untuk menghindari konflik scroll
             targetOpt.click(); 
             await sleep(800);
             success = true;
         } else {
-            // Jika gagal, tutup dropdown
             dropdownTrigger.click();
+        }
+    }
+    return success;
+}
+
+// FUNGSI BARU: Mencari pertanyaan spesifik lalu mengeklik dropdown di bawahnya
+async function isiDropdownSurveyJS(soalSelector, optionText) {
+    let success = false;
+    const questions = [...document.querySelectorAll('.sd-question, .sv-question')];
+    
+    // Cari kotak pertanyaan yang mengandung teks soalSelector
+    const targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(soalSelector.toLowerCase()));
+    if (!targetQ) return false;
+
+    // Cari dropdown HANYA di dalam kotak pertanyaan tersebut
+    const dropdownTrigger = targetQ.querySelector('.sd-dropdown, .sv-dropdown');
+    
+    if (dropdownTrigger) {
+        dropdownTrigger.click(); // Buka dropdown
+        await sleep(1200); // Tunggu animasi UI selesai
+
+        // Cari opsi dari popup list yang muncul di document
+        const allOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
+        const targetOpt = allOptions.find(el => 
+            (el.innerText || '').toLowerCase().includes(optionText.toLowerCase())
+        );
+
+        if (targetOpt) {
+            targetOpt.click(); // Klik opsi
+            await sleep(800);
+            success = true;
+        } else {
+            dropdownTrigger.click(); // Tutup dropdown jika tidak ketemu agar tidak macet
         }
     }
     return success;
@@ -274,57 +290,37 @@ async function pilihSemuaRadioLimit(text, limit = 99, exact = false) {
     return clicked;
 }
 
-async function isiRadioSurveyJS(soalSelector, teksJawaban) {
-    const questions = [...document.querySelectorAll('.sd-question, .sv-question')];
-    const targetQ = questions.find(q => q.innerText.toLowerCase().includes(soalSelector.toLowerCase()));
-    if (!targetQ) return false;
-    const labels = [...targetQ.querySelectorAll('label')];
-    const targetLabel = labels.find(l => l.innerText.toLowerCase().includes(teksJawaban.toLowerCase()));
-    if (targetLabel) {
-        const input = targetLabel.querySelector('input[type="radio"]');
-        if (input && !input.checked) {
-            input.click(); input.checked = true;
-            input.dispatchEvent(new Event('mousedown', { bubbles: true }));
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            input.dispatchEvent(new Event('click', { bubbles: true }));
-            await sleep(800);
-            return true;
-        }
-    }
-    return false;
-}
-
 async function handleTelingaMataAnak(data) {
     updateStatus('MENGISI: SKRINING TELINGA & MATA ANAK...');
 
     // 1. Tes Daya Dengar
-    // Opsi: 'Sesuai Umur' atau 'Ada kemungkinan penyimpangan'
-    await selectDropdownSurveyJS('Sesuai Umur');
-    await sleep(1000);
+    await isiDropdownSurveyJS('daya dengar', 'sesuai umur');
+    await sleep(800);
 
-    // 2. Tes Daya Lihat
-    // Opsi: 'Daya lihat anak baik' atau 'Daya lihat anak kurang'
-    await selectDropdownSurveyJS('Daya lihat anak baik');
-    await sleep(1000);
+    // 2. Tes Daya Lihat (Jika di data excel dicatat ada kelainan mata)
+    if ((data.mata || '').toLowerCase() === 'ya') {
+        await isiDropdownSurveyJS('daya lihat', 'anak kurang');
+    } else {
+        await isiDropdownSurveyJS('daya lihat', 'anak baik');
+    }
+    await sleep(800);
 
-    // 3. Serumen Impaksi (Pertanyaan 3)
-    // Berdasarkan inspect: Opsi biasanya 'Tidak ditemukan' atau serupa
-    await selectDropdownSurveyJS('Tidak ditemukan');
-    await sleep(1000);
+    // 3. Serumen Impaksi 
+    // Menggunakan kata 'tidak' untuk klik opsi 'Tidak ditemukan'
+    await isiDropdownSurveyJS('serumen impaksi', 'tidak');
+    await sleep(800);
 
-    // 4. Infeksi Telinga (Pertanyaan 4)
-    await selectDropdownSurveyJS('Tidak ditemukan');
-    await sleep(1000);
+    // 4. Infeksi Telinga
+    await isiDropdownSurveyJS('infeksi telinga', 'tidak');
+    await sleep(800);
 
-    // 5. Kelainan Mata (Pertanyaan 5 - Pertanyaan panjang)
-    // Opsi: 'Tidak ditemukan'
-    await selectDropdownSurveyJS('Tidak ditemukan');
-    await sleep(1000);
+    // 5. Kelainan Mata
+    await isiDropdownSurveyJS('selaput mata merah', 'tidak');
+    await sleep(800);
 }
 
 /* =========================================================
-   KLIK KIRIM & VALIDASI SAPU BERSIH (KHUSUS ANAK)
+   KLIK KIRIM & VALIDASI SAPU BERSIH 
 ========================================================= */
 function isFormValid() {
     const questions = document.querySelectorAll('.sd-question, .sv-question');
@@ -357,7 +353,6 @@ async function klikKirim() {
 
         for (let l of labels) {
             let labelText = (l.innerText || '').toLowerCase().trim();
-            // Upgrade opsi untuk form Anak: Normal, Tidak, Tidak Ada, Sesuai, Baik, Negatif
             if (labelText === 'tidak' || labelText === 'normal' || labelText === 'tidak ada' || 
                 labelText === 'sesuai' || labelText === 'baik' || labelText === 'negatif') {
                 const input = l.querySelector('input[type="radio"]');
@@ -372,7 +367,6 @@ async function klikKirim() {
         }
 
         if (!foundDefaultAnswer) {
-            console.warn("[WARNING] Soal wajib kosong dan tidak ada kata kunci default.");
             updateStatus('Terjebak soal dinamis.\nSilakan isi manual lalu klik Kirim.');
             return false; 
         }
@@ -431,7 +425,6 @@ async function autoContinueForm() {
         if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
         if(inputLP) forceInject(inputLP, data.lp); await sleep(1000);
     }
-    // RUTE BARU: Cegah Error Gula Darah 
     else if(title.includes('pemeriksaan gula darah anak')){
         currentId = 'gula'; updateStatus('MENGISI TAHAP: PEMERIKSAAN GULA');
         await pilihSemuaRadioLimit('tidak', 99, true); 
@@ -460,7 +453,7 @@ async function autoContinueForm() {
     }
    else if(title.includes('telinga dan mata')){
         currentId = 'telinga_mata';
-        // Gunakan fungsi baru khusus anak
+        // Fungsi spesifik Telinga Mata Anak menggunakan Dropdown Selector
         await handleTelingaMataAnak(data); 
     }
     else if(title.includes('karies') || title.includes('pemeriksaan gigi')){
@@ -469,7 +462,6 @@ async function autoContinueForm() {
         await selectDropdownSurveyJS('tidak', 1);
     }
     
-    // Dynamic Fallback: Biarkan fungsi Sapu Bersih mengerjakan form Anemia, Malaria, dll.
     if (!currentId) {
         const foundTarget = TARGETS.find(t => title.includes(t.txt));
         if (foundTarget) {
@@ -511,7 +503,6 @@ async function mainLoopCKG(data){
     let nextItem = getNextTarget();
     
     if(!nextItem) {
-        console.warn("Tombol tidak ketemu, mencoba scan ulang dalam 2 detik...");
         await sleep(2000);
         nextItem = getNextTarget();
     }
@@ -529,7 +520,7 @@ async function mainLoopCKG(data){
 }
 
 /* =========================================================
-   UI MODERN & DRAGGABLE (TEMA WARNA BARU)
+   UI MODERN & DRAGGABLE
 ========================================================= */
 let BOT_RUNNING = false;
 function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
@@ -547,7 +538,6 @@ function createUI(){
         </div>
     `;
     const style = document.createElement('style');
-    // UI menggunakan warna kuning keemasan sebagai penanda ini bot Anak/Remaja
     style.innerHTML = `
         #auto-ckg-ui {
             position: fixed; top: 100px; right: 20px; width: 300px;
