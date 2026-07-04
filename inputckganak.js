@@ -11,7 +11,7 @@ const GIDS = ['0', '846804574'];
 const TARGETS = [
     { id: 'gizi', txt: 'gizi anak' },
     { id: 'tensi', txt: 'tekanan darah anak' },
-    { id: 'gula', txt: 'gula darah anak' },
+    { id: 'gula', txt: 'pemeriksaan gula darah anak' },
     { id: 'tb', txt: 'x-ray tb' },
     { id: 'frambusia', txt: 'frambusia' },
     { id: 'kusta', txt: 'kusta' },
@@ -409,8 +409,8 @@ async function autoContinueForm() {
         if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
         if(inputLP) forceInject(inputLP, data.lp); await sleep(1000);
     }
-    else if(title.includes('gula darah anak')){
-        currentId = 'gula'; updateStatus('MENGISI TAHAP: PEMERIKSAAN GULA ANAK');
+    else if(title.includes('pemeriksaan gula darah anak')){
+        currentId = 'gula'; updateStatus('MENGISI TAHAP: PEMERIKSAAN GULA DARAH ANAK');
         await pilihSemuaRadioLimit('tidak', 99, true); 
         await sleep(800);
         const inputGula = document.querySelector('input[placeholder*="Isi sesuai hasil" i]') || realInputs[0];
