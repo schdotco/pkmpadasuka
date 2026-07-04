@@ -466,6 +466,19 @@ async function autoContinueForm() {
         currentId = 'skabies'; updateStatus('MENGISI TAHAP: SKABIES');
         await selectDropdownSurveyJS('tidak ada');
     }
+   else if(title.includes('x-ray tb') || title.includes('tuberkulosis')){
+        currentId = 'tb'; updateStatus('MENGISI TAHAP: TUBERKULOSIS ANAK');
+        
+        // 1. Menjawab soal nomor 1 ("Tidak batuk")
+        // exact = false agar dia bisa mendeteksi frasa "tidak batuk"
+        await pilihSemuaRadioLimit('tidak batuk', 1, false); 
+        await sleep(800);
+        
+        // 2. Menjawab soal nomor 2 sampai 6 ("Tidak")
+        // exact = true agar dia HANYA mengeklik yang teksnya benar-benar "Tidak" saja
+        await pilihSemuaRadioLimit('tidak', 99, true); 
+        await sleep(800);
+    }
    else if(title.includes('telinga dan mata')){
         currentId = 'telinga_mata';
         // Fungsi spesifik Telinga Mata Anak menggunakan Dropdown Selector
