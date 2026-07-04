@@ -488,7 +488,7 @@ async function autoContinueForm() {
             } else if ((imt >= 16.0 && imt < 17.0) || (imt > 24.9 && imt <= 29.9)) {
                 hasilKebugaran = 'Kurang';
             } else if (imt < 16.0 || imt > 29.9) {
-                hasilKebugaran = 'Kurang sekali';
+                hasilKebugaran = 'Kurang';
             }
         }
         
