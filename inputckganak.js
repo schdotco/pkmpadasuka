@@ -466,16 +466,15 @@ async function autoContinueForm() {
         currentId = 'skabies'; updateStatus('MENGISI TAHAP: SKABIES');
         await selectDropdownSurveyJS('tidak ada');
     }
-   else if(title.includes('x-ray tb') || title.includes('tuberkulosis')){
+// RUTE BARU: SKRINING TB ANAK
+    else if(title.includes('x-ray tb') || title.includes('skrining x-ray')){
         currentId = 'tb'; updateStatus('MENGISI TAHAP: TUBERKULOSIS ANAK');
         
-        // 1. Menjawab soal nomor 1 ("Tidak batuk")
-        // exact = false agar dia bisa mendeteksi frasa "tidak batuk"
+        // 1. Pilih opsi "Tidak batuk" khusus untuk soal nomor 1
         await pilihSemuaRadioLimit('tidak batuk', 1, false); 
         await sleep(800);
         
-        // 2. Menjawab soal nomor 2 sampai 6 ("Tidak")
-        // exact = true agar dia HANYA mengeklik yang teksnya benar-benar "Tidak" saja
+        // 2. Pilih opsi "Tidak" untuk soal nomor 2 sampai 6
         await pilihSemuaRadioLimit('tidak', 99, true); 
         await sleep(800);
     }
@@ -498,9 +497,13 @@ async function autoContinueForm() {
         }
     }
 
-    if(currentId) addCompleted(currentId);
-    await klikKirim();
-    updateStatus('Menunggu sistem pindah halaman...');
+   if(currentId) addCompleted(currentId);
+    
+    // PERBAIKAN BUG: Hanya ubah status ke "Menunggu" jika klikKirim sukses me-return true
+    let kirimSukses = await klikKirim();
+    if (kirimSukses) {
+        updateStatus('Menunggu sistem pindah halaman...');
+    }
 }
 
 /* =========================================================
