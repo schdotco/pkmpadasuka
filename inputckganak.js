@@ -337,8 +337,9 @@ async function klikKirim() {
 
         for (let l of labels) {
             let labelText = (l.innerText || '').toLowerCase().trim();
-            if (labelText === 'tidak' || labelText === 'normal' || labelText === 'tidak ada' || 
-                labelText === 'sesuai' || labelText === 'baik' || labelText === 'negatif') {
+                if (labelText === 'tidak' || labelText === 'normal' || labelText === 'tidak ada' || 
+                labelText === 'sesuai' || labelText === 'baik' || labelText === 'negatif' ||
+                labelText.includes('tidak ada ') || labelText.includes('tidak ditemukan')) {
                 const input = l.querySelector('input[type="radio"]');
                 if (input && !input.checked) {
                     input.click();
@@ -445,6 +446,19 @@ async function autoContinueForm() {
         currentId = 'skabies'; updateStatus('MENGISI TAHAP: SKABIES');
         await selectDropdownSurveyJS('tidak ada');
     }
+// RUTE 1: Telinga dan Mata (Anak Sekolah) -> Pakai Radio Button
+    else if(title.includes('telinga dan mata - anak sekolah')){
+        currentId = 'telinga_mata'; updateStatus('MENGISI TAHAP: TELINGA MATA (ANAK SEKOLAH)');
+        
+        // Klik semua jawaban yang mengandung kata "Normal" (untuk pendengaran/penglihatan)
+        await pilihSemuaRadioLimit('normal', 99, false); 
+        await sleep(800);
+        
+        // Klik semua jawaban yang mengandung kata "Tidak" (untuk serumen/infeksi)
+        await pilihSemuaRadioLimit('tidak', 99, false); 
+        await sleep(800);
+    }
+    // RUTE 2: Telinga dan Mata (Balita / Prasekolah) -> Pakai Dropdown
     else if(title.includes('telinga dan mata')){
         currentId = 'telinga_mata';
         await handleTelingaMataAnak(data); 
