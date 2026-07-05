@@ -629,7 +629,7 @@ async function handleSkriningMandiri(data) {
 
             // PERBAIKAN: Gunakan huruf kecil karena p sudah di-toLowerCase()
             if (p.includes('belum')) target = 'Belum Menikah';
-            else if (p.includes('cerai')) target = 'Cerai'; // Sesuaikan label web jika beda
+            else if (p.includes('cerai')) target = 'Cerai Hidup'; // Sesuaikan label web jika beda
             
             updateStatus('Mengisi: ' + target);
             await fillRadioSurveyJS('status perkawinan', target);
