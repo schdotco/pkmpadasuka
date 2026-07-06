@@ -184,6 +184,20 @@ async function cariData(nikInput) {
 /* =========================================================
    DOM INTERACTOR (SURVEYJS SAFE)
 ========================================================= */
+// FUNGSI BARU: forceInject (Untuk menyuntik angka ke dalam kotak)
+function forceInject(element, value) {
+    if (!element) return;
+    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+    nativeSetter.call(element, value);
+    if (element._valueTracker) {
+        element._valueTracker.setValue('');
+    }
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+    element.dispatchEvent(new Event('blur', { bubbles: true }));
+    element.blur();
+}
+
 async function fillRadioSurveyJS(soalText, jawabanText) {
     try {
 
