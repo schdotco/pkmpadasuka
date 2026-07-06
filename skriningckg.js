@@ -740,25 +740,35 @@ async function handleSkriningMandiri(data) {
         }
     }
 
-    // 7. SAPU BERSIH (Isi radio yang KOSONG menjadi default)
+// 7. SAPU BERSIH (Isi radio yang KOSONG menjadi default)
     const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
     questions.forEach(q => {
         let isAnswered = false;
-        q.querySelectorAll('input[type="radio"]').forEach(radio => {
+        const radios = q.querySelectorAll('input[type="radio"]');
+        
+        // Jika soal ini tidak punya pilihan radio button, lewati
+        if (radios.length === 0) return;
+
+        radios.forEach(radio => {
             if (radio.checked) isAnswered = true;
         });
 
         if (isAnswered) return;
 
         let qText = (q.innerText||'').toLowerCase();
-        if (qText.match(/aktivitas fisik/)) return; 
+        
+        // PERBAIKAN: Persempit kata kunci skip agar tidak salah melewati soal jantung/PJK
+        if (qText.includes('berapa hari anda aktif secara fisik') || qText.includes('jumlah hari aktif')) return; 
 
         q.querySelectorAll('label').forEach(l => {
             let txt = (l.innerText||'').toLowerCase().trim();
             if (txt === 'tidak' || txt === 'normal' || txt === 'tidak ada') {
                 let i = l.querySelector('input[type="radio"]');
                 if (i && !i.checked) { 
-                    i.click(); 
+                    // PERBAIKAN: Klik bagian bulatan decorator agar SurveyJS merespons dengan benar
+                    const decorator = l.querySelector('.sd-radio__decorator, .sd-item__decorator') || l;
+                    decorator.click(); 
+                    
                     i.checked = true; 
                     i.dispatchEvent(new Event('input', { bubbles:true }));
                     i.dispatchEvent(new Event('change', { bubbles:true }));
