@@ -753,9 +753,20 @@ async function handleSkriningMandiri(data) {
         });
     });
 
-    // 6. AKTIVITAS FISIK
+    // 8. AKTIVITAS FISIK (SUDAH DIPERBARUI)
     if (pageText.includes('aktivitas fisik')) {
         updateStatus('Mengisi Aktivitas Fisik...');
+        
+        // A. Suntik angka 3 pada form <input type="number">
+        const inputAngka = [...document.querySelectorAll('input[type="number"]')];
+        if (inputAngka.length > 0) {
+            if (inputAngka[0]) forceInject(inputAngka[0], '3');
+            await sleep(500);
+            if (inputAngka[1]) forceInject(inputAngka[1], '3');
+            await sleep(500);
+        }
+
+        // B. Fallback Dropdown (Jika form lawas masih muncul, pilih 'Tidak')
         const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
         for (let i = 0; i < dropdowns.length; i++) {
             const currentDropdown = dropdowns[i];
