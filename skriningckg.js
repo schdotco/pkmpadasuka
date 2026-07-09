@@ -544,67 +544,60 @@ async function isiSemuaRadioTidak() {
 }
 
 async function isiKesehatanJiwa(data) {
-    // 1. Fallback keamanan agar script tidak crash jika data lama masih tersimpan
+    // Debug: Lihat apa isi datanya
+    console.log("[BOT DEBUG] Data Jiwa dari Sheet:", { j1: data.jiwa1, j2: data.jiwa2, j3: data.jiwa3, j4: data.jiwa4 });
+
     const j1 = data.jiwa1 || '';
     const j2 = data.jiwa2 || '';
     const j3 = data.jiwa3 || '';
     const j4 = data.jiwa4 || '';
 
-    const semuaPertanyaan = [
-        ...document.querySelectorAll('.sd-question, .sd-element')
-    ];
+    const semuaPertanyaan = [...document.querySelectorAll('.sd-question, .sd-element')];
 
     for (const q of semuaPertanyaan) {
         const text = (q.innerText || '').toLowerCase();
         let jawabanSheet = '';
 
-        // 2. Deteksi Soal
-        if (text.includes('bersemangat')) {
-            jawabanSheet = j1;
-        } 
-        else if (text.includes('murung') || text.includes('putus asa')) {
-            jawabanSheet = j2;
-        } 
-        else if (text.includes('gugup') || text.includes('cemas')) {
-            jawabanSheet = j3;
-        } 
-        else if (text.includes('khawatir') || text.includes('mengendalikan')) {
-            jawabanSheet = j4;
-        }
+        if (text.includes('bersemangat')) jawabanSheet = j1;
+        else if (text.includes('murung') || text.includes('putus asa')) jawabanSheet = j2;
+        else if (text.includes('gugup') || text.includes('cemas')) jawabanSheet = j3;
+        else if (text.includes('khawatir') || text.includes('mengendalikan')) jawabanSheet = j4;
 
-        // 3. Eksekusi Pencarian Jawaban
         if (jawabanSheet.trim() !== '') {
+            console.log(`[BOT DEBUG] Soal "${text.substring(0, 15)}..." -> Jawaban Sheet: "${jawabanSheet}"`);
+            
             let kataKunci = '';
             const teksJawaban = jawabanSheet.toLowerCase();
             
-            // Konversi teks dari Spreadsheet menjadi 4 kata kunci paten
+            // Pencocokan lebih luas
             if (teksJawaban.includes('tidak')) kataKunci = 'tidak';
             else if (teksJawaban.includes('kurang')) kataKunci = 'kurang';
             else if (teksJawaban.includes('lebih')) kataKunci = 'lebih';
             else if (teksJawaban.includes('hampir')) kataKunci = 'hampir';
 
-            // Jika kata kunci berhasil didapatkan, cari radio button-nya
             if (kataKunci !== '') {
-                const pilihan = [
-                    ...q.querySelectorAll('.sd-item, .sv-item')
-                ];
-
-                // Cari opsi di web yang mengandung kata kunci paten tersebut
-                const targetPilihan = pilihan.find(el =>
-                    (el.innerText || '').toLowerCase().includes(kataKunci)
-                );
+                const pilihan = [...q.querySelectorAll('.sd-item, .sv-item, label')];
+                const targetPilihan = pilihan.find(el => (el.innerText || '').toLowerCase().includes(kataKunci));
 
                 if (targetPilihan) {
-                    const radio =
-                        targetPilihan.querySelector('.sd-radio__decorator') ||
-                        targetPilihan.querySelector('.sd-item__decorator') ||
-                        targetPilihan.querySelector('input[type="radio"]');
-
-                    if (radio) {
-                        radio.click();
-                        await sleep(400); // Jeda klik
+                    console.log(`[BOT DEBUG] ✅ Ditemukan pilihan "${kataKunci}" untuk soal.`);
+                    targetPilihan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    await sleep(300);
+                    targetPilihan.click(); 
+                    
+                    const inputAsli = targetPilihan.querySelector('input[type="radio"]');
+                    if (inputAsli) {
+                        inputAsli.checked = true;
+                        inputAsli.dispatchEvent(new Event('input', { bubbles:true }));
+                        inputAsli.dispatchEvent(new Event('change', { bubbles:true }));
                     }
+                    await sleep(600);
+                } else {
+                    console.warn(`[BOT DEBUG] ❌ Kata kunci "${kataKunci}" tidak cocok dengan opsi yang ada di layar.`);
+                    console.log("Opsi yang tersedia di layar:", pilihan.map(p => p.innerText.trim()));
                 }
+            } else {
+                console.warn(`[BOT DEBUG] ❌ Jawaban dari sheet ("${jawabanSheet}") tidak mengandung kata kunci (tidak/kurang/lebih/hampir).`);
             }
         }
     }
