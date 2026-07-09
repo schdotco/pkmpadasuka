@@ -594,32 +594,21 @@ async function isiKesehatanJiwa(data) {
                     (el.innerText || '').toLowerCase().includes(kataKunci)
                 );
 
-            if (targetPilihan) {
-                    console.log(`[BOT] ✅ Menemukan jawaban untuk soal.`);
-                    
-                    // STRATEGI BARU: Klik langsung pada elemen pembungkus (targetPilihan)
-                    // Ini jauh lebih aman karena targetPilihan biasanya adalah <label> 
-                    // yang membungkus <input> dan <span>decorator</span>.
-                    targetPilihan.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    await sleep(300);
+                if (targetPilihan) {
+                    const radio =
+                        targetPilihan.querySelector('.sd-radio__decorator') ||
+                        targetPilihan.querySelector('.sd-item__decorator') ||
+                        targetPilihan.querySelector('input[type="radio"]');
 
-                    // 1. Klik pembungkusnya
-                    targetPilihan.click(); 
-                    
-                    // 2. Jika ada input di dalamnya, pastikan checked
-                    const inputAsli = targetPilihan.querySelector('input[type="radio"]');
-                    if (inputAsli) {
-                        inputAsli.checked = true;
-                        inputAsli.dispatchEvent(new Event('input', { bubbles:true }));
-                        inputAsli.dispatchEvent(new Event('change', { bubbles:true }));
-                    }
-
-                    await sleep(600); // Jeda ekstra untuk memastikan SurveyJS memproses perubahan
+                    if (radio) {
+                        radio.click();
+                        await sleep(400); // Jeda klik
                     }
                 }
             }
         }
     }
+}
 
 async function isiTetanusCatin() {
 
