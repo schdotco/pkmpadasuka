@@ -18,7 +18,13 @@ const TARGETS = [
     { id: 'karies', txt: 'karies' },
     { id: 'periodontal', txt: 'periodontal' },
     { id: 'puma', txt: 'puma' }, 
-    { id: 'kanker_paru', txt: 'skrining kanker paru' }
+    { id: 'kanker_paru', txt: 'skrining kanker paru' },
+    { id: 'skilas_kog', txt: 'penurunan kognitif' },
+    { id: 'skilas_mob', txt: 'mobilisasi' },
+    { id: 'skilas_mob_alt', txt: 'tingkat kemandirian' },
+    { id: 'skilas_mal', txt: 'malnutrisi' },
+    { id: 'skilas_dep', txt: 'depresi' },
+    { id: 'skilas_dep_alt', txt: 'emosional' }
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r,ms));
@@ -177,7 +183,16 @@ async function cariData(nikInput) {
                     lp: cells[43] || '80',
                     gula: cells[58] || '110',
                     mata: cells[70] || 'Tidak',
-                    merokok: cells[71] || '' // Wajib ditambahkan agar skrining kanker & PUMA bekerja
+                    merokok: cells[71] || '', // Wajib ditambahkan agar skrining kanker & PUMA bekerja
+                    skilasKog1: (cells[78] || 'Ya').trim(),
+                    skilasKog2: (cells[79] || 'Benar semua').trim(),
+                    skilasKog3: (cells[80] || 'Ya').trim(),
+                    skilasMob:  (cells[81] || 'Ya').trim(),
+                    skilasMal1: (cells[82] || 'Tidak').trim(),
+                    skilasMal2: (cells[83] || 'Tidak').trim(),
+                    skilasMal3: (cells[84] || 'Tidak').trim(),
+                    skilasDep1: (cells[88] || 'Tidak').trim(),
+                    skilasDep2: (cells[89] || 'Tidak').trim()
                 };
             }
         }
@@ -554,6 +569,36 @@ async function autoContinueForm() {
         await isiRadioSurveyJS('batuk saat sedang tidak menderita', 'tidak');
         await isiRadioSurveyJS('spirometri', 'tidak');
         await sleep(500);
+    }
+      else if (title.includes('penurunan kognitif')) {
+        currentId = 'skilas_kog'; updateStatus('MENGISI TAHAP: PENURUNAN KOGNITIF');
+        await isiRadioSurveyJS('mengingat tiga kata: bunga', data.skilasKog1);
+        let opsiKog2 = (data.skilasKog2 || '').toLowerCase().includes('ya') ? 'benar semua' : 'salah';
+        await isiRadioSurveyJS('tanggal berapakah hari ini', opsiKog2);
+        await isiRadioSurveyJS('mengingat tiga kata sebelumnya', data.skilasKog3);
+    }
+    else if (title.includes('mobilisasi') || title.includes('tingkat kemandirian')) {
+        currentId = 'skilas_mob'; updateStatus('MENGISI TAHAP: MOBILISASI');
+        await isiRadioSurveyJS('berdiri dari kursi lima kali', data.skilasMob);
+    }
+    else if (title.includes('malnutrisi')) {
+        currentId = 'skilas_mal'; updateStatus('MENGISI TAHAP: MALNUTRISI');
+        await isiRadioSurveyJS('berat badan anda berkurang', data.skilasMal1);
+        await isiRadioSurveyJS('hilang nafsu makan', data.skilasMal2);
+        await isiRadioSurveyJS('ukuran lingkar lengan atas', data.skilasMal3);
+    }
+    else if (title.includes('gejala depresi') || title.includes('emosional')) {
+        currentId = 'skilas_dep'; 
+        updateStatus('MENGISI TAHAP: DEPRESI');
+        
+        // Ambil data (pastikan isinya "Ya" atau "Tidak" sesuai yang ada di website)
+        let d1 = (data.skilasDep1 || 'tidak').trim();
+        let d2 = (data.skilasDep2 || 'tidak').trim();
+        
+        // Panggil fungsi yang sudah diperbaiki
+        await selectDropdownContext('merasa sedih, tertekan', d1);
+        await sleep(500);
+        await selectDropdownContext('sedikit minat atau kesenangan', d2);
     }
 
 
