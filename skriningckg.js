@@ -5,8 +5,8 @@
 /* =========================================================
    CONFIG SPREADSHEET
 ========================================================= */
-const SHEET_ID = '15vBz_H8dT9ZxuiEjkdW0VjOZmoCawp2eqtl32gpi0oY';
-const GIDS = ['0', '846804574'];
+const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
+const GIDS = ['1783755807', '1121908280'];
 
 const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
