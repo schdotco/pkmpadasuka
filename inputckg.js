@@ -265,44 +265,46 @@ async function selectDropdownSurveyJS(optionText) {
     return success;
 }
 
-async function isiDropdownKhusus(soalSelector, teksJawaban) {
-    // 1. Cari container soal berdasarkan teks pertanyaannya
-    const questions = [...document.querySelectorAll('.sd-question, .sv-question')];
-    const targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(soalSelector.toLowerCase()));
-    
+async function selectDropdownContext(soalText, optionText) {
+    // 1. Cari kontainer soal berdasarkan teks
+    const questions = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')];
+    const targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(soalText.toLowerCase()));
     if (!targetQ) return false;
 
-    // 2. Cari elemen dropdown HANYA di dalam soal tersebut
-    const dropdownTrigger = targetQ.querySelector('.sd-dropdown, .sv-dropdown');
-    if (dropdownTrigger) {
-        // Gulir layar ke soal tersebut agar tidak tertutup elemen lain
-        targetQ.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        await sleep(500);
+    // 2. Cari dropdown di dalam soal tersebut
+    const dropdown = targetQ.querySelector('.sd-dropdown');
+    if (!dropdown) return false;
 
-        // Klik untuk membuka dropdown
-        triggerClick(dropdownTrigger);
-        await sleep(1000); // Tunggu animasi dropdown terbuka maksimal
+    // 3. Klik untuk membuka
+    dropdown.click();
+    await sleep(1000); // Wajib tunggu animasi
 
-        // 3. Cari opsi jawaban (PERBAIKAN: Hanya cari opsi yang TERLIHAT di layar)
-        const targetOpt = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')].find(el => {
-            const isTextMatch = (el.innerText || '').toLowerCase().includes(teksJawaban.toLowerCase());
-            
-            // Cek offsetWidth dan offsetHeight untuk memastikan elemen tidak tersembunyi (hidden/display:none)
-            const isVisible = (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
-            
-            return isTextMatch && isVisible;
-        });
-        
-        if (targetOpt) {
-            triggerClick(targetOpt);
-            await sleep(500);
-            return true;
-        } else {
-            // Tutup kembali jika jawaban tidak ditemukan agar tidak nyangkut
-            triggerClick(dropdownTrigger);
-        }
+    // 4. KUNCI: Cari daftar pilihan BERDASARKAN ID (aria-controls)
+    const listId = dropdown.getAttribute('aria-controls');
+    const listElement = document.getElementById(listId);
+    
+    if (!listElement) {
+        console.warn('Daftar pilihan tidak ditemukan untuk:', soalText);
+        dropdown.click(); // Tutup kembali
+        return false;
     }
-    return false;
+
+    // 5. Cari opsi HANYA di dalam listElement tersebut
+    const options = [...listElement.querySelectorAll('.sv-list__item-body')];
+    const targetOpt = options.find(el => 
+        (el.innerText || '').trim().toLowerCase() === optionText.toLowerCase()
+    );
+
+    if (targetOpt) {
+        targetOpt.click();
+        await sleep(500);
+        console.log('[AI] Berhasil memilih:', optionText);
+        return true;
+    } else {
+        console.warn('Opsi tidak ditemukan di list:', optionText);
+        dropdown.click(); // Tutup kembali jika gagal
+        return false;
+    }
 }
 
 async function pilihSemuaRadioLimit(text, limit = 99, exact = false) {
@@ -627,17 +629,18 @@ async function autoContinueForm() {
         await isiRadioSurveyJS('hilang nafsu makan', data.skilasMal2);
         await isiRadioSurveyJS('ukuran lingkar lengan atas', data.skilasMal3);
     }
-else if (title.includes('gejala depresi') || title.includes('emosional')) {
+    else if (title.includes('gejala depresi') || title.includes('emosional')) {
         currentId = 'skilas_dep'; 
         updateStatus('MENGISI TAHAP: DEPRESI');
         
+        // Ambil data (pastikan isinya "Ya" atau "Tidak" sesuai yang ada di website)
         let d1 = (data.skilasDep1 || 'tidak').trim();
         let d2 = (data.skilasDep2 || 'tidak').trim();
         
-        // Gunakan fungsi baru yang menargetkan dropdown per soal
-        await isiDropdownKhusus('merasa sedih, tertekan', d1);
-        await sleep(800);
-        await isiDropdownKhusus('sedikit minat atau kesenangan', d2);
+        // Panggil fungsi yang sudah diperbaiki
+        await selectDropdownContext('merasa sedih, tertekan', d1);
+        await sleep(500);
+        await selectDropdownContext('sedikit minat atau kesenangan', d2);
     }
 
     if(currentId) addCompleted(currentId);
