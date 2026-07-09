@@ -198,7 +198,8 @@ async function cariData(nikInput) {
         console.error("Terjadi kesalahan saat mencari data:", error);
         return null;
     }
-
+}
+    
 /* =========================================================
    DOM INTERACTOR (SURVEYJS SAFEe)
 ========================================================= */
