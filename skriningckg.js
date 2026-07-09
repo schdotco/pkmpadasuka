@@ -192,7 +192,7 @@ async function cariData(nikInput) {
             };
         }
     }
-
+}
     return null;
 }
 
