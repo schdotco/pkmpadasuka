@@ -189,12 +189,15 @@ async function cariData(nikInput) {
                 jiwa2: (row[73] || '').trim(), // Kolom BV
                 jiwa3: (row[74] || '').trim(), // Kolom BW
                 jiwa4: (row[75] || '').trim()  // Kolom BX
-            };
+                };
+            }
         }
+        return null;
+
+    } catch (error) { 
+        console.error("Terjadi kesalahan saat mencari data:", error);
+        return null;
     }
-}
-    return null;
-}
 
 /* =========================================================
    DOM INTERACTOR (SURVEYJS SAFE)
