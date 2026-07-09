@@ -275,14 +275,23 @@ async function isiDropdownKhusus(soalSelector, teksJawaban) {
     // 2. Cari elemen dropdown HANYA di dalam soal tersebut
     const dropdownTrigger = targetQ.querySelector('.sd-dropdown, .sv-dropdown');
     if (dropdownTrigger) {
+        // Gulir layar ke soal tersebut agar tidak tertutup elemen lain
+        targetQ.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await sleep(500);
+
         // Klik untuk membuka dropdown
         triggerClick(dropdownTrigger);
-        await sleep(1000); // Tunggu animasi dropdown terbuka
+        await sleep(1000); // Tunggu animasi dropdown terbuka maksimal
 
-        // 3. Cari opsi jawaban yang muncul (SurveyJS biasanya merender list di luar container saat diklik)
-        const targetOpt = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')].find(el =>
-            (el.innerText || '').toLowerCase().includes(teksJawaban.toLowerCase())
-        );
+        // 3. Cari opsi jawaban (PERBAIKAN: Hanya cari opsi yang TERLIHAT di layar)
+        const targetOpt = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')].find(el => {
+            const isTextMatch = (el.innerText || '').toLowerCase().includes(teksJawaban.toLowerCase());
+            
+            // Cek offsetWidth dan offsetHeight untuk memastikan elemen tidak tersembunyi (hidden/display:none)
+            const isVisible = (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
+            
+            return isTextMatch && isVisible;
+        });
         
         if (targetOpt) {
             triggerClick(targetOpt);
