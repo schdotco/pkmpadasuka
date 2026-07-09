@@ -181,6 +181,19 @@ async function cariData(nikInput) {
         const nikSheet = normalizeNIK(row[11]);
 
         if (nikSheet === target) {
+            // --- DEBUGGER: Menampilkan data mentah ke Console ---
+            console.log("=== DEBUG DATA PADA BARIS INI ===");
+            console.log("Target NIK:", target);
+            console.log("Panjang array baris (total kolom):", row.length);
+            console.log("Isi Kolom 72 (Jiwa 1):", row[72]);
+            console.log("Isi Kolom 73 (Jiwa 2):", row[73]);
+            console.log("Isi Kolom 74 (Jiwa 3):", row[74]);
+            console.log("Isi Kolom 75 (Jiwa 4):", row[75]);
+            
+            // Tampilkan 10 kolom sebelum dan sesudah 72 untuk memastikan posisi
+            console.log("Preview Kolom 70-80:", row.slice(70, 81));
+            console.log("================================");
+            
             return {
                 nik: target,
                 perkawinan: row[26] || 'Belum Menikah',
