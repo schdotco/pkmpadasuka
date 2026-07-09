@@ -104,7 +104,12 @@ function parseCSV(text) {
         }
     }
 
-    if (current || row.length) {
+   if (current || row.length) {
+        row.push(current);
+        rows.push(row);
+    }
+    return rows;
+       
 let cachedSheetData = null;
 
 async function cariData(nikInput) {
