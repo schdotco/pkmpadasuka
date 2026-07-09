@@ -620,7 +620,6 @@ async function isiKesehatanJiwa(data) {
             }
         }
     }
-}
 
 async function isiTetanusCatin() {
 
