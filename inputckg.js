@@ -109,6 +109,7 @@ function parseCSV(text) {
         rows.push(row);
     }
     return rows;
+}
        
 let cachedSheetData = null;
 
