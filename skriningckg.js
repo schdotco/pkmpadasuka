@@ -557,9 +557,7 @@ async function isiSemuaRadioTidak() {
 }
 
 async function isiKesehatanJiwa(data) {
-    // Debug: Lihat apa isi datanya
-    console.log("[BOT DEBUG] Data Jiwa dari Sheet:", { j1: data.jiwa1, j2: data.jiwa2, j3: data.jiwa3, j4: data.jiwa4 });
-
+    // 1. Fallback keamanan
     const j1 = data.jiwa1 || '';
     const j2 = data.jiwa2 || '';
     const j3 = data.jiwa3 || '';
@@ -571,18 +569,22 @@ async function isiKesehatanJiwa(data) {
         const text = (q.innerText || '').toLowerCase();
         let jawabanSheet = '';
 
-        if (text.includes('bersemangat')) jawabanSheet = j1;
-        else if (text.includes('murung') || text.includes('putus asa')) jawabanSheet = j2;
-        else if (text.includes('gugup') || text.includes('cemas')) jawabanSheet = j3;
-        else if (text.includes('khawatir') || text.includes('mengendalikan')) jawabanSheet = j4;
+        // 2. Deteksi Soal
+        if (text.includes('bersemangat')) {
+            jawabanSheet = j1;
+        } else if (text.includes('murung') || text.includes('putus asa')) {
+            jawabanSheet = j2;
+        } else if (text.includes('gugup') || text.includes('cemas')) {
+            jawabanSheet = j3;
+        } else if (text.includes('khawatir') || text.includes('mengendalikan')) {
+            jawabanSheet = j4;
+        }
 
+        // 3. Eksekusi Pencarian Jawaban
         if (jawabanSheet.trim() !== '') {
-            console.log(`[BOT DEBUG] Soal "${text.substring(0, 15)}..." -> Jawaban Sheet: "${jawabanSheet}"`);
-            
             let kataKunci = '';
             const teksJawaban = jawabanSheet.toLowerCase();
             
-            // Pencocokan lebih luas
             if (teksJawaban.includes('tidak')) kataKunci = 'tidak';
             else if (teksJawaban.includes('kurang')) kataKunci = 'kurang';
             else if (teksJawaban.includes('lebih')) kataKunci = 'lebih';
@@ -593,24 +595,40 @@ async function isiKesehatanJiwa(data) {
                 const targetPilihan = pilihan.find(el => (el.innerText || '').toLowerCase().includes(kataKunci));
 
                 if (targetPilihan) {
-                    console.log(`[BOT DEBUG] ✅ Ditemukan pilihan "${kataKunci}" untuk soal.`);
+                    console.log(`[BOT] ✅ Menemukan jawaban "${kataKunci}" untuk soal.`);
+                    
                     targetPilihan.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     await sleep(300);
-                    targetPilihan.click(); 
+
+                    // ==========================================
+                    // STRATEGI SUPER CLICKER SURVEYJS
+                    // ==========================================
                     
+                    // 1. Cari elemen bulatan spesifik (decorator)
+                    const decorator = targetPilihan.querySelector('.sd-radio__decorator, .sd-item__decorator, .sv-item__decorator');
+                    if (decorator) {
+                        // Jika bulatan ketemu, klik bulatannya!
+                        decorator.click(); 
+                    } else {
+                        // Jika tidak ada, klik pembungkusnya
+                        targetPilihan.click(); 
+                    }
+
+                    // 2. Eksekusi langsung ke input rahasianya
                     const inputAsli = targetPilihan.querySelector('input[type="radio"]');
                     if (inputAsli) {
-                        inputAsli.checked = true;
-                        inputAsli.dispatchEvent(new Event('input', { bubbles:true }));
-                        inputAsli.dispatchEvent(new Event('change', { bubbles:true }));
+                        inputAsli.click(); // Paksa klik input
+                        inputAsli.checked = true; // Centang paksa
+                        
+                        // Kirim sinyal ke Vue/SurveyJS bahwa data sudah berubah
+                        inputAsli.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                        inputAsli.dispatchEvent(new Event('input', { bubbles: true }));
+                        inputAsli.dispatchEvent(new Event('change', { bubbles: true }));
                     }
-                    await sleep(600);
-                } else {
-                    console.warn(`[BOT DEBUG] ❌ Kata kunci "${kataKunci}" tidak cocok dengan opsi yang ada di layar.`);
-                    console.log("Opsi yang tersedia di layar:", pilihan.map(p => p.innerText.trim()));
+                    // ==========================================
+
+                    await sleep(600); // Wajib ada agar web punya waktu untuk menampilkan efek klik
                 }
-            } else {
-                console.warn(`[BOT DEBUG] ❌ Jawaban dari sheet ("${jawabanSheet}") tidak mengandung kata kunci (tidak/kurang/lebih/hampir).`);
             }
         }
     }
