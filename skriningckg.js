@@ -8,6 +8,8 @@
 const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
 const GIDS = ['1783755807', '1121908280'];
 
+let BOT_RUNNING = false;
+
 const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
@@ -110,7 +112,7 @@ function clearCompleted() {
         catch(err) {} 
     }
 }
-
+    
 /* =========================================================
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
 ========================================================= */
@@ -1045,9 +1047,7 @@ async function mainLoop(data) {
 
 /* =========================================================
    UI MODERN & DRAGGABLE
-========================================================= */
-let BOT_RUNNING = false;
-    
+========================================================= */    
 function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
 function stopBOT(){ BOT_RUNNING = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); }
 
@@ -1082,7 +1082,6 @@ function createUI(){
     `;
     document.head.appendChild(style); document.body.appendChild(box);
 
-    // Ambil Data NIK Lama (Agar Tidak Hilang)
     const savedData = loadBOT();
     if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
 
@@ -1108,7 +1107,7 @@ function createUI(){
 
         BOT_RUNNING = true;
         saveBOT(data);
-        clearCompleted(); // Reset antrian tombol agar bot mulai ngeklik dari atas
+        clearCompleted(); 
 
         updateStatus(`Data Ketemu!\nPerkawinan: ${data.perkawinan}`);
         await sleep(500);
@@ -1121,46 +1120,42 @@ function createUI(){
 /* =========================================================
    INIT / PINTU UTAMA
 ========================================================= */
-setInterval(createUI, 1000);
+function safeCreateUI() {
+    if (document.body) {
+        createUI();
+    }
+}
 
-setTimeout(async ()=>{
-    const isFormPage = location.hostname.includes('form.kemkes.go.id');
-    const isMainPage = location.hostname.includes('sehatindonesiaku');
+setInterval(safeCreateUI, 1000);
+
+window.addEventListener('load', async () => {
+    await sleep(1500); 
+
+    const isFormPage = location.href.includes('form.kemkes.go.id');
+    const isMainPage = location.href.includes('sehatindonesiaku');
 
     if(isFormPage) {
         await autoContinueForm();
     } else if (isMainPage) {
-        
-        // 1. Cek apakah ada data pasien yang belum selesai dikerjakan
         const data = loadBOT();
         if(data){
             BOT_RUNNING = true;
             updateStatus('MELANJUTKAN OTOMATIS...\nMencari Form Berikutnya');
             
-            // Langsung eksekusi tugas utama tanpa harus menunggu download CSV
             await sleep(3000);
             await mainLoop(data);
         } else {
-            // Tampilan default agar pop-up langsung aktif tanpa nge-freeze
             updateStatus('Menyiapkan Data\nMasukkan NIK lalu Tunggu sampai Database siap sebelum klik START');
         }
 
-        // --- 2. FITUR PRE-LOAD BACKGROUND SEJATI ---
         if (!cachedSheetData) {
-            // Kita TIDAK memakai 'await' di sini.
-            // Script akan men-download diam-diam di balik layar (paralel).
             cariData('000').then(() => {
-                // Begitu download selesai, cek apakah bot sedang jalan.
-                // Jika sedang santai (tidak ada pasien diproses), update statusnya.
-                if (!BOT_RUNNING) {
-                    updateStatus('Database Siap !\nklik START');
-                }
+                if (!BOT_RUNNING) updateStatus('Database Siap !\nklik START');
             }).catch(err => {
-                console.error("Gagal mendownload background data:", err);
+                if (!BOT_RUNNING) updateStatus('Gagal Load Database.\nCek Koneksi atau Klik START');
             });
         }
-        // ---------------------------------------------------
     }
-}, 1500);
+});
 
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
