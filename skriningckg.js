@@ -676,17 +676,24 @@ async function handleSkriningMandiri(data) {
     const pageText = document.body.innerText.toLowerCase();
 
     // 1. STATUS PERKAWINAN (Hanya jalan jika ada kata 'perkawinan' di layar)
-    if (pageText.includes('status perkawinan')) {
+        if (pageText.includes('status perkawinan')) {
         updateStatus('Status di Sheet: ' + data.perkawinan); 
         await sleep(1000); 
 
         if (data.perkawinan && data.perkawinan !== 'Data Kosong') {
             let p = data.perkawinan.toLowerCase();
+            
+            // Jadikan 'Menikah' sebagai default jika kata kuncinya hanya 'menikah'
             let target = 'Menikah'; 
 
-            // PERBAIKAN: Gunakan huruf kecil karena p sudah di-toLowerCase()
-            if (p.includes('belum')) target = 'Belum Menikah';
-            else if (p.includes('cerai')) target = 'Cerai Hidup'; // Sesuaikan label web jika beda
+            // Jika mengandung kata 'belum', ubah jadi 'Belum Menikah'
+            if (p.includes('belum')) {
+                target = 'Belum Menikah';
+            } 
+            // Jika mengandung kata 'janda', 'duda', atau 'cerai', ubah jadi 'Cerai Hidup'
+            else if (p.includes('janda') || p.includes('duda') || p.includes('cerai')) {
+                target = 'Cerai Hidup'; 
+            }
             
             updateStatus('Mengisi: ' + target);
             await fillRadioSurveyJS('status perkawinan', target);
