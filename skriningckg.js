@@ -41,19 +41,25 @@ function saveBOT(data) {
         dataPasien: data
     };
     try { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(payload)); }
-    catch(e) { localStorage.setItem('AUTO_SKRINING_DATA', JSON.stringify(payload)); }
+    catch(e) { 
+        try { localStorage.setItem('AUTO_SKRINING_DATA', JSON.stringify(payload)); } 
+        catch(err) {} // Abaikan jika browser memblokir penyimpanan
+    }
 }
 
 function loadBOT() { 
-    let raw;
+    let raw = null;
     try { raw = GM_getValue('AUTO_SKRINING_DATA'); }
-    catch(e) { raw = localStorage.getItem('AUTO_SKRINING_DATA'); }
+    catch(e) { 
+        try { raw = localStorage.getItem('AUTO_SKRINING_DATA'); } 
+        catch(err) { return null; } // Anti-crash jika localStorage ditolak
+    }
     
     if (!raw) return null;
 
     try {
         const payload = JSON.parse(raw);
-        if (payload.waktuSimpan) {
+        if (payload && payload.waktuSimpan) {
             const umurData = Date.now() - payload.waktuSimpan;
             if (umurData > WAKTU_KEDALUWARSA) {
                 console.log("Sesi bot kedaluwarsa (lebih dari 60 menit), mereset data...");
@@ -70,22 +76,39 @@ function loadBOT() {
 
 function clearBOT() { 
     try { GM_deleteValue('AUTO_SKRINING_DATA'); GM_deleteValue('CKG_MODE'); }
-    catch(e) { localStorage.removeItem('AUTO_SKRINING_DATA'); localStorage.removeItem('CKG_MODE'); }
+    catch(e) { 
+        try { localStorage.removeItem('AUTO_SKRINING_DATA'); localStorage.removeItem('CKG_MODE'); } 
+        catch(err) {} 
+    }
 }
 
 function getCompleted() { 
-    try { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
-    catch(e) { return JSON.parse(localStorage.getItem('AUTO_SKRINING_COMPLETED') || '[]'); }
+    let raw = null;
+    try { raw = GM_getValue('AUTO_SKRINING_COMPLETED'); }
+    catch(e) { 
+        try { raw = localStorage.getItem('AUTO_SKRINING_COMPLETED'); } 
+        catch(err) { return []; } 
+    }
+    try { return JSON.parse(raw || '[]'); } 
+    catch(e) { return []; }
 }
+
 function addCompleted(id) {
     const arr = getCompleted();
     if(!arr.includes(id)) arr.push(id);
     try { GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr)); }
-    catch(e) { localStorage.setItem('AUTO_SKRINING_COMPLETED', JSON.stringify(arr)); }
+    catch(e) { 
+        try { localStorage.setItem('AUTO_SKRINING_COMPLETED', JSON.stringify(arr)); } 
+        catch(err) {} 
+    }
 }
+
 function clearCompleted() { 
     try { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
-    catch(e) { localStorage.removeItem('AUTO_SKRINING_COMPLETED'); }
+    catch(e) { 
+        try { localStorage.removeItem('AUTO_SKRINING_COMPLETED'); } 
+        catch(err) {} 
+    }
 }
 
 /* =========================================================
