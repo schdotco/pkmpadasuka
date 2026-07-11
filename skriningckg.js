@@ -8,8 +8,6 @@
 const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
 const GIDS = ['1783755807', '1121908280'];
 
-let BOT_RUNNING = false;
-
 const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
@@ -1025,6 +1023,8 @@ async function mainLoop(data) {
 /* =========================================================
    UI MODERN & DRAGGABLE
 ========================================================= */
+let BOT_RUNNING = false;
+    
 function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
 function stopBOT(){ BOT_RUNNING = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); }
 
