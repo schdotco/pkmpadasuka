@@ -8,8 +8,6 @@
 const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
 const GIDS = ['1783755807', '1121908280'];
 
-let BOT_RUNNING = false;
-
 const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
@@ -35,84 +33,18 @@ function jawabanMerokok(v){
 /* =========================================================
    SESSION & DYNAMIC TRACKER
 ========================================================= */
-const WAKTU_KEDALUWARSA = 60 * 60 * 1000; // 60 menit dalam milidetik
+function saveBOT(data) { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); }
+function loadBOT()     { const raw = GM_getValue('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; }
+function clearBOT() { GM_deleteValue('AUTO_SKRINING_DATA'); GM_deleteValue('CKG_MODE'); }
 
-function saveBOT(data) { 
-    const payload = {
-        waktuSimpan: Date.now(),
-        dataPasien: data
-    };
-    try { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(payload)); }
-    catch(e) { 
-        try { localStorage.setItem('AUTO_SKRINING_DATA', JSON.stringify(payload)); } 
-        catch(err) {} // Abaikan jika browser memblokir penyimpanan
-    }
-}
-
-function loadBOT() { 
-    let raw = null;
-    try { raw = GM_getValue('AUTO_SKRINING_DATA'); }
-    catch(e) { 
-        try { raw = localStorage.getItem('AUTO_SKRINING_DATA'); } 
-        catch(err) { return null; } // Anti-crash jika localStorage ditolak
-    }
-    
-    if (!raw) return null;
-
-    try {
-        const payload = JSON.parse(raw);
-        if (payload && payload.waktuSimpan) {
-            const umurData = Date.now() - payload.waktuSimpan;
-            if (umurData > WAKTU_KEDALUWARSA) {
-                console.log("Sesi bot kedaluwarsa (lebih dari 60 menit), mereset data...");
-                clearBOT();
-                return null;
-            }
-            return payload.dataPasien;
-        }
-        return payload; // Fallback jika membaca format data lama
-    } catch(e) {
-        return null;
-    }
-}
-
-function clearBOT() { 
-    try { GM_deleteValue('AUTO_SKRINING_DATA'); GM_deleteValue('CKG_MODE'); }
-    catch(e) { 
-        try { localStorage.removeItem('AUTO_SKRINING_DATA'); localStorage.removeItem('CKG_MODE'); } 
-        catch(err) {} 
-    }
-}
-
-function getCompleted() { 
-    let raw = null;
-    try { raw = GM_getValue('AUTO_SKRINING_COMPLETED'); }
-    catch(e) { 
-        try { raw = localStorage.getItem('AUTO_SKRINING_COMPLETED'); } 
-        catch(err) { return []; } 
-    }
-    try { return JSON.parse(raw || '[]'); } 
-    catch(e) { return []; }
-}
-
+function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
 function addCompleted(id) {
     const arr = getCompleted();
     if(!arr.includes(id)) arr.push(id);
-    try { GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr)); }
-    catch(e) { 
-        try { localStorage.setItem('AUTO_SKRINING_COMPLETED', JSON.stringify(arr)); } 
-        catch(err) {} 
-    }
+    GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr));
 }
+function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
 
-function clearCompleted() { 
-    try { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
-    catch(e) { 
-        try { localStorage.removeItem('AUTO_SKRINING_COMPLETED'); } 
-        catch(err) {} 
-    }
-}
-    
 /* =========================================================
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
 ========================================================= */
@@ -1047,7 +979,7 @@ async function mainLoop(data) {
 
 /* =========================================================
    UI MODERN & DRAGGABLE
-========================================================= */    
+========================================================= */
 function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
 function stopBOT(){ BOT_RUNNING = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); }
 
@@ -1082,6 +1014,7 @@ function createUI(){
     `;
     document.head.appendChild(style); document.body.appendChild(box);
 
+    // Ambil Data NIK Lama (Agar Tidak Hilang)
     const savedData = loadBOT();
     if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
 
@@ -1107,7 +1040,7 @@ function createUI(){
 
         BOT_RUNNING = true;
         saveBOT(data);
-        clearCompleted(); 
+        clearCompleted(); // Reset antrian tombol agar bot mulai ngeklik dari atas
 
         updateStatus(`Data Ketemu!\nPerkawinan: ${data.perkawinan}`);
         await sleep(500);
@@ -1120,42 +1053,46 @@ function createUI(){
 /* =========================================================
    INIT / PINTU UTAMA
 ========================================================= */
-function safeCreateUI() {
-    if (document.body) {
-        createUI();
-    }
-}
+setInterval(createUI, 1000);
 
-setInterval(safeCreateUI, 1000);
-
-window.addEventListener('load', async () => {
-    await sleep(1500); 
-
-    const isFormPage = location.href.includes('form.kemkes.go.id');
-    const isMainPage = location.href.includes('sehatindonesiaku');
+setTimeout(async ()=>{
+    const isFormPage = location.hostname.includes('form.kemkes.go.id');
+    const isMainPage = location.hostname.includes('sehatindonesiaku');
 
     if(isFormPage) {
         await autoContinueForm();
     } else if (isMainPage) {
+        
+        // 1. Cek apakah ada data pasien yang belum selesai dikerjakan
         const data = loadBOT();
         if(data){
             BOT_RUNNING = true;
             updateStatus('MELANJUTKAN OTOMATIS...\nMencari Form Berikutnya');
             
+            // Langsung eksekusi tugas utama tanpa harus menunggu download CSV
             await sleep(3000);
             await mainLoop(data);
         } else {
+            // Tampilan default agar pop-up langsung aktif tanpa nge-freeze
             updateStatus('Menyiapkan Data\nMasukkan NIK lalu Tunggu sampai Database siap sebelum klik START');
         }
 
+        // --- 2. FITUR PRE-LOAD BACKGROUND SEJATI ---
         if (!cachedSheetData) {
+            // Kita TIDAK memakai 'await' di sini.
+            // Script akan men-download diam-diam di balik layar (paralel).
             cariData('000').then(() => {
-                if (!BOT_RUNNING) updateStatus('Database Siap !\nklik START');
+                // Begitu download selesai, cek apakah bot sedang jalan.
+                // Jika sedang santai (tidak ada pasien diproses), update statusnya.
+                if (!BOT_RUNNING) {
+                    updateStatus('Database Siap !\nklik START');
+                }
             }).catch(err => {
-                if (!BOT_RUNNING) updateStatus('Gagal Load Database.\nCek Koneksi atau Klik START');
+                console.error("Gagal mendownload background data:", err);
             });
         }
+        // ---------------------------------------------------
     }
-});
+}, 1500);
 
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
