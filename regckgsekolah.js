@@ -132,16 +132,16 @@ async function prosesVerifikasi() {
 
 /* ================= TARIK DATA SPREADSHEET ================= */
 function parseCSV(text){
-    const rows = []; let row = []; let current = ""; let insideQuote = false;
-    for(let i=0;i<text.length;i++){
-        const char = text[i]; const next = text[i+1];
-        if(char === '"'){ if(insideQuote && next === '"'){ current += '"'; i++; }else{ insideQuote = !insideQuote; } }
-        else if(char === ',' && !insideQuote){ row.push(current); current = ""; }
-        else if((char === '\n' || char === '\r') && !insideQuote){ if(current || row.length){ row.push(current); rows.push(row); row = []; current = ""; } }
-        else{ current += char; }
-    }
-    if(current || row.length){ row.push(current); rows.push(row); }
-    return rows;
+    const rows = []; let row = []; let current = ""; let insideQuote = false;
+    for(let i=0;i<text.length;i++){
+        const char = text[i]; const next = text[i+1];
+        if(char === '"'){ if(insideQuote && next === '"'){ current += '"'; i++; }else{ insideQuote = !insideQuote; } }
+        else if(char === ',' && !insideQuote){ row.push(current); current = ""; }
+        else if((char === '\n' || char === '\r') && !insideQuote){ if(current || row.length){ row.push(current); rows.push(row); row = []; current = ""; } }
+        else{ current += char; }
+    }
+    if(current || row.length){ row.push(current); rows.push(row); }
+    return rows;
 }
 
 let cachedSheetDataList = null;
@@ -202,7 +202,14 @@ async function cariData(nikInput) {
             try {
                 GM_setValue('CKG_MULTISHEET_CACHE', JSON.stringify(cachedSheetDataList));
                 GM_setValue('CKG_MULTISHEET_CACHE_TIME', now.toString());
-            } catch (e) {}
+            } catch (e) {
+                try {
+                    sessionStorage.setItem('CKG_MULTISHEET_CACHE', JSON.stringify(cachedSheetDataList));
+                    sessionStorage.setItem('CKG_MULTISHEET_CACHE_TIME', now.toString());
+                } catch (err) {
+                    console.warn("Storage penuh, data hanya disimpan di RAM sementara.");
+                }
+            }
         }
     }
 
