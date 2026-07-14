@@ -1,23 +1,38 @@
+// ==UserScript==
+// @name         CKG SEKOLAH Launcher Production Padasuka BETA
+// @match        https://sehatindonesiaku.kemkes.go.id/*
+// @match        https://form.kemkes.go.id/*
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_deleteValue
+// @grant        GM_xmlhttpRequest
+// @connect      schdotco.github.io
+// @connect      docs.google.com
+// @connect      drive.google.com
+// @connect      googleusercontent.com
+// @connect      firestore.googleapis.com
+// ==/UserScript==
+
 (function (GM_xmlhttpRequest) {
 'use strict';
     const request = GM_xmlhttpRequest;
 
 function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
-    
+
 /* ================= MODE CKG SEKOLAH ================= */
 
 const SHEETS = [{
     id: "1HXWft2Z-ArjTogbTODhpW-5AxXac7omw8jgNQAZhoV4",
     gids: ["0"],
-    colNama: 2,
-    colTgl: 3,
-    colWA: 9,
-    colJK: 4,
+    colNama: 1,
+    colTgl: 2,
+    colWA: 8,
+    colJK: 3,
     colPekerjaan: 12, // Diabaikan di CKG Sekolah
-    colSekolah: 5,   // Pastikan index kolom ini sesuai database Bapak
-    colKelas: 6,     // Pastikan index kolom ini sesuai database Bapak
-    colDisabilitas: 8, // Pastikan index kolom ini sesuai database Bapak
-    colAlamat: 7,
+    colSekolah: 4,   // Pastikan index kolom ini sesuai database Bapak
+    colKelas: 5,     // Pastikan index kolom ini sesuai database Bapak
+    colDisabilitas: 7, // Pastikan index kolom ini sesuai database Bapak
+    colAlamat: 6,
     colMartial: 13,
     waStatis: true
 }];
@@ -181,17 +196,17 @@ async function cariData(nikInput) {
                     console.log(`Download Sheet: ${source.id} | GID: ${gid}`);
                     const csv = await new Promise(resolve => {
                         request({
-                            method: "GET", 
+                            method: "GET",
                             url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
-                            timeout: 10000, 
-                            onload: r => resolve(r.responseText || ""), 
+                            timeout: 10000,
+                            onload: r => resolve(r.responseText || ""),
                             onerror: () => resolve("")
                         });
                     });
 
                     if (!csv || csv.trim() === "") continue;
                     const rows = parseCSV(csv);
-                    
+
                     cachedSheetDataList.push({
                         sheetIndex: s,
                         rows: rows
@@ -214,7 +229,7 @@ async function cariData(nikInput) {
     }
 
     for (const cacheItem of cachedSheetDataList) {
-        const source = SHEETS[cacheItem.sheetIndex]; 
+        const source = SHEETS[cacheItem.sheetIndex];
         const rows = cacheItem.rows;
         let waD2 = (source.waStatis && rows[1]) ? normalizeNIK(rows[1][3]) : "";
 
@@ -272,7 +287,7 @@ async function clickVueDropdown(placeholderKeyword, valueText) {
         }
         await wait(400);
     }
-    
+
     if (!optionFound) {
         console.log(`[BOT] ❌ Opsi "${valueText}" tidak muncul. Menutup list.`);
         document.body.click();
@@ -287,7 +302,7 @@ async function isiModalPencarian(triggerKeyword, searchPlaceholder, targetValue)
 
     const allElements = Array.from(document.querySelectorAll('div, span'));
     const triggerDiv = allElements.find(el => {
-        const txt = (el.innerText || "").toLowerCase().trim(); 
+        const txt = (el.innerText || "").toLowerCase().trim();
         const rect = el.getBoundingClientRect();
         return txt === triggerKeyword.toLowerCase() && el.children.length === 0 && rect.width > 0;
     });
@@ -298,15 +313,15 @@ async function isiModalPencarian(triggerKeyword, searchPlaceholder, targetValue)
         clickableArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
         await wait(800);
         await ultraClick(clickableArea);
-        await wait(1500); 
+        await wait(1500);
 
         const searchInput = document.querySelector(`input[placeholder="${searchPlaceholder}"]`);
         if (searchInput) {
             console.log(`[BOT] Mengetik "${targetValue}" untuk menyortir...`);
-            searchInput.focus(); 
+            searchInput.focus();
             forceInject(searchInput, targetValue);
             searchInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-            await wait(1500); 
+            await wait(1500);
         } else {
             clickableArea.click();
             await wait(1500);
@@ -314,7 +329,7 @@ async function isiModalPencarian(triggerKeyword, searchPlaceholder, targetValue)
 
         let found = false;
         const optionDivs = Array.from(document.querySelectorAll('.modal-content div.flex.items-center.justify-between'));
-        
+
         for (let el of optionDivs) {
             let text = (el.innerText || "").trim().toLowerCase();
             if (text === targetValue.toLowerCase() || text.includes(targetValue.toLowerCase())) {
@@ -324,8 +339,8 @@ async function isiModalPencarian(triggerKeyword, searchPlaceholder, targetValue)
                 await wait(500);
                 await ultraClick(parentBtn);
                 found = true;
-                await wait(1000); 
-                break; 
+                await wait(1000);
+                break;
             }
         }
 
@@ -370,24 +385,50 @@ async function eksekusiHalamanDua(data) {
     if(kelasTarget) {
         await isiModalPencarian("Pilih jenjang pendidikan", "Cari jenjang pendidikan", kelasTarget);
     }
-    
+
     // Jeda sebelum mengeksekusi domisili
     await wait(1500);
 
     /* ================= 5. CENTANG ALAMAT SAMA DENGAN SEKOLAH ================= */
     console.log("[BOT] Mencentang Alamat sama dengan sekolah...");
-    const checkAlamat = document.getElementById("alamat-sama-dengan-sekolah");
-    if(checkAlamat) {
-        checkAlamat.scrollIntoView({ behavior:"smooth", block:"center" });
-        await wait(500);
-        
-        // Cek apakah belum tercentang (biasanya ada gambar svg ceklis di dalamnya kalau sudah aktif)
-        if(!checkAlamat.innerHTML.includes("svg")) {
-            await ultraClick(checkAlamat);
-            console.log("[BOT] ✅ Kotak alamat dicentang.");
-            await wait(1000);
+
+    // Cari input aslinya yang tersembunyi di sistem
+    const checkboxInput = document.querySelector('input[name="sameAddress"]') || document.querySelector('input[type="checkbox"]#alamat-sama-dengan-sekolah');
+    const visualBox = document.querySelector('div.check#alamat-sama-dengan-sekolah');
+
+    if (checkboxInput) {
+        // Cek status aslinya dari properti sistem (bukan dari gambar)
+        if (!checkboxInput.checked) {
+            // Cari elemen pembungkus yang sah untuk diklik oleh sistem Vue
+            const clickableWrapper = checkboxInput.closest('label') || visualBox || checkboxInput;
+
+            clickableWrapper.scrollIntoView({ behavior:"smooth", block:"center" });
+            await wait(500);
+
+            // Klik area tersebut dengan sistem click yang menembus ke dalam
+            await ultraClick(clickableWrapper);
+            await wait(800);
+
+            // Jika sistem masih bandel belum merespon klik, kita paksa suntik event-nya
+            if (!checkboxInput.checked) {
+                checkboxInput.checked = true;
+                checkboxInput.dispatchEvent(new Event('click', { bubbles: true }));
+                checkboxInput.dispatchEvent(new Event('input', { bubbles: true }));
+                checkboxInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            console.log("[BOT] ✅ Kotak alamat dicentang (Vue API Triggered).");
+
+            // Wajib tunggu agak lama agar API Kemenkes selesai loading menarik nama Kecamatan & Kelurahan
+            await wait(2500);
         } else {
-            console.log("[BOT] Kotak alamat sudah tercentang.");
+            console.log("[BOT] Kotak alamat sudah tercentang dari awal.");
+        }
+    } else if (visualBox) {
+        // Fallback jika input aslinya tiba-tiba disembunyikan web
+        if (!visualBox.innerHTML.includes("svg")) {
+            await ultraClick(visualBox);
+            await wait(2500);
         }
     }
 
@@ -427,7 +468,7 @@ async function eksekusiHalamanDua(data) {
     `;
 
     let counter = 0;
-            
+
     while(true){
         const btnNext2 = Array.from(document.querySelectorAll("button")).find(btn => {
             const txt = (btn.innerText || "").trim();
@@ -512,7 +553,7 @@ async function autoPilotSikatHabis(data) {
                     await wait(800);
                     break;
                 }
-                await wait(400); 
+                await wait(400);
             }
         }
     }
@@ -632,7 +673,7 @@ function initUI(){
         <div style="background:#222; padding:10px; border-radius:8px; text-align:center; margin-bottom:10px; border:1px solid #444;">
             <b style="color:#ffcc00; font-size:11px;">⚡ TEMPEL/SCAN NIK DI SINI ⚡</b><br>
             <input id="nikAI" placeholder="16 Digit NIK..." style="width:90%; margin-top:8px; padding:8px; border-radius:5px; background:#000; color:#00c8ff; font-weight:bold; text-align:center; border:1px solid #00c8ff; outline:none;">
-            
+
             <button id="btnResetBot" style="width:95%; margin-top:10px; padding:8px; border-radius:5px; background:#b30000; color:#fff; font-weight:bold; cursor:pointer; border:1px solid #ff3333; transition:0.2s;" title="Hapus cache dan download ulang database terbaru">
                 ♻️ BERSIHKAN & UPDATE DATA
             </button>
@@ -674,11 +715,11 @@ function initUI(){
     document.getElementById("btnResetBot").addEventListener('click', async () => {
         // 1. Bersihkan status bot dan form NIK agar siap menerima data baru
         document.getElementById("nikAI").value = "";
-        isProcessing = false;  
-        cachedSheetDataList = null; 
+        isProcessing = false;
+        cachedSheetDataList = null;
 
         document.getElementById("infoAI").innerHTML = `<b style="color:#ffcc00;">Menghapus Cache & Mengunduh Ulang... ⏳</b>`;
-        
+
         // 2. Hapus total cache dari memori browser (Tampermonkey & SessionStorage)
         try { GM_deleteValue('CKG_SEKOLAH_CACHE'); GM_deleteValue('CKG_SEKOLAH_CACHE_TIME'); } catch(e){}
         try { sessionStorage.removeItem('CKG_SEKOLAH_CACHE'); sessionStorage.removeItem('CKG_SEKOLAH_CACHE_TIME'); } catch(e){}
