@@ -4,27 +4,25 @@
 
 function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
     
-/* ================= MODE CKG ANAK SEKOLAH ================= */
+/* ================= MODE CKG SEKOLAH ================= */
 
 const SHEETS = [{
-    id: "1zOX229-nq8n0-jCSTMEL1r4CVqW_hYctcpo-5pgjY_E",
-    gids: ["484052211"],
-    colNama: 5,
-    colTgl: 8,
-    colWA: 23,
-    colJK: 6,
-    colPekerjaan: 12,
-    colKelurahan: 20,
-    colAlamat: 17,
+    id: "1HXWft2Z-ArjTogbTODhpW-5AxXac7omw8jgNQAZhoV4",
+    gids: ["0"],
+    colNama: 2,
+    colTgl: 3,
+    colWA: 9,
+    colJK: 4,
+    colPekerjaan: 12, // Diabaikan di CKG Sekolah
+    colSekolah: 5,   // Pastikan index kolom ini sesuai database Bapak
+    colKelas: 6,     // Pastikan index kolom ini sesuai database Bapak
+    colDisabilitas: 8, // Pastikan index kolom ini sesuai database Bapak
+    colAlamat: 7,
     colMartial: 13,
-    // TAMBAHAN KOLOM UNTUK ANAK SEKOLAH (Ubah angkanya sesuai posisi di sheet, ingat index mulai dari 0)
-    colSekolah: 21,       
-    colKelas: 22,         
-    colDisabilitas: 24,   
     waStatis: true
 }];
 
-console.log("MODE: CKG ANAK SEKOLAH");
+console.log("MODE: CKG SEKOLAH");
 
 let isProcessing = false;
 let loadingEl = null;
@@ -33,8 +31,8 @@ let loadingEl = null;
 function showLoading(text){
     if(loadingEl) { loadingEl.querySelector('#loadText').innerHTML = text; return; }
     loadingEl = document.createElement("div");
-    loadingEl.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;color:#00ff88;font-size:20px;font-weight:bold;text-align:center;flex-direction:column;";
-    loadingEl.innerHTML = `<div style="background:#111;padding:30px;border-radius:12px;border:3px solid #00ff88;box-shadow:0 0 20px #00ff88;"><span id="loadText">${text}</span><br><br><div style="margin:auto;border:6px solid #333;border-top:6px solid #00ff88;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;"></div></div>`;
+    loadingEl.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;color:#00c8ff;font-size:20px;font-weight:bold;text-align:center;flex-direction:column;";
+    loadingEl.innerHTML = `<div style="background:#111;padding:30px;border-radius:12px;border:3px solid #00c8ff;box-shadow:0 0 20px #00c8ff;"><span id="loadText">${text}</span><br><br><div style="margin:auto;border:6px solid #333;border-top:6px solid #00c8ff;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;"></div></div>`;
     document.body.appendChild(loadingEl);
 }
 function hideLoading(){ if(loadingEl){ loadingEl.remove(); loadingEl = null; } }
@@ -151,21 +149,20 @@ let cachedSheetDataList = null;
 async function cariData(nikInput) {
     const target = normalizeNIK(nikInput);
 
-    // --- 1. PROSES PENYIAPAN CACHE ---
     if (!cachedSheetDataList) {
         let savedCache = null;
         let cacheTime = 0;
-        const EXPIRATION_TIME = 4 * 60 * 60 * 1000; 
+        const EXPIRATION_TIME = 4 * 60 * 60 * 1000;
         const now = Date.now();
 
         try {
-            const rawCache = GM_getValue('CKG_ANAKSEKOLAH_CACHE');
-            cacheTime = parseInt(GM_getValue('CKG_ANAKSEKOLAH_CACHE_TIME') || '0');
+            const rawCache = GM_getValue('CKG_MULTISHEET_CACHE');
+            cacheTime = parseInt(GM_getValue('CKG_MULTISHEET_CACHE_TIME') || '0');
             if (rawCache) savedCache = JSON.parse(rawCache);
         } catch (e) {
             try {
-                const rawCache = sessionStorage.getItem('CKG_ANAKSEKOLAH_CACHE');
-                cacheTime = parseInt(sessionStorage.getItem('CKG_ANAKSEKOLAH_CACHE_TIME') || '0');
+                const rawCache = sessionStorage.getItem('CKG_MULTISHEET_CACHE');
+                cacheTime = parseInt(sessionStorage.getItem('CKG_MULTISHEET_CACHE_TIME') || '0');
                 if (rawCache) savedCache = JSON.parse(rawCache);
             } catch (err) {}
         }
@@ -173,15 +170,15 @@ async function cariData(nikInput) {
         if (savedCache && savedCache.length > 0 && (now - cacheTime < EXPIRATION_TIME)) {
             console.log('[CACHE READY] Memuat data dari penyimpanan lokal...');
             cachedSheetDataList = savedCache;
-        } 
-        else {
+        } else {
             if (typeof updateStatus === 'function') updateStatus("MENGUNDUH DATA SPREADSHEET...");
-            console.log('[DOWNLOAD] Memulai unduhan data...');
+            console.log('[DOWNLOAD] Memulai unduhan Multi-Sheet...');
             cachedSheetDataList = [];
 
             for (let s = 0; s < SHEETS.length; s++) {
                 const source = SHEETS[s];
                 for (const gid of source.gids) {
+                    console.log(`Download Sheet: ${source.id} | GID: ${gid}`);
                     const csv = await new Promise(resolve => {
                         request({
                             method: "GET", 
@@ -195,23 +192,20 @@ async function cariData(nikInput) {
                     if (!csv || csv.trim() === "") continue;
                     const rows = parseCSV(csv);
                     
-                    cachedSheetDataList.push({ sheetIndex: s, rows: rows });
+                    cachedSheetDataList.push({
+                        sheetIndex: s,
+                        rows: rows
+                    });
                 }
             }
-
+            console.log('[DOWNLOAD SELESAI]');
             try {
-                GM_setValue('CKG_ANAKSEKOLAH_CACHE', JSON.stringify(cachedSheetDataList));
-                GM_setValue('CKG_ANAKSEKOLAH_CACHE_TIME', now.toString());
-            } catch (e) {
-                try {
-                    sessionStorage.setItem('CKG_ANAKSEKOLAH_CACHE', JSON.stringify(cachedSheetDataList));
-                    sessionStorage.setItem('CKG_ANAKSEKOLAH_CACHE_TIME', now.toString());
-                } catch (err) {}
-            }
+                GM_setValue('CKG_MULTISHEET_CACHE', JSON.stringify(cachedSheetDataList));
+                GM_setValue('CKG_MULTISHEET_CACHE_TIME', now.toString());
+            } catch (e) {}
         }
     }
 
-    // --- 2. PROSES PENCARIAN NIK ---
     for (const cacheItem of cachedSheetDataList) {
         const source = SHEETS[cacheItem.sheetIndex]; 
         const rows = cacheItem.rows;
@@ -219,7 +213,6 @@ async function cariData(nikInput) {
 
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            
             if (Array.isArray(row) && row.find(col => normalizeNIK(col) === target)) {
                 return {
                     nik: target,
@@ -228,11 +221,8 @@ async function cariData(nikInput) {
                     hp: waD2 || (row[source.colWA] || "").replace(/\D/g,''),
                     jk: (row[source.colJK] || "").trim(),
                     alamat: (row[source.colAlamat] || "").trim(),
-                    pekerjaan: (row[source.colPekerjaan] || "").trim(),
-                    kelurahan: (row[source.colKelurahan] || "").trim(),
                     sekolah: (row[source.colSekolah] || "").trim(),
                     disabilitas: (row[source.colDisabilitas] || "").trim(),
-                    Martial: (row[source.colMartial] || "").trim(),
                     kelas: (row[source.colKelas] || "").trim()
                 };
             }
@@ -241,41 +231,82 @@ async function cariData(nikInput) {
     return null;
 }
 
-/* ================= ENGINE VUE: DROPDOWN DENGAN PENCARIAN ================= */
-// Fungsi universal untuk mengisi Pekerjaan, Sekolah, dan Jenjang Pendidikan
-async function isiDropdownPencarian(placeholderKotak, targetValue, placeholderPencarian = "Cari") {
-    if (!targetValue || targetValue.trim() === "") return false;
-    console.log(`[BOT] Memproses Dropdown: "${placeholderKotak}" -> Target: "${targetValue}"`);
+/* ================= ENGINE VUE DROPDOWN (TANPA MODAL) ================= */
+async function clickVueDropdown(placeholderKeyword, valueText) {
+    console.log(`[BOT] Memilih: "${placeholderKeyword}" -> "${valueText}"`);
 
-    // 1. CARI KOTAK PEMICU (Trigger)
+    const allDivs = Array.from(document.querySelectorAll('div, span'));
+    const trigger = allDivs.find(el =>
+        (el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
+        (el.className.includes('cursor-pointer') || el.closest('.cursor-pointer'))
+    );
+
+    if (!trigger) {
+        console.log(`[BOT] ❌ Kotak "${placeholderKeyword}" tidak ditemukan.`);
+        return false;
+    }
+
+    const clickableTrigger = trigger.closest('.cursor-pointer') || trigger;
+    await ultraClick(clickableTrigger);
+    await wait(1000);
+
+    let optionFound = false;
+    for (let i = 0; i < 10; i++) {
+        const targetOption = [...document.querySelectorAll('.py-2.px-4.cursor-pointer')].find(el =>
+            (el.innerText || '').trim().toLowerCase() === valueText.toLowerCase()
+        );
+
+        if (targetOption) {
+            await ultraClick(targetOption);
+            console.log(`[BOT] ✅ Opsi dipilih: ${valueText}`);
+            optionFound = true;
+            await wait(1000);
+            break;
+        }
+        await wait(400);
+    }
+    
+    if (!optionFound) {
+        console.log(`[BOT] ❌ Opsi "${valueText}" tidak muncul. Menutup list.`);
+        document.body.click();
+    }
+    return optionFound;
+}
+
+/* ================= ENGINE PENCARIAN MODAL (UNTUK SEKOLAH & KELAS) ================= */
+async function isiModalPencarian(triggerKeyword, searchPlaceholder, targetValue) {
+    if (!targetValue) return;
+    console.log(`[BOT] Memproses Pencarian: ${triggerKeyword} | Target: ${targetValue}`);
+
     const allElements = Array.from(document.querySelectorAll('div, span'));
     const triggerDiv = allElements.find(el => {
         const txt = (el.innerText || "").toLowerCase().trim(); 
         const rect = el.getBoundingClientRect();
-        return txt === placeholderKotak.toLowerCase() && rect.width > 0 && el.children.length === 0;
+        return txt === triggerKeyword.toLowerCase() && el.children.length === 0 && rect.width > 0;
     });
 
     if (triggerDiv) {
+        console.log(`[BOT] Modal ${triggerKeyword} ditemukan! Membuka...`);
         const clickableArea = triggerDiv.closest('.cursor-pointer') || triggerDiv;
         clickableArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        await wait(500);
+        await wait(800);
         await ultraClick(clickableArea);
-        await wait(1200); 
+        await wait(1500); 
 
-        // 2. TEMBAK KE KOLOM PENCARIAN
-        const searchInput = Array.from(document.querySelectorAll('input')).find(el => (el.placeholder || "").toLowerCase().includes(placeholderPencarian.toLowerCase()));
-        
+        const searchInput = document.querySelector(`input[placeholder="${searchPlaceholder}"]`);
         if (searchInput) {
-            console.log(`[BOT] Mengetik "${targetValue}" pada pencarian...`);
+            console.log(`[BOT] Mengetik "${targetValue}" untuk menyortir...`);
             searchInput.focus(); 
             forceInject(searchInput, targetValue);
             searchInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-            await wait(1500); // Wajib tunggu server men-sortir data
+            await wait(1500); 
+        } else {
+            clickableArea.click();
+            await wait(1500);
         }
 
-        // 3. AMBIL DAN KLIK HASIL
         let found = false;
-        const optionDivs = Array.from(document.querySelectorAll('.modal-content div.flex.items-center.justify-between, .py-2.px-4.cursor-pointer, .ant-modal-content div'));
+        const optionDivs = Array.from(document.querySelectorAll('.modal-content div.flex.items-center.justify-between'));
         
         for (let el of optionDivs) {
             let text = (el.innerText || "").trim().toLowerCase();
@@ -283,7 +314,7 @@ async function isiDropdownPencarian(placeholderKotak, targetValue, placeholderPe
                 const parentBtn = el.closest('button') || el;
                 console.log(`[BOT] ✅ Opsi ditemukan: "${text}". Mengeklik...`);
                 parentBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                await wait(300);
+                await wait(500);
                 await ultraClick(parentBtn);
                 found = true;
                 await wait(1000); 
@@ -291,153 +322,79 @@ async function isiDropdownPencarian(placeholderKotak, targetValue, placeholderPe
             }
         }
 
-        if (!found) console.log(`[BOT] ⚠️ Pilihan "${targetValue}" tidak ada di menu dropdown.`);
+        if (!found) console.log(`[BOT] ⚠️ Pilihan "${targetValue}" tidak ada di sistem.`);
 
-        // 4. TUTUP MODAL JIKA MASIH TERBUKA
+        // Penutupan Agresif
         let cekModal = 0;
-        while(document.querySelector(`input[placeholder*="${placeholderPencarian}"]`) && cekModal < 5) {
+        while(document.querySelector(`input[placeholder="${searchPlaceholder}"]`) && cekModal < 8) {
             const closeBtn = document.querySelector('.modal-content header button');
             if (closeBtn) await ultraClick(closeBtn);
-            else document.body.click(); 
+            else document.body.click();
             await wait(500);
             cekModal++;
         }
-        return found;
     } else {
-        console.log(`[BOT] ❌ Kotak '${placeholderKotak}' tidak ditemukan.`);
-        return false;
+        console.log(`[BOT] ❌ Kotak pemicu '${triggerKeyword}' tidak ditemukan.`);
     }
 }
 
-
-/* ================= ENGINE VUE: KLIK DROPDOWN BIASA (TANPA PENCARIAN) ================= */
-async function isiDropdownBiasa(placeholderKotak, targetValue) {
-    if (!targetValue || targetValue === "") return false;
-    console.log(`[BOT] Memproses Dropdown (Biasa): "${placeholderKotak}" -> Target: "${targetValue}"`);
-    
-    const allElements = Array.from(document.querySelectorAll('span, div.cursor-pointer, label'));
-    const trigger = allElements.find(el => (el.innerText || "").toLowerCase().trim() === placeholderKotak.toLowerCase());
-
-    if (trigger) {
-        const clickableTrigger = trigger.closest('.cursor-pointer') || trigger;
-        await ultraClick(clickableTrigger);
-        await wait(1000);
-
-        let optionFound = false;
-        for (let i = 0; i < 15; i++) {
-            const targetOption = [...document.querySelectorAll('.py-2.px-4.cursor-pointer, .flex.items-center.justify-between')].find(el => (el.innerText || '').trim().toLowerCase() === targetValue.toLowerCase());
-        
-            if (targetOption) {
-                await ultraClick(targetOption);
-                console.log("[BOT] ✅ Sukses dipilih:", targetValue);
-                optionFound = true;
-                await wait(1000);
-                break;
-            }
-            await wait(400);
-        }
-        if (!optionFound) console.log(`[BOT] Error: Opsi ${targetValue} tidak muncul.`);
-        return optionFound;
-    }
-    console.log(`[BOT] Error: Kotak '${placeholderKotak}' tidak ditemukan.`);
-    return false;
-}
-
-
-/* ================= ENGINE ALAMAT WILAYAH VUE (DINAMIS KELURAHAN) ================= */
-async function setAlamatDomisiliVue(kelurahanTarget) {
-    console.log("[BOT] Menyetel Alamat Domisili Otomatis...");
-    // Kelurahan diambil dari spreadsheet
-    const steps = ["Jawa Barat", "Kota Bandung", "Cibeunying Kidul", kelurahanTarget || "Padasuka"];
-
-    const allElements = Array.from(document.querySelectorAll('div, span'));
-    const trigger = allElements.find(el => (el.innerText || "").toLowerCase().trim() === "pilih alamat domisili" && el.children.length === 0);
-
-    if (!trigger) return false;
-    await ultraClick(trigger.closest('.cursor-pointer') || trigger);
-    await wait(1500); 
-
-    for (const step of steps) {
-        console.log("[BOT] Memilih wilayah:", step);
-        
-        let searchInput = Array.from(document.querySelectorAll('input')).find(el => {
-            const p = (el.placeholder || "").toLowerCase();
-            return p.includes("cari") && !p.includes("pekerjaan"); 
-        });
-
-        if (searchInput) {
-            forceInject(searchInput, step);
-            await wait(1500); 
-        }
-
-        let clicked = false;
-        for (let i = 0; i < 15; i++) {
-            const options = Array.from(document.querySelectorAll('div.flex.items-center.justify-between')).filter(el => (el.innerText || "").trim().toLowerCase() === step.toLowerCase());
-            if (options.length > 0) {
-                await ultraClick(options[options.length - 1]);
-                clicked = true;
-                await wait(1000);
-                break;
-            }
-            await wait(400);
-        }
-        if(!clicked) {
-            console.log("[BOT] Gagal di wilayah:", step);
-            break;
-        }
-    }
-}
-
-/* ================= EKSEKUSI HALAMAN 2 (VUE VERSION) ================= */
+/* ================= EKSEKUSI HALAMAN 2 (CKG SEKOLAH) ================= */
 async function eksekusiHalamanDua(data) {
-    showLoading("⚡ MENGISI HALAMAN PENDAFTARAN... ⚡");
-    await wait(2500);
+    showLoading("⚡ MENGISI HALAMAN 2 (SEKOLAH)... ⚡");
 
-    // 1. STATUS PERNIKAHAN
-    let rawPernikahan = (data.Martial || "").trim().toUpperCase();
-    let textPernikahan = "Belum Menikah"; // Default untuk pelajar
-    if (rawPernikahan.includes("MENIKAH") || rawPernikahan.includes("KAWIN")) textPernikahan = "Menikah";
-    await isiDropdownBiasa("Pilih status pernikahan", textPernikahan);
+    // Beri jeda agar halaman selesai dimuat sepenuhnya
+    await wait(3000);
+
+    /* ================= 1. STATUS PERNIKAHAN (Dipaksa 'Belum Menikah') ================= */
+    await clickVueDropdown("Pilih status pernikahan", "Belum Menikah");
+
+    /* ================= 2. PENYANDANG DISABILITAS ================= */
+    let disabilitasTarget = (data.disabilitas || "Tidak memiliki disabilitas").trim();
+    await clickVueDropdown("Pilih penyandang disabilitas", disabilitasTarget);
+
+    /* ================= 3. NAMA SEKOLAH ================= */
+    let sekolahTarget = (data.sekolah || "").trim();
+    if(sekolahTarget) {
+        await isiModalPencarian("Pilih nama sekolah", "Cari nama sekolah", sekolahTarget);
+    }
+
+    /* ================= 4. JENJANG PENDIDIKAN (KELAS) ================= */
+    let kelasTarget = (data.kelas || "").trim();
+    if(kelasTarget) {
+        await isiModalPencarian("Pilih jenjang pendidikan", "Cari jenjang pendidikan", kelasTarget);
+    }
     
-    // 2. PENYANDANG DISABILITAS
-    // Membaca data sheet, jika kosong otomatis "Tidak" atau "Bukan Penyandang Disabilitas"
-    let disabilitasText = (data.disabilitas || "").trim() !== "" ? data.disabilitas : "Tidak ada"; // Ganti 'Tidak ada' jika teks di web Kemenkes beda (contoh: "Bukan penyandang disabilitas")
-    await isiDropdownBiasa("Pilih penyandang disabilitas", disabilitasText);
+    // Jeda sebelum mengeksekusi domisili
+    await wait(1500);
 
-    // 3. PEKERJAAN (Otomatis "Pelajar")
-    await isiDropdownPencarian("Pilih pekerjaan", "Pelajar", "Cari");
-
-    // 4. NAMA SEKOLAH
-    if (data.sekolah) {
-        await isiDropdownPencarian("Pilih nama sekolah", data.sekolah, "Cari");
-    } else {
-        console.log("[BOT] Data Sekolah kosong di Spreadsheet.");
+    /* ================= 5. CENTANG ALAMAT SAMA DENGAN SEKOLAH ================= */
+    console.log("[BOT] Mencentang Alamat sama dengan sekolah...");
+    const checkAlamat = document.getElementById("alamat-sama-dengan-sekolah");
+    if(checkAlamat) {
+        checkAlamat.scrollIntoView({ behavior:"smooth", block:"center" });
+        await wait(500);
+        
+        // Cek apakah belum tercentang (biasanya ada gambar svg ceklis di dalamnya kalau sudah aktif)
+        if(!checkAlamat.innerHTML.includes("svg")) {
+            await ultraClick(checkAlamat);
+            console.log("[BOT] ✅ Kotak alamat dicentang.");
+            await wait(1000);
+        } else {
+            console.log("[BOT] Kotak alamat sudah tercentang.");
+        }
     }
 
-    // 5. JENJANG PENDIDIKAN (Kelas)
-    if (data.kelas) {
-        await isiDropdownPencarian("Pilih jenjang pendidikan", data.kelas, "Cari");
-    } else {
-        console.log("[BOT] Data Jenjang Pendidikan/Kelas kosong di Spreadsheet.");
-    }
-
-    await wait(1000);
-
-    // 6. ALAMAT DOMISILI (Kelurahan Dinamis dari data Sheet)
-    showLoading("⚡ MENCARI WILAYAH DOMISILI... ⚡");
-    await setAlamatDomisiliVue(data.kelurahan);
-    await wait(2000);
-
-    // 7. DETAIL ALAMAT
+    /* ================= 6. DETAIL DOMISILI ================= */
     console.log("[BOT] Mengisi Detail Alamat...");
-    showLoading("⚡ MENYUNTIKKAN DETAIL ALAMAT... ⚡");
-    let inpAlamat = document.getElementById('detail-domisili') || document.querySelector('textarea[placeholder*="Jl. Kenanga"]');
+    let inpAlamat = document.getElementById('detail-domisili') || document.querySelector('textarea[name="detail-domisili"]');
 
     if(inpAlamat){
         inpAlamat.scrollIntoView({ behavior:"smooth", block:"center" });
         await wait(500);
+
         let alamatTarget = data.alamat || "-";
         forceInject(inpAlamat, alamatTarget);
+
         await wait(500);
         inpAlamat.dispatchEvent(new Event('input', { bubbles:true }));
         inpAlamat.dispatchEvent(new Event('change', { bubbles:true }));
@@ -446,13 +403,24 @@ async function eksekusiHalamanDua(data) {
     }
 
     hideLoading();
+
     console.log("[BOT] Halaman 2 selesai diproses.");
+    console.log("[BOT] Menunggu user melengkapi data...");
 
     document.getElementById("infoAI").innerHTML += `
-    <div style="margin-top:8px; padding:6px; background:#222; border-radius:5px; color:#ffcc00;">
+    <div style="
+        margin-top:8px;
+        padding:6px;
+        background:#222;
+        border-radius:5px;
+        color:#ffcc00;
+    ">
     ⏳ Menunggu tombol Selanjutnya aktif...
-    </div>`;
+    </div>
+    `;
 
+    let counter = 0;
+            
     while(true){
         const btnNext2 = Array.from(document.querySelectorAll("button")).find(btn => {
             const txt = (btn.innerText || "").trim();
@@ -501,19 +469,48 @@ async function autoPilotSikatHabis(data) {
     if (inpWA) forceInject(inpWA, cleanHP);
 
     /* ================= ISI JK (VUE/TAILWIND DROPDOWN) ================= */
+    console.log("[BOT] Memproses Jenis Kelamin:", data.jk);
     let rawJK = (data.jk || "").trim().toUpperCase();
     let textToFindJK = "";
+
     if (rawJK.includes("LAKI") || rawJK === "L" || rawJK === "LK") {
         textToFindJK = "Laki-laki";
     } else if (rawJK.includes("PEREM") || rawJK === "P" || rawJK === "PR" || rawJK.includes("WANITA")) {
         textToFindJK = "Perempuan";
     }
-    
+
     if (textToFindJK !== "") {
-        await isiDropdownBiasa("Pilih jenis kelamin", textToFindJK);
+        const allElements = Array.from(document.querySelectorAll('span, div.cursor-pointer, label'));
+        const triggerJK = allElements.find(el => {
+            const txt = (el.innerText || "").toLowerCase().trim();
+            return txt === 'pilih jenis kelamin' || txt === 'jenis kelamin';
+        });
+
+        if (triggerJK) {
+            const clickableTrigger = triggerJK.closest('.cursor-pointer') || triggerJK;
+            await ultraClick(clickableTrigger);
+            await wait(1000);
+
+            let optionFound = false;
+            for (let i = 0; i < 15; i++) {
+                const possibleOptions = Array.from(document.querySelectorAll('*')).filter(el => {
+                    return (el.innerText || "").trim() === textToFindJK && el.children.length === 0;
+                });
+
+                if (possibleOptions.length > 0) {
+                    const targetOption = possibleOptions[possibleOptions.length - 1];
+                    await ultraClick(targetOption);
+                    console.log("[BOT] Sukses mengklik Jenis Kelamin:", textToFindJK);
+                    optionFound = true;
+                    await wait(800);
+                    break;
+                }
+                await wait(400); 
+            }
+        }
     }
 
-    /* ================= ISI TANGGAL (VUE2-DATEPICKER) ================= */
+    /* ================= ISI TANGGAL ================= */
     let tglRaw = data.tgl || "";
     if (tglRaw.trim() !== "") {
         let parts = tglRaw.split(/[-/]/);
@@ -564,71 +561,79 @@ async function autoPilotSikatHabis(data) {
         }
     }
 
-    hideLoading();
-    document.getElementById("infoAI").innerHTML = `
-        <div style="background:#00ff88; color:#000; padding:8px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:8px;">
-            ✅ HALAMAN 1 OTOMATIS
-        </div>
-        <div style="background:#222; border:1px solid #555; padding:8px; border-radius:5px; font-size:12px; line-height:1.7;">
-            <b>📌 DATA ANAK SEKOLAH:</b><br><br>
-            • Nama: <b style="color:#00ff88;">${data.nama || '-'}</b><br>
-            • Sekolah: <b style="color:#00ff88;">${data.sekolah || '-'}</b><br>
-            • Kelas: <b style="color:#00ff88;">${data.kelas || '-'}</b><br>
-            • Kelurahan: <b style="color:#00ff88;">${data.kelurahan || '-'}</b><br>
-            • Alamat: <div style="color:#00ff88; margin-top:3px; background:#111; padding:6px; border-radius:5px; border:1px solid #333; word-break:break-word; max-height:65px; overflow:auto;">${data.alamat || '-'}</div>
-        </div>
-        <div style="margin-top:8px; font-size:11px; color:#aaa; text-align:center;">
-            Bot memantau tombol <b>'Selanjutnya'</b>...
-        </div>
-    `;
+/* ================= INFO UI ================= */
+hideLoading();
+document.getElementById("infoAI").innerHTML = `
+    <div style="background:#00c8ff; color:#000; padding:8px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:8px;">
+        ✅ HALAMAN 1 OTOMATIS
+    </div>
+    <div style="background:#222; border:1px solid #555; padding:8px; border-radius:5px; font-size:12px; line-height:1.7;">
+        <b>📌 DATA SEKOLAH:</b><br><br>
+        • Nama: <b style="color:#00c8ff;">${data.nama || '-'}</b><br>
+        • Tgl: <b style="color:#00c8ff;">${data.tgl || '-'}</b><br>
+        • Sekolah: <b style="color:#00c8ff;">${data.sekolah || '-'}</b><br>
+        • Kelas: <b style="color:#00c8ff;">${data.kelas || '-'}</b><br>
+        • Disabilitas: <b style="color:#00c8ff;">${data.disabilitas || 'Tidak memiliki disabilitas'}</b><br>
+    </div>
+    <div style="margin-top:8px; font-size:11px; color:#aaa; text-align:center;">
+        Bot memantau tombol <b>'Selanjutnya'</b>...
+    </div>
+`;
 
-    let btnLanjut = null;
-    while(true){
-        btnLanjut = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Selanjutnya'));
-        if(btnLanjut && !btnLanjut.disabled && !btnLanjut.classList.contains('ant-btn-disabled')) break;
-        await wait(500);
+/* ================= AUTO NEXT ================= */
+let btnLanjut = null;
+
+while(true){
+    btnLanjut = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Selanjutnya'));
+    if(btnLanjut && !btnLanjut.disabled && !btnLanjut.classList.contains('ant-btn-disabled')){
+        break;
     }
-    await ultraClick(btnLanjut);
-
-    console.log("[BOT] Menunggu popup Lanjutkan...");
-    while(true){
-        const lanjutBtn = Array.from(document.querySelectorAll('button.btn-fill-primary')).find(btn => (btn.innerText || "").includes("Lanjutkan"));
-        if(lanjutBtn){
-            await ultraClick(lanjutBtn);
-            break;
-        }
-        await wait(500);
-    }
-
-    /* ================= MENUJU HALAMAN 2 ================= */
-    await eksekusiHalamanDua(data);
+    await wait(500);
 }
 
-/* ================= UI KONTROL & DRAGGABLE ================= */
+await ultraClick(btnLanjut);
+console.log("[BOT] Menunggu popup Lanjutkan...");
+
+while(true){
+    const lanjutBtn = Array.from(document.querySelectorAll('button.btn-fill-primary')).find(btn => (btn.innerText || "").includes("Lanjutkan"));
+    if(lanjutBtn){
+        console.log("[BOT] Popup validasi ditemukan");
+        await ultraClick(lanjutBtn);
+        break;
+    }
+    await wait(500);
+}
+
+/* ================= HALAMAN 2 ================= */
+await eksekusiHalamanDua(data);
+}
+
+/* ================= UI KONTROL & DRAGGABLE LOGIC ================= */
 function initUI(){
     if(document.getElementById("reg-ckg-ai-box")) return;
 
     const box = document.createElement("div");
     box.id = "reg-ckg-ai-box";
-    box.style = "position:fixed;top:150px;right:20px;background:#111;color:#fff;padding:15px;border-radius:12px;z-index:99999;width:270px;font-family:sans-serif;box-shadow:0 0 15px #00aaff; border: 2px solid #222;";
+    box.style = "position:fixed;top:150px;right:20px;background:#111;color:#fff;padding:15px;border-radius:12px;z-index:99999;width:270px;font-family:sans-serif;box-shadow:0 0 15px #00c8ff; border: 2px solid #222;";
 
     box.innerHTML = `
         <div id="dragHeader" style="text-align:center; margin-bottom:10px; cursor:move; background:#222; padding:8px; border-radius:8px; border:1px solid #444;" title="Klik dan tahan untuk menggeser bot">
-            <b style="color:#00aaff; font-size:16px;">CKG ANAK SEKOLAH</b><br>
+            <b style="color:#00c8ff; font-size:16px;">Register SEKOLAH</b><br>
             <span style="font-size:10px; color:#aaa; letter-spacing:1px;">UPTD Puskesmas Padasuka</span>
         </div>
         <div style="background:#222; padding:10px; border-radius:8px; text-align:center; margin-bottom:10px; border:1px solid #444;">
             <b style="color:#ffcc00; font-size:11px;">⚡ TEMPEL/SCAN NIK DI SINI ⚡</b><br>
-            <input id="nikAI" placeholder="16 Digit NIK..." style="width:90%; margin-top:8px; padding:8px; border-radius:5px; background:#000; color:#00aaff; font-weight:bold; text-align:center; border:1px solid #00aaff; outline:none;">
+            <input id="nikAI" placeholder="16 Digit NIK..." style="width:90%; margin-top:8px; padding:8px; border-radius:5px; background:#000; color:#00c8ff; font-weight:bold; text-align:center; border:1px solid #00c8ff; outline:none;">
         </div>
         <div id="infoAI" style="font-size:12px; line-height:1.5; color:#ccc;">
-            Status: <b style="color:#00aaff;">Siaga. Menunggu NIK...</b>
+            Status: <b style="color:#00c8ff;">Siaga. Menunggu NIK...</b>
         </div>
     `;
     document.body.appendChild(box);
 
     const dragHeader = document.getElementById("dragHeader");
-    let isDraggingBox = false, offsetX, offsetY;
+    let isDraggingBox = false;
+    let offsetX, offsetY;
 
     dragHeader.addEventListener('mousedown', function(e) {
         isDraggingBox = true;
@@ -639,14 +644,18 @@ function initUI(){
 
     document.addEventListener('mousemove', function(e) {
         if (isDraggingBox) {
-            box.style.right = 'auto'; box.style.bottom = 'auto';
+            box.style.right = 'auto';
+            box.style.bottom = 'auto';
             box.style.left = (e.clientX - offsetX) + 'px';
             box.style.top = (e.clientY - offsetY) + 'px';
         }
     });
 
     document.addEventListener('mouseup', function() {
-        if (isDraggingBox) { isDraggingBox = false; box.style.opacity = "1"; }
+        if (isDraggingBox) {
+            isDraggingBox = false;
+            box.style.opacity = "1";
+        }
     });
 
     document.getElementById("nikAI").addEventListener('input', async (e) => {
