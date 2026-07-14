@@ -152,7 +152,7 @@ async function cariData(nikInput) {
     if (!cachedSheetDataList) {
         let savedCache = null;
         let cacheTime = 0;
-        const EXPIRATION_TIME = 4 * 60 * 60 * 1000;
+        const EXPIRATION_TIME = 1 * 60 * 60 * 1000;
         const now = Date.now();
 
         try {
@@ -623,6 +623,7 @@ function initUI(){
     box.id = "reg-ckg-ai-box";
     box.style = "position:fixed;top:150px;right:20px;background:#111;color:#fff;padding:15px;border-radius:12px;z-index:99999;width:270px;font-family:sans-serif;box-shadow:0 0 15px #00c8ff; border: 2px solid #222;";
 
+    // PERBAIKAN: Menambahkan elemen tombol Reset/Update di bawah input NIK
     box.innerHTML = `
         <div id="dragHeader" style="text-align:center; margin-bottom:10px; cursor:move; background:#222; padding:8px; border-radius:8px; border:1px solid #444;" title="Klik dan tahan untuk menggeser bot">
             <b style="color:#00c8ff; font-size:16px;">Register SEKOLAH</b><br>
@@ -631,6 +632,10 @@ function initUI(){
         <div style="background:#222; padding:10px; border-radius:8px; text-align:center; margin-bottom:10px; border:1px solid #444;">
             <b style="color:#ffcc00; font-size:11px;">⚡ TEMPEL/SCAN NIK DI SINI ⚡</b><br>
             <input id="nikAI" placeholder="16 Digit NIK..." style="width:90%; margin-top:8px; padding:8px; border-radius:5px; background:#000; color:#00c8ff; font-weight:bold; text-align:center; border:1px solid #00c8ff; outline:none;">
+            
+            <button id="btnResetBot" style="width:95%; margin-top:10px; padding:8px; border-radius:5px; background:#b30000; color:#fff; font-weight:bold; cursor:pointer; border:1px solid #ff3333; transition:0.2s;" title="Hapus cache dan download ulang database terbaru">
+                ♻️ BERSIHKAN & UPDATE DATA
+            </button>
         </div>
         <div id="infoAI" style="font-size:12px; line-height:1.5; color:#ccc;">
             Status: <b style="color:#00c8ff;">Siaga. Menunggu NIK...</b>
@@ -665,6 +670,29 @@ function initUI(){
         }
     });
 
+    // === LOGIKA BARU: TOMBOL BERSIHKAN & UPDATE ===
+    document.getElementById("btnResetBot").addEventListener('click', async () => {
+        // 1. Bersihkan status bot dan form NIK agar siap menerima data baru
+        document.getElementById("nikAI").value = "";
+        isProcessing = false;  
+        cachedSheetDataList = null; 
+
+        document.getElementById("infoAI").innerHTML = `<b style="color:#ffcc00;">Menghapus Cache & Mengunduh Ulang... ⏳</b>`;
+        
+        // 2. Hapus total cache dari memori browser (Tampermonkey & SessionStorage)
+        try { GM_deleteValue('CKG_SEKOLAH_CACHE'); GM_deleteValue('CKG_SEKOLAH_CACHE_TIME'); } catch(e){}
+        try { sessionStorage.removeItem('CKG_SEKOLAH_CACHE'); sessionStorage.removeItem('CKG_SEKOLAH_CACHE_TIME'); } catch(e){}
+
+        // 3. Paksa bot mendownload data terbaru dari Spreadsheet saat itu juga secara background
+        try {
+            await cariData("0000000000000000"); // Angka nol ini hanya pancingan agar fungsi download jalan
+            document.getElementById("infoAI").innerHTML = `<b style="color:#00c8ff;">✅ Database Terbaru Berhasil Diunduh!<br>Silakan masukkan NIK.</b>`;
+        } catch (err) {
+            document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">❌ Gagal mengunduh. Periksa koneksi internet Anda.</b>`;
+        }
+    });
+
+    // === LOGIKA INPUT NIK NORMAL ===
     document.getElementById("nikAI").addEventListener('input', async (e) => {
         let val = e.target.value.replace(/\D/g, '');
         if (val.length === 16 && !isProcessing) {
