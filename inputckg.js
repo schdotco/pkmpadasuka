@@ -137,90 +137,42 @@ let cachedSheetData = null;
 async function cariData(nikInput) {
     try {
         const target = normalizeNIK(nikInput);
-        
-        // Cek apakah data sudah ada di variabel RAM (Halaman yang sama)
         if (!cachedSheetData) {
-            
-            // Kita langsung bypass pengecekan cache lama dari GM_getValue 
-            // agar memori yang sudah bengkak (64MB) tidak ikut terpanggil.
-            
             updateStatus("MENGUNDUH DATA SPREADSHEET...");
             cachedSheetData = [];
-
-            // Looping ke semua GID yang ada di array GIDS
             for (const gid of GIDS) {
-                console.log('Download sheet gid:', gid);
                 const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
-                
                 const res = await fetch(url);
-                if (!res.ok) {
-                    console.warn(`[WARNING] Gagal terhubung ke GID: ${gid}`);
-                    continue;
-                }
-                
+                if (!res.ok) continue;
                 const csvText = await res.text();
                 if (!csvText) continue;
-
                 const rows = parseCSV(csvText);
                 if (rows && rows.length > 1) {
-                    if (cachedSheetData.length === 0) {
-                        cachedSheetData = cachedSheetData.concat(rows);
-                    } else {
-                        cachedSheetData = cachedSheetData.concat(rows.slice(1));
-                    }
+                    if (cachedSheetData.length === 0) cachedSheetData = cachedSheetData.concat(rows);
+                    else cachedSheetData = cachedSheetData.concat(rows.slice(1));
                 }
             }
-            console.log('[DOWNLOAD SELESAI]', cachedSheetData.length, 'baris didapat.');
-
-            // --- BYPASS ERROR 64MB ---
-            // Kode GM_setValue() dan sessionStorage() DIHAPUS DARI SINI.
-            // Data HANYA akan ditampung di RAM (Memory Sementara).
             console.log('[INFO] Database besar. Data disimpan di RAM sementara untuk mencegah Crash 64MiB.');
         }
-
         const rows = cachedSheetData;
         if (!rows || rows.length < 2) return null;
-
-        // Loop data untuk mencari NIK
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            
-            // Defensif: pastikan baris memiliki data minimal (misal 10 kolom) agar tidak error saat dipanggil
             if (!row || row.length < 10) continue; 
-            
-            // Ubah semua cell jadi string murni (menghindari error array undefined)
             const cells = row.map(col => String(col || '').trim());
-            
-            // Pastikan index array ada isinya sebelum dibaca
             const rawNik = (cells.length > 2) ? (cells[0] || cells[1] || cells[2]) : '';
-            const foundNik = normalizeNIK(rawNik) === target || 
-                 cells.some(col => normalizeNIK(col) === target); // Gunakan .some() lebih cepat dari .find() jika hanya mengecek boolean
-
-            if (foundNik) {
+            if (normalizeNIK(rawNik) === target || cells.some(col => normalizeNIK(col) === target)) {
                 return {
-                    nik: target,
-                    nama: cells[7] || '',
-                    sistole: cells[37] || '120',
-                    diastole: cells[38] || '80',
-                    bb: cells[40] || '60',
-                    tb: cells[41] || '165',
-                    lp: cells[43] || '80',
-                    gula: cells[58] || '110',
-                    mata: cells[70] || 'Tidak',
-                    merokok: cells[71] || '', // Wajib ditambahkan agar skrining kanker & PUMA bekerja
-                    skilasKog1: (cells[78] || 'Ya').trim(),
-                    skilasKog2: (cells[79] || 'Benar semua').trim(),
-                    skilasKog3: (cells[80] || 'Ya').trim(),
-                    skilasMob:  (cells[81] || 'Ya').trim(),
-                    skilasMal1: (cells[82] || 'Tidak').trim(),
-                    skilasMal2: (cells[83] || 'Tidak').trim(),
-                    skilasMal3: (cells[84] || 'Tidak').trim(),
-                    skilasDep1: (cells[88] || 'Tidak').trim(),
-                    skilasDep2: (cells[89] || 'Tidak').trim()
+                    nik: target, nama: cells[7] || '', sistole: cells[37] || '120', diastole: cells[38] || '80',
+                    bb: cells[40] || '60', tb: cells[41] || '165', lp: cells[43] || '80', gula: cells[58] || '110',
+                    mata: cells[70] || 'Tidak', merokok: cells[71] || '', skilasKog1: (cells[78] || 'Ya').trim(),
+                    skilasKog2: (cells[79] || 'Benar semua').trim(), skilasKog3: (cells[80] || 'Ya').trim(),
+                    skilasMob:  (cells[81] || 'Ya').trim(), skilasMal1: (cells[82] || 'Tidak').trim(),
+                    skilasMal2: (cells[83] || 'Tidak').trim(), skilasMal3: (cells[84] || 'Tidak').trim(),
+                    skilasDep1: (cells[88] || 'Tidak').trim(), skilasDep2: (cells[89] || 'Tidak').trim()
                 };
             }
         }
-        
         return null; 
     } catch (error) {
         console.error("Terjadi masalah jaringan:", error);
