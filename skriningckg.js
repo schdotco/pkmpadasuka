@@ -1024,8 +1024,11 @@ async function mainLoop(data) {
 /* =========================================================
    UI MODERN & DRAGGABLE
 ========================================================= */
+// Tambahan variabel LOOP_ACTIVE agar bot tidak bertabrakan saat pindah halaman
+let LOOP_ACTIVE = false; 
+
 function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
-function stopBOT(){ BOT_RUNNING = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); }
+function stopBOT(){ BOT_RUNNING = false; LOOP_ACTIVE = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); }
 
 function createUI(){
     if(document.getElementById('auto-ckg-ui')) return;
@@ -1044,7 +1047,8 @@ function createUI(){
             position: fixed; top: 100px; right: 20px; width: 300px;
             background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px);
             border: 1px solid rgba(0, 200, 255, 0.5); border-radius: 16px;
-            z-index: 999999999; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            z-index: 2147483647; /* DIBUAT MAX-INTEGER AGAR MUSTAHIL TERTUTUP WEB KEMENKES */
+            padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             font-family: 'Segoe UI', sans-serif; color: white; cursor: default;
         }
         #drag-handle { padding: 5px; text-align: center; font-weight: bold; color: #00c8ff; cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333; }
@@ -1058,7 +1062,6 @@ function createUI(){
     `;
     document.head.appendChild(style); document.body.appendChild(box);
 
-    // Ambil Data NIK Lama (Agar Tidak Hilang)
     const savedData = loadBOT();
     if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
 
@@ -1071,72 +1074,71 @@ function createUI(){
     }
 
     document.getElementById('run-bot').onclick = async ()=>{
-        if(BOT_RUNNING) return alert('BOT SEDANG BERJALAN');
+        if(BOT_RUNNING || LOOP_ACTIVE) return alert('BOT SEDANG BERJALAN');
         const nik = document.getElementById('nik-bot').value;
         if(!nik) return alert('Masukkan NIK');
 
         updateStatus('MENCARI NIK DI SPREADSHEET...');
         const data = await cariData(nik);
 
-        if(!data) {
-            return updateStatus('NIK TIDAK DITEMUKAN DI GOOGLE SHEETS');
-        }
+        if(!data) return updateStatus('NIK TIDAK DITEMUKAN DI GOOGLE SHEETS');
 
-        BOT_RUNNING = true;
+        // Simpan data dan reset antrian
         saveBOT(data);
-        clearCompleted(); // Reset antrian tombol agar bot mulai ngeklik dari atas
+        clearCompleted(); 
 
-        updateStatus(`Data Ketemu!\nPerkawinan: ${data.perkawinan}`);
-        await sleep(500);
-
-        await mainLoop(data);
+        updateStatus(`Data Ketemu!\nMemulai Otomatis...`);
+        
+        // Aktifkan bot. Sistem Supervisor akan otomatis mengambil alih ke menu yang tepat.
+        BOT_RUNNING = true;
     };
+    
     document.getElementById('stop-bot').onclick = stopBOT;
 }
 
 /* =========================================================
-   INIT / PINTU UTAMA
+   INIT / SUPERVISOR OBSERVER (ANTI MACET SPA)
 ========================================================= */
+// 1. Amankan UI agar selalu muncul
 setInterval(createUI, 1000);
 
-setTimeout(async ()=>{
+let isDownloadingBackground = false;
+
+// 2. Supervisor Loop (Berjalan setiap 2 detik memantau URL tanpa henti)
+setInterval(async () => {
     const isFormPage = location.hostname.includes('form.kemkes.go.id');
     const isMainPage = location.hostname.includes('sehatindonesiaku');
+    
+    const data = loadBOT();
 
-    if(isFormPage) {
-        await autoContinueForm();
-    } else if (isMainPage) {
-        
-        // 1. Cek apakah ada data pasien yang belum selesai dikerjakan
-        const data = loadBOT();
-        if(data){
-            BOT_RUNNING = true;
-            updateStatus('MELANJUTKAN OTOMATIS...\nMencari Form Berikutnya');
-            
-            // Langsung eksekusi tugas utama tanpa harus menunggu download CSV
-            await sleep(3000);
-            await mainLoop(data);
-        } else {
-            // Tampilan default agar pop-up langsung aktif tanpa nge-freeze
-            updateStatus('Menyiapkan Data\nMasukkan NIK lalu Tunggu sampai Database siap sebelum klik START');
-        }
-
-        // --- 2. FITUR PRE-LOAD BACKGROUND SEJATI ---
-        if (!cachedSheetData) {
-            // Kita TIDAK memakai 'await' di sini.
-            // Script akan men-download diam-diam di balik layar (paralel).
-            cariData('000').then(() => {
-                // Begitu download selesai, cek apakah bot sedang jalan.
-                // Jika sedang santai (tidak ada pasien diproses), update statusnya.
-                if (!BOT_RUNNING) {
-                    updateStatus('Database Siap !\nklik START');
-                }
-            }).catch(err => {
-                console.error("Gagal mendownload background data:", err);
-            });
-        }
-        // ---------------------------------------------------
+    // Auto-Resume: Jika web di-refresh manual oleh user tapi pasien belum selesai
+    if (data && !BOT_RUNNING) {
+        BOT_RUNNING = true;
     }
-}, 1500);
+
+    // Download Database secara tersembunyi (Hanya saat bot nganggur di Dashboard)
+    if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
+        isDownloadingBackground = true;
+        cariData('000').then(() => {
+            if (!BOT_RUNNING) updateStatus('Database Siap !\nklik START');
+        }).catch(e => {
+            isDownloadingBackground = false; // Boleh coba lagi jika gagal
+        });
+    }
+
+    // LOGIK INTI (Mencegah bot diam saat URL berubah)
+    if (BOT_RUNNING && data && !LOOP_ACTIVE) {
+        if (isFormPage) {
+            LOOP_ACTIVE = true; // Kunci agar tidak bentrok
+            await autoContinueForm();
+            LOOP_ACTIVE = false; // Buka kunci saat loop selesai/pindah URL
+        } 
+        else if (isMainPage) {
+            LOOP_ACTIVE = true;
+            await mainLoop(data);
+            LOOP_ACTIVE = false;
+        }
+    }
+}, 2000);
 
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
