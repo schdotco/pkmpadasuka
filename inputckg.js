@@ -137,43 +137,111 @@ let cachedSheetData = null;
 async function cariData(nikInput) {
     try {
         const target = normalizeNIK(nikInput);
-        if (!cachedSheetData) {
-            updateStatus("MENGUNDUH DATA SPREADSHEET...");
-            cachedSheetData = [];
-            for (const gid of GIDS) {
-                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
-                const res = await fetch(url);
-                if (!res.ok) continue;
-                const csvText = await res.text();
-                if (!csvText) continue;
-                const rows = parseCSV(csvText);
-                if (rows && rows.length > 1) {
-                    if (cachedSheetData.length === 0) cachedSheetData = cachedSheetData.concat(rows);
-                    else cachedSheetData = cachedSheetData.concat(rows.slice(1));
+        
+        // --- TAHAP 1: CEK CACHE ATAU DOWNLOAD (ANTI CRASH) ---
+        if (!cachedSheetData || cachedSheetData.length === 0) {
+            
+            let savedCache = null;
+            let cacheTime = 0;
+            const EXPIRATION_TIME = 4 * 60 * 60 * 1000; // Cache 4 jam
+            const now = Date.now();
+
+            // 1. Cek dari IndexedDB
+            try {
+                savedCache = await getCacheDB('CKG_SHEET_DATA');
+                cacheTime = await getCacheDB('CKG_SHEET_TIME') || 0;
+            } catch(e) {
+                console.warn("Gagal membaca IndexedDB", e);
+            }
+
+            // 2. Jika valid, gunakan dari IndexedDB (Langsung load ke RAM tanpa nge-lag)
+            if (savedCache && savedCache.length > 0 && (now - cacheTime < EXPIRATION_TIME)) {
+                console.log('[CACHE READY] Memuat data dari IndexedDB...');
+                cachedSheetData = savedCache;
+            } 
+            // 3. Jika tidak ada / expired, lakukan Download
+            else {
+                updateStatus("MENGUNDUH DATA SPREADSHEET...");
+                cachedSheetData = [];
+                
+                for (const gid of GIDS) {
+                    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+                    const res = await fetch(url);
+                    if (!res.ok) continue;
+                    
+                    const csvText = await res.text();
+                    if (!csvText) continue;
+                    
+                    const rows = parseCSV(csvText);
+                    if (rows && rows.length > 1) {
+                        // [OPTIMASI MEMORI] Ganti .concat() dengan PUSH LOOP
+                        if (cachedSheetData.length === 0) {
+                            cachedSheetData = rows;
+                        } else {
+                            for (let i = 1; i < rows.length; i++) {
+                                cachedSheetData.push(rows[i]);
+                            }
+                        }
+                    }
+                }
+                
+                console.log('[DOWNLOAD SELESAI]', cachedSheetData.length, 'baris didapat.');
+
+                // Simpan ke IndexedDB secara background
+                try {
+                    await setCacheDB('CKG_SHEET_DATA', cachedSheetData);
+                    await setCacheDB('CKG_SHEET_TIME', now);
+                    console.log('[INFO] Database besar berhasil disimpan ke IndexedDB agar aman dari limit RAM.');
+                } catch(e) {
+                    console.warn("Gagal menyimpan ke IndexedDB.", e);
                 }
             }
-            console.log('[INFO] Database besar. Data disimpan di RAM sementara untuk mencegah Crash 64MiB.');
         }
+
+        // --- TAHAP 2: PROSES PENCARIAN NIK ---
         const rows = cachedSheetData;
+        
+        // Proteksi jika data gagal diload
         if (!rows || rows.length < 2) return null;
+        
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
+            
+            // Proteksi baris pendek / kosong
             if (!row || row.length < 10) continue; 
+            
             const cells = row.map(col => String(col || '').trim());
             const rawNik = (cells.length > 2) ? (cells[0] || cells[1] || cells[2]) : '';
+            
             if (normalizeNIK(rawNik) === target || cells.some(col => normalizeNIK(col) === target)) {
+                
+                // Jika ketemu, return format data yang Anda inginkan
                 return {
-                    nik: target, nama: cells[7] || '', sistole: cells[37] || '120', diastole: cells[38] || '80',
-                    bb: cells[40] || '60', tb: cells[41] || '165', lp: cells[43] || '80', gula: cells[58] || '110',
-                    mata: cells[70] || 'Tidak', merokok: cells[71] || '', skilasKog1: (cells[78] || 'Ya').trim(),
-                    skilasKog2: (cells[79] || 'Benar semua').trim(), skilasKog3: (cells[80] || 'Ya').trim(),
-                    skilasMob:  (cells[81] || 'Ya').trim(), skilasMal1: (cells[82] || 'Tidak').trim(),
-                    skilasMal2: (cells[83] || 'Tidak').trim(), skilasMal3: (cells[84] || 'Tidak').trim(),
-                    skilasDep1: (cells[88] || 'Tidak').trim(), skilasDep2: (cells[89] || 'Tidak').trim()
+                    nik: target, 
+                    nama: cells[7] || '', 
+                    sistole: cells[37] || '120', 
+                    diastole: cells[38] || '80',
+                    bb: cells[40] || '60', 
+                    tb: cells[41] || '165', 
+                    lp: cells[43] || '80', 
+                    gula: cells[58] || '110',
+                    mata: cells[70] || 'Tidak', 
+                    merokok: cells[71] || '', 
+                    skilasKog1: (cells[78] || 'Ya').trim(),
+                    skilasKog2: (cells[79] || 'Benar semua').trim(), 
+                    skilasKog3: (cells[80] || 'Ya').trim(),
+                    skilasMob:  (cells[81] || 'Ya').trim(), 
+                    skilasMal1: (cells[82] || 'Tidak').trim(),
+                    skilasMal2: (cells[83] || 'Tidak').trim(), 
+                    skilasMal3: (cells[84] || 'Tidak').trim(),
+                    skilasDep1: (cells[88] || 'Tidak').trim(), 
+                    skilasDep2: (cells[89] || 'Tidak').trim()
                 };
             }
         }
+        
         return null; 
+        
     } catch (error) {
         console.error("Terjadi masalah jaringan:", error);
         updateStatus("ERROR JARINGAN: Cek Koneksi");
