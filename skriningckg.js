@@ -93,41 +93,76 @@ function parseCSV(text) {
 
 let cachedSheetData = null;
 
+// ========================================================
+// 1. TAMBAHKAN HELPER INDEXEDDB DI LUAR FUNGSI UTAMA
+// ========================================================
+const DB_NAME = 'CKG_Database';
+const STORE_NAME = 'SheetCache';
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+            e.target.result.createObjectStore(STORE_NAME);
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function setCacheDB(key, value) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(value, key);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function getCacheDB(key) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const request = tx.objectStore(STORE_NAME).get(key);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(tx.error);
+    });
+}
+
+// ========================================================
+// 2. KODE FUNGSI CARI DATA YANG SUDAH DIOPTIMASI & DIGABUNG
+// ========================================================
 async function cariData(nikInput) {
     try {
         const target = normalizeNIK(nikInput);
         
-        // Cek apakah data sudah ada di variabel RAM (Halaman yang sama)
-        if (!cachedSheetData) {
+        // --- TAHAP 1: SIAPKAN DATA (DARI RAM, INDEXEDDB, ATAU DOWNLOAD) ---
+        if (!cachedSheetData || cachedSheetData.length === 0) {
             
-            // --- 1. CEK CACHE DI PENYIMPANAN BROWSER ---
             let savedCache = null;
             let cacheTime = 0;
-            const EXPIRATION_TIME = 4 * 60 * 60 * 1000; // Cache bertahan 4 jam (dalam milidetik)
+            const EXPIRATION_TIME = 4 * 60 * 60 * 1000; // Cache bertahan 4 jam
             const now = Date.now();
 
+            // Cek IndexedDB
             try {
-                const rawCache = GM_getValue('CKG_SHEET_CACHE');
-                cacheTime = parseInt(GM_getValue('CKG_SHEET_CACHE_TIME') || '0');
-                if (rawCache) savedCache = JSON.parse(rawCache);
+                savedCache = await getCacheDB('CKG_SHEET_DATA');
+                cacheTime = await getCacheDB('CKG_SHEET_TIME') || 0;
             } catch(e) {
-                // Fallback jika GM_getValue diblokir
-                const rawCache = sessionStorage.getItem('CKG_SHEET_CACHE');
-                cacheTime = parseInt(sessionStorage.getItem('CKG_SHEET_CACHE_TIME') || '0');
-                if (rawCache) savedCache = JSON.parse(rawCache);
+                console.warn("Gagal membaca IndexedDB", e);
             }
 
-            // --- 2. JIKA CACHE VALID & BELUM EXPIRED, GUNAKAN CACHE ---
+            // Gunakan Cache jika valid
             if (savedCache && savedCache.length > 0 && (now - cacheTime < EXPIRATION_TIME)) {
-                console.log('[CACHE READY] Memuat data dari penyimpanan lokal (Cepat)...');
+                console.log('[CACHE READY] Memuat data dari IndexedDB (Cepat)...');
                 cachedSheetData = savedCache;
             } 
-            // --- 3. JIKA TIDAK ADA CACHE ATAU EXPIRED, DOWNLOAD ULANG ---
+            // Download jika tidak ada/expired
             else {
                 updateStatus("MENGUNDUH DATA SPREADSHEET...");
                 cachedSheetData = [];
 
-                // Looping ke semua GID yang ada di array GIDS
                 for (const gid of GIDS) {
                     console.log('Download sheet gid:', gid);
                     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
@@ -144,67 +179,69 @@ async function cariData(nikInput) {
                     const rows = parseCSV(csvText);
                     if (rows && rows.length > 1) {
                         if (cachedSheetData.length === 0) {
-                            cachedSheetData = cachedSheetData.concat(rows);
+                            cachedSheetData = rows;
                         } else {
-                            cachedSheetData = cachedSheetData.concat(rows.slice(1));
+                            for (let i = 1; i < rows.length; i++) {
+                                cachedSheetData.push(rows[i]);
+                            }
                         }
                     }
                 }
+                
                 console.log('[DOWNLOAD SELESAI]', cachedSheetData.length, 'baris didapat.');
 
-                // Simpan hasil download ke Penyimpanan Browser agar bisa dipakai di halaman selanjutnya
+                // Simpan ke IndexedDB
                 try {
-                    GM_setValue('CKG_SHEET_CACHE', JSON.stringify(cachedSheetData));
-                    GM_setValue('CKG_SHEET_CACHE_TIME', now.toString());
+                    await setCacheDB('CKG_SHEET_DATA', cachedSheetData);
+                    await setCacheDB('CKG_SHEET_TIME', now);
+                    console.log('[CACHE SAVED] Data berhasil disimpan ke IndexedDB.');
                 } catch(e) {
-                    try {
-                        sessionStorage.setItem('CKG_SHEET_CACHE', JSON.stringify(cachedSheetData));
-                        sessionStorage.setItem('CKG_SHEET_CACHE_TIME', now.toString());
-                    } catch (err) {
-                        console.warn("Storage browser penuh, data hanya disimpan di RAM sementara.");
-                    }
+                    console.warn("Gagal menyimpan ke IndexedDB, data hanya di RAM sementara.", e);
                 }
             }
         }
+        
+        // --- TAHAP 2: PROSES PENCARIAN NIK ---
+        
+        // PROTEKSI: Pastikan array cachedSheetData valid dan punya data selain header
+        if (!cachedSheetData || cachedSheetData.length < 2) {
+            console.warn("Data sheet kosong atau gagal dimuat.");
+            return null;
+        }
 
-    const rows = cachedSheetData;
+        // Loop pencarian menggunakan cachedSheetData
+        for (let i = 1; i < cachedSheetData.length; i++) {
+            const row = cachedSheetData[i];
 
-    // PROTEKSI: Pastikan array rows valid dan punya data selain header
-    if (!rows || rows.length < 2) return null;
+            // PROTEKSI: Jika ada baris "sampah" atau kolom tidak cukup panjang
+            if (!row || row.length < 12) continue;
 
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
+            const nikSheet = normalizeNIK(row[11]);
 
-        // PROTEKSI: Jika ada baris "sampah" atau kolom tidak cukup panjang
-        if (!row || row.length < 12) continue;
-
-        const nikSheet = normalizeNIK(row[11]);
-
-        if (nikSheet === target) {
-            // --- DEBUGGER: Menampilkan data mentah ke Console ---
-            console.log("=== DEBUG DATA PADA BARIS INI ===");
-            console.log("Target NIK:", target);
-            console.log("Panjang array baris (total kolom):", row.length);
-            console.log("Isi Kolom 72 (Jiwa 1):", row[72]);
-            console.log("Isi Kolom 73 (Jiwa 2):", row[73]);
-            console.log("Isi Kolom 74 (Jiwa 3):", row[74]);
-            console.log("Isi Kolom 75 (Jiwa 4):", row[75]);
-            
-            // Tampilkan 10 kolom sebelum dan sesudah 72 untuk memastikan posisi
-            console.log("Preview Kolom 70-80:", row.slice(70, 81));
-            console.log("================================");
-            
-            return {
-                nik: target,
-                perkawinan: row[26] || 'Belum Menikah',
-                merokok: (row[71] || '').trim(),
-                jiwa1: (row[72] || '').trim(), // Kolom BU
-                jiwa2: (row[73] || '').trim(), // Kolom BV
-                jiwa3: (row[74] || '').trim(), // Kolom BW
-                jiwa4: (row[75] || '').trim()  // Kolom BX
+            if (nikSheet === target) {
+                // --- DEBUGGER: Menampilkan data mentah ke Console ---
+                console.log("=== DEBUG DATA PADA BARIS INI ===");
+                console.log("Target NIK:", target);
+                console.log("Panjang array baris (total kolom):", row.length);
+                console.log("Isi Kolom 72 (Jiwa 1):", row[72]);
+                console.log("Isi Kolom 73 (Jiwa 2):", row[73]);
+                console.log("Isi Kolom 74 (Jiwa 3):", row[74]);
+                console.log("Isi Kolom 75 (Jiwa 4):", row[75]);
+                console.log("================================");
+                
+                return {
+                    nik: target,
+                    perkawinan: row[26] || 'Belum Menikah',
+                    merokok: (row[71] || '').trim(),
+                    jiwa1: (row[72] || '').trim(), 
+                    jiwa2: (row[73] || '').trim(), 
+                    jiwa3: (row[74] || '').trim(), 
+                    jiwa4: (row[75] || '').trim()  
                 };
             }
         }
+        
+        // Jika looping selesai tapi NIK tidak ditemukan
         return null;
 
     } catch (error) { 
