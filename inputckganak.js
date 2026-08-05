@@ -10,6 +10,7 @@ const GIDS = ['1783755807', '1121908280'];
 // TARGETS dioptimalkan agar ADAPTIF dan sangat presisi dengan nama menu di ASIK
 const TARGETS = [
     { id: 'gizi', txt: 'gizi anak' },
+    { id: 'gizi_balita', txt: 'pertumbuhan' },
     { id: 'tensi', txt: 'tekanan darah anak' },
     { id: 'gula', txt: 'pemeriksaan gula darah anak' },
     { id: 'tb', txt: 'x-ray tb' },
@@ -268,14 +269,23 @@ async function isiDropdownSurveyJS(soalSelector, optionText) {
     const targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(soalSelector.toLowerCase()));
     if (!targetQ) return false;
 
+    // Cek apakah dropdown sudah terisi (menghindari loop klik sia-sia)
+    const valEl = targetQ.querySelector('.sd-dropdown__value, input.sd-dropdown__filter-string-input');
+    if (valEl && (valEl.value || valEl.innerText || '').toLowerCase().includes(optionText.toLowerCase())) {
+        return true; 
+    }
+
     const dropdownTrigger = targetQ.querySelector('.sd-dropdown, .sv-dropdown');
     
     if (dropdownTrigger) {
-        dropdownTrigger.click(); 
-        await sleep(1200); 
+        dropdownTrigger.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        dropdownTrigger.click(); // Buka dropdown
+        await sleep(1000); 
 
+        // CARI HANYA OPSI YANG SEDANG TAMPIL DI LAYAR (Mencegah klik opsi gaib/tersembunyi)
         const allOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
         const targetOpt = allOptions.find(el => 
+            el.offsetParent !== null && // Syarat mutlak: Elemen harus kelihatan
             (el.innerText || '').toLowerCase().includes(optionText.toLowerCase())
         );
 
@@ -284,7 +294,7 @@ async function isiDropdownSurveyJS(soalSelector, optionText) {
             await sleep(800);
             success = true;
         } else {
-            dropdownTrigger.click(); 
+            dropdownTrigger.click(); // Tutup kembali jika anehnya tidak ada pilihan
         }
     }
     return success;
@@ -445,11 +455,12 @@ async function autoContinueForm() {
 
     let currentId = null;
 
-    // ==========================================
+      // ==========================================
     // RUTE 1: GIZI BALITA (< 5 TAHUN)
     // ==========================================
     if (title.includes('skrining pertumbuhan - balita') || title.includes('balita dan anak prasekolah')) {
-        currentId = 'gizi'; updateStatus('MENGISI TAHAP: SKRINING PERTUMBUHAN BALITA');
+        currentId = 'gizi_balita'; // <--- PASTIKAN INI BERUBAH JADI gizi_balita
+        updateStatus('MENGISI TAHAP: SKRINING PERTUMBUHAN BALITA');
         
         // 1. Input Berat Badan
         const inputBB = document.querySelector('input[placeholder*="kilogram" i]') || realInputs[0];
@@ -468,7 +479,7 @@ async function autoContinueForm() {
         // 4. Dropdown Status Lingkar Kepala -> Normal
         await isiDropdownSurveyJS('lingkar kepala', 'normal');
         await sleep(800);
-    } 
+    }
     // ==========================================
     // RUTE 2: GIZI ANAK SEKOLAH / REMAJA (> 5 TAHUN)
     // ==========================================
