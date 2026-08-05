@@ -476,10 +476,21 @@ function isFormValid() {
             continue;
         }
 
+        // Cek kelengkapan Radio Button
         const radios = q.querySelectorAll('input[type="radio"]');
         if (radios.length > 0) {
             const hasSelected = Array.from(radios).some(r => r.checked);
             if (!hasSelected) return { valid: false, container: q };
+        }
+
+        // Cek kelengkapan Dropdown SurveyJS
+        const dropdowns = q.querySelectorAll('.sd-dropdown, .sv-dropdown');
+        for (let dd of dropdowns) {
+            const valText = (dd.innerText || '').toLowerCase().trim();
+            // Cek jika teks dropdown masih default "Select..."
+            if (valText === 'select...' || valText === '') {
+                return { valid: false, container: q };
+            }
         }
     }
     return { valid: true };
@@ -561,6 +572,24 @@ async function autoContinueForm() {
 
     let currentId = null;
 
+   // ==========================================
+    // RUTE 1: TELINGA DAN MATA (TARUH PALING ATAS)
+    // ==========================================
+    // Harus diprioritaskan agar string "balita dan anak prasekolah" tidak nyasar ke form Gizi
+    if (title.includes('telinga dan mata')) {
+        currentId = 'telinga_mata';
+        
+        if (title.includes('skrining telinga dan mata - balita') || title.includes('balita dan anak prasekolah')) {
+            updateStatus('MENGISI TAHAP: TELINGA & MATA (BALITA)');
+            await handleTelingaMataBalita(data); 
+        } else {
+            updateStatus('MENGISI TAHAP: TELINGA & MATA (ANAK/DEWASA)');
+            await pilihSemuaRadioLimit('normal', 99, false); 
+            await sleep(800);
+            await pilihSemuaRadioLimit('tidak', 99, false); 
+            await sleep(800);
+        }
+    }
    
       // ==========================================
     // RUTE 1: GIZI BALITA (< 5 TAHUN)
@@ -603,11 +632,6 @@ async function autoContinueForm() {
             await pilihSemuaRadioLimit('tidak', 99, false); 
             await sleep(800);
         }
-    }
-    // RUTE 2: Telinga dan Mata (Balita / Prasekolah) -> Pakai Dropdown
-    else if(title.includes('telinga dan mata')){
-        currentId = 'telinga_mata';
-        await handleTelingaMataAnak(data); 
     }
     // ==========================================
     // RUTE 2: GIZI ANAK SEKOLAH / REMAJA (> 5 TAHUN)
