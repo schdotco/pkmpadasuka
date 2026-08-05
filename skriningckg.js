@@ -705,6 +705,60 @@ async function isiTetanusCatin() {
     return true;
 }
 
+async function isiImunisasiBalita() {
+    const judul = document.body.innerText.toLowerCase();
+    if (!judul.includes('riwayat imunisasi rutin balita')) {
+        return false;
+    }
+
+    updateStatus('Mengisi Imunisasi Balita (Ya/Sudah)...');
+    
+    // Cari semua dropdown di halaman
+    const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
+
+    for (let i = 0; i < dropdowns.length; i++) {
+        const currentDropdown = dropdowns[i];
+        if (!currentDropdown) continue;
+
+        // Scroll ke pertanyaan
+        currentDropdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Buka Dropdown
+        currentDropdown.click();
+        await sleep(800); // Tunggu animasi popup dropdown muncul
+
+        // Cari opsi di dalam popup yang sedang terbuka
+        const popupOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
+        
+        // Cari opsi yang tulisannya persis "Ya" atau "Sudah"
+        const targetOpt = popupOptions.find(el => {
+            const txt = (el.innerText || '').trim().toLowerCase();
+            return txt === 'ya' || txt === 'sudah';
+        });
+
+        if (targetOpt) {
+            targetOpt.click(); // Pilih Ya / Sudah
+            await sleep(500);
+        } else {
+            // Jika anehnya tidak ada opsi itu, tutup kembali dropdownnya
+            currentDropdown.click(); 
+            await sleep(300);
+        }
+    }
+
+    // Cari dan Klik Tombol Kirim / Lanjut
+    await sleep(1000);
+    const btnKirim = document.querySelector('.sd-navigation__complete-btn') || 
+                     [...document.querySelectorAll('button,input[type="button"]')].find(b => (b.innerText||'').toLowerCase().match(/lanjut|kirim/));
+
+    if (btnKirim) {
+        btnKirim.click();
+        await sleep(3500); // Tunggu loading submit
+    }
+
+    return true;
+}
+
 /* =========================================================
    CORE LOGIC SKRINING MANDIRI (REVISI STATUS PERKAWINAN)
 ========================================================= */
@@ -938,7 +992,10 @@ async function autoContinueForm(){
             // Setelah form dipastikan muncul, baru kita baca teks halamannya
             const pageText = document.body.innerText.toLowerCase();
 
-            if (pageText.includes('riwayat imunisasi tetanus')) {
+            if (pageText.includes('riwayat imunisasi rutin balita')) {
+                // Eksekusi Imunisasi Balita hardcode Ya/Sudah
+                await isiImunisasiBalita();
+            } else if (pageText.includes('riwayat imunisasi tetanus')) {
                 await isiTetanusCatin();
             } else {
                 await handleSkriningMandiri(data);
