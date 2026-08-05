@@ -743,15 +743,39 @@ async function autoContinueForm() {
 function getNextTarget(){
     const completed = getCompleted();
     const btns = [...document.querySelectorAll('button')].filter(btn => (btn.innerText || '').toLowerCase().includes('input data'));
+    
     for(let btn of btns){
+        // =========================================================
+        // [!] FITUR ANTI-LOOPING: BACA STATUS DARI WEB ASIK
+        // =========================================================
+        // Kita ambil semua teks dari baris/tabel yang membungkus tombol ini
+        let parentForStatus = btn.parentElement;
+        let rowText = '';
+        for(let i=0; i < 8; i++){
+            if(parentForStatus){
+                rowText = (parentForStatus.innerText || '').toLowerCase();
+                parentForStatus = parentForStatus.parentElement;
+            }
+        }
+        
+        // JIKA DI BARIS TERSEBUT ADA TULISAN "SELESAI DIPERIKSA", ABAIKAN TOMBOL INI!
+        if(rowText.includes('selesai diperiksa')){
+            continue; 
+        }
+
+        // =========================================================
+        // LOGIKA PENCARIAN TARGET NORMAL
+        // =========================================================
         let parent = btn.parentElement;
         for(let i=0; i<10; i++){
             if(!parent) break;
             const txt = (parent.innerText || '').replace(/\s+/g,' ').trim().toLowerCase();
             const found = TARGETS.find(t => txt.includes(t.txt));
+            
             if(found && !completed.includes(found.id)){
                 return { btn: btn, id: found.id, title: found.txt };
-            } else if(found) break;
+            } else if(found) break; 
+            
             parent = parent.parentElement;
         }
     }
