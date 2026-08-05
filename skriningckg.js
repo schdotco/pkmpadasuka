@@ -746,7 +746,7 @@ async function isiImunisasiBalita() {
                 }
 
                 dropdown.click(); // Buka menu popup
-                await sleep(1000); // Jeda wajib agar popup SurveyJS selesai dirender
+                await sleep(800); // Jeda wajib agar popup SurveyJS selesai dirender
 
                 // KUNCI UTAMA PERBAIKAN: Ambil HANYA opsi yang BENAR-BENAR MUNCUL DI LAYAR saat ini
                 const opsiList = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')]
@@ -787,7 +787,7 @@ async function isiImunisasiBalita() {
             }
 
             // WAJIB: Tunggu animasi web Kemenkes memuat soal baru ke bawahnya
-            await sleep(2000); 
+            await sleep(1000); 
         }
 
         // 3. Update catatan jumlah soal
