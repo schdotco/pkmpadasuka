@@ -416,7 +416,7 @@ async function handleTelingaMataBalita(data) {
         "Sesuai Umur", 
         ((data.mata || '').toLowerCase() === 'ya' ? "Daya lihat anak kurang" : "Daya lihat anak baik"), 
         "Tidak ada serumen impaksi", 
-        "Tidak ada serumen impaksi", 
+        "Tidak ada infeksi telinga", 
         "Normal"
     ];
 
