@@ -709,82 +709,71 @@ async function isiImunisasiBalita() {
     const judul = document.body.innerText.toLowerCase();
     if (!judul.includes('riwayat imunisasi rutin balita')) return false;
 
-    updateStatus('Mengisi Imunisasi Balita Berantai (Ya/Sudah)...');
+    updateStatus('Mengisi Imunisasi Balita Berantai...');
 
-    let maxLoop = 0;
-    let adaSoalDiisi = true;
+    let jumlahSoalTerjawab = 0;
+    let maksimalLoop = 0;
 
-    // Loop akan terus berputar mencari soal baru sampai benar-benar habis (Max 20 soal agar aman)
-    while (adaSoalDiisi && maxLoop < 20) {
-        adaSoalDiisi = false;
-        maxLoop++;
+    // Loop selama ada penambahan soal baru di layar (maksimal 20 kali putaran agar aman)
+    while (maksimalLoop < 20) {
+        maksimalLoop++;
 
-        // ==============================================================
-        // STRATEGI 1: TANGANI FORMAT DROPDOWN (Seperti di Screenshot)
-        // ==============================================================
-        const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
-        
-        for (const dropdown of dropdowns) {
-            const textDropdown = (dropdown.innerText || '').toLowerCase().trim();
+        // 1. Ambil semua kerangka pertanyaan yang ada di layar SAAT INI
+        const semuaSoal = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')].filter(q => q.offsetParent !== null); // pastikan elemen terlihat
 
-            // KUNCI PERBAIKAN: Cek apakah kotak masih bertuliskan "Select..." atau "Pilih..."
-            // Jika ya, berarti ini adalah soal baru yang belum dijawab.
-            if (textDropdown.includes('select') || textDropdown.includes('pilih')) {
-                
-                dropdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                await sleep(400);
-                dropdown.click(); // Buka dropdown
-                await sleep(800);
+        // Jika jumlah soal di layar sama dengan yang sudah kita kerjakan, berarti antrian habis!
+        if (semuaSoal.length === 0 || semuaSoal.length === jumlahSoalTerjawab) {
+            console.log("[BOT] Tidak ada soal baru yang muncul. Selesai.");
+            break; 
+        }
 
-                // Cari jawaban 'Ya' atau 'Sudah' di daftar yang terbuka
-                const items = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')];
-                let ketemu = false;
+        // 2. Kita HANYA memproses soal-soal BARU (dimulai dari index jumlahSoalTerjawab terakhir)
+        for (let i = jumlahSoalTerjawab; i < semuaSoal.length; i++) {
+            const soalSaatIni = semuaSoal[i];
+            
+            soalSaatIni.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            await sleep(500);
 
-                for (const item of items) {
+            // --- CEK APAKAH DI DALAM SOAL INI ADA DROPDOWN ---
+            const dropdown = soalSaatIni.querySelector('.sd-dropdown, .sv-dropdown');
+            if (dropdown) {
+                dropdown.click(); // Buka menu
+                await sleep(1000);
+
+                const opsiList = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')];
+                const targetOpsi = opsiList.find(el => {
+                    const txt = (el.innerText || '').toLowerCase().trim();
+                    return txt === 'ya' || txt === 'sudah';
+                });
+
+                if (targetOpsi) {
+                    targetOpsi.click();
+                    console.log(`[BOT] Menjawab Dropdown soal ke-${i+1} dengan Ya/Sudah`);
+                } else {
+                    dropdown.click(); // Tutup kembali jika opsi tidak ada
+                }
+            } 
+            // --- JIKA BUKAN DROPDOWN, CEK APAKAH INI RADIO BUTTON ---
+            else {
+                const radioItems = [...soalSaatIni.querySelectorAll('.sd-item, .sv-item')];
+                for (const item of radioItems) {
                     const txt = (item.innerText || '').toLowerCase().trim();
                     if (txt === 'ya' || txt === 'sudah') {
-                        item.click();
-                        ketemu = true;
-                        adaSoalDiisi = true; // Tandai bahwa kita baru saja menjawab soal
-                        await sleep(1500); // JEDA WAJIB: Beri waktu sistem memunculkan pertanyaan nomor 2, 3, dst
+                        const decorator = item.querySelector('.sd-radio__decorator, .sd-item__decorator') || item;
+                        decorator.click();
+                        console.log(`[BOT] Menjawab Radio soal ke-${i+1} dengan Ya/Sudah`);
                         break;
                     }
                 }
-
-                // Jika berhasil dijawab, HANCURKAN proses ini agar bot mengulang dari awal (mencari soal nomor 2 yg baru muncul)
-                if (ketemu) break; 
-                else {
-                    dropdown.click(); // Tutup dropdown jika opsi tidak ada
-                    await sleep(400);
-                }
             }
+
+            // WAJIB: Tunggu animasi web Kemenkes memuat soal baru ke bawahnya
+            await sleep(2000); 
         }
 
-        // ==============================================================
-        // STRATEGI 2: TANGANI FORMAT RADIO BUTTON 
-        // (Diadopsi persis dari fungsi "isiSemuaRadioTidak" milik Anda)
-        // ==============================================================
-        if (!adaSoalDiisi) {
-            const radioItems = [...document.querySelectorAll('.sd-item, .sv-item')];
-            
-            for (const item of radioItems) {
-                const txt = (item.innerText || '').toLowerCase().trim();
-
-                if (txt === 'ya' || txt === 'sudah') {
-                    // Pastikan radio ini BELUM dicentang (agar tidak nge-klik nomor 1 berulang kali)
-                    const inputRadio = item.querySelector('input[type="radio"]');
-                    if (inputRadio && !inputRadio.checked) {
-                        
-                        const decorator = item.querySelector('.sd-radio__decorator, .sd-item__decorator') || item;
-                        decorator.click();
-                        
-                        adaSoalDiisi = true; // Tandai bot baru saja menjawab soal
-                        await sleep(1200); // Tunggu soal baru muncul
-                        break; // Hancurkan loop dan scan halaman dari awal
-                    }
-                }
-            }
-        }
+        // 3. Update catatan bot: "Oke, saya sudah menyelesaikan X soal"
+        // Saat kembali ke 'while', bot akan mengecek apakah soal bertambah jadi X+1
+        jumlahSoalTerjawab = semuaSoal.length;
     }
 
     // Cari dan Klik Tombol Kirim / Lanjut
