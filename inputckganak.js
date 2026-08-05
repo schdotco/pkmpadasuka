@@ -408,6 +408,62 @@ async function handleTelingaMataAnak(data) {
     await sleep(800);
 }
 
+async function handleTelingaMataBalita(data) {
+    updateStatus('MENGISI: SKRINING TELINGA & MATA BALITA...');
+    await sleep(1000);
+
+    const jawabanBalita = [
+        "Sesuai Umur", 
+        ((data.mata || '').toLowerCase() === 'ya' ? "Daya lihat anak kurang" : "Daya lihat anak baik"), 
+        "Tidak ada serumen impaksi", 
+        "Tidak ada serumen impaksi", 
+        "Normal"
+    ];
+
+    const semuaSoal = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')].filter(q => q.offsetParent !== null);
+
+    for (let i = 0; i < semuaSoal.length; i++) {
+        const soal = semuaSoal[i];
+        const targetJawaban = jawabanBalita[i];
+        
+        if (!targetJawaban) continue;
+
+        soal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await sleep(500);
+
+        const dropdown = soal.querySelector('.sd-dropdown, .sv-dropdown');
+        if (dropdown) {
+            const teksKotak = (dropdown.innerText || '').toLowerCase().trim();
+            if (teksKotak.includes(targetJawaban.toLowerCase())) {
+                continue;
+            }
+
+            dropdown.click();
+            await sleep(1000);
+
+            const allOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')]
+                .filter(el => {
+                    const rect = el.getBoundingClientRect();
+                    return rect.width > 0 && rect.height > 0;
+                });
+
+            const targetOpt = allOptions.find(el => 
+                (el.innerText || '').toLowerCase().trim().includes(targetJawaban.toLowerCase())
+            );
+
+            if (targetOpt) {
+                targetOpt.click();
+                console.log(`[BOT] Sukses mengisi pertanyaan balita ke-${i + 1} dengan: "${targetJawaban}"`);
+                await sleep(1200);
+            } else {
+                dropdown.click();
+                await sleep(500);
+            }
+        }
+    }
+    await sleep(1000);
+}
+
 /* =========================================================
    KLIK KIRIM & VALIDASI SAPU BERSIH 
 ========================================================= */
@@ -581,16 +637,21 @@ async function autoContinueForm() {
         await selectDropdownSurveyJS('tidak ada');
     }
 // RUTE 1: Telinga dan Mata (Anak Sekolah) -> Pakai Radio Button
-    else if(title.includes('telinga dan mata - anak sekolah')){
-        currentId = 'telinga_mata'; updateStatus('MENGISI TAHAP: TELINGA MATA (ANAK SEKOLAH)');
+   else if(title.includes('telinga dan mata')) {
+        currentId = 'telinga_mata';
         
-        // Klik semua jawaban yang mengandung kata "Normal" (untuk pendengaran/penglihatan)
-        await pilihSemuaRadioLimit('normal', 99, false); 
-        await sleep(800);
-        
-        // Klik semua jawaban yang mengandung kata "Tidak" (untuk serumen/infeksi)
-        await pilihSemuaRadioLimit('tidak', 99, false); 
-        await sleep(800);
+        // Cek apakah ini form khusus Balita/Prasekolah berdasarkan teks di halaman
+        if (title.includes('balita dan anak prasekolah')) {
+            updateStatus('MENGISI TAHAP: TELINGA & MATA (BALITA)');
+            await handleTelingaMataBalita(data); // Memanggil fungsi khusus balita
+        } else {
+            updateStatus('MENGISI TAHAP: TELINGA & MATA (ANAK/DEWASA/LANSIA)');
+            // Tetap pertahankan logika lama yang menggunakan Radio Button / Dropdown umum
+            await pilihSemuaRadioLimit('normal', 99, false); 
+            await sleep(800);
+            await pilihSemuaRadioLimit('tidak', 99, false); 
+            await sleep(800);
+        }
     }
     // RUTE 2: Telinga dan Mata (Balita / Prasekolah) -> Pakai Dropdown
     else if(title.includes('telinga dan mata')){
