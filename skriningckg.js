@@ -707,57 +707,81 @@ async function isiTetanusCatin() {
 
 async function isiImunisasiBalita() {
     const judul = document.body.innerText.toLowerCase();
-    if (!judul.includes('riwayat imunisasi rutin balita')) {
-        return false;
-    }
+    if (!judul.includes('riwayat imunisasi rutin balita')) return false;
 
-    updateStatus('Mengisi Imunisasi Balita Berantai...');
-    
-    let adaPertanyaanBaru = true;
-    let maksimalLoop = 0; // Pengaman agar bot tidak terjebak infinite loop (maksimal 20 soal)
+    updateStatus('Mengisi Imunisasi Balita Berantai (Ya/Sudah)...');
 
-    // Gunakan loop WHILE agar bot mereset pencarian setiap kali soal baru muncul
-    while (adaPertanyaanBaru && maksimalLoop < 20) {
-        adaPertanyaanBaru = false;
-        maksimalLoop++;
+    let maxLoop = 0;
+    let adaSoalDiisi = true;
 
-        // KUNCI: Cari ulang semua dropdown SETIAP loop berputar
+    // Loop akan terus berputar mencari soal baru sampai benar-benar habis (Max 20 soal agar aman)
+    while (adaSoalDiisi && maxLoop < 20) {
+        adaSoalDiisi = false;
+        maxLoop++;
+
+        // ==============================================================
+        // STRATEGI 1: TANGANI FORMAT DROPDOWN (Seperti di Screenshot)
+        // ==============================================================
         const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
+        
+        for (const dropdown of dropdowns) {
+            const textDropdown = (dropdown.innerText || '').toLowerCase().trim();
 
-        for (let i = 0; i < dropdowns.length; i++) {
-            const currentDropdown = dropdowns[i];
-            if (!currentDropdown) continue;
+            // KUNCI PERBAIKAN: Cek apakah kotak masih bertuliskan "Select..." atau "Pilih..."
+            // Jika ya, berarti ini adalah soal baru yang belum dijawab.
+            if (textDropdown.includes('select') || textDropdown.includes('pilih')) {
+                
+                dropdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                await sleep(400);
+                dropdown.click(); // Buka dropdown
+                await sleep(800);
 
-            // Cek isi kotak dropdown, apakah sudah terisi 'Ya' / 'Sudah'?
-            const textDropdown = (currentDropdown.innerText || '').trim().toLowerCase();
+                // Cari jawaban 'Ya' atau 'Sudah' di daftar yang terbuka
+                const items = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')];
+                let ketemu = false;
+
+                for (const item of items) {
+                    const txt = (item.innerText || '').toLowerCase().trim();
+                    if (txt === 'ya' || txt === 'sudah') {
+                        item.click();
+                        ketemu = true;
+                        adaSoalDiisi = true; // Tandai bahwa kita baru saja menjawab soal
+                        await sleep(1500); // JEDA WAJIB: Beri waktu sistem memunculkan pertanyaan nomor 2, 3, dst
+                        break;
+                    }
+                }
+
+                // Jika berhasil dijawab, HANCURKAN proses ini agar bot mengulang dari awal (mencari soal nomor 2 yg baru muncul)
+                if (ketemu) break; 
+                else {
+                    dropdown.click(); // Tutup dropdown jika opsi tidak ada
+                    await sleep(400);
+                }
+            }
+        }
+
+        // ==============================================================
+        // STRATEGI 2: TANGANI FORMAT RADIO BUTTON 
+        // (Diadopsi persis dari fungsi "isiSemuaRadioTidak" milik Anda)
+        // ==============================================================
+        if (!adaSoalDiisi) {
+            const radioItems = [...document.querySelectorAll('.sd-item, .sv-item')];
             
-            // Jika tulisan di kotak adalah 'Select...' atau belum dijawab 'ya'/'sudah'
-            if (!textDropdown.includes('ya') && !textDropdown.includes('sudah')) {
-                
-                // Scroll ke soal tersebut
-                currentDropdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                await sleep(300);
-                
-                // Buka Dropdown
-                currentDropdown.click();
-                await sleep(1000); 
+            for (const item of radioItems) {
+                const txt = (item.innerText || '').toLowerCase().trim();
 
-                // Cari opsi "Ya" atau "Sudah" di dalam menu yang terbuka
-                const popupOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
-                const targetOpt = popupOptions.find(el => {
-                    const txt = (el.innerText || '').trim().toLowerCase();
-                    return txt === 'ya' || txt === 'sudah';
-                });
-
-                if (targetOpt) {
-                    targetOpt.click(); // Pilih jawabannya
-                    await sleep(1200); // WAJIB JEDA AGAR SOAL BERIKUTNYA SEMPAT MUNCUL DI LAYAR
-                    
-                    adaPertanyaanBaru = true; // Beri sinyal bahwa ada aksi, mungkin ada soal baru
-                    break; // STOP FOR LOOP INI! Kembali ke WHILE untuk scan ulang soal dari awal
-                } else {
-                    currentDropdown.click(); // Tutup dropdown jika opsi tidak ditemukan
-                    await sleep(500);
+                if (txt === 'ya' || txt === 'sudah') {
+                    // Pastikan radio ini BELUM dicentang (agar tidak nge-klik nomor 1 berulang kali)
+                    const inputRadio = item.querySelector('input[type="radio"]');
+                    if (inputRadio && !inputRadio.checked) {
+                        
+                        const decorator = item.querySelector('.sd-radio__decorator, .sd-item__decorator') || item;
+                        decorator.click();
+                        
+                        adaSoalDiisi = true; // Tandai bot baru saja menjawab soal
+                        await sleep(1200); // Tunggu soal baru muncul
+                        break; // Hancurkan loop dan scan halaman dari awal
+                    }
                 }
             }
         }
