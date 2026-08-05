@@ -711,38 +711,55 @@ async function isiImunisasiBalita() {
         return false;
     }
 
-    updateStatus('Mengisi Imunisasi Balita (Ya/Sudah)...');
+    updateStatus('Mengisi Imunisasi Balita Berantai...');
     
-    // Cari semua dropdown di halaman
-    const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
+    let adaPertanyaanBaru = true;
+    let maksimalLoop = 0; // Pengaman agar bot tidak terjebak infinite loop (maksimal 20 soal)
 
-    for (let i = 0; i < dropdowns.length; i++) {
-        const currentDropdown = dropdowns[i];
-        if (!currentDropdown) continue;
+    // Gunakan loop WHILE agar bot mereset pencarian setiap kali soal baru muncul
+    while (adaPertanyaanBaru && maksimalLoop < 20) {
+        adaPertanyaanBaru = false;
+        maksimalLoop++;
 
-        // Scroll ke pertanyaan
-        currentDropdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        // Buka Dropdown
-        currentDropdown.click();
-        await sleep(800); // Tunggu animasi popup dropdown muncul
+        // KUNCI: Cari ulang semua dropdown SETIAP loop berputar
+        const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
 
-        // Cari opsi di dalam popup yang sedang terbuka
-        const popupOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
-        
-        // Cari opsi yang tulisannya persis "Ya" atau "Sudah"
-        const targetOpt = popupOptions.find(el => {
-            const txt = (el.innerText || '').trim().toLowerCase();
-            return txt === 'ya' || txt === 'sudah';
-        });
+        for (let i = 0; i < dropdowns.length; i++) {
+            const currentDropdown = dropdowns[i];
+            if (!currentDropdown) continue;
 
-        if (targetOpt) {
-            targetOpt.click(); // Pilih Ya / Sudah
-            await sleep(500);
-        } else {
-            // Jika anehnya tidak ada opsi itu, tutup kembali dropdownnya
-            currentDropdown.click(); 
-            await sleep(300);
+            // Cek isi kotak dropdown, apakah sudah terisi 'Ya' / 'Sudah'?
+            const textDropdown = (currentDropdown.innerText || '').trim().toLowerCase();
+            
+            // Jika tulisan di kotak adalah 'Select...' atau belum dijawab 'ya'/'sudah'
+            if (!textDropdown.includes('ya') && !textDropdown.includes('sudah')) {
+                
+                // Scroll ke soal tersebut
+                currentDropdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                await sleep(300);
+                
+                // Buka Dropdown
+                currentDropdown.click();
+                await sleep(1000); 
+
+                // Cari opsi "Ya" atau "Sudah" di dalam menu yang terbuka
+                const popupOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
+                const targetOpt = popupOptions.find(el => {
+                    const txt = (el.innerText || '').trim().toLowerCase();
+                    return txt === 'ya' || txt === 'sudah';
+                });
+
+                if (targetOpt) {
+                    targetOpt.click(); // Pilih jawabannya
+                    await sleep(1200); // WAJIB JEDA AGAR SOAL BERIKUTNYA SEMPAT MUNCUL DI LAYAR
+                    
+                    adaPertanyaanBaru = true; // Beri sinyal bahwa ada aksi, mungkin ada soal baru
+                    break; // STOP FOR LOOP INI! Kembali ke WHILE untuk scan ulang soal dari awal
+                } else {
+                    currentDropdown.click(); // Tutup dropdown jika opsi tidak ditemukan
+                    await sleep(500);
+                }
+            }
         }
     }
 
