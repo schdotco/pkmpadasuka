@@ -507,15 +507,18 @@ async function klikKirim() {
     
     while (!check.valid) {
         updateStatus('Sapu Bersih form kosong...');
-        const labels = check.container.querySelectorAll('label');
+        
+        // [!] Kunci Perbaikan: Perluas radar pencarian (bukan cuma 'label', tapi seluruh bungkus kotak/item)
+        const items = check.container.querySelectorAll('.sd-item, .sv-item, label');
         let foundDefaultAnswer = false; 
 
-        for (let l of labels) {
-            let labelText = (l.innerText || '').toLowerCase().trim();
+        for (let el of items) {
+            let labelText = (el.innerText || '').toLowerCase().trim();
                 if (labelText === 'tidak' || labelText === 'normal' || labelText === 'tidak ada' || 
                 labelText === 'sesuai' || labelText === 'baik' || labelText === 'negatif' ||
                 labelText.includes('tidak ada ') || labelText.includes('tidak ditemukan')) {
-                const input = l.querySelector('input[type="radio"]');
+                
+                const input = el.querySelector('input[type="radio"]');
                 if (input && !input.checked) {
                     input.click();
                     input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -673,17 +676,21 @@ async function autoContinueForm() {
         await pilihSemuaRadioLimit('tidak', 99, true); 
         await sleep(800);
     }
-    else if(title.includes('frambusia')){
+   else if(title.includes('frambusia')){
         currentId = 'frambusia'; updateStatus('MENGISI TAHAP: FRAMBUSIA');
-        await pilihSemuaRadioLimit('tidak ada', 99, false);
+        await pilihSemuaRadioLimit('tidak', 99, false);
         await selectDropdownSurveyJS('tidak ada');
     }
     else if(title.includes('kusta')){
         currentId = 'kusta'; updateStatus('MENGISI TAHAP: KUSTA');
+        // Kunci Perbaikan: Tambahkan penembak Radio Button di sini
+        await pilihSemuaRadioLimit('tidak', 99, false); 
         await selectDropdownSurveyJS('tidak ada');
     }
     else if(title.includes('skabies')){
         currentId = 'skabies'; updateStatus('MENGISI TAHAP: SKABIES');
+        // Kunci Perbaikan: Tambahkan penembak Radio Button di sini
+        await pilihSemuaRadioLimit('tidak', 99, false);
         await selectDropdownSurveyJS('tidak ada');
     }
     else if(title.includes('pemeriksaan gigi')){
