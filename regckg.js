@@ -20,10 +20,61 @@ const SHEETS = [{
     waStatis: true
 }];
 
-console.log("MODE: CKG UMUM");
+console.log("MODE: CKG UMUM - INDEXEDDB STORAGE ENABLED");
 
 let isProcessing = false;
 let loadingEl = null;
+
+/* ================= STORAGE INTERNAL PC (INDEXED DB) ================= */
+// IndexedDB bisa menampung ber-Gigabyte data tanpa limit 64MiB / 5MB
+const DB_NAME = 'CKG_Database_Internal';
+const STORE_NAME = 'SheetCache';
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        let req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+            let db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function saveInternalDB(key, data) {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            let tx = db.transaction(STORE_NAME, 'readwrite');
+            let store = tx.objectStore(STORE_NAME);
+            store.put(data, key);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch (e) {
+        console.error("Gagal menyimpan ke Internal DB:", e);
+        return false;
+    }
+}
+
+async function loadInternalDB(key) {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            let tx = db.transaction(STORE_NAME, 'readonly');
+            let store = tx.objectStore(STORE_NAME);
+            let req = store.get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null); // Jika tidak ada, return null
+        });
+    } catch (e) {
+        return null;
+    }
+}
+    
 /* ================= LOADING SCREEN ================= */
 function showLoading(text){
     if(loadingEl) { loadingEl.querySelector('#loadText').innerHTML = text; return; }
@@ -185,94 +236,81 @@ let cachedSheetDataList = null;
 async function cariData(nikInput) {
     const target = normalizeNIK(nikInput);
 
-    // --- 1. PROSES PENYIAPAN CACHE ---
+    // --- 1. PROSES PENYIAPAN CACHE (INDEXED DB) ---
     if (!cachedSheetDataList) {
         let savedCache = null;
         let cacheTime = 0;
-        const EXPIRATION_TIME = 4 * 60 * 60 * 1000; // Cache bertahan 4 jam (dalam milidetik)
+        const EXPIRATION_TIME = 4 * 60 * 60 * 1000; // Cache bertahan 4 jam
         const now = Date.now();
 
-        // Coba muat data dari penyimpanan lokal
-        try {
-            // Menggunakan nama key yang berbeda agar tidak bentrok dengan script sebelumnya
-            const rawCache = GM_getValue('CKG_MULTISHEET_CACHE');
-            cacheTime = parseInt(GM_getValue('CKG_MULTISHEET_CACHE_TIME') || '0');
-            if (rawCache) savedCache = JSON.parse(rawCache);
-        } catch (e) {
-            try {
-                const rawCache = sessionStorage.getItem('CKG_MULTISHEET_CACHE');
-                cacheTime = parseInt(sessionStorage.getItem('CKG_MULTISHEET_CACHE_TIME') || '0');
-                if (rawCache) savedCache = JSON.parse(rawCache);
-            } catch (err) {}
+        // Coba muat dari Internal Storage PC
+        const cacheObj = await loadInternalDB('MULTISHEET_DATA');
+        if (cacheObj) {
+            savedCache = cacheObj.data;
+            cacheTime = cacheObj.time || 0;
         }
 
-        // Jika cache valid dan belum kadaluarsa
+        // Jika cache valid
         if (savedCache && savedCache.length > 0 && (now - cacheTime < EXPIRATION_TIME)) {
-            console.log('[CACHE READY] Memuat data Multi-Sheet dari penyimpanan lokal (Instan)...');
+            console.log('[CACHE READY] Memuat data dari Internal PC (Sangat Cepat)...');
             cachedSheetDataList = savedCache;
         } 
-        // Jika tidak ada cache, lakukan proses unduh (download)
+        // Jika tidak ada cache atau expired, DOWNLOAD
         else {
-            if (typeof updateStatus === 'function') updateStatus("MENGUNDUH DATA SPREADSHEET...");
-            console.log('[DOWNLOAD] Memulai unduhan Multi-Sheet...');
+            console.log('[DOWNLOAD] Memulai unduhan ke Database Internal PC...');
             cachedSheetDataList = [];
 
             for (let s = 0; s < SHEETS.length; s++) {
                 const source = SHEETS[s];
                 for (const gid of source.gids) {
                     console.log(`Download Sheet: ${source.id} | GID: ${gid}`);
+                    document.getElementById("infoAI").innerHTML = `<b style="color:#ffcc00;">Mengunduh Database...<br>Mohon tunggu (File Besar)</b>`;
+
                     const csv = await new Promise(resolve => {
                         request({
                             method: "GET", 
                             url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
-                            timeout: 10000, 
+                            timeout: 60000, // DIPERPANJANG: 60 Detik untuk data besar
                             onload: r => resolve(r.responseText || ""), 
-                            onerror: () => resolve("")
+                            ontimeout: () => { console.error(`[TIMEOUT] Gagal unduh GID: ${gid}`); resolve(""); },
+                            onerror: () => { console.error(`[ERROR] Gagal unduh GID: ${gid}`); resolve(""); }
                         });
                     });
 
                     if (!csv || csv.trim() === "") continue;
-                    const rows = parseCSV(csv);
                     
-                    // KUNCI: Simpan baris beserta Index Sumber-nya (s)
-                    // Agar saat dibaca ulang, bot tahu ini milik settingan kolom yang mana
+                    const rows = parseCSV(csv);
+                    // OPTIMASI RAM: Buang baris yang kosong agar tidak membebani memori
+                    const cleanRows = rows.filter(row => row.some(cell => String(cell).trim() !== ''));
+
                     cachedSheetDataList.push({
                         sheetIndex: s,
-                        rows: rows
+                        rows: cleanRows
                     });
                 }
             }
 
-            console.log('[DOWNLOAD SELESAI] Data Multi-Sheet berhasil disimpan.');
+            console.log('[DOWNLOAD SELESAI] Data berhasil diunduh.');
 
-            // Simpan hasil unduhan ke penyimpanan browser
-            try {
-                GM_setValue('CKG_MULTISHEET_CACHE', JSON.stringify(cachedSheetDataList));
-                GM_setValue('CKG_MULTISHEET_CACHE_TIME', now.toString());
-            } catch (e) {
-                try {
-                    sessionStorage.setItem('CKG_MULTISHEET_CACHE', JSON.stringify(cachedSheetDataList));
-                    sessionStorage.setItem('CKG_MULTISHEET_CACHE_TIME', now.toString());
-                } catch (err) {
-                    console.warn("Storage penuh, data hanya disimpan di RAM sementara.");
-                }
+            // Simpan ke Internal DB PC (Aman dari limit 64MiB)
+            if (cachedSheetDataList.length > 0) {
+                const saved = await saveInternalDB('MULTISHEET_DATA', { data: cachedSheetDataList, time: now });
+                if (saved) console.log("[BOT] Data tersimpan aman di Database Internal PC.");
             }
         }
     }
 
     // --- 2. PROSES PENCARIAN NIK ---
+    if (!cachedSheetDataList || cachedSheetDataList.length === 0) return null;
+
     for (const cacheItem of cachedSheetDataList) {
-        // Panggil kembali settingan konfigurasi kolom asli berdasarkan Index-nya
         const source = SHEETS[cacheItem.sheetIndex]; 
         const rows = cacheItem.rows;
-
-        // Logika waD2 persis seperti buatan Bapak
         let waD2 = (source.waStatis && rows[1]) ? normalizeNIK(rows[1][3]) : "";
 
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             
-            // Defensif: pastikan row adalah array sebelum menjalankan fungsi .find()
             if (Array.isArray(row) && row.find(col => normalizeNIK(col) === target)) {
                 return {
                     nik: target,
