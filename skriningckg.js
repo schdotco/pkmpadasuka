@@ -718,42 +718,61 @@ async function isiImunisasiBalita() {
     while (maksimalLoop < 20) {
         maksimalLoop++;
 
-        // 1. Ambil semua kerangka pertanyaan yang ada di layar SAAT INI
-        const semuaSoal = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')].filter(q => q.offsetParent !== null); // pastikan elemen terlihat
+        // 1. Ambil semua kerangka pertanyaan yang ADA DI LAYAR SAAT INI
+        const semuaSoal = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')]
+            .filter(q => q.offsetParent !== null); // pastikan kerangka soalnya terlihat
 
-        // Jika jumlah soal di layar sama dengan yang sudah kita kerjakan, berarti antrian habis!
+        // Jika jumlah soal di layar sama dengan yang sudah kita kerjakan, antrian habis!
         if (semuaSoal.length === 0 || semuaSoal.length === jumlahSoalTerjawab) {
             console.log("[BOT] Tidak ada soal baru yang muncul. Selesai.");
             break; 
         }
 
-        // 2. Kita HANYA memproses soal-soal BARU (dimulai dari index jumlahSoalTerjawab terakhir)
+        // 2. HANYA memproses soal-soal BARU
         for (let i = jumlahSoalTerjawab; i < semuaSoal.length; i++) {
             const soalSaatIni = semuaSoal[i];
             
             soalSaatIni.scrollIntoView({ behavior: 'smooth', block: 'center' });
             await sleep(500);
 
-            // --- CEK APAKAH DI DALAM SOAL INI ADA DROPDOWN ---
+            // --- TANGANI DROPDOWN ---
             const dropdown = soalSaatIni.querySelector('.sd-dropdown, .sv-dropdown');
             if (dropdown) {
-                dropdown.click(); // Buka menu
-                await sleep(1000);
+                // PENGAMAN: Cek jika kotak dropdown sudah berisi tulisan "Ya" / "Sudah", maka skip
+                const teksKotak = (dropdown.innerText || '').toLowerCase().trim();
+                if (teksKotak === 'ya' || teksKotak === 'sudah' || teksKotak.includes('ya') || teksKotak.includes('sudah')) {
+                    console.log(`[BOT] Soal ke-${i+1} sudah terisi sebelumnya.`);
+                    continue;
+                }
 
-                const opsiList = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')];
+                dropdown.click(); // Buka menu popup
+                await sleep(1000); // Jeda wajib agar popup SurveyJS selesai dirender
+
+                // KUNCI UTAMA PERBAIKAN: Ambil HANYA opsi yang BENAR-BENAR MUNCUL DI LAYAR saat ini
+                const opsiList = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')]
+                    .filter(el => {
+                        const rect = el.getBoundingClientRect();
+                        return rect.width > 0 && rect.height > 0; // Filter Anti-Elemen Hantu
+                    });
+
                 const targetOpsi = opsiList.find(el => {
                     const txt = (el.innerText || '').toLowerCase().trim();
                     return txt === 'ya' || txt === 'sudah';
                 });
 
                 if (targetOpsi) {
+                    // Klik dengan teknik yang lebih dalam agar sistem Vue/SurveyJS merespons
+                    targetOpsi.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                    targetOpsi.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
                     targetOpsi.click();
+                    
                     console.log(`[BOT] Menjawab Dropdown soal ke-${i+1} dengan Ya/Sudah`);
                 } else {
-                    dropdown.click(); // Tutup kembali jika opsi tidak ada
+                    console.log(`[BOT] Opsi tidak ditemukan untuk soal ke-${i+1}, menutup menu.`);
+                    dropdown.click(); // Tutup kembali
                 }
             } 
-            // --- JIKA BUKAN DROPDOWN, CEK APAKAH INI RADIO BUTTON ---
+            // --- TANGANI RADIO BUTTON (Jaga-jaga jika Kemenkes ubah format) ---
             else {
                 const radioItems = [...soalSaatIni.querySelectorAll('.sd-item, .sv-item')];
                 for (const item of radioItems) {
@@ -771,8 +790,7 @@ async function isiImunisasiBalita() {
             await sleep(2000); 
         }
 
-        // 3. Update catatan bot: "Oke, saya sudah menyelesaikan X soal"
-        // Saat kembali ke 'while', bot akan mengecek apakah soal bertambah jadi X+1
+        // 3. Update catatan jumlah soal
         jumlahSoalTerjawab = semuaSoal.length;
     }
 
