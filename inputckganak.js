@@ -561,6 +561,7 @@ async function autoContinueForm() {
 
     let currentId = null;
 
+   
       // ==========================================
     // RUTE 1: GIZI BALITA (< 5 TAHUN)
     // ==========================================
@@ -585,6 +586,28 @@ async function autoContinueForm() {
         // 4. Dropdown Status Lingkar Kepala -> Normal
         await isiDropdownSurveyJS('lingkar kepala', 'normal');
         await sleep(800);
+    }
+      // RUTE 1: Telinga dan Mata (Anak Sekolah) -> Pakai Radio Button
+      else if(title.includes('telinga dan mata')) {
+        currentId = 'telinga_mata';
+        
+        // Cek apakah ini form khusus Balita/Prasekolah berdasarkan teks di halaman
+        if (title.includes('skrining telinga dan mata - balita')) {
+            updateStatus('MENGISI TAHAP: TELINGA & MATA (BALITA)');
+            await handleTelingaMataBalita(data); // Memanggil fungsi khusus balita
+        } else {
+            updateStatus('MENGISI TAHAP: TELINGA & MATA (ANAK/DEWASA/LANSIA)');
+            // Tetap pertahankan logika lama yang menggunakan Radio Button / Dropdown umum
+            await pilihSemuaRadioLimit('normal', 99, false); 
+            await sleep(800);
+            await pilihSemuaRadioLimit('tidak', 99, false); 
+            await sleep(800);
+        }
+    }
+    // RUTE 2: Telinga dan Mata (Balita / Prasekolah) -> Pakai Dropdown
+    else if(title.includes('telinga dan mata')){
+        currentId = 'telinga_mata';
+        await handleTelingaMataAnak(data); 
     }
     // ==========================================
     // RUTE 2: GIZI ANAK SEKOLAH / REMAJA (> 5 TAHUN)
@@ -635,28 +658,6 @@ async function autoContinueForm() {
     else if(title.includes('skabies')){
         currentId = 'skabies'; updateStatus('MENGISI TAHAP: SKABIES');
         await selectDropdownSurveyJS('tidak ada');
-    }
-// RUTE 1: Telinga dan Mata (Anak Sekolah) -> Pakai Radio Button
-   else if(title.includes('telinga dan mata')) {
-        currentId = 'telinga_mata';
-        
-        // Cek apakah ini form khusus Balita/Prasekolah berdasarkan teks di halaman
-        if (title.includes('balita dan anak prasekolah')) {
-            updateStatus('MENGISI TAHAP: TELINGA & MATA (BALITA)');
-            await handleTelingaMataBalita(data); // Memanggil fungsi khusus balita
-        } else {
-            updateStatus('MENGISI TAHAP: TELINGA & MATA (ANAK/DEWASA/LANSIA)');
-            // Tetap pertahankan logika lama yang menggunakan Radio Button / Dropdown umum
-            await pilihSemuaRadioLimit('normal', 99, false); 
-            await sleep(800);
-            await pilihSemuaRadioLimit('tidak', 99, false); 
-            await sleep(800);
-        }
-    }
-    // RUTE 2: Telinga dan Mata (Balita / Prasekolah) -> Pakai Dropdown
-    else if(title.includes('telinga dan mata')){
-        currentId = 'telinga_mata';
-        await handleTelingaMataAnak(data); 
     }
     else if(title.includes('pemeriksaan gigi')){
         currentId = 'gigi'; updateStatus('MENGISI TAHAP: GIGI ANAK');
