@@ -464,6 +464,46 @@ async function handleTelingaMataBalita(data) {
     await sleep(1000);
 }
 
+async function handlePemeriksaanGigi() {
+    updateStatus('MENGISI TAHAP: PEMERIKSAAN GIGI...');
+    
+    // 1. Pilih semua radio button yang jawabannya "tidak", "normal", atau "tidak ada"
+    await pilihSemuaRadioLimit('tidak', 99, false);
+    await sleep(500);
+    await pilihSemuaRadioLimit('normal', 99, false);
+    await sleep(500);
+    await pilihSemuaRadioLimit('tidak ada', 99, false);
+    await sleep(500);
+
+    // 2. Loop SEMUA dropdown yang ada di halaman pemeriksaan gigi secara otomatis
+    const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
+    
+    for (let i = 0; i < dropdowns.length; i++) {
+        const drop = dropdowns[i];
+        if (!drop) continue;
+
+        drop.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        drop.click();
+        await sleep(800); // Tunggu popup dropdown terbuka
+
+        // Cari opsi yang terlihat di layar yang mengandung kata 'tidak', 'normal', atau 'sehat'
+        const options = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
+        const targetOpt = options.find(el => {
+            if (el.offsetParent === null) return false; // Pastikan elemennya kelihatan
+            const txt = (el.innerText || '').toLowerCase().trim();
+            return txt.includes('tidak') || txt.includes('normal') || txt.includes('sehat');
+        });
+
+        if (targetOpt) {
+            targetOpt.click();
+            await sleep(500);
+        } else {
+            drop.click(); // Tutup kembali jika tidak ditemukan
+            await sleep(300);
+        }
+    }
+}
+
 /* =========================================================
    KLIK KIRIM & VALIDASI SAPU BERSIH 
 ========================================================= */
@@ -681,10 +721,9 @@ async function autoContinueForm() {
         await pilihSemuaRadioLimit('tidak', 99, false);
         await selectDropdownSurveyJS('tidak ada');
     }
-    else if(title.includes('pemeriksaan gigi')){
-        currentId = 'gigi'; updateStatus('MENGISI TAHAP: GIGI ANAK');
-        await pilihSemuaRadioLimit('tidak', 1, true);
-        await selectDropdownSurveyJS('tidak', 1);
+   else if(title.includes('pemeriksaan gigi')){
+        currentId = 'gigi'; 
+        await handlePemeriksaanGigi();
     }
    else if(title.includes('kebugaran jasmani')){
         currentId = 'jasmani'; updateStatus('MENGISI TAHAP: KEBUGARAN JASMANI');
