@@ -239,12 +239,12 @@ async function cariData(nikInput) {
                 return {
                     nik: target, 
                     nama: cells[7] || '', 
-                    sistole: cells[37] || '120',
-                    diastole: cells[38] || '80', 
-                    bb: cells[40] || '60', 
-                    tb: cells[41] || '165',
-                    lp: cells[43] || '80', 
-                    gula: cells[58] || '110',
+                    sistole: cells[37] || '',
+                    diastole: cells[38] || '', 
+                    bb: cells[40] || '', 
+                    tb: cells[41] || '',
+                    lp: cells[43] || '', 
+                    gula: cells[58] || '100',
                     mata: cells[70] || 'Tidak', 
                     merokok: cells[71] || '' 
                 };
