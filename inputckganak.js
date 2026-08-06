@@ -412,30 +412,41 @@ async function handleTelingaMataBalita(data) {
     updateStatus('MENGISI: SKRINING TELINGA & MATA BALITA...');
     await sleep(800);
 
-    const jawabanBalita = [
-        "Sesuai Umur", 
-        ((data.mata || '').toLowerCase() === 'ya' ? "Daya lihat anak kurang" : "Daya lihat anak baik"), 
-        "Tidak ada serumen impaksi", 
-        "Tidak ada infeksi telinga", 
-        "Normal"
-    ];
-
     const semuaSoal = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')].filter(q => q.offsetParent !== null);
 
     for (let i = 0; i < semuaSoal.length; i++) {
         const soal = semuaSoal[i];
-        const targetJawaban = jawabanBalita[i];
         
+        // Ambil teks pertanyaan untuk dianalisis
+        const teksSoal = (soal.innerText || '').toLowerCase();
+        let targetJawaban = null;
+
+        // [KUNCI PERBAIKAN]: Cocokkan jawaban berdasarkan teks yang ada di pertanyaan
+        // Urutan di web mau dibolak-balik tidak akan jadi masalah
+        if (teksSoal.includes('serumen')) {
+            targetJawaban = "Tidak ada serumen impaksi";
+        } else if (teksSoal.includes('infeksi')) {
+            targetJawaban = "Tidak ada infeksi telinga";
+        } else if (teksSoal.includes('daya dengar')) {
+            targetJawaban = "Sesuai Umur";
+        } else if (teksSoal.includes('daya lihat')) {
+            targetJawaban = ((data.mata || '').toLowerCase() === 'ya' ? "Daya lihat anak kurang" : "Daya lihat anak baik");
+        } else if (teksSoal.includes('selaput mata merah') || teksSoal.includes('pupil putih')) {
+            targetJawaban = ((data.mata || '').toLowerCase() === 'ya' ? "Curiga kelainan" : "Normal");
+        }
+
+        // Jika tidak ada kata kunci yang cocok, lewati
         if (!targetJawaban) continue;
 
         soal.scrollIntoView({ behavior: 'smooth', block: 'center' });
         await sleep(500);
 
+        // 1. Eksekusi jika bentuknya Dropdown
         const dropdown = soal.querySelector('.sd-dropdown, .sv-dropdown');
         if (dropdown) {
             const teksKotak = (dropdown.innerText || '').toLowerCase().trim();
             if (teksKotak.includes(targetJawaban.toLowerCase())) {
-                continue;
+                continue; // Skip jika kotak sudah terisi jawaban yang benar
             }
 
             dropdown.click();
@@ -453,11 +464,28 @@ async function handleTelingaMataBalita(data) {
 
             if (targetOpt) {
                 targetOpt.click();
-                console.log(`[BOT] Sukses mengisi pertanyaan balita ke-${i + 1} dengan: "${targetJawaban}"`);
+                console.log(`[BOT] Dropdown terisi: "${targetJawaban}"`);
                 await sleep(1200);
             } else {
-                dropdown.click();
+                dropdown.click(); // Tutup kembali dropdown jika opsi tidak ditemukan
                 await sleep(500);
+            }
+        } 
+        // 2. Eksekusi jika bentuknya Radio Button (Contoh: Soal Pupil Putih)
+        else {
+            const radioLabels = [...soal.querySelectorAll('label, .ant-radio-wrapper, .sd-item, .sv-item')];
+            if (radioLabels.length > 0) {
+                const targetRadioOpt = radioLabels.find(el => (el.innerText || '').toLowerCase().includes(targetJawaban.toLowerCase()));
+                
+                if (targetRadioOpt) {
+                    const inputRadio = targetRadioOpt.querySelector('input[type="radio"]');
+                    if (inputRadio && !inputRadio.checked) {
+                        inputRadio.click();
+                        inputRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                        console.log(`[BOT] Radio terisi: "${targetJawaban}"`);
+                        await sleep(1000);
+                    }
+                }
             }
         }
     }
