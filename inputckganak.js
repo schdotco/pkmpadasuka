@@ -330,7 +330,7 @@ async function isiDropdownSurveyJS(soalSelector, optionText) {
     if (dropdownTrigger) {
         dropdownTrigger.scrollIntoView({ behavior: 'smooth', block: 'center' });
         dropdownTrigger.click(); // Buka dropdown
-        await sleep(1000); 
+        await sleep(850); 
 
         // CARI HANYA OPSI YANG SEDANG TAMPIL DI LAYAR (Mencegah klik opsi gaib/tersembunyi)
         const allOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
@@ -410,7 +410,7 @@ async function handleTelingaMataAnak(data) {
 
 async function handleTelingaMataBalita(data) {
     updateStatus('MENGISI: SKRINING TELINGA & MATA BALITA...');
-    await sleep(1000);
+    await sleep(800);
 
     const jawabanBalita = [
         "Sesuai Umur", 
@@ -439,7 +439,7 @@ async function handleTelingaMataBalita(data) {
             }
 
             dropdown.click();
-            await sleep(1000);
+            await sleep(800);
 
             const allOptions = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')]
                 .filter(el => {
@@ -461,7 +461,7 @@ async function handleTelingaMataBalita(data) {
             }
         }
     }
-    await sleep(1000);
+    await sleep(800);
 }
 
 async function handlePemeriksaanGigi() {
@@ -541,7 +541,7 @@ function isFormValid() {
 
 async function klikKirim() {
     updateStatus('Mengirim data form...');
-    await sleep(1000);
+    await sleep(800);
 
     const btn = document.querySelector('.sd-navigation__complete-btn') ||
                 [...document.querySelectorAll('button')].find(b => (b.innerText || '').toLowerCase().includes('kirim'));
@@ -571,7 +571,7 @@ async function klikKirim() {
 
     if (isSuccess) {
         updateStatus('Kirim Berhasil! Berpindah halaman...');
-        await sleep(2000);
+        await sleep(1000);
         return true;
     } else {
         // Jika gagal pindah web, berarti SurveyJS menolak dan memunculkan tanda merah secara otomatis
@@ -595,9 +595,9 @@ async function autoContinueForm() {
     
     for(let i = 0; i < 10; i++) {
         if(document.querySelector('.sd-question, .sv-question, input')) break;
-        await sleep(1000);
+        await sleep(800);
     }
-    await sleep(1000); 
+    await sleep(800); 
 
     const title = document.body.innerText.toLowerCase();
     const realInputs = [...document.querySelectorAll('input')].filter(el =>
@@ -679,7 +679,7 @@ async function autoContinueForm() {
         
         if (inputBB) forceInject(inputBB, data.bb); await sleep(800);
         if (inputTB) forceInject(inputTB, data.tb); await sleep(800);
-        if (inputLP) forceInject(inputLP, data.lp); await sleep(1000);
+        if (inputLP) forceInject(inputLP, data.lp); await sleep(850);
     }
     else if(title.includes('pemeriksaan gula darah anak')){
         currentId = 'gula'; updateStatus('MENGISI TAHAP: PEMERIKSAAN GULA DARAH ANAK');
@@ -695,7 +695,7 @@ async function autoContinueForm() {
         const inSistol = document.querySelector('input[placeholder*="Sistolik" i]') || realInputs[0];
         const inDiastol = document.querySelector('input[placeholder*="Diastolik" i]') || realInputs[1];
         if(inSistol) forceInject(inSistol, data.sistole); await sleep(800);
-        if(inDiastol) forceInject(inDiastol, data.diastole); await sleep(1000);
+        if(inDiastol) forceInject(inDiastol, data.diastole); await sleep(850);
     }
     else if(title.includes('x-ray tb')){
         currentId = 'tb'; updateStatus('MENGISI TAHAP: TUBERKULOSIS ANAK');
@@ -794,12 +794,12 @@ function getNextTarget(){
 
 async function mainLoopCKG(data){
     updateStatus('MENCARI ANTRIAN...');
-    await sleep(2000); 
+    await sleep(1000); 
     
     let nextItem = getNextTarget();
     
     if(!nextItem) {
-        await sleep(2000);
+        await sleep(1000);
         nextItem = getNextTarget();
     }
 
@@ -811,7 +811,7 @@ async function mainLoopCKG(data){
     }
     
     updateStatus('MEMBUKA TARGET:\n' + nextItem.title.toUpperCase());
-    await sleep(1000);
+    await sleep(800);
     triggerClick(nextItem.btn);
 }
 
@@ -827,7 +827,7 @@ function createUI(){
     const box = document.createElement('div'); box.id = 'auto-ckg-ui';
     box.innerHTML = `
         <div id="drag-handle">INPUT CKG ANAK & REMAJA</div>
-        <div id="bot-status">Menyiapkan Database, Jangan Klik Start !...</div>
+        <div id="bot-status">Menyiapkan Database, Klik Start !...</div>
         <input id="nik-bot" placeholder="Masukkan NIK">
         <div id="btn-wrap">
             <button id="run-bot">START</button><button id="stop-bot">BATAL</button>
@@ -916,7 +916,7 @@ async function waitForElement(selector, timeout = 10000) {
             if(data){
                 BOT_RUNNING = true;
                 updateStatus('MELANJUTKAN OTOMATIS...\nJangan tekan apapun');
-                await sleep(1000);
+                await sleep(800);
                 await mainLoopCKG(data);
             } else {
                 updateStatus('IDLE\nSiap Digunakan');
