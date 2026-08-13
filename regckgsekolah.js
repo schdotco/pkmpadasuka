@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         CKG SEKOLAH Launcher Production Padasuka BETA
+// @name         CKG SEKOLAH Launcher Production Padasuka 1.0
 // @match        https://sehatindonesiaku.kemkes.go.id/*
 // @match        https://form.kemkes.go.id/*
 // @grant        GM_getValue
@@ -22,17 +22,17 @@ function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
 /* ================= MODE CKG SEKOLAH ================= */
 
 const SHEETS = [{
-    id: "1HXWft2Z-ArjTogbTODhpW-5AxXac7omw8jgNQAZhoV4",
-    gids: ["0"],
-    colNama: 1,
-    colTgl: 2,
-    colWA: 8,
-    colJK: 3,
+    id: "1zOX229-nq8n0-jCSTMEL1r4CVqW_hYctcpo-5pgjY_E",
+    gids: ["484052211"],
+    colNama: 5,
+    colTgl: 8,
+    colWA: 23,
+    colJK: 6,
     colPekerjaan: 12, // Diabaikan di CKG Sekolah
-    colSekolah: 4,   // Pastikan index kolom ini sesuai database Bapak
-    colKelas: 5,     // Pastikan index kolom ini sesuai database Bapak
-    colDisabilitas: 7, // Pastikan index kolom ini sesuai database Bapak
-    colAlamat: 6,
+    colSekolah: 14,   // Pastikan index kolom ini sesuai database Bapak
+    colKelas: 15,     // Pastikan index kolom ini sesuai database Bapak
+    colDisabilitas: 16, // Pastikan index kolom ini sesuai database Bapak
+    colAlamat: 17,
     colMartial: 13,
     waStatis: true
 }];
@@ -668,7 +668,7 @@ function initUI(){
     box.innerHTML = `
         <div id="dragHeader" style="text-align:center; margin-bottom:10px; cursor:move; background:#222; padding:8px; border-radius:8px; border:1px solid #444;" title="Klik dan tahan untuk menggeser bot">
             <b style="color:#00c8ff; font-size:16px;">Register SEKOLAH</b><br>
-            <span style="font-size:10px; color:#aaa; letter-spacing:1px;">UPTD Puskesmas Padasuka</span>
+            <span style="font-size:10px; color:#aaa; letter-spacing:1px;">UPTD Puskesmas Dago</span>
         </div>
         <div style="background:#222; padding:10px; border-radius:8px; text-align:center; margin-bottom:10px; border:1px solid #444;">
             <b style="color:#ffcc00; font-size:11px;">⚡ TEMPEL/SCAN NIK DI SINI ⚡</b><br>
@@ -734,9 +734,14 @@ function initUI(){
     });
 
     // === LOGIKA INPUT NIK NORMAL ===
-    document.getElementById("nikAI").addEventListener('input', async (e) => {
-        let val = e.target.value.replace(/\D/g, '');
-        if (val.length === 16 && !isProcessing) {
+    async function prosesNIK(val) {
+        if (val.length === 16) {
+            if (isProcessing) {
+                console.log("[BOT] Gagal: Bot sedang memproses data lain.");
+                document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">Bot sedang sibuk! Klik "Bersihkan & Update" jika macet.</b>`;
+                return;
+            }
+            
             isProcessing = true;
             document.getElementById("infoAI").innerHTML = `<b style="color:#ffcc00;">Mencari NIK: ${val}...</b>`;
 
@@ -752,10 +757,28 @@ function initUI(){
                 hideLoading();
                 document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">Terjadi Kendala. Coba lagi!</b>`;
             } finally {
-                e.target.value = "";
+                document.getElementById("nikAI").value = "";
                 isProcessing = false;
             }
+        } else {
+            console.log("[BOT] NIK belum 16 digit, saat ini: " + val.length);
         }
+    }
+
+    // Listener Input Biasa
+    document.getElementById("nikAI").addEventListener('input', async (e) => {
+        let val = e.target.value.replace(/\D/g, '');
+        prosesNIK(val);
+    });
+
+    // Listener Khusus Paste
+    document.getElementById("nikAI").addEventListener('paste', async (e) => {
+        // Beri waktu 50ms agar nilai input terisi sempurna sebelum dibaca
+        setTimeout(() => {
+            let val = e.target.value.replace(/\D/g, '');
+            console.log("[BOT] Paste terdeteksi, NIK: " + val);
+            prosesNIK(val);
+        }, 50);
     });
 }
 setTimeout(initUI, 1500);
