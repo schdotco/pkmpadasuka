@@ -958,10 +958,6 @@ while(true){
 }
 
 /* ================= HALAMAN 2 ================= */
-await eksekusiHalamanDua(data);
-}
-
-/* ================= HALAMAN 2 SELESAI ================= */
     await eksekusiHalamanDua(data);
     
     // --- TRIGGER ESTAFET & SMART PAUSE ---
