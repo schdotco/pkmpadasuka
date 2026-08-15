@@ -70,9 +70,18 @@ function jawabanMerokok(v){
 /* =========================================================
    SESSION & DYNAMIC TRACKER
 ========================================================= */
-function saveBOT(data) { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); }
-function loadBOT()     { const raw = GM_getValue('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; }
-function clearBOT() { GM_deleteValue('AUTO_SKRINING_DATA'); GM_deleteValue('CKG_MODE'); }
+function saveBOT(data) { 
+    try { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); } 
+    catch(e) { localStorage.setItem('AUTO_SKRINING_DATA', JSON.stringify(data)); }
+}
+function loadBOT() { 
+    try { const raw = GM_getValue('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; } 
+    catch(e) { const raw = localStorage.getItem('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; }
+}
+function clearBOT() { 
+    try { GM_deleteValue('AUTO_SKRINING_DATA'); GM_deleteValue('CKG_MODE'); } 
+    catch(e) { localStorage.removeItem('AUTO_SKRINING_DATA'); localStorage.removeItem('CKG_MODE'); }
+}
 
 function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
 function addCompleted(id) {
