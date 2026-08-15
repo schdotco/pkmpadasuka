@@ -3,15 +3,11 @@
     const request = GM_xmlhttpRequest;
 
 /* =========================================================
-   MODUL ESTAFET, AUDIO & HUMANIZED DELAY
+   MODUL AUDIO & DELAY
 ========================================================= */
-// 1. Mengubah fungsi jeda menjadi tidak tertebak (Anti-Banned)
-function randomJeda(min, max) { 
-    if(!max) max = min + 300; // Jeda acak +300ms dari waktu asli
-    return new Promise(r => setTimeout(r, Math.random() * (max - min) + min)); 
-}
+const sleep = ms => new Promise(r => setTimeout(r,ms));
+function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
-// 2. Synthesizer Suara Tanpa File MP3 (Bebas Error CORS)
 function playSound(type) {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -21,22 +17,8 @@ function playSound(type) {
             osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
             gain.gain.setValueAtTime(0.5, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
             osc.start(); osc.stop(ctx.currentTime + 0.5);
-        } else if (type === 'selesai') { 
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, ctx.currentTime); 
-            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.2); 
-            osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.4); 
-            gain.gain.setValueAtTime(0.5, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
-            osc.start(); osc.stop(ctx.currentTime + 1);
         }
     } catch(e) {}
-}
-
-// 3. Radar Deteksi Umur (Untuk Cabang Anak / Dewasa)
-function getKategoriUmur(tglLahir) {
-    if (!tglLahir) return 'dewasa';
-    let p = tglLahir.split(/[-/]/);
-    let y = p[0].length === 4 ? p[0] : (p[2] || new Date().getFullYear());
-    return (new Date().getFullYear() - parseInt(y)) < 18 ? 'anak' : 'dewasa';
 }
 
 /* =========================================================
@@ -79,17 +61,24 @@ function loadBOT() {
     catch(e) { const raw = localStorage.getItem('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; }
 }
 function clearBOT() { 
-    try { GM_deleteValue('AUTO_SKRINING_DATA'); GM_deleteValue('CKG_MODE'); } 
-    catch(e) { localStorage.removeItem('AUTO_SKRINING_DATA'); localStorage.removeItem('CKG_MODE'); }
+    try { GM_deleteValue('AUTO_SKRINING_DATA'); } 
+    catch(e) { localStorage.removeItem('AUTO_SKRINING_DATA'); }
 }
 
-function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
+function getCompleted() { 
+    try { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
+    catch(e) { return JSON.parse(localStorage.getItem('AUTO_SKRINING_COMPLETED') || '[]'); }
+}
 function addCompleted(id) {
     const arr = getCompleted();
     if(!arr.includes(id)) arr.push(id);
-    GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr));
+    try { GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr)); }
+    catch(e) { localStorage.setItem('AUTO_SKRINING_COMPLETED', JSON.stringify(arr)); }
 }
-function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
+function clearCompleted() { 
+    try { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
+    catch(e) { localStorage.removeItem('AUTO_SKRINING_COMPLETED'); }
+}
 
 /* =========================================================
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
@@ -167,12 +156,17 @@ async function setCacheDB(key, value) {
 }
 
 async function getCacheDB(key) {
-    const db = await openDB();
     return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const request = tx.objectStore(STORE_NAME).get(key);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(tx.error);
+        const request = indexedDB.open('CKG_Database', 1);
+        request.onsuccess = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('SheetCache')) return resolve(null);
+            const tx = db.transaction('SheetCache', 'readonly');
+            const req = tx.objectStore('SheetCache').get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        };
+        request.onerror = () => resolve(null);
     });
 }
 
@@ -1181,15 +1175,40 @@ let LOOP_ACTIVE = false;
 function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
 function stopBOT(){ BOT_RUNNING = false; LOOP_ACTIVE = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); }
 
+function syncUI() {
+    const data = loadBOT();
+    const btnStart = document.getElementById('run-bot');
+    const btnNext = document.getElementById('next-bot');
+    const inputNik = document.getElementById('nik-bot');
+
+    if (!btnStart || !btnNext || !inputNik) return;
+
+    if (data) {
+        btnStart.style.display = 'none';
+        btnNext.style.display = 'block';
+        inputNik.value = data.nik || '';
+        inputNik.disabled = true;
+        updateStatus('SIAP. KLIK "SELANJUTNYA"');
+    } else {
+        btnStart.style.display = 'block';
+        btnNext.style.display = 'none';
+        inputNik.value = '';
+        inputNik.disabled = false;
+        updateStatus('INISIALISASI...');
+    }
+}
+    
 function createUI(){
     if(document.getElementById('auto-ckg-ui')) return;
     const box = document.createElement('div'); box.id = 'auto-ckg-ui';
     box.innerHTML = `
-        <div id="drag-handle">SKRINING MANDIRI PADASUKA</div>
+        <div id="drag-handle">SKRINING PADASUKA (MANUAL)</div>
         <div id="bot-status">INISIALISASI...</div>
         <input id="nik-bot" placeholder="Masukkan NIK">
         <div id="btn-wrap">
-            <button id="run-bot">START</button><button id="stop-bot">BATAL</button>
+            <button id="run-bot">START DATA</button>
+            <button id="next-bot" style="display:none; background:#f59e0b; color:#000;">⏩ SELANJUTNYA</button>
+            <button id="stop-bot">BATAL</button>
         </div>
     `;
     const style = document.createElement('style');
@@ -1198,23 +1217,20 @@ function createUI(){
             position: fixed; top: 100px; right: 20px; width: 300px;
             background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px);
             border: 1px solid rgba(0, 200, 255, 0.5); border-radius: 16px;
-            z-index: 2147483647; /* DIBUAT MAX-INTEGER AGAR MUSTAHIL TERTUTUP WEB KEMENKES */
+            z-index: 2147483647; 
             padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             font-family: 'Segoe UI', sans-serif; color: white; cursor: default;
         }
         #drag-handle { padding: 5px; text-align: center; font-weight: bold; color: #00c8ff; cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333; }
-        #bot-status { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; min-height: 50px; margin-bottom: 10px; color: #00c8ff; font-size: 13px; text-align: center; white-space: pre-wrap; }
-        #nik-bot { width: 100%; box-sizing: border-box; padding: 10px; border: none; border-radius: 8px; background: #333; color: white; margin-bottom: 10px; }
+        #bot-status { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; min-height: 50px; margin-bottom: 10px; color: #00c8ff; font-size: 13px; text-align: center; white-space: pre-wrap; font-weight:bold; }
+        #nik-bot { width: 100%; box-sizing: border-box; padding: 10px; border: none; border-radius: 8px; background: #333; color: white; margin-bottom: 10px; text-align:center; font-weight:bold; }
         #btn-wrap { display: flex; gap: 8px; }
-        #run-bot, #stop-bot { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        #run-bot, #stop-bot, #next-bot { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         #run-bot { background: #00c8ff; color: #000; }
         #run-bot:hover { background: #009acc; }
         #stop-bot { background: #ff4444; color: white; }
     `;
     document.head.appendChild(style); document.body.appendChild(box);
-
-    const savedData = loadBOT();
-    if(savedData && savedData.nik) document.getElementById('nik-bot').value = savedData.nik;
 
     const handle = document.getElementById('drag-handle');
     if(handle){
@@ -1224,27 +1240,63 @@ function createUI(){
         document.onmouseup = ()=>{ isDragging = false; };
     }
 
+    // 1. TOMBOL START (Mengunci Data & Siap Eksekusi)
     document.getElementById('run-bot').onclick = async ()=>{
-        if(BOT_RUNNING || LOOP_ACTIVE) return alert('BOT SEDANG BERJALAN');
         const nik = document.getElementById('nik-bot').value;
         if(!nik) return alert('Masukkan NIK');
 
-        updateStatus('MENCARI NIK DI SPREADSHEET...');
+        updateStatus('MENCARI NIK DI DATABASE...');
         const data = await cariData(nik);
 
-        if(!data) return updateStatus('NIK TIDAK DITEMUKAN DI GOOGLE SHEETS');
+        if(!data) {
+            updateStatus('NIK TIDAK DITEMUKAN');
+            return;
+        }
 
-        // Simpan data dan reset antrian
         saveBOT(data);
         clearCompleted(); 
+        syncUI();
+        playSound('sukses');
+    };
 
-        updateStatus(`Data Ketemu!\nMemulai Otomatis...`);
+    // 2. TOMBOL SELANJUTNYA (Satu kali klik, satu aksi)
+    document.getElementById('next-bot').onclick = async () => {
+        if (IS_PROCESSING) return; 
         
-        // Aktifkan bot. Sistem Supervisor akan otomatis mengambil alih ke menu yang tepat.
-        BOT_RUNNING = true;
+        const data = loadBOT();
+        if (!data) return stopBOT();
+
+        IS_PROCESSING = true;
+        const btnNext = document.getElementById('next-bot');
+        const oldText = btnNext.innerHTML;
+        btnNext.innerHTML = "⏳ DIPROSES...";
+        btnNext.style.background = "#d97706"; // Warna loading
+
+        try {
+            if (location.hostname.includes('form.kemkes.go.id')) {
+                updateStatus('⚡ Mengisi Formulir...');
+                await eksekusiIsiFormulir(data);
+            } else if (location.hostname.includes('sehatindonesiaku')) {
+                updateStatus('🔍 Mencari Menu...');
+                await eksekusiMenuSelanjutnya();
+            }
+        } catch (e) {
+            console.error(e);
+            updateStatus('Terjadi kesalahan. Coba klik kembali.');
+        }
+
+        btnNext.innerHTML = oldText;
+        btnNext.style.background = "#f59e0b";
+        IS_PROCESSING = false;
     };
     
-    document.getElementById('stop-bot').onclick = stopBOT;
+    // 3. TOMBOL BATAL (Mematikan Segala Proses)
+    document.getElementById('stop-bot').onclick = () => {
+        stopBOT();
+        alert('Bot berhasil dihentikan. Memori NIK dihapus.');
+    };
+
+    syncUI();
 }
 
 /* =========================================================
@@ -1256,38 +1308,31 @@ setInterval(createUI, 1000);
 let isDownloadingBackground = false;
 
 // 2. Supervisor Loop (Berjalan setiap 2 detik memantau URL tanpa henti)
-setInterval(async () => {
-    const isFormPage = location.hostname.includes('form.kemkes.go.id');
-    const isMainPage = location.hostname.includes('sehatindonesiaku');
-    const data = loadBOT();
+========================================================= */
+setInterval(() => {
+    createUI(); // Pastikan UI selalu ada
 
-    if (data && !BOT_RUNNING) BOT_RUNNING = true;
-
-// --- AUTO START ESTAFET ---
+    // Cek memori lemparan dari form pendaftaran
     let estafetRaw = null;
     try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
-    if (estafetRaw && !BOT_RUNNING && !LOOP_ACTIVE && isMainPage && cachedSheetData) {
+
+    const curData = loadBOT();
+    
+    // Jika ada data lemparan, dan kita sedang belum menjalankan NIK apapun
+    if (estafetRaw && !curData) {
         const estafet = JSON.parse(estafetRaw);
+        
+        // Hapus memori estafet agar tidak terpicu berkali-kali
+        try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
+
         if (estafet.kategori === 'dewasa') {
-            const inpNik = document.getElementById('nik-bot');
-            const btnRun = document.getElementById('run-bot');
-            if (inpNik && btnRun && !document.getElementById('bot-status').innerText.includes('MEMULAI')) {
-                inpNik.value = estafet.nik;
-                btnRun.click(); // Klik otomatis
-                playSound('sukses');
+            const inputNik = document.getElementById('nik-bot');
+            const btnStart = document.getElementById('run-bot');
+            if (inputNik && btnStart) {
+                inputNik.value = estafet.nik;
+                btnStart.click(); // Klik start otomatis (Data tersimpan & Tombol Selanjutnya Muncul)
             }
         }
-    }
-    // ---------------------------
-
-    if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
-        isDownloadingBackground = true;
-        cariData('000').then(() => { if (!BOT_RUNNING) updateStatus('Database Siap !'); }).catch(e => { isDownloadingBackground = false; });
-    }
-
-    if (BOT_RUNNING && data && !LOOP_ACTIVE) {
-        if (isFormPage) { LOOP_ACTIVE = true; await autoContinueForm(); LOOP_ACTIVE = false; } 
-        else if (isMainPage) { LOOP_ACTIVE = true; await mainLoop(data); LOOP_ACTIVE = false; }
     }
 }, 2000);
 
