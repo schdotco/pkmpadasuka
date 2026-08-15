@@ -27,7 +27,6 @@ function playSound(type) {
 const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
 const GIDS = ['1783755807', '1121908280'];
 
-const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
 /* =========================================================
@@ -1184,13 +1183,13 @@ function createUI(){
     if(document.getElementById('auto-ckg-ui')) return;
     const box = document.createElement('div'); box.id = 'auto-ckg-ui';
     box.innerHTML = `
-        <div id="drag-handle">SKRINING PADASUKA (MANUAL)</div>
+        <div id="drag-handle">SKRINING PADASUKA</div>
         <div id="bot-status">INISIALISASI...</div>
         <input id="nik-bot" placeholder="Masukkan NIK">
         
         <div id="btn-wrap">
             <button id="run-bot">START DATA</button>
-            <button id="next-bot" style="display:none; background:#f59e0b; color:#000;">⏩ SELANJUTNYA</button>
+            <button id="next-bot" style="display:none; background:#f59e0b; color:#000;">
             <button id="stop-bot">BATAL</button>
         </div>
 
