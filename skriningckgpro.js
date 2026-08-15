@@ -50,7 +50,8 @@ function loadBOT() {
 function clearBOT() { 
     GM_setValue('AUTO_SKRINING_DATA', ''); // Paksa kosongkan sebelum delete
     GM_deleteValue('AUTO_SKRINING_DATA'); 
-    GM_deleteValue('CKG_MODE'); 
+    // PERBAIKAN: GM_deleteValue('CKG_MODE') TELAH DIHAPUS DARI SINI
+    // Agar saat reset pasien, bot tidak mati total dan hilang.
 }
 
 function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
@@ -682,19 +683,41 @@ function createUI(){
         };
     }
 
+    // PERBAIKAN URUTAN EKSEKUSI PADA TOMBOL DEWASA
     document.getElementById('btn-to-input').onclick = () => {
         const nik = document.getElementById('nik-bot').value;
         if(!confirm('Anda yakin ingin pindah ke Modul INPUT DEWASA?')) return;
-        try { GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' })); GM_setValue('CKG_MODE', 'input'); } catch(e) {}
-        clearBOT(); clearCompleted(); GM_deleteValue('LAST_USED_NIK'); // Bersihkan memori NIK agar rapi saat pindah modul
+        
+        // BERSIHKAN DULU...
+        clearBOT(); 
+        clearCompleted(); 
+        GM_deleteValue('LAST_USED_NIK'); 
+        
+        // BARU SET MODE TERBARU LALU RELOAD
+        try { 
+            GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' })); 
+            GM_setValue('CKG_MODE', 'input'); 
+        } catch(e) {}
+        
         updateStatus('Beralih ke Input Dewasa...'); setTimeout(() => location.reload(), 500); 
     };
 
+    // PERBAIKAN URUTAN EKSEKUSI PADA TOMBOL ANAK
     document.getElementById('btn-to-anak').onclick = () => {
         const nik = document.getElementById('nik-bot').value;
         if(!confirm('Anda yakin ingin pindah ke Modul INPUT ANAK?')) return;
-        try { GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' })); GM_setValue('CKG_MODE', 'input_anak'); } catch(e) {}
-        clearBOT(); clearCompleted(); GM_deleteValue('LAST_USED_NIK'); // Bersihkan memori NIK agar rapi saat pindah modul
+        
+        // BERSIHKAN DULU...
+        clearBOT(); 
+        clearCompleted(); 
+        GM_deleteValue('LAST_USED_NIK'); 
+        
+        // BARU SET MODE TERBARU LALU RELOAD
+        try { 
+            GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' })); 
+            GM_setValue('CKG_MODE', 'input_anak'); 
+        } catch(e) {}
+        
         updateStatus('Beralih ke Input Anak...'); setTimeout(() => location.reload(), 500); 
     };
 
