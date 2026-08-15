@@ -1180,24 +1180,27 @@ function syncUI() {
     const btnStart = document.getElementById('run-bot');
     const btnNext = document.getElementById('next-bot');
     const inputNik = document.getElementById('nik-bot');
+    const estafetWrap = document.getElementById('estafet-wrap');
 
-    if (!btnStart || !btnNext || !inputNik) return;
+    if (!btnStart || !btnNext || !inputNik || !estafetWrap) return;
 
     if (data) {
         btnStart.style.display = 'none';
         btnNext.style.display = 'block';
+        estafetWrap.style.display = 'flex'; // Munculkan tombol Estafet
         inputNik.value = data.nik || '';
         inputNik.disabled = true;
         updateStatus('SIAP. KLIK "SELANJUTNYA"');
     } else {
         btnStart.style.display = 'block';
         btnNext.style.display = 'none';
+        estafetWrap.style.display = 'none'; // Sembunyikan Estafet
         inputNik.value = '';
         inputNik.disabled = false;
         updateStatus('INISIALISASI...');
     }
 }
-    
+
 function createUI(){
     if(document.getElementById('auto-ckg-ui')) return;
     const box = document.createElement('div'); box.id = 'auto-ckg-ui';
@@ -1205,10 +1208,17 @@ function createUI(){
         <div id="drag-handle">SKRINING PADASUKA (MANUAL)</div>
         <div id="bot-status">INISIALISASI...</div>
         <input id="nik-bot" placeholder="Masukkan NIK">
+        
         <div id="btn-wrap">
             <button id="run-bot">START DATA</button>
             <button id="next-bot" style="display:none; background:#f59e0b; color:#000;">⏩ SELANJUTNYA</button>
             <button id="stop-bot">BATAL</button>
+        </div>
+
+        <!-- TOMBOL ESTAFET BARU -->
+        <div id="estafet-wrap" style="display:none; gap:8px; margin-top:8px;">
+            <button id="btn-to-input" style="flex:1; background:#10b981; color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">DEWASA ⏭️</button>
+            <button id="btn-to-anak" style="flex:1; background:#eab308; color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">ANAK ⏭️</button>
         </div>
     `;
     const style = document.createElement('style');
@@ -1229,6 +1239,8 @@ function createUI(){
         #run-bot { background: #00c8ff; color: #000; }
         #run-bot:hover { background: #009acc; }
         #stop-bot { background: #ff4444; color: white; }
+        #btn-to-input:hover { background: #059669; }
+        #btn-to-anak:hover { background: #ca8a04; }
     `;
     document.head.appendChild(style); document.body.appendChild(box);
 
@@ -1245,13 +1257,10 @@ function createUI(){
         const nik = document.getElementById('nik-bot').value;
         if(!nik) return alert('Masukkan NIK');
 
-        updateStatus('MENCARI NIK DI DATABASE...');
+        updateStatus('MENCARI NIK DI DATABASE LOKAL...');
         const data = await cariData(nik);
 
-        if(!data) {
-            updateStatus('NIK TIDAK DITEMUKAN');
-            return;
-        }
+        if(!data) return; // Jika kosong, fungsi cariData sudah menampilkan Alert
 
         saveBOT(data);
         clearCompleted(); 
@@ -1290,10 +1299,45 @@ function createUI(){
         IS_PROCESSING = false;
     };
     
-    // 3. TOMBOL BATAL (Mematikan Segala Proses)
+    // 3. TOMBOL ESTAFET LANGSUNG KE INPUT (BYPASS)
+    document.getElementById('btn-to-input').onclick = () => {
+        const nik = document.getElementById('nik-bot').value;
+        if(!confirm('Anda yakin ingin pindah ke Modul INPUT DEWASA?')) return;
+        
+        // Simpan NIK Estafet
+        try { GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' })); }
+        catch(e) { localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' })); }
+        
+        // Ganti Setelan Launcher agar membuka Input Dewasa
+        try { GM_setValue('CKG_MODE', 'input'); }
+        catch(e) { localStorage.setItem('CKG_MODE', 'input'); }
+        
+        clearBOT(); clearCompleted();
+        updateStatus('Beralih ke Input Dewasa...');
+        setTimeout(() => location.reload(), 500); // Reload halaman agar Launcher menyuntik skrip yang baru
+    };
+
+    document.getElementById('btn-to-anak').onclick = () => {
+        const nik = document.getElementById('nik-bot').value;
+        if(!confirm('Anda yakin ingin pindah ke Modul INPUT ANAK?')) return;
+        
+        // Simpan NIK Estafet
+        try { GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' })); }
+        catch(e) { localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' })); }
+        
+        // Ganti Setelan Launcher agar membuka Input Anak
+        try { GM_setValue('CKG_MODE', 'input_anak'); }
+        catch(e) { localStorage.setItem('CKG_MODE', 'input_anak'); }
+        
+        clearBOT(); clearCompleted();
+        updateStatus('Beralih ke Input Anak...');
+        setTimeout(() => location.reload(), 500); // Reload halaman agar Launcher menyuntik skrip yang baru
+    };
+
+    // 4. TOMBOL BATAL (Mematikan Segala Proses)
     document.getElementById('stop-bot').onclick = () => {
         stopBOT();
-        alert('Bot berhasil dihentikan. Memori NIK dihapus.');
+        alert('Bot berhasil dibatalkan. Memori NIK dihapus.');
     };
 
     syncUI();
