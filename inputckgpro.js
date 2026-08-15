@@ -901,17 +901,18 @@ function createUI(){
             if(!confirm('Anda yakin ingin mereset memori dan kembali ke daftar awal?')) return;
             
             clearBOT(); clearCompleted(); 
+            try { GM_deleteValue('LAST_USED_NIK'); } catch(e) { localStorage.removeItem('LAST_USED_NIK'); }
+            
+            // Set Mode ke Daftar agar Launcher membaca instruksi baru
             try { 
-                GM_deleteValue('LAST_USED_NIK');
-                GM_deleteValue('PASIEN_AKTIF');
-                GM_deleteValue('CKG_MODE');
-            } catch(e) { 
-                localStorage.removeItem('LAST_USED_NIK');
-                localStorage.removeItem('PASIEN_AKTIF');
-                localStorage.removeItem('CKG_MODE');
+                GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'daftar' })); 
+                GM_setValue('CKG_MODE', 'daftar'); 
+            } catch(e) {
+                localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'daftar' }));
+                localStorage.setItem('CKG_MODE', 'daftar');
             }
             
-            updateStatus('Membersihkan data & memuat ulang...'); 
+            updateStatus('Beralih ke Daftar...'); 
             setTimeout(() => location.reload(), 500); 
         };
     }
