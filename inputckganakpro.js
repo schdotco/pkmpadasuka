@@ -806,8 +806,11 @@ async function autoContinueForm() {
     if (finalSaveBtn) {
         finalSaveBtn.click();
         clearBOT();
-        GM_deleteValue('PASIEN_AKTIF'); // <-- Hapus memori estafet
+        
+        // --- FINISH & HAPUS ESTAFET ---
+        try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
         playSound('selesai'); // Nada Chime Selesai
+        
         updateStatus('Data Anak Berhasil Disimpan & Estafet Selesai!\nSilakan daftar pasien berikutnya.');
     }
 }
@@ -958,7 +961,8 @@ setInterval(async () => {
         let data = loadBOT();
         
         // --- AUTO START ESTAFET ANAK ---
-        const estafetRaw = GM_getValue('PASIEN_AKTIF');
+        let estafetRaw = null;
+        try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
         if (estafetRaw && !data) {
             const estafet = JSON.parse(estafetRaw);
             if (estafet.kategori === 'anak') {
