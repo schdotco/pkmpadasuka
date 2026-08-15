@@ -27,7 +27,6 @@ function playSound(type) {
 const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
 const GIDS = ['1783755807', '1121908280'];
 
-const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
 /* =========================================================
@@ -1352,7 +1351,6 @@ setInterval(createUI, 1000);
 let isDownloadingBackground = false;
 
 // 2. Supervisor Loop (Berjalan setiap 2 detik memantau URL tanpa henti)
-========================================================= */
 setInterval(() => {
     createUI(); // Pastikan UI selalu ada
 
