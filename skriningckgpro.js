@@ -27,6 +27,7 @@ function playSound(type) {
 const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
 const GIDS = ['1783755807', '1121908280'];
 
+const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
 /* =========================================================
@@ -51,33 +52,17 @@ function jawabanMerokok(v){
 /* =========================================================
    SESSION & DYNAMIC TRACKER
 ========================================================= */
-function saveBOT(data) { 
-    try { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); } 
-    catch(e) { localStorage.setItem('AUTO_SKRINING_DATA', JSON.stringify(data)); }
-}
-function loadBOT() { 
-    try { const raw = GM_getValue('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; } 
-    catch(e) { const raw = localStorage.getItem('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; }
-}
-function clearBOT() { 
-    try { GM_deleteValue('AUTO_SKRINING_DATA'); } 
-    catch(e) { localStorage.removeItem('AUTO_SKRINING_DATA'); }
-}
+function saveBOT(data) { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); }
+function loadBOT()     { const raw = GM_getValue('AUTO_SKRINING_DATA'); return raw ? JSON.parse(raw) : null; }
+function clearBOT() { GM_deleteValue('AUTO_SKRINING_DATA'); GM_deleteValue('CKG_MODE'); }
 
-function getCompleted() { 
-    try { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
-    catch(e) { return JSON.parse(localStorage.getItem('AUTO_SKRINING_COMPLETED') || '[]'); }
-}
+function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
 function addCompleted(id) {
     const arr = getCompleted();
     if(!arr.includes(id)) arr.push(id);
-    try { GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr)); }
-    catch(e) { localStorage.setItem('AUTO_SKRINING_COMPLETED', JSON.stringify(arr)); }
+    GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr));
 }
-function clearCompleted() { 
-    try { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
-    catch(e) { localStorage.removeItem('AUTO_SKRINING_COMPLETED'); }
-}
+function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
 
 /* =========================================================
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
@@ -155,17 +140,12 @@ async function setCacheDB(key, value) {
 }
 
 async function getCacheDB(key) {
+    const db = await openDB();
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open('CKG_Database', 1);
-        request.onsuccess = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains('SheetCache')) return resolve(null);
-            const tx = db.transaction('SheetCache', 'readonly');
-            const req = tx.objectStore('SheetCache').get(key);
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => resolve(null);
-        };
-        request.onerror = () => resolve(null);
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const request = tx.objectStore(STORE_NAME).get(key);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(tx.error);
     });
 }
 
@@ -1266,39 +1246,8 @@ function createUI(){
         syncUI();
         playSound('sukses');
     };
-
-    // 2. TOMBOL SELANJUTNYA (Satu kali klik, satu aksi)
-    document.getElementById('next-bot').onclick = async () => {
-        if (IS_PROCESSING) return; 
-        
-        const data = loadBOT();
-        if (!data) return stopBOT();
-
-        IS_PROCESSING = true;
-        const btnNext = document.getElementById('next-bot');
-        const oldText = btnNext.innerHTML;
-        btnNext.innerHTML = "⏳ DIPROSES...";
-        btnNext.style.background = "#d97706"; // Warna loading
-
-        try {
-            if (location.hostname.includes('form.kemkes.go.id')) {
-                updateStatus('⚡ Mengisi Formulir...');
-                await eksekusiIsiFormulir(data);
-            } else if (location.hostname.includes('sehatindonesiaku')) {
-                updateStatus('🔍 Mencari Menu...');
-                await eksekusiMenuSelanjutnya();
-            }
-        } catch (e) {
-            console.error(e);
-            updateStatus('Terjadi kesalahan. Coba klik kembali.');
-        }
-
-        btnNext.innerHTML = oldText;
-        btnNext.style.background = "#f59e0b";
-        IS_PROCESSING = false;
-    };
     
-    // 3. TOMBOL ESTAFET LANGSUNG KE INPUT (BYPASS)
+    // 2. TOMBOL ESTAFET LANGSUNG KE INPUT (BYPASS)
     document.getElementById('btn-to-input').onclick = () => {
         const nik = document.getElementById('nik-bot').value;
         if(!confirm('Anda yakin ingin pindah ke Modul INPUT DEWASA?')) return;
@@ -1351,29 +1300,38 @@ setInterval(createUI, 1000);
 let isDownloadingBackground = false;
 
 // 2. Supervisor Loop (Berjalan setiap 2 detik memantau URL tanpa henti)
-setInterval(() => {
-    createUI(); // Pastikan UI selalu ada
-
-    // Cek memori lemparan dari form pendaftaran
-    let estafetRaw = null;
-    try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
-
-    const curData = loadBOT();
+setInterval(async () => {
+    const isFormPage = location.hostname.includes('form.kemkes.go.id');
+    const isMainPage = location.hostname.includes('sehatindonesiaku');
     
-    // Jika ada data lemparan, dan kita sedang belum menjalankan NIK apapun
-    if (estafetRaw && !curData) {
-        const estafet = JSON.parse(estafetRaw);
-        
-        // Hapus memori estafet agar tidak terpicu berkali-kali
-        try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
+    const data = loadBOT();
 
-        if (estafet.kategori === 'dewasa') {
-            const inputNik = document.getElementById('nik-bot');
-            const btnStart = document.getElementById('run-bot');
-            if (inputNik && btnStart) {
-                inputNik.value = estafet.nik;
-                btnStart.click(); // Klik start otomatis (Data tersimpan & Tombol Selanjutnya Muncul)
-            }
+    // Auto-Resume: Jika web di-refresh manual oleh user tapi pasien belum selesai
+    if (data && !BOT_RUNNING) {
+        BOT_RUNNING = true;
+    }
+
+    // Download Database secara tersembunyi (Hanya saat bot nganggur di Dashboard)
+    if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
+        isDownloadingBackground = true;
+        cariData('000').then(() => {
+            if (!BOT_RUNNING) updateStatus('Database Siap !\nklik START');
+        }).catch(e => {
+            isDownloadingBackground = false; // Boleh coba lagi jika gagal
+        });
+    }
+
+    // LOGIK INTI (Mencegah bot diam saat URL berubah)
+    if (BOT_RUNNING && data && !LOOP_ACTIVE) {
+        if (isFormPage) {
+            LOOP_ACTIVE = true; // Kunci agar tidak bentrok
+            await autoContinueForm();
+            LOOP_ACTIVE = false; // Buka kunci saat loop selesai/pindah URL
+        } 
+        else if (isMainPage) {
+            LOOP_ACTIVE = true;
+            await mainLoop(data);
+            LOOP_ACTIVE = false;
         }
     }
 }, 2000);
