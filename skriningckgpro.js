@@ -1263,8 +1263,9 @@ setInterval(async () => {
 
     if (data && !BOT_RUNNING) BOT_RUNNING = true;
 
-    // --- AUTO START ESTAFET ---
-    const estafetRaw = GM_getValue('PASIEN_AKTIF');
+// --- AUTO START ESTAFET ---
+    let estafetRaw = null;
+    try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
     if (estafetRaw && !BOT_RUNNING && !LOOP_ACTIVE && isMainPage && cachedSheetData) {
         const estafet = JSON.parse(estafetRaw);
         if (estafet.kategori === 'dewasa') {
