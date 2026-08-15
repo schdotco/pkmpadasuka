@@ -36,9 +36,12 @@ function jawabanMerokok(v){
 }
 
 /* =========================================================
-   SESSION & DYNAMIC TRACKER (DIPERKUAT ANTI BOCOR)
+   SESSION & DYNAMIC TRACKER (DIPERKUAT ANTI BOCOR & MEMORI)
 ========================================================= */
-function saveBOT(data) { GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); }
+function saveBOT(data) { 
+    GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); 
+    GM_setValue('LAST_USED_NIK', data.nik); // Menyimpan NIK terakhir agar tombol Estafet tidak hilang
+}
 function loadBOT() { 
     const raw = GM_getValue('AUTO_SKRINING_DATA'); 
     if(!raw || raw === '') return null; // Cegah ghost data
@@ -534,10 +537,8 @@ async function mainLoop(data) {
         if (!nextItem) {
             BOT_RUNNING = false;
             clearBOT(); 
-            // PERBAIKAN: JANGAN panggil clearCompleted() di sini!
-            // Agar jika bot error/zombie, ia tetap tidak mengeklik tombol yang sudah di klik.
-            
-            updateStatus('SELESAI SEMUA TARGET.\nSilakan ganti NIK untuk pasien baru.');
+            // PERBAIKAN: Set status khusus saat selesai, yang tidak akan ditimpa syncUI
+            updateStatus('SELESAI SEMUA TARGET.\nSilakan pilih DEWASA/ANAK.');
             syncUI(); 
             alert('Semua antrian pemeriksaan selesai!');
             break;
@@ -547,17 +548,15 @@ async function mainLoop(data) {
         addCompleted(nextItem.id); 
         nextItem.btn.click();
         
-        // PERBAIKAN KEBOCORAN PENTING
-        // Kunci proses pencarian tombol agar diam saat halaman transisi loading menuju form!
         updateStatus('Mengalihkan halaman form...');
         for(let wait = 0; wait < 15; wait++) {
             await sleep(1500);
             if (!location.hostname.includes('sehatindonesiaku')) {
-                break; // Hentikan wait jika URL berhasil berpindah
+                break; 
             }
         }
         
-        break; // Wajib keluar dari while loop utama agar dialihkan ke router pengisian form
+        break; 
     }
 }
 
@@ -567,7 +566,16 @@ async function mainLoop(data) {
 let LOOP_ACTIVE = false; 
 
 function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
-function stopBOT(){ BOT_RUNNING = false; LOOP_ACTIVE = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); syncUI(); }
+
+function stopBOT(){ 
+    BOT_RUNNING = false; 
+    LOOP_ACTIVE = false; 
+    clearBOT(); 
+    clearCompleted(); 
+    GM_deleteValue('LAST_USED_NIK'); // Bersihkan memori NIK jika tombol Batal ditekan
+    updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); 
+    syncUI(); 
+}
 
 function syncUI() {
     const data = loadBOT();
@@ -575,16 +583,40 @@ function syncUI() {
     const btnNext = document.getElementById('next-bot');
     const inputNik = document.getElementById('nik-bot');
     const estafetWrap = document.getElementById('estafet-wrap');
+    const statusEl = document.getElementById('bot-status');
 
     if (!btnStart || !btnNext || !inputNik || !estafetWrap) return;
 
     if (data) {
-        btnStart.style.display = 'none'; btnNext.style.display = 'block'; estafetWrap.style.display = 'flex';
-        inputNik.value = data.nik || ''; inputNik.disabled = true;
+        btnStart.style.display = 'none'; 
+        btnNext.style.display = 'block'; 
+        estafetWrap.style.display = 'flex';
+        inputNik.value = data.nik || ''; 
+        inputNik.disabled = true;
         updateStatus('SIAP. PENGISIAN OTOMATIS BERJALAN');
     } else {
-        btnStart.style.display = 'block'; btnNext.style.display = 'none'; estafetWrap.style.display = 'none'; 
-        inputNik.value = ''; inputNik.disabled = false; updateStatus('INISIALISASI...');
+        btnStart.style.display = 'block'; 
+        btnNext.style.display = 'none'; 
+        
+        // Panggil memori NIK terakhir
+        const lastNik = GM_getValue('LAST_USED_NIK');
+        
+        if (lastNik) {
+            // Jika bot baru saja selesai, TAMPILKAN tombol Estafet
+            estafetWrap.style.display = 'flex';
+            if (inputNik.value === '') inputNik.value = lastNik; // Jangan hapus ketikan user jika ia sedang mengetik NIK baru
+            inputNik.disabled = false;
+        } else {
+            // Jika benar-benar reset bersih (dibatalkan)
+            estafetWrap.style.display = 'none'; 
+            inputNik.value = ''; 
+            inputNik.disabled = false; 
+            
+            // Jangan ubah status jika sedang menampilkan pesan dihentikan
+            if(statusEl && !statusEl.innerText.includes('DIHENTIKAN')) {
+                updateStatus('INISIALISASI...');
+            }
+        }
     }
 }
 
@@ -636,7 +668,7 @@ function createUI(){
 
         if(!data) return; 
         saveBOT(data);
-        clearCompleted(); // PERBAIKAN: clearCompleted HANYA boleh dipanggil saat tombol START diklik
+        clearCompleted(); 
         syncUI();
         playSound('sukses');
     };
@@ -654,14 +686,16 @@ function createUI(){
         const nik = document.getElementById('nik-bot').value;
         if(!confirm('Anda yakin ingin pindah ke Modul INPUT DEWASA?')) return;
         try { GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' })); GM_setValue('CKG_MODE', 'input'); } catch(e) {}
-        clearBOT(); clearCompleted(); updateStatus('Beralih ke Input Dewasa...'); setTimeout(() => location.reload(), 500); 
+        clearBOT(); clearCompleted(); GM_deleteValue('LAST_USED_NIK'); // Bersihkan memori NIK agar rapi saat pindah modul
+        updateStatus('Beralih ke Input Dewasa...'); setTimeout(() => location.reload(), 500); 
     };
 
     document.getElementById('btn-to-anak').onclick = () => {
         const nik = document.getElementById('nik-bot').value;
         if(!confirm('Anda yakin ingin pindah ke Modul INPUT ANAK?')) return;
         try { GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' })); GM_setValue('CKG_MODE', 'input_anak'); } catch(e) {}
-        clearBOT(); clearCompleted(); updateStatus('Beralih ke Input Anak...'); setTimeout(() => location.reload(), 500); 
+        clearBOT(); clearCompleted(); GM_deleteValue('LAST_USED_NIK'); // Bersihkan memori NIK agar rapi saat pindah modul
+        updateStatus('Beralih ke Input Anak...'); setTimeout(() => location.reload(), 500); 
     };
 
     document.getElementById('stop-bot').onclick = () => { stopBOT(); alert('Bot berhasil dibatalkan. Memori NIK dihapus.'); };
@@ -684,7 +718,13 @@ setInterval(async () => {
 
     if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
         isDownloadingBackground = true;
-        cariData('000').then(() => { if (!BOT_RUNNING) updateStatus('Database Siap !\nklik START'); }).catch(e => { isDownloadingBackground = false; });
+        cariData('000').then(() => { 
+            // Cek status, jangan ditimpa bila status sudah "SELESAI..."
+            const statusEl = document.getElementById('bot-status');
+            if (!BOT_RUNNING && statusEl && !statusEl.innerText.includes('SELESAI')) {
+                updateStatus('Database Siap !\nklik START'); 
+            }
+        }).catch(e => { isDownloadingBackground = false; });
     }
 
     if (BOT_RUNNING && data && !LOOP_ACTIVE) {
