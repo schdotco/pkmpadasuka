@@ -72,14 +72,18 @@ function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 /* =========================================================
    SESSION & DYNAMIC TRACKER (FIXED UNTUK LOADER EKSTERNAL)
 ========================================================= */
-// Menggunakan try-catch agar jika GM_setValue diblokir oleh master script, 
-// ia akan otomatis menggunakan localStorage browser.
 const WAKTU_KEDALUWARSA = 60 * 60 * 1000; // 60 menit
 
 function saveBOT(data) { 
     const payload = { waktuSimpan: Date.now(), dataPasien: data };
-    try { GM_setValue('AUTO_CKG_DATA', JSON.stringify(payload)); } 
-    catch(e) { localStorage.setItem('AUTO_CKG_DATA', JSON.stringify(payload)); }
+    try { 
+        GM_setValue('AUTO_CKG_DATA', JSON.stringify(payload)); 
+        GM_setValue('LAST_USED_NIK', data.nik); // Simpan NIK untuk estafet
+    } 
+    catch(e) { 
+        localStorage.setItem('AUTO_CKG_DATA', JSON.stringify(payload)); 
+        localStorage.setItem('LAST_USED_NIK', data.nik); 
+    }
 }
 
 function loadBOT() { 
@@ -100,7 +104,7 @@ function loadBOT() {
             }
             return payload.dataPasien;
         }
-        return payload; // Fallback jika membaca format data lama
+        return payload; 
     } catch(e) {
         return null;
     }
@@ -225,15 +229,13 @@ async function cariData(nikInput) {
     try {
         const target = normalizeNIK(nikInput);
         
-        // --- TAHAP 1: CEK CACHE ATAU DOWNLOAD (ANTI CRASH) ---
         if (!cachedSheetData || cachedSheetData.length === 0) {
             
             let savedCache = null;
             let cacheTime = 0;
-            const EXPIRATION_TIME = 4 * 60 * 60 * 1000; // Cache 4 jam
+            const EXPIRATION_TIME = 4 * 60 * 60 * 1000; 
             const now = Date.now();
 
-            // 1. Cek dari IndexedDB
             try {
                 savedCache = await getCacheDB('CKG_SHEET_DATA');
                 cacheTime = await getCacheDB('CKG_SHEET_TIME') || 0;
@@ -241,12 +243,10 @@ async function cariData(nikInput) {
                 console.warn("Gagal membaca IndexedDB", e);
             }
 
-            // 2. Jika valid, gunakan dari IndexedDB (Langsung load ke RAM tanpa nge-lag)
             if (savedCache && savedCache.length > 0 && (now - cacheTime < EXPIRATION_TIME)) {
                 console.log('[CACHE READY] Memuat data dari IndexedDB...');
                 cachedSheetData = savedCache;
             } 
-            // 3. Jika tidak ada / expired, lakukan Download
             else {
                 updateStatus("MENGUNDUH DATA SPREADSHEET...");
                 cachedSheetData = [];
@@ -261,7 +261,6 @@ async function cariData(nikInput) {
                     
                     const rows = parseCSV(csvText);
                     if (rows && rows.length > 1) {
-                        // [OPTIMASI MEMORI] Ganti .concat() dengan PUSH LOOP
                         if (cachedSheetData.length === 0) {
                             cachedSheetData = rows;
                         } else {
@@ -274,7 +273,6 @@ async function cariData(nikInput) {
                 
                 console.log('[DOWNLOAD SELESAI]', cachedSheetData.length, 'baris didapat.');
 
-                // Simpan ke IndexedDB secara background
                 try {
                     await setCacheDB('CKG_SHEET_DATA', cachedSheetData);
                     await setCacheDB('CKG_SHEET_TIME', now);
@@ -285,24 +283,17 @@ async function cariData(nikInput) {
             }
         }
 
-        // --- TAHAP 2: PROSES PENCARIAN NIK ---
         const rows = cachedSheetData;
-        
-        // Proteksi jika data gagal diload
         if (!rows || rows.length < 2) return null;
         
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            
-            // Proteksi baris pendek / kosong
             if (!row || row.length < 10) continue; 
             
             const cells = row.map(col => String(col || '').trim());
             const rawNik = (cells.length > 2) ? (cells[0] || cells[1] || cells[2]) : '';
             
             if (normalizeNIK(rawNik) === target || cells.some(col => normalizeNIK(col) === target)) {
-                
-                // Jika ketemu, return format data yang Anda inginkan
                 return {
                     nik: target, 
                     nama: cells[7] || '', 
@@ -351,25 +342,12 @@ function triggerClick(el){
 
 function forceInject(element, value) {
     if (!element) return;
-    
-    // 1. Dapatkan "native setter" untuk input agar framework tidak curiga
     const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-    
-    // 2. Terapkan nilai menggunakan setter asli
     nativeSetter.call(element, value);
-    
-    // 3. (PENTING untuk React/SurveyJS) Hapus tracker jika ada
-    if (element._valueTracker) {
-        element._valueTracker.setValue('');
-    }
-    
-    // 4. Kirim event agar framework melakukan validasi dan update state
+    if (element._valueTracker) { element._valueTracker.setValue(''); }
     element.dispatchEvent(new Event('input', { bubbles: true }));
     element.dispatchEvent(new Event('change', { bubbles: true }));
-    
-    // 5. Trigger BLUR (Seringkali validasi berjalan saat kursor keluar dari kolom)
     element.dispatchEvent(new Event('blur', { bubbles: true }));
-    
     element.blur();
 }
 
@@ -397,44 +375,32 @@ async function selectDropdownSurveyJS(optionText) {
 }
 
 async function selectDropdownContext(soalText, optionText) {
-    // 1. Cari kontainer soal berdasarkan teks
     const questions = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')];
     const targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(soalText.toLowerCase()));
     if (!targetQ) return false;
-
-    // 2. Cari dropdown di dalam soal tersebut
     const dropdown = targetQ.querySelector('.sd-dropdown');
     if (!dropdown) return false;
 
-    // 3. Klik untuk membuka
     dropdown.click();
-    await sleep(1000); // Wajib tunggu animasi
+    await sleep(1000);
 
-    // 4. KUNCI: Cari daftar pilihan BERDASARKAN ID (aria-controls)
     const listId = dropdown.getAttribute('aria-controls');
     const listElement = document.getElementById(listId);
     
     if (!listElement) {
-        console.warn('Daftar pilihan tidak ditemukan untuk:', soalText);
-        dropdown.click(); // Tutup kembali
+        dropdown.click(); 
         return false;
     }
 
-    // 5. Cari opsi HANYA di dalam listElement tersebut
     const options = [...listElement.querySelectorAll('.sv-list__item-body')];
     const targetOpt = options.find(el => 
         (el.innerText || '').trim().toLowerCase() === optionText.toLowerCase()
     );
 
     if (targetOpt) {
-        targetOpt.click();
-        await sleep(500);
-        console.log('[AI] Berhasil memilih:', optionText);
-        return true;
+        targetOpt.click(); await sleep(500); return true;
     } else {
-        console.warn('Opsi tidak ditemukan di list:', optionText);
-        dropdown.click(); // Tutup kembali jika gagal
-        return false;
+        dropdown.click(); return false;
     }
 }
 
@@ -450,16 +416,12 @@ async function pilihSemuaRadioLimit(text, limit = 99, exact = false) {
         
         if (isMatch) {
             const radio = el.querySelector('input[type="radio"]');
-            
-            // CEK TUMPANG TINDIH: Cari tahu apakah soal ini sudah dijawab
             const questionContainer = el.closest('.sd-question, .sv-question, [role="radiogroup"]');
             let isQuestionAnswered = false;
             if (questionContainer) {
                 const allRadiosInQuestion = questionContainer.querySelectorAll('input[type="radio"]');
                 isQuestionAnswered = Array.from(allRadiosInQuestion).some(r => r.checked);
             }
-
-            // Hanya klik jika soal belum dijawab sama sekali
             if (radio && !isQuestionAnswered) {
                 radio.click();
                 radio.dispatchEvent(new Event('change', { bubbles: true }));
@@ -495,47 +457,21 @@ async function isiRadioSurveyJS(soalSelector, teksJawaban) {
 
 async function handleTelingaMata(data) {
     updateStatus('MENGISI: TELINGA & MATA...');
-
     await isiRadioSurveyJS('serumen impaksi', 'tidak ada serumen impaksi');
     await sleep(500);
-
     await selectDropdownSurveyJS('tidak ada infeksi');
     await sleep(500);
-
     await isiRadioSurveyJS('tajam pendengaran', 'normal');
     await sleep(500);
 
-    // ===== LOGIKA MATA =====
-   console.log('[MATA]', JSON.stringify(data.mata));
-   updateStatus('MATA: ' + JSON.stringify(data.mata));
     if ((data.mata || '').toLowerCase() === 'ya') {
-
-        // Pertanyaan nomor 4
-        await isiRadioSurveyJS(
-            'tajam penglihatan',
-            'curiga gangguan penglihatan'
-        );
-
-        // Tunggu pertanyaan nomor 5 muncul
+        await isiRadioSurveyJS('tajam penglihatan', 'curiga gangguan penglihatan');
         await sleep(1500);
-
-        // Pertanyaan nomor 5
-        await isiRadioSurveyJS(
-            'hasil pemeriksaan visus',
-            'gangguan penglihatan ringan'
-        );
-
+        await isiRadioSurveyJS('hasil pemeriksaan visus', 'gangguan penglihatan ringan');
     } else {
-
-        // Pertanyaan nomor 4
-        await isiRadioSurveyJS(
-            'tajam penglihatan',
-            'normal (visus 6/6 - 6/12)'
-        );
+        await isiRadioSurveyJS('tajam penglihatan', 'normal (visus 6/6 - 6/12)');
     }
-
     await sleep(500);
-
     await isiRadioSurveyJS('pupil', 'normal');
 }
 
@@ -546,7 +482,6 @@ function isFormValid() {
     const questions = document.querySelectorAll('.sd-question, .sv-question');
     for (let q of questions) {
         const pertanyaan = q.innerText.toLowerCase();
-        // Abaikan validasi untuk pertanyaan ini
         if (pertanyaan.includes('pinhole') || pertanyaan.includes('funduskopi') ||
             pertanyaan.includes('foto torax') || pertanyaan.includes('foto toraks')) {
             continue;
@@ -570,7 +505,7 @@ async function klikKirim() {
     while (!check.valid) {
         updateStatus('Mengisi soal kosong...');
         const labels = check.container.querySelectorAll('label');
-        let foundDefaultAnswer = false; // Penanda apakah opsi default ketemu
+        let foundDefaultAnswer = false; 
 
         for (let l of labels) {
             let labelText = l.innerText.toLowerCase();
@@ -586,11 +521,10 @@ async function klikKirim() {
             }
         }
 
-        // PROTEKSI INFINITE LOOP: Jika opsi "Normal/Tidak" tidak ada di soal tersebut
         if (!foundDefaultAnswer) {
             console.warn("[WARNING] Soal wajib kosong tapi tidak ada opsi default (Normal/Tidak).");
             updateStatus('Terjebak soal wajib.\nSilakan isi manual lalu klik Kirim.');
-            return false; // Hentikan loop paksa
+            return false;
         }
 
         await sleep(1000);
@@ -624,12 +558,10 @@ async function autoContinueForm() {
     BOT_RUNNING = true;
     updateStatus('MENUNGGU FORM DIMUAT...');
     
-    // TUNGGU SAMPAI KERANGKA SOAL MUNCUL (Maksimal tunggu 10 detik)
     for(let i = 0; i < 10; i++) {
         if(document.querySelector('.sd-question, .sv-question, input')) break;
         await sleep(1000);
     }
-    // Beri ekstra nafas 1 detik agar animasi framework selesai
     await sleep(1000); 
 
     const title = document.body.innerText.toLowerCase();
@@ -641,8 +573,6 @@ async function autoContinueForm() {
 
     if(title.includes('gizi (bb') || title.includes('lingkar perut')){
         currentId = 'gizi'; updateStatus('MENGISI TAHAP: GIZI');
-      
-      // Menggunakan array find untuk mencegah tabrakan kata "hasil pengukuran" antara TB dan LP
         const inputBB = document.querySelector('input[placeholder*="satuan kg" i]') || document.querySelector('input[placeholder*="Berat Badan" i]') || realInputs[0];
         const inputTB = document.querySelector('input[placeholder*="tinggi badan" i]') || realInputs[1];
         const inputLP = realInputs.find(el => (el.placeholder || '').toLowerCase().includes('hasil pengukuran') && !(el.placeholder || '').toLowerCase().includes('tinggi badan')) || realInputs[2];
@@ -699,44 +629,28 @@ async function autoContinueForm() {
         let isPerokok = (data.merokok || '').toLowerCase().includes('ya') || 
                         (data.merokok || '').toLowerCase().includes('rokok');
 
-        // 1 & 2. Pilih yang ada teks Tidak
         await isiRadioSurveyJS('didiagnosis atau menderita kanker', 'tidak pernah didiagnosis');
         await isiRadioSurveyJS('ada anggota keluarga yang menderita kanker', 'tidak ada keluarga');
 
-        // 3. Riwayat merokok/paparan asap
         if (isPerokok) {
             await isiRadioSurveyJS('riwayat merokok', 'perokok aktif');
         } else {
             await isiRadioSurveyJS('riwayat merokok', 'tidak pernah merokok');
         }
 
-        // 4. Tempat kerja zat karsinogenik
         await isiRadioSurveyJS('zat karsinogenik', 'Tidak tempat kerja mengandung zat karsinogenik');
-
-        // 5. Berpotensi tinggi
         await isiRadioSurveyJS('berpotensi tinggi', 'Tidak memiliki tempat tinggal berpotensi tinggi');
-
-        // 6. Rumah tidak sehat (Khusus ini teksnya "memiliki lingkungan dalam rumah yang sehat")
         await isiRadioSurveyJS('dalam rumah yang tidak sehat', 'Memiliki lingkungan dalam rumah yang sehat');
-
-        // 7. Paru kronik
         await isiRadioSurveyJS('penyakit paru kronik', 'tidak pernah didiagnosis penyakit paru kronik');
-
-        // 8. Foto Torax akan diabaikan (Jangan diisi apa-apa)
         await sleep(500);
     }
    else if(title.includes('puma') || title.includes('ppok')){
         currentId = 'puma'; updateStatus('MENGISI TAHAP: PPOK (PUMA)');
-
-        // Mengecek apakah data merokok mengandung kata 'ya' atau 'rokok'
         let isPerokok = (data.merokok || '').toLowerCase().includes('ya') || 
                         (data.merokok || '').toLowerCase().includes('rokok');
-
-        // 1. Riwayat merokok (Pilih 'Iya' atau 'Tidak')
         await isiRadioSurveyJS('mempunyai riwayat merokok', isPerokok ? 'iya' : 'tidak');
         await sleep(400);
 
-        // 2-5. Jawab otomatis Tidak
         await isiRadioSurveyJS('napas pendek', 'tidak');
         await isiRadioSurveyJS('mempunyai dahak', 'tidak');
         await isiRadioSurveyJS('batuk saat sedang tidak menderita', 'tidak');
@@ -763,12 +677,8 @@ async function autoContinueForm() {
     else if (title.includes('gejala depresi') || title.includes('emosional')) {
         currentId = 'skilas_dep'; 
         updateStatus('MENGISI TAHAP: DEPRESI');
-        
-        // Ambil data (pastikan isinya "Ya" atau "Tidak" sesuai yang ada di website)
         let d1 = (data.skilasDep1 || 'tidak').trim();
         let d2 = (data.skilasDep2 || 'tidak').trim();
-        
-        // Panggil fungsi yang sudah diperbaiki
         await selectDropdownContext('merasa sedih, tertekan', d1);
         await sleep(500);
         await selectDropdownContext('sedikit minat atau kesenangan', d2);
@@ -780,7 +690,7 @@ async function autoContinueForm() {
 }
 
 /* =========================================================
-   TRACKER ROUTER
+   TRACKER ROUTER & ESTAFET UI
 ========================================================= */
 function getNextTarget(){
     const completed = getCompleted();
@@ -802,28 +712,26 @@ function getNextTarget(){
 
 async function mainLoopCKG(data){
     updateStatus('MENCARI ANTRIAN...');
-    await sleep(2000); // Beri waktu halaman bernapas
+    await sleep(2000); 
     
     let nextItem = getNextTarget();
     
-    // --- TAMBAHAN: RE-TRY LOGIC ---
-    // Jika tombol tidak ketemu, coba tunggu sekali lagi (mungkin halaman masih loading)
     if(!nextItem) {
         console.warn("Tombol tidak ketemu, mencoba scan ulang dalam 2 detik...");
         await sleep(2000);
         nextItem = getNextTarget();
     }
-    // ------------------------------
 
    if(!nextItem){
         clearBOT(); clearCompleted(); BOT_RUNNING = false;
-        
-        // --- FINISH & HAPUS ESTAFET ---
         try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
         playSound('selesai'); 
         
-        updateStatus('SELESAI SEMUA PEMERIKSAAN'); 
-        alert('BOT SUKSES INPUT SEMUA PEMERIKSAAN');
+        // Memunculkan tombol estafet Skrining
+        updateStatus('SELESAI SEMUA PEMERIKSAAN\nSilakan pilih menu SKRINING.'); 
+        syncUI(); 
+
+        alert('BOT SUKSES INPUT SEMUA PEMERIKSAAN!');
         return;
     }
     
@@ -836,7 +744,55 @@ async function mainLoopCKG(data){
    UI MODERN & DRAGGABLE
 ========================================================= */
 function updateStatus(text){ const el = document.getElementById('bot-status'); if(el) el.innerText = text; }
-function stopBOT(){ BOT_RUNNING = false; clearBOT(); clearCompleted(); updateStatus('BOT DIHENTIKAN. DATA DIRESET.'); }
+
+function stopBOT(){ 
+    BOT_RUNNING = false; 
+    clearBOT(); 
+    clearCompleted(); 
+    try { GM_deleteValue('LAST_USED_NIK'); } catch(e) { localStorage.removeItem('LAST_USED_NIK'); }
+    updateStatus('BOT DIHENTIKAN. DATA DIRESET.'); 
+    syncUI();
+}
+
+// Fungsi Sync UI Baru (Penampil Tombol Estafet)
+function syncUI() {
+    const data = loadBOT();
+    const btnStart = document.getElementById('run-bot');
+    const inputNik = document.getElementById('nik-bot');
+    const estafetWrap = document.getElementById('estafet-wrap');
+    const statusEl = document.getElementById('bot-status');
+
+    if (!btnStart || !inputNik || !estafetWrap) return;
+
+    if (data) {
+        // Jika bot aktif/ada data
+        btnStart.style.display = 'none'; 
+        estafetWrap.style.display = 'none'; // Sembunyikan selama bot jalan agar rapi
+        inputNik.value = data.nik || ''; 
+        inputNik.disabled = true;
+    } else {
+        // Jika bot selesai/idle
+        btnStart.style.display = 'block'; 
+        
+        let lastNik = null;
+        try { lastNik = GM_getValue('LAST_USED_NIK'); } catch(e) { lastNik = localStorage.getItem('LAST_USED_NIK'); }
+        
+        if (lastNik) {
+            // Tampilkan tombol Estafet
+            estafetWrap.style.display = 'flex';
+            if (inputNik.value === '') inputNik.value = lastNik; 
+            inputNik.disabled = false;
+        } else {
+            // Jika reset total
+            estafetWrap.style.display = 'none'; 
+            inputNik.value = ''; 
+            inputNik.disabled = false; 
+            if(statusEl && !statusEl.innerText.includes('DIHENTIKAN')) {
+                updateStatus('Siap Digunakan. Masukkan NIK.');
+            }
+        }
+    }
+}
 
 function createUI(){
     if(document.getElementById('auto-ckg-ui')) return;
@@ -847,6 +803,9 @@ function createUI(){
         <input id="nik-bot" placeholder="Masukkan NIK">
         <div id="btn-wrap">
             <button id="run-bot">START</button><button id="stop-bot">BATAL</button>
+        </div>
+        <div id="estafet-wrap" style="display:none; gap:8px; margin-top:8px;">
+            <button id="btn-to-skrining" style="flex:1; background:#3b82f6; color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">⏮️ KEMBALI SKRINING</button>
         </div>
     `;
     const style = document.createElement('style');
@@ -879,6 +838,7 @@ function createUI(){
         #run-bot { background: #00ff88; color: #000; }
         #run-bot:hover { background: #00cc6a; }
         #stop-bot { background: #ff4444; color: white; }
+        #btn-to-skrining:hover { background: #2563eb; }
     `;
     document.head.appendChild(style); document.body.appendChild(box);
 
@@ -900,10 +860,39 @@ function createUI(){
         if(!data) return updateStatus('DATA TIDAK DITEMUKAN');
 
         BOT_RUNNING = true; saveBOT(data); clearCompleted();
+        syncUI(); 
+        
         updateStatus('MEMULAI BOT...');
         await sleep(500); await mainLoopCKG(data);
     };
+    
     document.getElementById('stop-bot').onclick = stopBOT;
+
+    // Logika Tombol Estafet ke Skrining
+    const btnSkrining = document.getElementById('btn-to-skrining');
+    if (btnSkrining) {
+        btnSkrining.onclick = () => {
+            const nik = document.getElementById('nik-bot').value;
+            if(!confirm('Anda yakin ingin kembali ke Modul SKRINING?')) return;
+            
+            clearBOT(); clearCompleted(); 
+            try { GM_deleteValue('LAST_USED_NIK'); } catch(e) { localStorage.removeItem('LAST_USED_NIK'); }
+            
+            // Set Mode ke Skrining agar Launcher membaca instruksi baru
+            try { 
+                GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'skrining' })); 
+                GM_setValue('CKG_MODE', 'skrining'); 
+            } catch(e) {
+                localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'skrining' }));
+                localStorage.setItem('CKG_MODE', 'skrining');
+            }
+            
+            updateStatus('Beralih ke Skrining...'); 
+            setTimeout(() => location.reload(), 500); 
+        };
+    }
+    
+    syncUI();
 }
 
 /* =========================================================
@@ -930,8 +919,6 @@ setInterval(async () => {
         try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
 
         // --- AUTO START ESTAFET ---
-
-        // --- AUTO START ESTAFET ---
         if (estafetRaw && !BOT_RUNNING && !data && cachedSheetData) {
             const estafet = JSON.parse(estafetRaw);
             if (estafet.kategori === 'dewasa') {
@@ -944,7 +931,6 @@ setInterval(async () => {
                 }
             }
         }
-        // ---------------------------
 
         if (data && !BOT_RUNNING) {
             BOT_RUNNING = true;
