@@ -727,8 +727,8 @@ async function mainLoopCKG(data){
         try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
         playSound('selesai'); 
         
-        // Memunculkan tombol estafet Skrining
-        updateStatus('SELESAI SEMUA PEMERIKSAAN\nSilakan pilih menu SKRINING.'); 
+        // Memunculkan tombol estafet Skrining & Daftar
+        updateStatus('SELESAI SEMUA PEMERIKSAAN\nSilakan pilih menu selanjutnya.'); 
         syncUI(); 
 
         alert('BOT SUKSES INPUT SEMUA PEMERIKSAAN!');
@@ -805,7 +805,8 @@ function createUI(){
             <button id="run-bot">START</button><button id="stop-bot">BATAL</button>
         </div>
         <div id="estafet-wrap" style="display:none; gap:8px; margin-top:8px;">
-            <button id="btn-to-skrining" style="flex:1; background:#3b82f6; color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">⏮️ KEMBALI SKRINING</button>
+            <button id="btn-to-skrining" style="flex:1; background:#3b82f6; color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">⏮️ SKRINING</button>
+            <button id="btn-to-daftar" style="flex:1; background:#6b7280; color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">🔙 DAFTAR</button>
         </div>
     `;
     const style = document.createElement('style');
@@ -839,6 +840,7 @@ function createUI(){
         #run-bot:hover { background: #00cc6a; }
         #stop-bot { background: #ff4444; color: white; }
         #btn-to-skrining:hover { background: #2563eb; }
+        #btn-to-daftar:hover { background: #4b5563; }
     `;
     document.head.appendChild(style); document.body.appendChild(box);
 
@@ -888,6 +890,28 @@ function createUI(){
             }
             
             updateStatus('Beralih ke Skrining...'); 
+            setTimeout(() => location.reload(), 500); 
+        };
+    }
+    
+    // Logika Tombol Kembali ke Daftar (Reset Total)
+    const btnDaftar = document.getElementById('btn-to-daftar');
+    if (btnDaftar) {
+        btnDaftar.onclick = () => {
+            if(!confirm('Anda yakin ingin mereset memori dan kembali ke daftar awal?')) return;
+            
+            clearBOT(); clearCompleted(); 
+            try { 
+                GM_deleteValue('LAST_USED_NIK');
+                GM_deleteValue('PASIEN_AKTIF');
+                GM_deleteValue('CKG_MODE');
+            } catch(e) { 
+                localStorage.removeItem('LAST_USED_NIK');
+                localStorage.removeItem('PASIEN_AKTIF');
+                localStorage.removeItem('CKG_MODE');
+            }
+            
+            updateStatus('Membersihkan data & memuat ulang...'); 
             setTimeout(() => location.reload(), 500); 
         };
     }
