@@ -970,10 +970,10 @@ setInterval(async () => {
         }
         // -------------------------------
 
-        if(data){
+         if(data){
             BOT_RUNNING = true;
             updateStatus('MELANJUTKAN OTOMATIS...\nMencari Form Berikutnya');
-            await mainLoop(data);
+            await mainLoopCKG(data); // <-- FIX: Tambahkan CKG
         }
     }
 }, 2000);
