@@ -960,9 +960,13 @@ while(true){
 /* ================= HALAMAN 2 ================= */
     await eksekusiHalamanDua(data);
     
-    // --- TRIGGER ESTAFET & SMART PAUSE ---
+// --- TRIGGER ESTAFET & SMART PAUSE ---
     let kategori = getKategoriUmur(data.tgl);
-    GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: data.nik, kategori: kategori }));
+    try { 
+        GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: data.nik, kategori: kategori })); 
+    } catch(e) { 
+        localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: data.nik, kategori: kategori })); 
+    }
     
     playSound('sukses');
     showLoading("✅ PENDAFTARAN SELESAI!<br><span style='font-size:15px;color:#fff;'>Data tersimpan di Estafet.<br>Silakan konfirmasi kehadiran dan buka halaman Skrining/Input.</span>");
