@@ -815,8 +815,13 @@ async function mainLoopCKG(data){
     }
     // ------------------------------
 
-    if(!nextItem){
+   if(!nextItem){
         clearBOT(); clearCompleted(); BOT_RUNNING = false;
+        
+        // --- FINISH & HAPUS ESTAFET ---
+        try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
+        playSound('selesai'); 
+        
         updateStatus('SELESAI SEMUA PEMERIKSAAN'); 
         alert('BOT SUKSES INPUT SEMUA PEMERIKSAAN');
         return;
@@ -920,8 +925,11 @@ setInterval(async () => {
     if (isFormPage) {
         if (!BOT_RUNNING) await autoContinueForm();
     } else {
-        const data = loadBOT();
-        const estafetRaw = GM_getValue('PASIEN_AKTIF');
+    const data = loadBOT();
+        let estafetRaw = null;
+        try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
+
+        // --- AUTO START ESTAFET ---
 
         // --- AUTO START ESTAFET ---
         if (estafetRaw && !BOT_RUNNING && !data && cachedSheetData) {
