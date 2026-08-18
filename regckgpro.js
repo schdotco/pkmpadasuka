@@ -5,15 +5,62 @@
 function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
 
 /* =========================================================
-   MODUL ESTAFET, AUDIO & HUMANIZED DELAY
+   [EXPERT FEATURE] 1. SISTEM TELEMETRI & ERROR LOGGING
 ========================================================= */
-// 1. Mengubah fungsi jeda menjadi tidak tertebak (Anti-Banned)
+function sendBotErrorLog(context, errorMessage) {
+    try {
+        const deviceId = localStorage.getItem("CKG_DEVICE_ID") || "Unknown_Device";
+        const payload = {
+            fields: {
+                timestamp: { stringValue: new Date().toISOString() },
+                device: { stringValue: deviceId },
+                module: { stringValue: "REGISTRATION_BOT" },
+                context: { stringValue: context },
+                message: { stringValue: String(errorMessage) }
+            }
+        };
+        request({
+            method: "POST",
+            url: "https://firestore.googleapis.com/v1/projects/jadwal-daily-pkm-padasuka/databases/(default)/documents/Customer/Padasuka/error_logs",
+            headers: { "Content-Type": "application/json" },
+            data: JSON.stringify(payload)
+        });
+    } catch(e) { }
+}
+
+/* =========================================================
+   [EXPERT FEATURE] 2. TOAST NOTIFICATION (NON-BLOCKING UI)
+========================================================= */
+function showToast(message, type = 'info') {
+    const toastId = 'ckg-toast-container';
+    let container = document.getElementById(toastId);
+    if (!container) {
+        container = document.createElement('div');
+        container.id = toastId;
+        container.style = "position:fixed; top:20px; right:20px; z-index:999999; display:flex; flex-direction:column; gap:10px; pointer-events:none;";
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    const bgColors = { info: '#3b82f6', success: '#10b981', error: '#ef4444', warning: '#f59e0b' };
+    toast.style = `background:${bgColors[type] || bgColors.info}; color:#fff; padding:12px 20px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); font-family:sans-serif; font-size:14px; font-weight:bold; opacity:0; transform:translateX(50px); transition:all 0.3s ease;`;
+    toast.innerHTML = message;
+    
+    container.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(0)'; });
+    
+    setTimeout(() => {
+        toast.style.opacity = '0'; toast.style.transform = 'translateX(50px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+/* ================= MODUL ESTAFET, AUDIO & DELAY ================= */
 function randomJeda(min, max) { 
-    if(!max) max = min + 300; // Jeda acak +300ms dari waktu asli
+    if(!max) max = min + 300; 
     return new Promise(r => setTimeout(r, Math.random() * (max - min) + min)); 
 }
 
-// 2. Synthesizer Suara Tanpa File MP3 (Bebas Error CORS)
 function playSound(type) {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -33,7 +80,6 @@ function playSound(type) {
     } catch(e) {}
 }
 
-// 3. Radar Deteksi Umur (Untuk Cabang Anak / Dewasa)
 function getKategoriUmur(tglLahir) {
     if (!tglLahir) return 'dewasa';
     let p = tglLahir.split(/[-/]/);
@@ -42,28 +88,17 @@ function getKategoriUmur(tglLahir) {
 }
     
 /* ================= MODE CKG UMUM ================= */
-
 const SHEETS = [{
     id: "1zOX229-nq8n0-jCSTMEL1r4CVqW_hYctcpo-5pgjY_E",
     gids: ["484052211"],
-    colNama: 5,
-    colTgl: 8,
-    colWA: 23,
-    colJK: 6,
-    colPekerjaan: 12,
-    colKelurahan: 20,
-    colAlamat: 17,
-    colMartial: 13,
-    waStatis: true
+    colNama: 5, colTgl: 8, colWA: 23, colJK: 6, colPekerjaan: 12, colKelurahan: 20, colAlamat: 17, colMartial: 13, waStatis: true
 }];
 
-console.log("MODE: CKG UMUM - INDEXEDDB STORAGE ENABLED");
-
 let isProcessing = false;
+let isCancelled = false; // Flag global untuk membatalkan proses
 let loadingEl = null;
 
 /* ================= STORAGE INTERNAL PC (INDEXED DB) ================= */
-// IndexedDB bisa menampung ber-Gigabyte data tanpa limit 64MiB / 5MB
 const DB_NAME = 'CKG_Database_Internal';
 const STORE_NAME = 'SheetCache';
 
@@ -72,9 +107,7 @@ function openDB() {
         let req = indexedDB.open(DB_NAME, 1);
         req.onupgradeneeded = (e) => {
             let db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME);
-            }
+            if (!db.objectStoreNames.contains(STORE_NAME)) { db.createObjectStore(STORE_NAME); }
         };
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
@@ -91,10 +124,7 @@ async function saveInternalDB(key, data) {
             tx.oncomplete = () => resolve(true);
             tx.onerror = () => reject(tx.error);
         });
-    } catch (e) {
-        console.error("Gagal menyimpan ke Internal DB:", e);
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
 async function loadInternalDB(key) {
@@ -105,20 +135,18 @@ async function loadInternalDB(key) {
             let store = tx.objectStore(STORE_NAME);
             let req = store.get(key);
             req.onsuccess = () => resolve(req.result);
-            req.onerror = () => resolve(null); // Jika tidak ada, return null
+            req.onerror = () => resolve(null); 
         });
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
 }
     
 /* ================= LOADING SCREEN ================= */
 function showLoading(text){
-    if(loadingEl) { loadingEl.querySelector('#loadText').innerHTML = text; return; }
-    loadingEl = document.createElement("div");
-    loadingEl.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;color:#00ff88;font-size:20px;font-weight:bold;text-align:center;flex-direction:column;";
-    loadingEl.innerHTML = `<div style="background:#111;padding:30px;border-radius:12px;border:3px solid #00ff88;box-shadow:0 0 20px #00ff88;"><span id="loadText">${text}</span><br><br><div style="margin:auto;border:6px solid #333;border-top:6px solid #00ff88;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;"></div></div>`;
-    document.body.appendChild(loadingEl);
+    if(loadingEl) { loadingEl.querySelector('#loadText').innerHTML = text; return; }
+    loadingEl = document.createElement("div");
+    loadingEl.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;color:#00ff88;font-size:20px;font-weight:bold;text-align:center;flex-direction:column;";
+    loadingEl.innerHTML = `<div style="background:#111;padding:30px;border-radius:12px;border:3px solid #00ff88;box-shadow:0 0 20px #00ff88;"><span id="loadText">${text}</span><br><br><div style="margin:auto;border:6px solid #333;border-top:6px solid #00ff88;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;"></div></div>`;
+    document.body.appendChild(loadingEl);
 }
 function hideLoading(){ if(loadingEl){ loadingEl.remove(); loadingEl = null; } }
 const style = document.createElement('style'); style.innerHTML = `@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`; document.head.appendChild(style);
@@ -127,145 +155,86 @@ const style = document.createElement('style'); style.innerHTML = `@keyframes spi
 const normalizeNIK = v => String(v || "").replace(/\D/g, '');
 
 function sikatReactInput(element, value){
-    if(!element) return;
-    const setter = Object.getOwnPropertyDescriptor(element.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype, 'value').set;
-    if(setter){
-        setter.call(element, value);
-        element.dispatchEvent(new Event('input', { bubbles:true }));
-        element.dispatchEvent(new Event('change', { bubbles:true }));
-    }
+    if(!element) return;
+    const setter = Object.getOwnPropertyDescriptor(element.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype, 'value').set;
+    if(setter){
+        setter.call(element, value);
+        element.dispatchEvent(new Event('input', { bubbles:true }));
+        element.dispatchEvent(new Event('change', { bubbles:true }));
+    }
 }
 
 function forceInject(element, value) {
-    if (!element) return;
-    element.removeAttribute('disabled');
-    element.removeAttribute('readonly');
-    sikatReactInput(element, value);
+    if (!element) return;
+    element.removeAttribute('disabled');
+    element.removeAttribute('readonly');
+    sikatReactInput(element, value);
 }
 
 function getInput(keyword){
-    const inputs = Array.from(document.querySelectorAll("input, textarea"));
-    let target = inputs.find(i => (i.placeholder || "").toLowerCase().includes(keyword.toLowerCase()));
-    if(target) return target;
-    const labels = Array.from(document.querySelectorAll('.ant-form-item-label label'));
-    const label = labels.find(l => l.innerText.toLowerCase().includes(keyword.toLowerCase()));
-    if (label) {
-        const row = label.closest('.ant-form-item');
-        if (row) return row.querySelector('input, textarea');
-    }
-    return null;
+    const inputs = Array.from(document.querySelectorAll("input, textarea"));
+    let target = inputs.find(i => (i.placeholder || "").toLowerCase().includes(keyword.toLowerCase()));
+    if(target) return target;
+    const labels = Array.from(document.querySelectorAll('.ant-form-item-label label'));
+    const label = labels.find(l => l.innerText.toLowerCase().includes(keyword.toLowerCase()));
+    if (label) {
+        const row = label.closest('.ant-form-item');
+        if (row) return row.querySelector('input, textarea');
+    }
+    return null;
 }
 
 async function ultraClick(el){
-    if(!el) return false;
-    const rect = el.getBoundingClientRect();
-    const x = rect.left + rect.width/2;
-    const y = rect.top + rect.height/2;
-    el.scrollIntoView({ behavior:'smooth', block:'center' });
-    await wait(300);
-    ['pointerover','mouseover','mouseenter'].forEach(type=>{
-        el.dispatchEvent(new MouseEvent(type,{ bubbles:true, clientX:x, clientY:y }));
-    });
-    await wait(80);
-    el.dispatchEvent(new PointerEvent('pointerdown',{ bubbles:true, pointerType:'mouse', clientX:x, clientY:y, isPrimary:true }));
-    el.dispatchEvent(new MouseEvent('mousedown',{ bubbles:true, clientX:x, clientY:y }));
-    await wait(120);
-    el.dispatchEvent(new PointerEvent('pointerup',{ bubbles:true, pointerType:'mouse', clientX:x, clientY:y, isPrimary:true }));
-    el.dispatchEvent(new MouseEvent('mouseup',{ bubbles:true, clientX:x, clientY:y }));
-    await wait(50);
-    el.click();
-    return true;
-}
-
-async function waitAndClickText(text, timeout = 30000) {
-
-    const start = Date.now();
-
-    while (Date.now() - start < timeout) {
-
-        const btn = Array.from(
-            document.querySelectorAll('button')
-        ).find(btn =>
-            (btn.innerText || "").includes(text)
-        );
-
-        if (btn) {
-
-            console.log("[BOT] Klik tombol:", text);
-
-            await ultraClick(btn);
-
-            return true;
-        }
-
-        await wait(500);
-    }
-
-    console.log("[BOT] Timeout:", text);
-
-    return false;
+    if(!el) return false;
+    const rect = el.getBoundingClientRect();
+    const x = rect.left + rect.width/2;
+    const y = rect.top + rect.height/2;
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+    await wait(300);
+    ['pointerover','mouseover','mouseenter'].forEach(type=>{
+        el.dispatchEvent(new MouseEvent(type,{ bubbles:true, clientX:x, clientY:y }));
+    });
+    await wait(80);
+    el.dispatchEvent(new PointerEvent('pointerdown',{ bubbles:true, pointerType:'mouse', clientX:x, clientY:y, isPrimary:true }));
+    el.dispatchEvent(new MouseEvent('mousedown',{ bubbles:true, clientX:x, clientY:y }));
+    await wait(120);
+    el.dispatchEvent(new PointerEvent('pointerup',{ bubbles:true, pointerType:'mouse', clientX:x, clientY:y, isPrimary:true }));
+    el.dispatchEvent(new MouseEvent('mouseup',{ bubbles:true, clientX:x, clientY:y }));
+    await wait(50);
+    el.click();
+    return true;
 }
 
 async function prosesVerifikasi() {
-
-    while (true) {
-
-        const pilihText = Array.from(
-            document.querySelectorAll('.tracking-wide')
-        ).find(el =>
-            (el.innerText || "").trim() === "Pilih"
-        );
-        
-        const pilihBtn =
-            pilihText?.closest('.flex.flex-row.justify-center.gap-2') ||
-            pilihText?.parentElement ||
-            pilihText;
-
-        if (pilihBtn) {
-            await ultraClick(pilihBtn);
-            break;
-        }
-
+    while (!isCancelled) {
+        const pilihText = Array.from(document.querySelectorAll('.tracking-wide')).find(el => (el.innerText || "").trim() === "Pilih");
+        const pilihBtn = pilihText?.closest('.flex.flex-row.justify-center.gap-2') || pilihText?.parentElement || pilihText;
+        if (pilihBtn) { await ultraClick(pilihBtn); break; }
         await wait(500);
     }
 
-    console.log("[BOT] Tombol Pilih berhasil diklik");
-
-    while (true) {
-    
-        const daftarBtn = document.querySelector(
-            'button.btn-fill-primary-v2'
-        );
-    
-        if (
-            daftarBtn &&
-            daftarBtn.innerText.includes("Daftarkan dengan NIK")
-        ) {
-    
-            console.log("[BOT] Tombol Daftarkan ditemukan");
-    
+    while (!isCancelled) {
+        const daftarBtn = document.querySelector('button.btn-fill-primary-v2');
+        if (daftarBtn && daftarBtn.innerText.includes("Daftarkan dengan NIK")) {
             await ultraClick(daftarBtn);
-    
             break;
         }
-    
         await wait(500);
     }
-
 }
 
 /* ================= TARIK DATA SPREADSHEET ================= */
 function parseCSV(text){
-    const rows = []; let row = []; let current = ""; let insideQuote = false;
-    for(let i=0;i<text.length;i++){
-        const char = text[i]; const next = text[i+1];
-        if(char === '"'){ if(insideQuote && next === '"'){ current += '"'; i++; }else{ insideQuote = !insideQuote; } }
-        else if(char === ',' && !insideQuote){ row.push(current); current = ""; }
-        else if((char === '\n' || char === '\r') && !insideQuote){ if(current || row.length){ row.push(current); rows.push(row); row = []; current = ""; } }
-        else{ current += char; }
-    }
-    if(current || row.length){ row.push(current); rows.push(row); }
-    return rows;
+    const rows = []; let row = []; let current = ""; let insideQuote = false;
+    for(let i=0;i<text.length;i++){
+        const char = text[i]; const next = text[i+1];
+        if(char === '"'){ if(insideQuote && next === '"'){ current += '"'; i++; }else{ insideQuote = !insideQuote; } }
+        else if(char === ',' && !insideQuote){ row.push(current); current = ""; }
+        else if((char === '\n' || char === '\r') && !insideQuote){ if(current || row.length){ row.push(current); rows.push(row); row = []; current = ""; } }
+        else{ current += char; }
+    }
+    if(current || row.length){ row.push(current); rows.push(row); }
+    return rows;
 }
 
 let cachedSheetDataList = null;
@@ -273,71 +242,46 @@ let cachedSheetDataList = null;
 async function cariData(nikInput) {
     const target = normalizeNIK(nikInput);
 
-    // --- 1. PROSES PENYIAPAN CACHE (INDEXED DB) ---
     if (!cachedSheetDataList) {
         let savedCache = null;
         let cacheTime = 0;
-        const EXPIRATION_TIME = 4 * 60 * 60 * 1000; // Cache bertahan 4 jam
+        const EXPIRATION_TIME = 4 * 60 * 60 * 1000; 
         const now = Date.now();
 
-        // Coba muat dari Internal Storage PC
         const cacheObj = await loadInternalDB('MULTISHEET_DATA');
-        if (cacheObj) {
-            savedCache = cacheObj.data;
-            cacheTime = cacheObj.time || 0;
-        }
+        if (cacheObj) { savedCache = cacheObj.data; cacheTime = cacheObj.time || 0; }
 
-        // Jika cache valid
         if (savedCache && savedCache.length > 0 && (now - cacheTime < EXPIRATION_TIME)) {
-            console.log('[CACHE READY] Memuat data dari Internal PC (Sangat Cepat)...');
             cachedSheetDataList = savedCache;
-        } 
-        // Jika tidak ada cache atau expired, DOWNLOAD
-        else {
-            console.log('[DOWNLOAD] Memulai unduhan ke Database Internal PC...');
+        } else {
             cachedSheetDataList = [];
-
             for (let s = 0; s < SHEETS.length; s++) {
                 const source = SHEETS[s];
                 for (const gid of source.gids) {
-                    console.log(`Download Sheet: ${source.id} | GID: ${gid}`);
                     document.getElementById("infoAI").innerHTML = `<b style="color:#ffcc00;">Mengunduh Database...<br>Mohon tunggu (File Besar)</b>`;
-
                     const csv = await new Promise(resolve => {
                         request({
                             method: "GET", 
                             url: `https://docs.google.com/spreadsheets/d/${source.id}/export?format=csv&gid=${gid}`,
-                            timeout: 60000, // DIPERPANJANG: 60 Detik untuk data besar
+                            timeout: 60000, 
                             onload: r => resolve(r.responseText || ""), 
-                            ontimeout: () => { console.error(`[TIMEOUT] Gagal unduh GID: ${gid}`); resolve(""); },
-                            onerror: () => { console.error(`[ERROR] Gagal unduh GID: ${gid}`); resolve(""); }
+                            ontimeout: () => resolve(""),
+                            onerror: () => resolve("")
                         });
                     });
 
                     if (!csv || csv.trim() === "") continue;
-                    
                     const rows = parseCSV(csv);
-                    // OPTIMASI RAM: Buang baris yang kosong agar tidak membebani memori
                     const cleanRows = rows.filter(row => row.some(cell => String(cell).trim() !== ''));
-
-                    cachedSheetDataList.push({
-                        sheetIndex: s,
-                        rows: cleanRows
-                    });
+                    cachedSheetDataList.push({ sheetIndex: s, rows: cleanRows });
                 }
             }
-
-            console.log('[DOWNLOAD SELESAI] Data berhasil diunduh.');
-
-            // Simpan ke Internal DB PC (Aman dari limit 64MiB)
             if (cachedSheetDataList.length > 0) {
-                const saved = await saveInternalDB('MULTISHEET_DATA', { data: cachedSheetDataList, time: now });
-                if (saved) console.log("[BOT] Data tersimpan aman di Database Internal PC.");
+                await saveInternalDB('MULTISHEET_DATA', { data: cachedSheetDataList, time: now });
             }
         }
     }
 
-    // --- 2. PROSES PENCARIAN NIK ---
     if (!cachedSheetDataList || cachedSheetDataList.length === 0) return null;
 
     for (const cacheItem of cachedSheetDataList) {
@@ -347,148 +291,34 @@ async function cariData(nikInput) {
 
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            
             if (Array.isArray(row) && row.find(col => normalizeNIK(col) === target)) {
                 return {
-                    nik: target,
-                    nama: (row[source.colNama] || "").trim(),
-                    tgl: (row[source.colTgl] || "").trim(),
-                    hp: waD2 || (row[source.colWA] || "").replace(/\D/g,''),
-                    jk: (row[source.colJK] || "").trim(),
-                    alamat: (row[source.colAlamat] || "").trim(),
-                    pekerjaan: (row[source.colPekerjaan] || "").trim(),
-                    kelurahan: (row[source.colKelurahan] || "").trim(),
-                    sekolah: (row[source.colSekolah] || "").trim(),
-                    disabilitas: (row[source.colDisabilitas] || "").trim(),
-                    Martial: (row[source.colMartial] || "").trim(),
+                    nik: target, nama: (row[source.colNama] || "").trim(), tgl: (row[source.colTgl] || "").trim(),
+                    hp: waD2 || (row[source.colWA] || "").replace(/\D/g,''), jk: (row[source.colJK] || "").trim(),
+                    alamat: (row[source.colAlamat] || "").trim(), pekerjaan: (row[source.colPekerjaan] || "").trim(),
+                    kelurahan: (row[source.colKelurahan] || "").trim(), sekolah: (row[source.colSekolah] || "").trim(),
+                    disabilitas: (row[source.colDisabilitas] || "").trim(), Martial: (row[source.colMartial] || "").trim(),
                     kelas: (row[source.colKelas] || "").trim()
                 };
             }
         }
     }
-
-    // Jika pencarian selesai dan NIK tidak ditemukan
     return null;
 }
 
-/* ================= ENGINE VUE DROPDOWN (REVISI KHUSUS) ================= */
-async function clickVueDropdown(placeholderKeyword, valueText) {
-    console.log(`[DEBUG] Mencari kotak: "${placeholderKeyword}"`);
-
-    // 1. Cari kotak trigger berdasarkan placeholder
-    const allDivs = Array.from(document.querySelectorAll('div'));
-    const trigger = allDivs.find(el =>
-        (el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
-        el.className.includes('cursor-pointer') // Memastikan ini adalah kotak dropdown
-    );
-
-    if (!trigger) {
-        console.log(`[DEBUG] ❌ Kotak "${placeholderKeyword}" tidak ditemukan.`);
-        return false;
-    }
-
-    // Klik kotak untuk membuka menu
-    trigger.click();
-    await wait(1000);
-
-    // 2. Cari Opsi dengan metode "Scan Semua Teks"
-    console.log(`[DEBUG] Mencari opsi: "${valueText}"`);
-    let optionFound = false;
-
-    // Kita ambil semua elemen yang mungkin mengandung opsi
-    const allOptions = Array.from(document.querySelectorAll('div'));
-    const targetOption = allOptions.find(el =>
-        (el.innerText || "").trim() === valueText &&
-        el.className.includes('justify-between') // Sesuai dengan struktur inspect Anda
-    );
-
-    if (targetOption) {
-        console.log(`[DEBUG] ✅ Opsi ditemukan! Melakukan klik...`);
-        targetOption.scrollIntoView({ behavior: "smooth", block: "center" });
-        await wait(300);
-
-        // Pemicu klik manual
-        targetOption.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-        targetOption.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-        targetOption.click();
-
-        optionFound = true;
-        await wait(800);
-    } else {
-        console.log(`[DEBUG] ❌ Opsi "${valueText}" tidak ditemukan. Menutup dropdown.`);
-        document.body.click();
-    }
-
-    return optionFound;
-}
-
-/* ================= FUNGSI KHUSUS: STATUS PERNIKAHAN ================= */
-async function fillAndValidate(placeholderKeyword, valueText, isSearchable = false) {
-    console.log(`[BOT] Memproses: ${placeholderKeyword} | Target: ${valueText}`);
-
-    // 1. Cari & Klik Trigger
-    const triggers = Array.from(document.querySelectorAll('div, span'));
-    const trigger = triggers.find(el =>
-        (el.innerText || "").toLowerCase().trim().includes(placeholderKeyword.toLowerCase()) &&
-        (el.className.includes('cursor-pointer') || el.closest('.cursor-pointer'))
-    );
-
-    if (!trigger) {
-        console.error(`[BOT] ❌ Trigger "${placeholderKeyword}" tidak ditemukan!`);
-        return false;
-    }
-
-    await ultraClick(trigger.closest('.cursor-pointer') || trigger);
-    await wait(1200); // Tunggu dropdwon terbuka
-
-    // 2. Jika perlu cari (Pekerjaan)
-    if (isSearchable) {
-        const searchInput = document.querySelector('input[placeholder*="Cari"]');
-        if (searchInput) {
-            forceInject(searchInput, valueText);
-            await wait(2000); // Wajib tunggu API filter website
-        }
-    }
-
-    // 3. Pilih Opsi
-    const allDivs = Array.from(document.querySelectorAll('div'));
-    const targetOption = allDivs.find(el => (el.innerText || "").trim() === valueText);
-
-    if (targetOption) {
-        await ultraClick(targetOption);
-        await wait(1000);
-
-        // 4. VALIDASI (Penting!)
-        // Mengecek apakah teks trigger sekarang sudah berubah menjadi valueText
-        const triggerUpdated = triggers.find(el => (el.innerText || "").trim() === valueText);
-        if (triggerUpdated) {
-            console.log(`[BOT] ✅ Sukses tervalidasi: ${valueText}`);
-            return true;
-        } else {
-            console.warn(`[BOT] ⚠️ Pilihan diklik, tapi sistem tidak merespon. Mencoba ulang...`);
-            return false;
-        }
-    }
-    return false;
-}
-
-/* ================= ENGINE ALAMAT WILAYAH VUE (BARU) ================= */
+/* ================= ENGINE ALAMAT WILAYAH VUE ================= */
 async function setAlamatDomisiliVue() {
-    console.log("[BOT] Menyetel Alamat Domisili Otomatis...");
-    const steps = ["Jawa Barat", "Kota Bandung", "Cibeunying Kidul", "Padasuka"];
-
+    if(isCancelled) return false;
+    const steps = ["Jawa Barat", "Kota Bandung", "Cibeunying Kidul", "Padasuka"];
     const allElements = Array.from(document.querySelectorAll('div, span'));
     const trigger = allElements.find(el => (el.innerText || "").toLowerCase().trim() === "pilih alamat domisili" && el.children.length === 0);
 
     if (!trigger) return false;
     await ultraClick(trigger.closest('.cursor-pointer') || trigger);
-    await wait(1500); // Jeda ekstra untuk memastikan modal terbuka
+    await wait(1500); 
 
-    // Loop berurutan (Provinsi -> Kota -> Kecamatan -> Kelurahan)
     for (const step of steps) {
-        console.log("[BOT] Memilih wilayah:", step);
-        
-        // LAPIS KEAMANAN: Cari input yang ada kata "cari" TAPI BUKAN "pekerjaan"
+        if(isCancelled) return false;
         let searchInput = Array.from(document.querySelectorAll('input')).find(el => {
             const p = (el.placeholder || "").toLowerCase();
             return p.includes("cari") && !p.includes("pekerjaan"); 
@@ -496,11 +326,12 @@ async function setAlamatDomisiliVue() {
 
         if (searchInput) {
             forceInject(searchInput, step);
-            await wait(1500); // Tunggu filter Kemenkes
+            await wait(1500); 
         }
 
         let clicked = false;
         for (let i = 0; i < 15; i++) {
+            if(isCancelled) return false;
             const options = Array.from(document.querySelectorAll('div.flex.items-center.justify-between')).filter(el => (el.innerText || "").trim().toLowerCase() === step.toLowerCase());
             if (options.length > 0) {
                 await ultraClick(options[options.length - 1]);
@@ -510,544 +341,448 @@ async function setAlamatDomisiliVue() {
             }
             await wait(400);
         }
-        if(!clicked) {
-            console.log("[BOT] Gagal di wilayah:", step);
-            break;
-        }
+        if(!clicked) break;
     }
 }
 
-/* ================= EKSEKUSI HALAMAN 2 (VUE VERSION) ================= */
-    async function eksekusiHalamanDua(data) {
-    showLoading("⚡ MENGISI HALAMAN 2... ⚡");
+/* ================= EKSEKUSI HALAMAN 2 ================= */
+async function eksekusiHalamanDua(data) {
+    try {
+        if(isCancelled) return;
+        showLoading("⚡ MENGISI HALAMAN 2... ⚡");
+        await wait(2500);
 
-    // Beri jeda agar halaman selesai dimuat sepenuhnya
-    await wait(2500);
+        // --- 1. STATUS PERNIKAHAN ---
+        let rawPernikahan = (data.Martial || "").trim().toUpperCase();
+        let textToFindPernikahan = "";
+        if (rawPernikahan.includes("BELUM")) { textToFindPernikahan = "Belum Menikah"; } 
+        else if (rawPernikahan.includes("MENIKAH") || rawPernikahan.includes("KAWIN")) { textToFindPernikahan = "Menikah"; } 
+        else if (rawPernikahan.includes("CERAI HIDUP") || rawPernikahan.includes("CERAI_HIDUP") || rawPernikahan.includes("JANDA") || rawPernikahan.includes("DUDA")) { textToFindPernikahan = "Cerai Hidup"; } 
+        else if (rawPernikahan.includes("CERAI MATI") || rawPernikahan.includes("CERAI_MATI")) { textToFindPernikahan = "Cerai Mati"; }
 
-/* ================= ISI STATUS PERNIKAHAN (VUE/TAILWIND LOGIC) ================= */
-console.log("[BOT] Memproses Status Pernikahan:", data.Martial);
-let rawPernikahan = (data.Martial || "").trim().toUpperCase();
-let textToFindPernikahan = "";
+        if (textToFindPernikahan !== "" && !isCancelled) {
+            const allElements = Array.from(document.querySelectorAll('span, div.cursor-pointer, label'));
+            const triggerPernikahan = allElements.find(el => {
+                const txt = (el.innerText || "").toLowerCase().trim();
+                return txt === 'pilih status pernikahan' || txt === 'status pernikahan';
+            });
 
-// Normalisasi data (Pastikan ejaannya sama persis dengan yang muncul di website)
-if (rawPernikahan.includes("BELUM")) {
-    textToFindPernikahan = "Belum Menikah";
-} else if (rawPernikahan.includes("MENIKAH") || rawPernikahan.includes("KAWIN")) {
-    textToFindPernikahan = "Menikah";
-} else if (rawPernikahan.includes("CERAI HIDUP") || rawPernikahan.includes("CERAI_HIDUP") || rawPernikahan.includes("JANDA") || rawPernikahan.includes("DUDA")) {
-    // Janda/Duda otomatis diarahkan ke Cerai Hidup
-    textToFindPernikahan = "Cerai Hidup"; 
-} else if (rawPernikahan.includes("CERAI MATI") || rawPernikahan.includes("CERAI_MATI")) {
-    textToFindPernikahan = "Cerai Mati";
-}
-
-if (textToFindPernikahan !== "") {
-    // Cari container trigger
-    const allElements = Array.from(document.querySelectorAll('span, div.cursor-pointer, label'));
-    const triggerPernikahan = allElements.find(el => {
-        const txt = (el.innerText || "").toLowerCase().trim();
-        return txt === 'pilih status pernikahan' || txt === 'status pernikahan';
-    });
-
-    if (triggerPernikahan) {
-        // Gunakan klik yang sama dengan yang sukses di Jenis Kelamin
-        const clickableTrigger = triggerPernikahan.closest('.cursor-pointer') || triggerPernikahan;
-        await ultraClick(clickableTrigger);
-        await wait(1000);
-
-        let optionFound = false;
-        
-        for (let i = 0; i < 15; i++) {
-        
-            const targetOption = [
-                ...document.querySelectorAll(
-                    '.py-2.px-4.cursor-pointer'
-                )
-            ].find(el =>
-                (el.innerText || '').trim() ===
-                textToFindPernikahan
-            );
-        
-            if (targetOption) {
-        
-                await ultraClick(targetOption);
-        
-                console.log(
-                    "[BOT] Status Pernikahan dipilih:",
-                    textToFindPernikahan
-                );
-        
-                optionFound = true;
+            if (triggerPernikahan) {
+                const clickableTrigger = triggerPernikahan.closest('.cursor-pointer') || triggerPernikahan;
+                await ultraClick(clickableTrigger);
                 await wait(1000);
-                break;
+
+                for (let i = 0; i < 15; i++) {
+                    if(isCancelled) return;
+                    const targetOption = [...document.querySelectorAll('.py-2.px-4.cursor-pointer')].find(el => (el.innerText || '').trim() === textToFindPernikahan);
+                    if (targetOption) {
+                        await ultraClick(targetOption);
+                        await wait(1000);
+                        break;
+                    }
+                    await wait(400);
+                }
             }
-        
-            await wait(400);
         }
-        if (!optionFound) console.log("[BOT] Error: Opsi Status Pernikahan tidak muncul.");
-    } else {
-        console.log("[BOT] Error: Kotak 'Status Pernikahan' tidak ditemukan.");
-    }
-}
 
-/* ================= 2. PEKERJAAN (PENUTUPAN AGRESIF) ================= */
-    console.log("[BOT] Memproses Pekerjaan...");
-    let jobTarget = (data.pekerjaan || data.Pekerjaan || "").trim();
+        // --- 2. PEKERJAAN ---
+        let jobTarget = (data.pekerjaan || data.Pekerjaan || "").trim();
+        if (jobTarget && !isCancelled) {
+            const allElements = Array.from(document.querySelectorAll('div, span'));
+            const triggerDiv = allElements.find(el => {
+                const txt = (el.innerText || "").toLowerCase().trim(); 
+                const rect = el.getBoundingClientRect();
+                return txt === "pilih pekerjaan" && el.children.length === 0 && rect.width > 0;
+            });
 
-    if (jobTarget) {
-        // 1. CARI KOTAK PEMICU (HANYA YANG TERLIHAT DI LAYAR)
-        const allElements = Array.from(document.querySelectorAll('div, span'));
-        const triggerDiv = allElements.find(el => {
-            const txt = (el.innerText || "").toLowerCase().trim(); 
-            const rect = el.getBoundingClientRect();
-            return txt === "pilih pekerjaan" && el.children.length === 0 && rect.width > 0;
-        });
-
-        if (triggerDiv) {
-            console.log("[BOT] Kotak Pekerjaan VALID ditemukan! Membuka modal...");
-            const clickableArea = triggerDiv.closest('.cursor-pointer') || triggerDiv;
-            clickableArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            await wait(800);
-            await ultraClick(clickableArea);
-            await wait(1500); 
-
-            // 2. TEMBAK KE KOLOM PENCARIAN (AGAR TERSORTIR)
-            const searchInput = document.querySelector('input[placeholder="Cari pekerjaan"]');
-            if (searchInput) {
-                console.log(`[BOT] Mengetik "${jobTarget}" untuk menyortir...`);
-                searchInput.focus(); 
-                forceInject(searchInput, jobTarget);
-                searchInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+            if (triggerDiv) {
+                const clickableArea = triggerDiv.closest('.cursor-pointer') || triggerDiv;
+                clickableArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                await wait(800);
+                await ultraClick(clickableArea);
                 await wait(1500); 
-            } else {
-                console.log("[BOT] ⚠️ Kolom 'Cari pekerjaan' tidak muncul. (Fallback klik ulang)");
-                clickableArea.click();
-                await wait(1500);
-            }
 
-            // 3. AMBIL DAN KLIK HASIL YANG SUDAH TERSORTIR
-            let found = false;
-            const optionDivs = Array.from(document.querySelectorAll('.modal-content div.flex.items-center.justify-between'));
-            
-            for (let el of optionDivs) {
-                let text = (el.innerText || "").trim().toLowerCase();
-                if (text === jobTarget.toLowerCase() || text.includes(jobTarget.toLowerCase())) {
-                    const parentBtn = el.closest('button');
-                    if (parentBtn) {
-                        console.log(`[BOT] ✅ Pekerjaan ditemukan: "${text}". Mengeklik...`);
-                        parentBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        await wait(500);
-                        
-                        await ultraClick(parentBtn);
-                        found = true;
-                        await wait(1000); 
-                        break; 
+                const searchInput = document.querySelector('input[placeholder="Cari pekerjaan"]');
+                if (searchInput) {
+                    searchInput.focus(); 
+                    forceInject(searchInput, jobTarget);
+                    searchInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                    await wait(1500); 
+                }
+
+                const optionDivs = Array.from(document.querySelectorAll('.modal-content div.flex.items-center.justify-between'));
+                for (let el of optionDivs) {
+                    if(isCancelled) return;
+                    let text = (el.innerText || "").trim().toLowerCase();
+                    if (text === jobTarget.toLowerCase() || text.includes(jobTarget.toLowerCase())) {
+                        const parentBtn = el.closest('button');
+                        if (parentBtn) {
+                            parentBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            await wait(500);
+                            await ultraClick(parentBtn);
+                            await wait(1000); 
+                            break; 
+                        }
                     }
                 }
-            }
 
-            if (!found) {
-                console.log(`[BOT] ⚠️ Pekerjaan "${jobTarget}" tidak ada di pilihan.`);
-            }
-
-            // 4. PENUTUPAN MODAL AGRESIF (ACTIVE WAIT)
-            console.log("[BOT] Memastikan modal pekerjaan mati & tertutup...");
-            let cekModal = 0;
-            // Looping akan menahan script selama input 'Cari pekerjaan' masih terdeteksi di layar
-            while(document.querySelector('input[placeholder="Cari pekerjaan"]') && cekModal < 8) {
-                // Coba cari tombol X (Close) pada modal lalu klik
-                const closeBtn = document.querySelector('.modal-content header button');
-                if (closeBtn) {
-                    await ultraClick(closeBtn);
-                } else {
-                    document.body.click(); // Klik di area kosong sebagai cadangan
+                let cekModal = 0;
+                while(document.querySelector('input[placeholder="Cari pekerjaan"]') && cekModal < 8 && !isCancelled) {
+                    const closeBtn = document.querySelector('.modal-content header button');
+                    if (closeBtn) await ultraClick(closeBtn);
+                    else document.body.click();
+                    await wait(500);
+                    cekModal++;
                 }
-                await wait(500);
-                cekModal++;
             }
-            console.log("[BOT] Modal pekerjaan berhasil diamankan.");
-            
-        } else {
-            console.log("[BOT] ❌ Kotak 'Pilih pekerjaan' yang aktif tidak ditemukan.");
         }
-    }
-    
-    // Jeda final sebelum Domisili
-    await wait(1500);
-
-    /* ================= 3. ALAMAT DOMISILI ================= */
-    console.log("[BOT] Memproses Domisili...");
-    showLoading("⚡ MENCARI WILAYAH PADASUKA... ⚡");
-    await setAlamatDomisiliVue();
-
-    // WAJIB: Berikan jeda krusial setelah API wilayah selesai
-    await wait(2000);
-
-    /* ================= 4. DETAIL DOMISILI ================= */
-    console.log("[BOT] Mengisi Detail Alamat...");
-    showLoading("⚡ MENYUNTIKKAN DETAIL ALAMAT... ⚡");
-    let inpAlamat = document.getElementById('detail-domisili') || document.querySelector('textarea[placeholder*="Jl. Kenanga"]');
-
-    if(inpAlamat){
-        inpAlamat.scrollIntoView({ behavior:"smooth", block:"center" });
-        await wait(500);
-
-        let alamatTarget = data.alamat || "-";
-        forceInject(inpAlamat, alamatTarget);
-
-        await wait(500);
-        inpAlamat.dispatchEvent(new Event('input', { bubbles:true }));
-        inpAlamat.dispatchEvent(new Event('change', { bubbles:true }));
-        inpAlamat.blur();
-        console.log("[BOT] Detail alamat terisi.");
-    }
-
-hideLoading();
-
-console.log("[BOT] Halaman 2 selesai diproses.");
-console.log("[BOT] Menunggu user melengkapi data...");
-
-document.getElementById("infoAI").innerHTML += `
-<div style="
-    margin-top:8px;
-    padding:6px;
-    background:#222;
-    border-radius:5px;
-    color:#ffcc00;
-">
-⏳ Menunggu tombol Selanjutnya aktif...
-</div>
-`;
-
-let counter = 0;
         
-while(true){
+        await wait(1500);
 
-    const btnNext2 = Array.from(
-        document.querySelectorAll("button")
-    ).find(btn => {
+        // --- 3. ALAMAT DOMISILI ---
+        if(!isCancelled) {
+            showLoading("⚡ MENCARI WILAYAH PADASUKA... ⚡");
+            await setAlamatDomisiliVue();
+            await wait(2000);
+        }
 
-        const txt = (btn.innerText || "").trim();
+        // --- 4. DETAIL DOMISILI ---
+        if(!isCancelled) {
+            showLoading("⚡ MENYUNTIKKAN DETAIL ALAMAT... ⚡");
+            let inpAlamat = document.getElementById('detail-domisili') || document.querySelector('textarea[placeholder*="Jl. Kenanga"]');
 
-        return (
-            txt === "Selanjutnya" &&
-            !btn.disabled &&
-            btn.offsetParent !== null
-        );
+            if(inpAlamat){
+                inpAlamat.scrollIntoView({ behavior:"smooth", block:"center" });
+                await wait(500);
+                forceInject(inpAlamat, data.alamat || "-");
+                await wait(500);
+                inpAlamat.blur();
+            }
+        }
 
-    });
+        hideLoading();
 
-    if(btnNext2){
+        // --- 5. MENUNGGU NEXT ---
+        if(!isCancelled) {
+            document.getElementById("infoAI").innerHTML += `<div id="status-wait-next" style="margin-top:8px; padding:6px; background:#222; border-radius:5px; color:#ffcc00;">⏳ Menunggu tombol Selanjutnya aktif...</div>`;
+            
+            while(!isCancelled){
+                const btnNext2 = Array.from(document.querySelectorAll("button")).find(btn => {
+                    const txt = (btn.innerText || "").trim();
+                    return (txt === "Selanjutnya" && !btn.disabled && btn.offsetParent !== null);
+                });
 
-        console.log("[BOT] Tombol Selanjutnya aktif");
-
-        await ultraClick(btnNext2);
-
-        console.log("[BOT] Menuju halaman verifikasi");
-
-        await wait(3000);
-
-        await prosesVerifikasi();
-
-        break;
+                if(btnNext2){
+                    await ultraClick(btnNext2);
+                    await wait(3000);
+                    await prosesVerifikasi();
+                    break;
+                }
+                await wait(1000);
+            }
+        }
+        
+    } catch (error) {
+        sendBotErrorLog("eksekusiHalamanDua", error.message || error);
+        hideLoading();
+        showToast("Terjadi kendala di Halaman 2.", "warning");
     }
-
-    await wait(1000);
-}
-
 }
 
 /* ================= SISTEM SEMI AUTO-PILOT ================= */
 async function autoPilotSikatHabis(data) {
-    showLoading("⚡ AUTO-PILOT AKTIF ⚡<br><span style='font-size:14px;color:#fff;'>Mengisi NIK...</span>");
+    try {
+        isCancelled = false; // Reset status batal tiap kali bot baru berjalan
+        document.getElementById("btn-batal-ai").style.display = "block"; // Munculkan tombol batal
+        document.getElementById("btn-direct-skrining").style.display = "none"; // Sembunyikan direct sampai sukses
 
-    const btnTambah = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Tambah Baru') || b.innerText.includes('Tambah Peserta'));
-    if (btnTambah && !document.querySelector('.ant-modal-content')) {
-        ultraClick(btnTambah);
-        await wait(1500);
-    }
+        showLoading("⚡ AUTO-PILOT AKTIF ⚡<br><span style='font-size:14px;color:#fff;'>Mengisi NIK...</span>");
 
-    const inpNIK = getInput("nik");
-    if (inpNIK) {
-        forceInject(inpNIK, data.nik);
-        await wait(300);
-        const btnCek = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Cek NIK') || b.innerText.includes('Cari'));
-        if (btnCek) ultraClick(btnCek);
-    }
+        const btnTambah = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Tambah Baru') || b.innerText.includes('Tambah Peserta'));
+        if (btnTambah && !document.querySelector('.ant-modal-content') && !isCancelled) {
+            ultraClick(btnTambah);
+            await wait(1500);
+        }
 
-    showLoading("⏳ Menunggu Dukcapil Mereset Form...");
-    await wait(5000);
-    showLoading("⚡ MENGISI DATA AWAL... ⚡");
+        if(isCancelled) { handlePembatalan(); return; }
 
-    let inpNama = getInput("nama lengkap");
-    if (inpNama) forceInject(inpNama, data.nama);
+        const inpNIK = getInput("nik");
+        if (inpNIK) {
+            forceInject(inpNIK, data.nik);
+            await wait(300);
+            const btnCek = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Cek NIK') || b.innerText.includes('Cari'));
+            if (btnCek && !isCancelled) ultraClick(btnCek);
+        }
 
-    let cleanHP = (data.hp || "").replace(/^0/, "");
-    let inpWA = getInput("whatsapp") || getInput("telepon");
-    if (inpWA) forceInject(inpWA, cleanHP);
+        if(isCancelled) { handlePembatalan(); return; }
+        showLoading("⏳ Menunggu Dukcapil Mereset Form...");
+        await wait(5000);
+        if(isCancelled) { handlePembatalan(); return; }
+        showLoading("⚡ MENGISI DATA AWAL... ⚡");
 
-    /* ================= ISI JK (VUE/TAILWIND DROPDOWN) ================= */
-    console.log("[BOT] Memproses Jenis Kelamin:", data.jk);
-    let rawJK = (data.jk || "").trim().toUpperCase();
-    let textToFindJK = "";
+        let inpNama = getInput("nama lengkap");
+        if (inpNama) forceInject(inpNama, data.nama);
 
-    // Normalisasi kata dari spreadsheet (Menangani L/P, LK/PR, Laki/Perempuan)
-    if (rawJK.includes("LAKI") || rawJK === "L" || rawJK === "LK") {
-        textToFindJK = "Laki-laki";
-    } else if (rawJK.includes("PEREM") || rawJK === "P" || rawJK === "PR" || rawJK.includes("WANITA")) {
-        textToFindJK = "Perempuan";
-    }
+        let cleanHP = (data.hp || "").replace(/^0/, "");
+        let inpWA = getInput("whatsapp") || getInput("telepon");
+        if (inpWA) forceInject(inpWA, cleanHP);
 
-    if (textToFindJK !== "") {
-        // Cari container yang bertuliskan 'jenis kelamin'
-        const allElements = Array.from(document.querySelectorAll('span, div.cursor-pointer, label'));
-        const triggerJK = allElements.find(el => {
-            const txt = (el.innerText || "").toLowerCase().trim();
-            return txt === 'pilih jenis kelamin' || txt === 'jenis kelamin';
-        });
+        // --- ISI JK ---
+        let rawJK = (data.jk || "").trim().toUpperCase();
+        let textToFindJK = "";
+        if (rawJK.includes("LAKI") || rawJK === "L" || rawJK === "LK") { textToFindJK = "Laki-laki"; } 
+        else if (rawJK.includes("PEREM") || rawJK === "P" || rawJK === "PR" || rawJK.includes("WANITA")) { textToFindJK = "Perempuan"; }
 
-        if (triggerJK) {
-            // Gunakan pembungkus (wrapper) terdekat yang bisa diklik
-            const clickableTrigger = triggerJK.closest('.cursor-pointer') || triggerJK;
-            await ultraClick(clickableTrigger);
-            await wait(1000); // Tunggu animasi dropdown muncul di layar
+        if (textToFindJK !== "" && !isCancelled) {
+            const allElements = Array.from(document.querySelectorAll('span, div.cursor-pointer, label'));
+            const triggerJK = allElements.find(el => {
+                const txt = (el.innerText || "").toLowerCase().trim();
+                return txt === 'pilih jenis kelamin' || txt === 'jenis kelamin';
+            });
 
-            // Cari opsi target (Laki-laki / Perempuan)
-            let optionFound = false;
-            for (let i = 0; i < 15; i++) {
-                // Kita cari elemen leaf (tanpa child agar presisi) yang teksnya persis Laki-laki atau Perempuan
-                const possibleOptions = Array.from(document.querySelectorAll('*')).filter(el => {
-                    return (el.innerText || "").trim() === textToFindJK && el.children.length === 0;
-                });
+            if (triggerJK) {
+                const clickableTrigger = triggerJK.closest('.cursor-pointer') || triggerJK;
+                await ultraClick(clickableTrigger);
+                await wait(1000); 
 
-                if (possibleOptions.length > 0) {
-                    // Jika dropdown dirender menggunakan portal (di ujung body HTML), biasanya elemen terakhirlah yang valid/terlihat
-                    const targetOption = possibleOptions[possibleOptions.length - 1];
+                for (let i = 0; i < 15; i++) {
+                    if(isCancelled) return;
+                    const possibleOptions = Array.from(document.querySelectorAll('*')).filter(el => {
+                        return (el.innerText || "").trim() === textToFindJK && el.children.length === 0;
+                    });
+                    if (possibleOptions.length > 0) {
+                        await ultraClick(possibleOptions[possibleOptions.length - 1]);
+                        await wait(800);
+                        break;
+                    }
+                    await wait(400); 
+                }
+            }
+        }
 
-                    // Eksekusi klik pada opsi
-                    await ultraClick(targetOption);
-                    console.log("[BOT] Sukses mengklik Jenis Kelamin:", textToFindJK);
-                    optionFound = true;
-                    await wait(800);
-                    break;
-                }
-                await wait(400); // Looping tiap 0.4 detik jika DOM terlambat muncul
-            }
-            if (!optionFound) console.log("[BOT] Error: Opsi dropdown Jenis Kelamin tidak muncul di layar.");
-        } else {
-            console.log("[BOT] Error: Kotak 'Jenis Kelamin' tidak ditemukan di formulir.");
-        }
-    }
+        // --- ISI TANGGAL ---
+        let tglRaw = data.tgl || "";
+        if (tglRaw.trim() !== "" && !isCancelled) {
+            let parts = tglRaw.split(/[-/]/);
+            if (parts.length === 3) {
+                let yyyy, mm, dd;
+                if (parts[0].length === 4) { yyyy = parts[0]; mm = parts[1]; dd = parts[2]; }
+                else { dd = parts[0]; mm = parts[1]; yyyy = parts[2]; }
 
-    /* ================= ISI TANGGAL (VUE2-DATEPICKER) ================= */
-    let tglRaw = data.tgl || "";
-    if (tglRaw.trim() !== "") {
-        let parts = tglRaw.split(/[-/]/);
-        if (parts.length === 3) {
-            let yyyy, mm, dd;
-            if (parts[0].length === 4) { yyyy = parts[0]; mm = parts[1]; dd = parts[2]; }
-            else { dd = parts[0]; mm = parts[1]; yyyy = parts[2]; }
+                const targetDay = parseInt(dd, 10).toString();
+                const targetMonthIdx = parseInt(mm, 10) - 1;
+                const targetYear = yyyy;
 
-            const targetDay = parseInt(dd, 10).toString();
-            const targetMonthIdx = parseInt(mm, 10) - 1;
-            const targetYear = yyyy;
+                const wrappers = Array.from(document.querySelectorAll('.mx-input-wrapper'));
+                const targetWrapper = wrappers.find(w => w.innerText.toLowerCase().includes('tanggal lahir'));
 
-            const wrappers = Array.from(document.querySelectorAll('.mx-input-wrapper'));
-            const targetWrapper = wrappers.find(w => w.innerText.toLowerCase().includes('tanggal lahir'));
+                if (targetWrapper) {
+                    await ultraClick(targetWrapper);
+                    await wait(800);
 
-            if (targetWrapper) {
-                await ultraClick(targetWrapper);
-                await wait(800);
+                    const btnYear = document.querySelector('.mx-btn-current-year');
+                    if (btnYear) {
+                        await ultraClick(btnYear);
+                        await wait(600);
+                        for (let i = 0; i < 15; i++) {
+                            if(isCancelled) return;
+                            const yearCells = Array.from(document.querySelectorAll('.mx-table-year td'));
+                            const cell = yearCells.find(c => c.innerText.trim() === targetYear);
+                            if (cell) { await ultraClick(cell); await wait(600); break; }
+                            else {
+                                const btnPrev = document.querySelector('.mx-btn-icon-double-left') || document.querySelector('.mx-icon-double-left')?.closest('button');
+                                if (btnPrev) { await ultraClick(btnPrev); await wait(500); }
+                                else break;
+                            }
+                        }
+                    }
 
-                const btnYear = document.querySelector('.mx-btn-current-year');
-                if (btnYear) {
-                    await ultraClick(btnYear);
-                    await wait(600);
-                    for (let i = 0; i < 15; i++) {
-                        const yearCells = Array.from(document.querySelectorAll('.mx-table-year td'));
-                        const cell = yearCells.find(c => c.innerText.trim() === targetYear);
-                        if (cell) { await ultraClick(cell); await wait(600); break; }
-                        else {
-                            const btnPrev = document.querySelector('.mx-btn-icon-double-left') || document.querySelector('.mx-icon-double-left')?.closest('button');
-                            if (btnPrev) { await ultraClick(btnPrev); await wait(500); }
-                            else break;
-                        }
-                    }
-                }
+                    if (document.querySelectorAll('.mx-table-month td').length === 0 && !isCancelled) {
+                        const btnMonth = document.querySelector('.mx-btn-current-month');
+                        if (btnMonth) { await ultraClick(btnMonth); await wait(600); }
+                    }
 
-                if (document.querySelectorAll('.mx-table-month td').length === 0) {
-                    const btnMonth = document.querySelector('.mx-btn-current-month');
-                    if (btnMonth) { await ultraClick(btnMonth); await wait(600); }
-                }
+                    const monthCells = Array.from(document.querySelectorAll('.mx-table-month td'));
+                    if (monthCells.length > targetMonthIdx && !isCancelled) { await ultraClick(monthCells[targetMonthIdx]); await wait(600); }
 
-                const monthCells = Array.from(document.querySelectorAll('.mx-table-month td'));
-                if (monthCells.length > targetMonthIdx) { await ultraClick(monthCells[targetMonthIdx]); await wait(600); }
+                    const dateCells = Array.from(document.querySelectorAll('.mx-table-date td:not(.not-current-month):not(.out-in)'));
+                    const dayCell = dateCells.find(c => c.innerText.trim() === targetDay);
+                    if (dayCell && !isCancelled) { await ultraClick(dayCell); await wait(800); }
+                }
+            }
+        }
 
-                const dateCells = Array.from(document.querySelectorAll('.mx-table-date td:not(.not-current-month):not(.out-in)'));
-                const dayCell = dateCells.find(c => c.innerText.trim() === targetDay);
-                if (dayCell) { await ultraClick(dayCell); await wait(800); }
-            }
-        }
-    }
+        if(isCancelled) { handlePembatalan(); return; }
+        hideLoading();
+        showToast("Halaman 1 selesai diisi otomatis!", "success");
+        
+        document.getElementById("infoAI").innerHTML = `
+            <div style="background:#00ff88; color:#000; padding:8px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:8px;">
+                ✅ HALAMAN 1 OTOMATIS
+            </div>
+            <div style="background:#222; border:1px solid #555; padding:8px; border-radius:5px; font-size:12px; line-height:1.7;">
+                • Nama: <b style="color:#00ff88;">${data.nama || '-'}</b><br>
+                • Tgl: <b style="color:#00ff88;">${data.tgl || '-'}</b><br>
+            </div>
+        `;
 
-/* ================= INFO UI ================= */
-hideLoading();
-document.getElementById("infoAI").innerHTML = `
-    <div style="background:#00ff88; color:#000; padding:8px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:8px;">
-        ✅ HALAMAN 1 OTOMATIS
-    </div>
-    <div style="background:#222; border:1px solid #555; padding:8px; border-radius:5px; font-size:12px; line-height:1.7;">
-        <b>📌 DATA TERISI:</b><br><br>
-        • Nama: <b style="color:#00ff88;">${data.nama || '-'}</b><br>
-        • Tgl: <b style="color:#00ff88;">${data.tgl || '-'}</b><br>
-        • JK: <b style="color:#00ff88;">${data.jk || '-'}</b><br>
-        • Status: <b style="color:#00ff88;">${data.Martial || '-'}</b><br>
-        • Pekerjaan: <b style="color:#00ff88;">${data.pekerjaan || '-'}</b><br>
-        • Kelurahan: <b style="color:#00ff88;">Padasuka (HARDCODE)</b><br>
-        • Alamat: <div style="color:#00ff88; margin-top:3px; background:#111; padding:6px; border-radius:5px; border:1px solid #333; word-break:break-word; max-height:65px; overflow:auto;">${data.alamat || '-'}</div>
-    </div>
-    <div style="margin-top:8px; font-size:11px; color:#aaa; text-align:center;">
-        Bot memantau tombol <b>'Selanjutnya'</b>...
-    </div>
-`;
+        // --- AUTO NEXT ---
+        let btnLanjut = null;
+        while(!isCancelled){
+            btnLanjut = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Selanjutnya'));
+            if(btnLanjut && !btnLanjut.disabled && !btnLanjut.classList.contains('ant-btn-disabled')) { break; }
+            await wait(500);
+        }
 
-/* ================= AUTO NEXT ================= */
-let btnLanjut = null;
+        if(isCancelled) { handlePembatalan(); return; }
+        await ultraClick(btnLanjut);
 
-while(true){
+        while(!isCancelled){
+            const lanjutBtn = Array.from(document.querySelectorAll('button.btn-fill-primary')).find(btn => (btn.innerText || "").includes("Lanjutkan"));
+            if(lanjutBtn){ await ultraClick(lanjutBtn); break; }
+            await wait(500);
+        }
 
-    btnLanjut = Array.from(
-        document.querySelectorAll('button')
-    ).find(
-        b => b.innerText.includes('Selanjutnya')
-    );
+        // --- HALAMAN 2 ---
+        if(!isCancelled) await eksekusiHalamanDua(data);
+        if(isCancelled) { handlePembatalan(); return; }
+            
+        // --- TRIGGER ESTAFET & SMART PAUSE ---
+        let kategori = getKategoriUmur(data.tgl);
+        try { 
+            GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: data.nik, kategori: kategori })); 
+        } catch(e) { 
+            localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: data.nik, kategori: kategori })); 
+        }
+            
+        playSound('sukses');
+        
+        // Setup UI saat Sukses Berhasil Terdaftar
+        document.getElementById("btn-batal-ai").style.display = "none";
+        document.getElementById("btn-direct-skrining").style.display = "block";
+        document.getElementById("infoAI").innerHTML = `
+            <div style="background:#00ff88; color:#000; padding:8px; border-radius:5px; text-align:center; font-weight:bold;">
+                🎉 TERDAFTAR SUKSES!
+            </div>
+            <p style="font-size:11px; color:#aaa; text-align:center; margin-top:5px;">Silakan klik tombol di bawah untuk langsung eksekusi skrining mandiri.</p>
+        `;
 
-    if(
-        btnLanjut &&
-        !btnLanjut.disabled &&
-        !btnLanjut.classList.contains('ant-btn-disabled')
-    ){
-        break;
+        showLoading("✅ PENDAFTARAN SELESAI!<br><span style='font-size:15px;color:#fff;'>Data tersimpan di Estafet.<br>Siap eksekusi Skrining!</span>");
+        await wait(3000);
+        hideLoading();
+
+    } catch (err) {
+        sendBotErrorLog("autoPilotSikatHabis", err.message || err);
+        hideLoading();
+        showToast("Terjadi kendala sistem.", "error");
     }
-
-    await wait(500);
 }
 
-await ultraClick(btnLanjut);
-
-console.log("[BOT] Menunggu popup Lanjutkan...");
-
-while(true){
-
-    const lanjutBtn = Array.from(
-        document.querySelectorAll('button.btn-fill-primary')
-    ).find(btn =>
-        (btn.innerText || "").includes("Lanjutkan")
-    );
-
-    if(lanjutBtn){
-
-        console.log("[BOT] Popup validasi ditemukan");
-
-        await ultraClick(lanjutBtn);
-
-        break;
-    }
-
-    await wait(500);
-}
-
-/* ================= HALAMAN 2 ================= */
-    await eksekusiHalamanDua(data);
-    
-// --- TRIGGER ESTAFET & SMART PAUSE ---
-    let kategori = getKategoriUmur(data.tgl);
-    try { 
-        GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: data.nik, kategori: kategori })); 
-    } catch(e) { 
-        localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: data.nik, kategori: kategori })); 
-    }
-    
-    playSound('sukses');
-    showLoading("✅ PENDAFTARAN SELESAI!<br><span style='font-size:15px;color:#fff;'>Data tersimpan di Estafet.<br>Silakan konfirmasi kehadiran dan buka halaman Skrining/Input.</span>");
-    
-    await wait(4000);
+function handlePembatalan() {
     hideLoading();
+    isProcessing = false;
+    document.getElementById("btn-batal-ai").style.display = "none";
+    document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">❌ Proses Dihentikan Paksa!</b>`;
+    showToast("Otomatisasi dibatalkan oleh pengguna.", "warning");
 }
 
 /* ================= UI KONTROL & DRAGGABLE LOGIC ================= */
 function initUI(){
-    if(document.getElementById("reg-ckg-ai-box")) return;
+    if(document.getElementById("reg-ckg-ai-box")) return;
 
-    const box = document.createElement("div");
-    box.id = "reg-ckg-ai-box";
-    box.style = "position:fixed;top:150px;right:20px;background:#111;color:#fff;padding:15px;border-radius:12px;z-index:99999;width:270px;font-family:sans-serif;box-shadow:0 0 15px #00ff88; border: 2px solid #222;";
+    const box = document.createElement("div");
+    box.id = "reg-ckg-ai-box";
+    box.style = "position:fixed;top:150px;right:20px;background:#111;color:#fff;padding:15px;border-radius:12px;z-index:99999;width:270px;font-family:sans-serif;box-shadow:0 0 15px #00ff88; border: 2px solid #222;";
 
-    box.innerHTML = `
-        <div id="dragHeader" style="text-align:center; margin-bottom:10px; cursor:move; background:#222; padding:8px; border-radius:8px; border:1px solid #444;" title="Klik dan tahan untuk menggeser bot">
-            <b style="color:#00ff88; font-size:16px;">Register CKG</b><br>
-            <span style="font-size:10px; color:#aaa; letter-spacing:1px;">UPTD Puskesmas Padasuka</span>
-        </div>
-        <div style="background:#222; padding:10px; border-radius:8px; text-align:center; margin-bottom:10px; border:1px solid #444;">
-            <b style="color:#ffcc00; font-size:11px;">⚡ TEMPEL/SCAN NIK DI SINI ⚡</b><br>
-            <input id="nikAI" placeholder="16 Digit NIK..." style="width:90%; margin-top:8px; padding:8px; border-radius:5px; background:#000; color:#00ff88; font-weight:bold; text-align:center; border:1px solid #00ff88; outline:none;">
-        </div>
-        <div id="infoAI" style="font-size:12px; line-height:1.5; color:#ccc;">
-            Status: <b style="color:#00ff88;">Siaga. Menunggu NIK...</b>
-        </div>
-    `;
-    document.body.appendChild(box);
+    box.innerHTML = `
+        <div id="dragHeader" style="text-align:center; margin-bottom:10px; cursor:move; background:#222; padding:8px; border-radius:8px; border:1px solid #444;">
+            <b style="color:#00ff88; font-size:16px;">Register CKG</b><br>
+            <span style="font-size:10px; color:#aaa; letter-spacing:1px;">UPTD Puskesmas Padasuka</span>
+        </div>
+        <div style="background:#222; padding:10px; border-radius:8px; text-align:center; margin-bottom:10px; border:1px solid #444;">
+            <b style="color:#ffcc00; font-size:11px;">⚡ TEMPEL/SCAN NIK DI SINI ⚡</b><br>
+            <input id="nikAI" placeholder="16 Digit NIK..." style="width:90%; margin-top:8px; padding:8px; border-radius:5px; background:#000; color:#00ff88; font-weight:bold; text-align:center; border:1px solid #00ff88; outline:none;">
+        </div>
+        <div id="infoAI" style="font-size:12px; line-height:1.5; color:#ccc; margin-bottom:10px;">
+            Status: <b style="color:#00ff88;">Siaga. Menunggu NIK...</b>
+        </div>
+        
+        <button id="btn-batal-ai" style="display:none; width:100%; padding:10px; background:#ef4444; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:5px; box-shadow:0 2px 5px rgba(0,0,0,0.3);">🛑 BATALKAN PROSES</button>
+        <button id="btn-direct-skrining" style="display:none; width:100%; padding:11px; background:#10b981; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer; box-shadow:0 0 10px #10b981;">⏩ DIRECT KE SKRINING</button>
+    `;
+    document.body.appendChild(box);
 
-    const dragHeader = document.getElementById("dragHeader");
-    let isDraggingBox = false;
-    let offsetX, offsetY;
+    // Draggable Engine
+    const dragHeader = document.getElementById("dragHeader");
+    let isDraggingBox = false;
+    let offsetX, offsetY;
 
-    dragHeader.addEventListener('mousedown', function(e) {
-        isDraggingBox = true;
-        offsetX = e.clientX - box.getBoundingClientRect().left;
-        offsetY = e.clientY - box.getBoundingClientRect().top;
-        box.style.opacity = "0.8";
-    });
+    dragHeader.addEventListener('mousedown', function(e) {
+        isDraggingBox = true;
+        offsetX = e.clientX - box.getBoundingClientRect().left;
+        offsetY = e.clientY - box.getBoundingClientRect().top;
+        box.style.opacity = "0.8";
+    });
 
-    document.addEventListener('mousemove', function(e) {
-        if (isDraggingBox) {
-            box.style.right = 'auto';
-            box.style.bottom = 'auto';
-            box.style.left = (e.clientX - offsetX) + 'px';
-            box.style.top = (e.clientY - offsetY) + 'px';
-        }
-    });
+    document.addEventListener('mousemove', function(e) {
+        if (isDraggingBox) {
+            box.style.right = 'auto'; box.style.bottom = 'auto';
+            box.style.left = (e.clientX - offsetX) + 'px';
+            box.style.top = (e.clientY - offsetY) + 'px';
+        }
+    });
 
-    document.addEventListener('mouseup', function() {
-        if (isDraggingBox) {
-            isDraggingBox = false;
-            box.style.opacity = "1";
-        }
-    });
+    document.addEventListener('mouseup', function() {
+        if (isDraggingBox) { isDraggingBox = false; box.style.opacity = "1"; }
+    });
 
-    document.getElementById("nikAI").addEventListener('input', async (e) => {
-        let val = e.target.value.replace(/\D/g, '');
-        if (val.length === 16 && !isProcessing) {
-            isProcessing = true;
-            document.getElementById("infoAI").innerHTML = `<b style="color:#ffcc00;">Mencari NIK: ${val}...</b>`;
+    // Event Klik Tombol Batal
+    document.getElementById("btn-batal-ai").onclick = () => {
+        isCancelled = true;
+        handlePembatalan();
+    };
 
-            try {
-                let data = await cariData(val);
-                if (data) {
-                    await autoPilotSikatHabis(data);
-                } else {
-                    document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">Data NIK ${val} tidak ditemukan!</b>`;
-                }
-            } catch (err) {
-                console.log("[BOT ERROR]", err);
-                hideLoading();
-                document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">Terjadi Kendala. Coba lagi!</b>`;
-            } finally {
-                e.target.value = "";
-                isProcessing = false;
-            }
-        }
-    });
+    // Event Klik Tombol Direct Skrining
+    document.getElementById("btn-direct-skrining").onclick = () => {
+        try {
+            // Set CKG_MODE ke modus skrining agar Launcher memicu modul skrining secara otomatis saat reload
+            if (typeof GM_setValue !== "undefined") {
+                GM_setValue('CKG_MODE', 'skrining');
+            } else {
+                localStorage.setItem('CKG_MODE', 'skrining');
+            }
+            showToast("Beralih ke Modul Skrining Mandiri...", "success");
+            setTimeout(() => { window.location.reload(); }, 800);
+        } catch(e) {
+            alert("Gagal melakukan direct. Silahkan refresh dan pilih modul manual via launcher launcher.");
+        }
+    };
+
+    // Event Input Scanner NIK
+    document.getElementById("nikAI").addEventListener('input', async (e) => {
+        let val = e.target.value.replace(/\D/g, '');
+        if (val.length === 16 && !isProcessing) {
+            isProcessing = true;
+            document.getElementById("infoAI").innerHTML = `<b style="color:#ffcc00;">Mencari NIK: ${val}...</b>`;
+
+            try {
+                let data = await cariData(val);
+                if (data) {
+                    await autoPilotSikatHabis(data);
+                } else {
+                    showToast(`Data NIK ${val} tidak ditemukan!`, "error");
+                    document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">Data NIK ${val} tidak ditemukan!</b>`;
+                }
+            } catch (err) {
+                sendBotErrorLog("Pencarian_NIK", err.message || err);
+                hideLoading();
+                document.getElementById("infoAI").innerHTML = `<b style="color:#ff3333;">Terjadi Kendala. Coba lagi!</b>`;
+            } finally {
+                e.target.value = "";
+                isProcessing = false;
+            }
+        }
+    });
 }
 setTimeout(initUI, 1500);
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
