@@ -3,6 +3,58 @@
     const request = GM_xmlhttpRequest;
 
 /* =========================================================
+   [EXPERT FEATURE] 1. SISTEM TELEMETRI & ERROR LOGGING
+========================================================= */
+function sendBotErrorLog(context, errorMessage) {
+    try {
+        const deviceId = localStorage.getItem("CKG_DEVICE_ID") || "Unknown_Device";
+        const payload = {
+            fields: {
+                timestamp: { stringValue: new Date().toISOString() },
+                device: { stringValue: deviceId },
+                module: { stringValue: "SKRINING_MANDIRI_BOT" },
+                context: { stringValue: context },
+                message: { stringValue: String(errorMessage) }
+            }
+        };
+        request({
+            method: "POST",
+            url: "https://firestore.googleapis.com/v1/projects/jadwal-daily-pkm-padasuka/databases/(default)/documents/Customer/Padasuka/error_logs",
+            headers: { "Content-Type": "application/json" },
+            data: JSON.stringify(payload)
+        });
+        console.warn(`[TELEMETRI] Error log dikirim ke server: ${context}`);
+    } catch(e) { }
+}
+
+/* =========================================================
+   [EXPERT FEATURE] 2. TOAST NOTIFICATION (NON-BLOCKING UI)
+========================================================= */
+function showToast(message, type = 'info') {
+    const toastId = 'ckg-toast-container';
+    let container = document.getElementById(toastId);
+    if (!container) {
+        container = document.createElement('div');
+        container.id = toastId;
+        container.style = "position:fixed; top:20px; right:20px; z-index:999999; display:flex; flex-direction:column; gap:10px; pointer-events:none;";
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    const bgColors = { info: '#3b82f6', success: '#10b981', error: '#ef4444', warning: '#f59e0b' };
+    toast.style = `background:${bgColors[type] || bgColors.info}; color:#fff; padding:12px 20px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); font-family:sans-serif; font-size:14px; font-weight:bold; opacity:0; transform:translateX(50px); transition:all 0.3s ease; pointer-events:auto;`;
+    toast.innerHTML = message;
+    
+    container.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(0)'; });
+    
+    setTimeout(() => {
+        toast.style.opacity = '0'; toast.style.transform = 'translateX(50px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 4500);
+}
+
+/* =========================================================
    MODUL AUDIO & DELAY
 ========================================================= */
 const sleep = ms => new Promise(r => setTimeout(r,ms));
@@ -17,6 +69,12 @@ function playSound(type) {
             osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
             gain.gain.setValueAtTime(0.5, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
             osc.start(); osc.stop(ctx.currentTime + 0.5);
+        } else if (type === 'selesai') { 
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, ctx.currentTime); 
+            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.2); 
+            osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.4); 
+            gain.gain.setValueAtTime(0.5, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+            osc.start(); osc.stop(ctx.currentTime + 1);
         }
     } catch(e) {}
 }
@@ -40,18 +98,16 @@ function jawabanMerokok(v){
 ========================================================= */
 function saveBOT(data) { 
     GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); 
-    GM_setValue('LAST_USED_NIK', data.nik); // Menyimpan NIK terakhir agar tombol Estafet tidak hilang
+    GM_setValue('LAST_USED_NIK', data.nik); 
 }
 function loadBOT() { 
     const raw = GM_getValue('AUTO_SKRINING_DATA'); 
-    if(!raw || raw === '') return null; // Cegah ghost data
+    if(!raw || raw === '') return null; 
     try { return JSON.parse(raw); } catch(e) { return null; }
 }
 function clearBOT() { 
-    GM_setValue('AUTO_SKRINING_DATA', ''); // Paksa kosongkan sebelum delete
+    GM_setValue('AUTO_SKRINING_DATA', ''); 
     GM_deleteValue('AUTO_SKRINING_DATA'); 
-    // PERBAIKAN: GM_deleteValue('CKG_MODE') TELAH DIHAPUS DARI SINI
-    // Agar saat reset pasien, bot tidak mati total dan hilang.
 }
 
 function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
@@ -83,7 +139,6 @@ function parseCSV(text) {
 }
 
 let cachedSheetData = null;
-
 const DB_NAME = 'CKG_Database';
 const STORE_NAME = 'SheetCache';
 
@@ -97,23 +152,27 @@ function openDB() {
 }
 
 async function setCacheDB(key, value) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).put(value, key);
-        tx.oncomplete = () => resolve(true);
-        tx.onerror = () => reject(tx.error);
-    });
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            tx.objectStore(STORE_NAME).put(value, key);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch(e) { return false; }
 }
 
 async function getCacheDB(key) {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const request = tx.objectStore(STORE_NAME).get(key);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(tx.error);
-    });
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const request = tx.objectStore(STORE_NAME).get(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(tx.error);
+        });
+    } catch(e) { return null; }
 }
 
 async function cariData(nikInput) {
@@ -133,14 +192,18 @@ async function cariData(nikInput) {
                 cachedSheetData = [];
                 for (const gid of GIDS) {
                     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
-                    const res = await fetch(url);
-                    if (!res.ok) continue;
-                    const csvText = await res.text();
-                    if (!csvText) continue;
-                    const rows = parseCSV(csvText);
-                    if (rows && rows.length > 1) {
-                        if (cachedSheetData.length === 0) cachedSheetData = rows;
-                        else for (let i = 1; i < rows.length; i++) cachedSheetData.push(rows[i]);
+                    try {
+                        const res = await fetch(url);
+                        if (!res.ok) continue;
+                        const csvText = await res.text();
+                        if (!csvText) continue;
+                        const rows = parseCSV(csvText);
+                        if (rows && rows.length > 1) {
+                            if (cachedSheetData.length === 0) cachedSheetData = rows;
+                            else for (let i = 1; i < rows.length; i++) cachedSheetData.push(rows[i]);
+                        }
+                    } catch(fetchErr) {
+                        console.error("[CARI DATA] Error fetch GID:", gid, fetchErr);
                     }
                 }
                 try {
@@ -163,7 +226,10 @@ async function cariData(nikInput) {
             }
         }
         return null;
-    } catch (error) { return null; }
+    } catch (error) { 
+        sendBotErrorLog("cariData_Skrining", error.message || error);
+        return null; 
+    }
 }
     
 /* =========================================================
@@ -171,13 +237,15 @@ async function cariData(nikInput) {
 ========================================================= */
 function forceInject(element, value) {
     if (!element) return;
-    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-    nativeSetter.call(element, value);
-    if (element._valueTracker) element._valueTracker.setValue('');
-    element.dispatchEvent(new Event('input', { bubbles: true }));
-    element.dispatchEvent(new Event('change', { bubbles: true }));
-    element.dispatchEvent(new Event('blur', { bubbles: true }));
-    element.blur();
+    try {
+        const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+        nativeSetter.call(element, value);
+        if (element._valueTracker) element._valueTracker.setValue('');
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+        element.dispatchEvent(new Event('blur', { bubbles: true }));
+        element.blur();
+    } catch(e) { }
 }
 
 async function fillRadioSurveyJS(soalText, jawabanText) {
@@ -252,223 +320,243 @@ async function selectDropdownContext(soalText, optionText, typeChar = 't') {
 }
 
 async function isiKesehatanJiwa(data) {
-    const j1 = data.jiwa1 || ''; const j2 = data.jiwa2 || ''; const j3 = data.jiwa3 || ''; const j4 = data.jiwa4 || '';
-    const semuaPertanyaan = [...document.querySelectorAll('.sd-question, .sd-element')];
+    try {
+        const j1 = data.jiwa1 || ''; const j2 = data.jiwa2 || ''; const j3 = data.jiwa3 || ''; const j4 = data.jiwa4 || '';
+        const semuaPertanyaan = [...document.querySelectorAll('.sd-question, .sd-element')];
 
-    for (const q of semuaPertanyaan) {
-        const text = (q.innerText || '').toLowerCase(); let jawabanSheet = '';
+        for (const q of semuaPertanyaan) {
+            if(!BOT_RUNNING) break;
+            const text = (q.innerText || '').toLowerCase(); let jawabanSheet = '';
 
-        if (text.includes('bersemangat')) jawabanSheet = j1;
-        else if (text.includes('murung') || text.includes('putus asa')) jawabanSheet = j2;
-        else if (text.includes('gugup') || text.includes('cemas')) jawabanSheet = j3;
-        else if (text.includes('khawatir') || text.includes('mengendalikan')) jawabanSheet = j4;
+            if (text.includes('bersemangat')) jawabanSheet = j1;
+            else if (text.includes('murung') || text.includes('putus asa')) jawabanSheet = j2;
+            else if (text.includes('gugup') || text.includes('cemas')) jawabanSheet = j3;
+            else if (text.includes('khawatir') || text.includes('mengendalikan')) jawabanSheet = j4;
 
-        if (jawabanSheet.trim() !== '') {
-            let kataKunci = ''; const teksJawaban = jawabanSheet.toLowerCase();
-            if (teksJawaban.includes('tidak')) kataKunci = 'tidak';
-            else if (teksJawaban.includes('kurang')) kataKunci = 'kurang';
-            else if (teksJawaban.includes('lebih')) kataKunci = 'lebih';
-            else if (teksJawaban.includes('hampir')) kataKunci = 'hampir';
+            if (jawabanSheet.trim() !== '') {
+                let kataKunci = ''; const teksJawaban = jawabanSheet.toLowerCase();
+                if (teksJawaban.includes('tidak')) kataKunci = 'tidak';
+                else if (teksJawaban.includes('kurang')) kataKunci = 'kurang';
+                else if (teksJawaban.includes('lebih')) kataKunci = 'lebih';
+                else if (teksJawaban.includes('hampir')) kataKunci = 'hampir';
 
-            if (kataKunci !== '') {
-                const pilihan = [...q.querySelectorAll('.sd-item, .sv-item, label')];
-                const targetPilihan = pilihan.find(el => (el.innerText || '').toLowerCase().includes(kataKunci));
+                if (kataKunci !== '') {
+                    const pilihan = [...q.querySelectorAll('.sd-item, .sv-item, label')];
+                    const targetPilihan = pilihan.find(el => (el.innerText || '').toLowerCase().includes(kataKunci));
 
-                if (targetPilihan) {
-                    targetPilihan.scrollIntoView({ behavior: 'smooth', block: 'center' }); await sleep(300);
-                    const decorator = targetPilihan.querySelector('.sd-radio__decorator, .sd-item__decorator, .sv-item__decorator');
-                    if (decorator) { decorator.click(); } else { targetPilihan.click(); }
-                    const inputAsli = targetPilihan.querySelector('input[type="radio"]');
-                    if (inputAsli) {
-                        inputAsli.click(); inputAsli.checked = true;
-                        inputAsli.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                        inputAsli.dispatchEvent(new Event('input', { bubbles: true }));
-                        inputAsli.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (targetPilihan) {
+                        targetPilihan.scrollIntoView({ behavior: 'smooth', block: 'center' }); await sleep(300);
+                        const decorator = targetPilihan.querySelector('.sd-radio__decorator, .sd-item__decorator, .sv-item__decorator');
+                        if (decorator) { decorator.click(); } else { targetPilihan.click(); }
+                        const inputAsli = targetPilihan.querySelector('input[type="radio"]');
+                        if (inputAsli) {
+                            inputAsli.click(); inputAsli.checked = true;
+                            inputAsli.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                            inputAsli.dispatchEvent(new Event('input', { bubbles: true }));
+                            inputAsli.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        await sleep(600); 
                     }
-                    await sleep(600); 
                 }
             }
         }
-    }
+    } catch(e) { }
 }
 
 async function isiTetanusCatin() {
-    const judul = document.body.innerText.toLowerCase();
-    if (!judul.includes('riwayat imunisasi tetanus')) return false;
+    try {
+        const judul = document.body.innerText.toLowerCase();
+        if (!judul.includes('riwayat imunisasi tetanus')) return false;
 
-    updateStatus('Mengisi Imunisasi Tetanus Catin...');
-    await selectDropdownContext('pernah mendapatkan imunisasi tetanus', 'pernah imunisasi tetanus tetapi tidak ingat berapa kali');
-    await sleep(1000);
+        updateStatus('Mengisi Imunisasi Tetanus Catin...');
+        await selectDropdownContext('pernah mendapatkan imunisasi tetanus', 'pernah imunisasi tetanus tetapi tidak ingat berapa kali');
+        await sleep(1000);
 
-    const btnKirim = document.querySelector('.sd-navigation__complete-btn') || [...document.querySelectorAll('button,input[type="button"]')].find(el => (el.value || el.innerText || '').toLowerCase().includes('kirim'));
-    if (btnKirim) { btnKirim.click(); await sleep(3000); }
-    return true;
+        if(!BOT_RUNNING) return false;
+        const btnKirim = document.querySelector('.sd-navigation__complete-btn') || [...document.querySelectorAll('button,input[type="button"]')].find(el => (el.value || el.innerText || '').toLowerCase().includes('kirim'));
+        if (btnKirim) { btnKirim.click(); await sleep(3000); }
+        return true;
+    } catch(e) { return false; }
 }
 
 async function isiImunisasiBalita() {
-    const judul = document.body.innerText.toLowerCase();
-    if (!judul.includes('riwayat imunisasi rutin balita')) return false;
+    try {
+        const judul = document.body.innerText.toLowerCase();
+        if (!judul.includes('riwayat imunisasi rutin balita')) return false;
 
-    updateStatus('Mengisi Imunisasi Balita Berantai...');
-    let jumlahSoalTerjawab = 0; let maksimalLoop = 0;
+        updateStatus('Mengisi Imunisasi Balita Berantai...');
+        let jumlahSoalTerjawab = 0; let maksimalLoop = 0;
 
-    while (maksimalLoop < 20) {
-        maksimalLoop++;
-        const semuaSoal = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')].filter(q => q.offsetParent !== null);
-        if (semuaSoal.length === 0 || semuaSoal.length === jumlahSoalTerjawab) break; 
+        while (maksimalLoop < 20 && BOT_RUNNING) {
+            maksimalLoop++;
+            const semuaSoal = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')].filter(q => q.offsetParent !== null);
+            if (semuaSoal.length === 0 || semuaSoal.length === jumlahSoalTerjawab) break; 
 
-        for (let i = jumlahSoalTerjawab; i < semuaSoal.length; i++) {
-            const soalSaatIni = semuaSoal[i];
-            soalSaatIni.scrollIntoView({ behavior: 'smooth', block: 'center' }); await sleep(500);
+            for (let i = jumlahSoalTerjawab; i < semuaSoal.length; i++) {
+                if(!BOT_RUNNING) break;
+                const soalSaatIni = semuaSoal[i];
+                soalSaatIni.scrollIntoView({ behavior: 'smooth', block: 'center' }); await sleep(500);
 
-            const dropdown = soalSaatIni.querySelector('.sd-dropdown, .sv-dropdown');
-            if (dropdown) {
-                const teksKotak = (dropdown.innerText || '').toLowerCase().trim();
-                if (teksKotak === 'ya' || teksKotak === 'sudah' || teksKotak.includes('ya') || teksKotak.includes('sudah')) continue;
-                dropdown.click(); await sleep(800); 
+                const dropdown = soalSaatIni.querySelector('.sd-dropdown, .sv-dropdown');
+                if (dropdown) {
+                    const teksKotak = (dropdown.innerText || '').toLowerCase().trim();
+                    if (teksKotak === 'ya' || teksKotak === 'sudah' || teksKotak.includes('ya') || teksKotak.includes('sudah')) continue;
+                    dropdown.click(); await sleep(800); 
 
-                const opsiList = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')].filter(el => {
-                    const rect = el.getBoundingClientRect(); return rect.width > 0 && rect.height > 0;
-                });
-                const targetOpsi = opsiList.find(el => { const txt = (el.innerText || '').toLowerCase().trim(); return txt === 'ya' || txt === 'sudah'; });
+                    const opsiList = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')].filter(el => {
+                        const rect = el.getBoundingClientRect(); return rect.width > 0 && rect.height > 0;
+                    });
+                    const targetOpsi = opsiList.find(el => { const txt = (el.innerText || '').toLowerCase().trim(); return txt === 'ya' || txt === 'sudah'; });
 
-                if (targetOpsi) {
-                    targetOpsi.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                    targetOpsi.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                    targetOpsi.click();
-                } else { dropdown.click(); }
-            } else {
-                const radioItems = [...soalSaatIni.querySelectorAll('.sd-item, .sv-item')];
-                for (const item of radioItems) {
-                    const txt = (item.innerText || '').toLowerCase().trim();
-                    if (txt === 'ya' || txt === 'sudah') {
-                        const decorator = item.querySelector('.sd-radio__decorator, .sd-item__decorator') || item;
-                        decorator.click(); break;
+                    if (targetOpsi) {
+                        targetOpsi.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                        targetOpsi.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                        targetOpsi.click();
+                    } else { dropdown.click(); }
+                } else {
+                    const radioItems = [...soalSaatIni.querySelectorAll('.sd-item, .sv-item')];
+                    for (const item of radioItems) {
+                        const txt = (item.innerText || '').toLowerCase().trim();
+                        if (txt === 'ya' || txt === 'sudah') {
+                            const decorator = item.querySelector('.sd-radio__decorator, .sd-item__decorator') || item;
+                            decorator.click(); break;
+                        }
                     }
                 }
+                await sleep(1000); 
             }
-            await sleep(1000); 
+            jumlahSoalTerjawab = semuaSoal.length;
         }
-        jumlahSoalTerjawab = semuaSoal.length;
-    }
-    await sleep(1000);
-    const btnKirim = document.querySelector('.sd-navigation__complete-btn') || [...document.querySelectorAll('button,input[type="button"]')].find(b => (b.innerText||'').toLowerCase().match(/lanjut|kirim/));
-    if (btnKirim) { btnKirim.click(); await sleep(3500); }
-    return true;
+        await sleep(1000);
+        
+        if(!BOT_RUNNING) return false;
+        const btnKirim = document.querySelector('.sd-navigation__complete-btn') || [...document.querySelectorAll('button,input[type="button"]')].find(b => (b.innerText||'').toLowerCase().match(/lanjut|kirim/));
+        if (btnKirim) { btnKirim.click(); await sleep(3500); }
+        return true;
+    } catch(e) { return false; }
 }
 
 /* =========================================================
    CORE LOGIC SKRINING MANDIRI 
 ========================================================= */
 async function handleSkriningMandiri(data) {
-    const pageText = document.body.innerText.toLowerCase();
+    try {
+        const pageText = document.body.innerText.toLowerCase();
 
-    if (pageText.includes('status perkawinan')) {
-        updateStatus('Status di Sheet: ' + data.perkawinan); await sleep(1000); 
-        if (data.perkawinan && data.perkawinan !== 'Data Kosong') {
-            let p = data.perkawinan.toLowerCase(); let target = 'Menikah'; 
-            if (p.includes('belum')) target = 'Belum Menikah';
-            else if (p.includes('janda') || p.includes('duda') || p.includes('cerai')) target = 'Cerai Hidup'; 
-            updateStatus('Mengisi: ' + target);
-            await fillRadioSurveyJS('status perkawinan', target); await sleep(1000);
-        } else { updateStatus('Data Perkawinan Kosong!'); await sleep(1000); }
-    }
-    
-    if (pageText.includes('faktor risiko tb') || pageText.includes('tuberkulosis')) {
-        await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk'); await fillRadioSurveyJS('faktor risiko tb', 'tidak');
-    }
-    if (pageText.includes('disabilitas')) { await fillRadioSurveyJS('disabilitas', 'non disabilitas'); }
-    if (pageText.includes('2 minggu terakhir') || pageText.includes('kesehatan jiwa')) { await isiKesehatanJiwa(data); }
-    if (pageText.includes('kanker leher rahim')) {
-        let p = (data.perkawinan || '').toLowerCase(); let isYes = p.includes('menikah') || p.includes('cerai') || (p.includes('kawin') && !p.includes('belum'));
-        await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
-    }
-
-    if (pageText.includes('merokok') || pageText.includes('kanker paru')) {
-        const statusMerokok = jawabanMerokok(data.merokok); 
-        const semuaPertanyaan = [...document.querySelectorAll('.sd-question, .sd-element')];
+        if (pageText.includes('status perkawinan') && BOT_RUNNING) {
+            updateStatus('Status di Sheet: ' + data.perkawinan); await sleep(1000); 
+            if (data.perkawinan && data.perkawinan !== 'Data Kosong') {
+                let p = data.perkawinan.toLowerCase(); let target = 'Menikah'; 
+                if (p.includes('belum')) target = 'Belum Menikah';
+                else if (p.includes('janda') || p.includes('duda') || p.includes('cerai')) target = 'Cerai Hidup'; 
+                updateStatus('Mengisi: ' + target);
+                await fillRadioSurveyJS('status perkawinan', target); await sleep(1000);
+            } else { updateStatus('Data Perkawinan Kosong!'); await sleep(1000); }
+        }
         
-        for (const q of semuaPertanyaan) {
-            const text = (q.innerText || '').toLowerCase(); let targetJawaban = '';
+        if ((pageText.includes('faktor risiko tb') || pageText.includes('tuberkulosis')) && BOT_RUNNING) {
+            await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk'); await fillRadioSurveyJS('faktor risiko tb', 'tidak');
+        }
+        if (pageText.includes('disabilitas') && BOT_RUNNING) { await fillRadioSurveyJS('disabilitas', 'non disabilitas'); }
+        if ((pageText.includes('2 minggu terakhir') || pageText.includes('kesehatan jiwa')) && BOT_RUNNING) { await isiKesehatanJiwa(data); }
+        if (pageText.includes('kanker leher rahim') && BOT_RUNNING) {
+            let p = (data.perkawinan || '').toLowerCase(); let isYes = p.includes('menikah') || p.includes('cerai') || (p.includes('kawin') && !p.includes('belum'));
+            await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
+        }
 
-            if (text.includes('setahun terakhir')) targetJawaban = statusMerokok;
-            else if (text.includes('15 tahun terakhir')) targetJawaban = statusMerokok;
-            else if (text.includes('menghirup asap rokok') || text.includes('terpapar asap rokok')) targetJawaban = statusMerokok;
-            else if (text.includes('jenis rokok apa yang dikonsumsi')) targetJawaban = 'konvensional';
-            else if (text.includes('kanker paru pada keluarga') || text.includes('batuk dalam jangka waktu') || text.includes('tbc atau ppok')) targetJawaban = 'tidak';
+        if ((pageText.includes('merokok') || pageText.includes('kanker paru')) && BOT_RUNNING) {
+            const statusMerokok = jawabanMerokok(data.merokok); 
+            const semuaPertanyaan = [...document.querySelectorAll('.sd-question, .sd-element')];
+            
+            for (const q of semuaPertanyaan) {
+                if(!BOT_RUNNING) break;
+                const text = (q.innerText || '').toLowerCase(); let targetJawaban = '';
 
-            if (targetJawaban !== '') {
-                const pilihan = [...q.querySelectorAll('.sd-item, .sv-item')];
-                const targetPilihan = pilihan.find(el => (el.innerText || '').toLowerCase().includes(targetJawaban));
-                
-                if (targetPilihan) {
-                    const radio = targetPilihan.querySelector('.sd-radio__decorator') || targetPilihan.querySelector('.sd-item__decorator') || targetPilihan.querySelector('input[type="radio"]');
-                    if (radio) {
-                        radio.click();
-                        const inputAsli = targetPilihan.querySelector('input[type="radio"]');
-                        if (inputAsli) {
-                            inputAsli.checked = true;
-                            inputAsli.dispatchEvent(new Event('input', { bubbles:true }));
-                            inputAsli.dispatchEvent(new Event('change', { bubbles:true }));
+                if (text.includes('setahun terakhir')) targetJawaban = statusMerokok;
+                else if (text.includes('15 tahun terakhir')) targetJawaban = statusMerokok;
+                else if (text.includes('menghirup asap rokok') || text.includes('terpapar asap rokok')) targetJawaban = statusMerokok;
+                else if (text.includes('jenis rokok apa yang dikonsumsi')) targetJawaban = 'konvensional';
+                else if (text.includes('kanker paru pada keluarga') || text.includes('batuk dalam jangka waktu') || text.includes('tbc atau ppok')) targetJawaban = 'tidak';
+
+                if (targetJawaban !== '') {
+                    const pilihan = [...q.querySelectorAll('.sd-item, .sv-item')];
+                    const targetPilihan = pilihan.find(el => (el.innerText || '').toLowerCase().includes(targetJawaban));
+                    
+                    if (targetPilihan) {
+                        const radio = targetPilihan.querySelector('.sd-radio__decorator') || targetPilihan.querySelector('.sd-item__decorator') || targetPilihan.querySelector('input[type="radio"]');
+                        if (radio) {
+                            radio.click();
+                            const inputAsli = targetPilihan.querySelector('input[type="radio"]');
+                            if (inputAsli) {
+                                inputAsli.checked = true;
+                                inputAsli.dispatchEvent(new Event('input', { bubbles:true }));
+                                inputAsli.dispatchEvent(new Event('change', { bubbles:true }));
+                            }
+                            await sleep(300); 
                         }
-                        await sleep(300); 
                     }
                 }
             }
         }
-    }
 
-    const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
-    questions.forEach(q => {
-        let isAnswered = false; const radios = q.querySelectorAll('input[type="radio"]');
-        if (radios.length === 0) return;
-        radios.forEach(radio => { if (radio.checked) isAnswered = true; });
-        if (isAnswered) return;
+        const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
+        questions.forEach(q => {
+            if(!BOT_RUNNING) return;
+            let isAnswered = false; const radios = q.querySelectorAll('input[type="radio"]');
+            if (radios.length === 0) return;
+            radios.forEach(radio => { if (radio.checked) isAnswered = true; });
+            if (isAnswered) return;
 
-        let qText = (q.innerText||'').toLowerCase();
-        if (qText.includes('berapa hari anda aktif secara fisik') || qText.includes('jumlah hari aktif')) return; 
+            let qText = (q.innerText||'').toLowerCase();
+            if (qText.includes('berapa hari anda aktif secara fisik') || qText.includes('jumlah hari aktif')) return; 
 
-        q.querySelectorAll('label').forEach(l => {
-            let txt = (l.innerText||'').toLowerCase().trim();
-            if (txt === 'tidak' || txt === 'normal' || txt === 'tidak ada') {
-                let i = l.querySelector('input[type="radio"]');
-                if (i && !i.checked) { 
-                    const decorator = l.querySelector('.sd-radio__decorator, .sd-item__decorator') || l;
-                    decorator.click(); i.checked = true; 
-                    i.dispatchEvent(new Event('input', { bubbles:true }));
-                    i.dispatchEvent(new Event('change', { bubbles:true }));
+            q.querySelectorAll('label').forEach(l => {
+                let txt = (l.innerText||'').toLowerCase().trim();
+                if (txt === 'tidak' || txt === 'normal' || txt === 'tidak ada') {
+                    let i = l.querySelector('input[type="radio"]');
+                    if (i && !i.checked) { 
+                        const decorator = l.querySelector('.sd-radio__decorator, .sd-item__decorator') || l;
+                        decorator.click(); i.checked = true; 
+                        i.dispatchEvent(new Event('input', { bubbles:true }));
+                        i.dispatchEvent(new Event('change', { bubbles:true }));
+                    }
                 }
-            }
+            });
         });
-    });
 
-    if (pageText.includes('aktivitas fisik')) {
-        updateStatus('Mengisi Aktivitas Fisik...');
-        const inputAngka = [...document.querySelectorAll('input[type="number"]')];
-        if (inputAngka.length > 0) {
-            if (inputAngka[0]) forceInject(inputAngka[0], '3'); await sleep(500);
-            if (inputAngka[1]) forceInject(inputAngka[1], '3'); await sleep(500);
+        if (pageText.includes('aktivitas fisik') && BOT_RUNNING) {
+            updateStatus('Mengisi Aktivitas Fisik...');
+            const inputAngka = [...document.querySelectorAll('input[type="number"]')];
+            if (inputAngka.length > 0) {
+                if (inputAngka[0]) forceInject(inputAngka[0], '3'); await sleep(500);
+                if (inputAngka[1]) forceInject(inputAngka[1], '3'); await sleep(500);
+            }
+
+            const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
+            for (let i = 0; i < dropdowns.length; i++) {
+                if(!BOT_RUNNING) break;
+                const currentDropdown = dropdowns[i];
+                if (!currentDropdown) continue;
+                currentDropdown.scrollIntoView({ behavior: 'smooth', block: 'center' }); currentDropdown.click(); await sleep(1200);
+
+                const opsiTidak = [...document.querySelectorAll('li.sv-list__item, li.sd-list__item')].filter(li => li.innerText.trim().toLowerCase() === 'tidak');
+                if (opsiTidak[i]) {
+                    opsiTidak[i].click(); opsiTidak[i].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); await sleep(500);
+                } else { break; }
+            }
         }
 
-        const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
-        for (let i = 0; i < dropdowns.length; i++) {
-            const currentDropdown = dropdowns[i];
-            if (!currentDropdown) continue;
-            currentDropdown.scrollIntoView({ behavior: 'smooth', block: 'center' }); currentDropdown.click(); await sleep(1200);
-
-            const opsiTidak = [...document.querySelectorAll('li.sv-list__item, li.sd-list__item')].filter(li => li.innerText.trim().toLowerCase() === 'tidak');
-            if (opsiTidak[i]) {
-                opsiTidak[i].click(); opsiTidak[i].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); await sleep(500);
-            } else { break; }
+        await sleep(1500);
+        if(!BOT_RUNNING) return;
+        
+        const btnNext = document.querySelector('.sd-navigation__next-btn, .sd-navigation__complete-btn') || [...document.querySelectorAll('button')].find(b => (b.innerText||'').toLowerCase().match(/lanjut|kirim/));
+        if (btnNext) { 
+            updateStatus('Mengirim data form...');
+            btnNext.click(); 
+            await sleep(3500); 
         }
-    }
-
-    await sleep(1500);
-    const btnNext = document.querySelector('.sd-navigation__next-btn, .sd-navigation__complete-btn') || [...document.querySelectorAll('button')].find(b => (b.innerText||'').toLowerCase().match(/lanjut|kirim/));
-    if (btnNext) { 
-        updateStatus('Mengirim data form...');
-        btnNext.click(); 
-        await sleep(3500); 
+    } catch(e) {
+        sendBotErrorLog("handleSkriningMandiri", e.message || e);
     }
 }
 
@@ -494,7 +582,10 @@ async function autoContinueForm(){
             if (pageText.includes('riwayat imunisasi rutin balita')) { await isiImunisasiBalita(); } 
             else if (pageText.includes('riwayat imunisasi tetanus')) { await isiTetanusCatin(); } 
             else { await handleSkriningMandiri(data); }
-        } catch(e) { updateStatus("Melewati error, mencoba ulang..."); }
+        } catch(e) { 
+            sendBotErrorLog("autoContinueForm_Loop", e.message || e);
+            updateStatus("Melewati error, mencoba ulang..."); 
+        }
         await sleep(2000);
     }
 }
@@ -503,61 +594,72 @@ async function autoContinueForm(){
    DASHBOARD TRACKER (ANTI BOCOR)
 ========================================================= */
 function getNextTarget(){
-    const completed = getCompleted();
-    const btns = [...document.querySelectorAll('button')].filter(btn => {
-        const txt = (btn.innerText || '').toLowerCase(); return txt.includes('skrining mandiri') || txt.includes('input data') || txt.includes('tambah');
-    });
+    try {
+        const completed = getCompleted();
+        const btns = [...document.querySelectorAll('button')].filter(btn => {
+            const txt = (btn.innerText || '').toLowerCase(); return txt.includes('skrining mandiri') || txt.includes('input data') || txt.includes('tambah');
+        });
 
-    for(let btn of btns){
-        let parent = btn.parentElement;
-        for(let i=0; i<6; i++){
-            if(!parent) break;
-            let txt = (parent.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
-            if (txt.length > 10) {
-                let id = txt.substring(0, 35);
-                if(!completed.includes(id)){ return { btn: btn, id: id, title: txt.substring(0, 25) }; }
-                break;
+        for(let btn of btns){
+            let parent = btn.parentElement;
+            for(let i=0; i<6; i++){
+                if(!parent) break;
+                let txt = (parent.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                if (txt.length > 10) {
+                    let id = txt.substring(0, 35);
+                    if(!completed.includes(id)){ return { btn: btn, id: id, title: txt.substring(0, 25) }; }
+                    break;
+                }
+                parent = parent.parentElement;
             }
-            parent = parent.parentElement;
         }
-    }
-    return null;
+        return null;
+    } catch(e) { return null; }
 }
 
 async function mainLoop(data) {
     updateStatus('MENCARI ANTRIAN...');
 
     while (BOT_RUNNING && location.hostname.includes('sehatindonesiaku')) {
-        let nextItem = null;
-        for (let i = 0; i < 3; i++) {
-            nextItem = getNextTarget(); 
-            if (nextItem) break; 
+        try {
+            let nextItem = null;
+            for (let i = 0; i < 3; i++) {
+                if(!BOT_RUNNING) break;
+                nextItem = getNextTarget(); 
+                if (nextItem) break; 
+                await sleep(2000);
+            }
+
+            if (!BOT_RUNNING) break;
+
+            if (!nextItem) {
+                BOT_RUNNING = false;
+                clearBOT(); 
+                updateStatus('SELESAI SEMUA TARGET.\nSilakan pilih DEWASA/ANAK.');
+                syncUI(); 
+                playSound('selesai');
+                showToast('Semua antrian skrining selesai! Lanjut Input Dewasa/Anak.', 'success');
+                break;
+            }
+
+            updateStatus('MEMBUKA TARGET:\n' + nextItem.title.toUpperCase());
+            addCompleted(nextItem.id); 
+            nextItem.btn.click();
+            
+            updateStatus('Mengalihkan halaman form...');
+            for(let wait = 0; wait < 15; wait++) {
+                if(!BOT_RUNNING) break;
+                await sleep(1500);
+                if (!location.hostname.includes('sehatindonesiaku')) {
+                    break; 
+                }
+            }
+            
+            break; 
+        } catch(e) {
+            sendBotErrorLog("mainLoop", e.message || e);
             await sleep(2000);
         }
-
-        if (!nextItem) {
-            BOT_RUNNING = false;
-            clearBOT(); 
-            // PERBAIKAN: Set status khusus saat selesai, yang tidak akan ditimpa syncUI
-            updateStatus('SELESAI SEMUA TARGET.\nSilakan pilih DEWASA/ANAK.');
-            syncUI(); 
-            alert('Semua antrian pemeriksaan selesai!');
-            break;
-        }
-
-        updateStatus('MEMBUKA TARGET:\n' + nextItem.title.toUpperCase());
-        addCompleted(nextItem.id); 
-        nextItem.btn.click();
-        
-        updateStatus('Mengalihkan halaman form...');
-        for(let wait = 0; wait < 15; wait++) {
-            await sleep(1500);
-            if (!location.hostname.includes('sehatindonesiaku')) {
-                break; 
-            }
-        }
-        
-        break; 
     }
 }
 
@@ -573,8 +675,9 @@ function stopBOT(){
     LOOP_ACTIVE = false; 
     clearBOT(); 
     clearCompleted(); 
-    GM_deleteValue('LAST_USED_NIK'); // Bersihkan memori NIK jika tombol Batal ditekan
+    GM_deleteValue('LAST_USED_NIK'); 
     updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); 
+    showToast('Proses dibatalkan secara paksa.', 'warning');
     syncUI(); 
 }
 
@@ -594,27 +697,27 @@ function syncUI() {
         estafetWrap.style.display = 'flex';
         inputNik.value = data.nik || ''; 
         inputNik.disabled = true;
-        updateStatus('SIAP. PENGISIAN OTOMATIS BERJALAN');
+        
+        // Jangan timpa tulisan jika form sedang dikerjakan
+        if(!statusEl.innerText.includes('MEMBUKA TARGET') && !statusEl.innerText.includes('MENGIRIM DATA') && !statusEl.innerText.includes('PENGISIAN OTOMATIS')) {
+            updateStatus('SIAP. PENGISIAN OTOMATIS BERJALAN');
+        }
     } else {
         btnStart.style.display = 'block'; 
         btnNext.style.display = 'none'; 
         
-        // Panggil memori NIK terakhir
         const lastNik = GM_getValue('LAST_USED_NIK');
         
         if (lastNik) {
-            // Jika bot baru saja selesai, TAMPILKAN tombol Estafet
             estafetWrap.style.display = 'flex';
-            if (inputNik.value === '') inputNik.value = lastNik; // Jangan hapus ketikan user jika ia sedang mengetik NIK baru
+            if (inputNik.value === '') inputNik.value = lastNik; 
             inputNik.disabled = false;
         } else {
-            // Jika benar-benar reset bersih (dibatalkan)
             estafetWrap.style.display = 'none'; 
             inputNik.value = ''; 
             inputNik.disabled = false; 
             
-            // Jangan ubah status jika sedang menampilkan pesan dihentikan
-            if(statusEl && !statusEl.innerText.includes('DIHENTIKAN')) {
+            if(statusEl && !statusEl.innerText.includes('DIHENTIKAN') && !statusEl.innerText.includes('SELESAI')) {
                 updateStatus('INISIALISASI...');
             }
         }
@@ -625,29 +728,30 @@ function createUI(){
     if(document.getElementById('auto-ckg-ui')) return;
     const box = document.createElement('div'); box.id = 'auto-ckg-ui';
     box.innerHTML = `
-        <div id="drag-handle">SKRINING PADASUKA</div>
+        <div id="drag-handle" title="Klik dan tahan untuk memindahkan kotak">SKRINING PADASUKA</div>
         <div id="bot-status">INISIALISASI...</div>
-        <input id="nik-bot" placeholder="Masukkan NIK">
+        <input id="nik-bot" placeholder="Masukkan 16 Digit NIK...">
         <div id="btn-wrap">
-            <button id="run-bot">START DATA</button>
-            <button id="next-bot" style="display:none; background:#f59e0b; color:#000;">⏩ SELANJUTNYA</button>
-            <button id="stop-bot">BATAL</button>
+            <button id="run-bot">▶ START SKRINING</button>
+            <button id="next-bot" style="display:none; background:#f59e0b; color:#000;">⏩ PAKSA LANJUT</button>
+            <button id="stop-bot">🛑 BATAL</button>
         </div>
-        <div id="estafet-wrap" style="display:none; gap:8px; margin-top:8px;">
-            <button id="btn-to-input" style="flex:1; background:#10b981; color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">DEWASA ⏭️</button>
-            <button id="btn-to-anak" style="flex:1; background:#eab308; color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s;">ANAK ⏭️</button>
+        <div id="estafet-wrap" style="display:none; gap:8px; margin-top:12px; border-top:1px solid #333; padding-top:12px;">
+            <button id="btn-to-input" style="flex:1; background:#10b981; color:#fff; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5);" title="Beralih ke Input Dewasa">DEWASA ⏭️</button>
+            <button id="btn-to-anak" style="flex:1; background:#eab308; color:#fff; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5);" title="Beralih ke Input Anak">ANAK ⏭️</button>
         </div>
     `;
     const style = document.createElement('style');
     style.innerHTML = `
         #auto-ckg-ui { position: fixed; top: 100px; right: 20px; width: 300px; background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(0, 200, 255, 0.5); border-radius: 16px; z-index: 2147483647; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-family: 'Segoe UI', sans-serif; color: white; cursor: default; }
         #drag-handle { padding: 5px; text-align: center; font-weight: bold; color: #00c8ff; cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333; }
-        #bot-status { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; min-height: 50px; margin-bottom: 10px; color: #00c8ff; font-size: 13px; text-align: center; white-space: pre-wrap; font-weight:bold; }
-        #nik-bot { width: 100%; box-sizing: border-box; padding: 10px; border: none; border-radius: 8px; background: #333; color: white; margin-bottom: 10px; text-align:center; font-weight:bold; }
+        #bot-status { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; min-height: 50px; margin-bottom: 10px; color: #00ff88; font-size: 13px; text-align: center; white-space: pre-wrap; font-weight:bold; border: 1px solid #333; display:flex; align-items:center; justify-content:center;}
+        #nik-bot { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #00c8ff; border-radius: 8px; background: #000; color: #00ff88; margin-bottom: 10px; text-align:center; font-weight:bold; outline:none;}
+        #nik-bot:disabled { border-color: #555; color: #888; }
         #btn-wrap { display: flex; gap: 8px; }
-        #run-bot, #stop-bot, #next-bot { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        #run-bot, #stop-bot, #next-bot { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5); }
         #run-bot { background: #00c8ff; color: #000; } #run-bot:hover { background: #009acc; }
-        #stop-bot { background: #ff4444; color: white; }
+        #stop-bot { background: #ff4444; color: white; } #stop-bot:hover { background: #cc0000; }
         #btn-to-input:hover { background: #059669; } #btn-to-anak:hover { background: #ca8a04; }
     `;
     document.head.appendChild(style); document.body.appendChild(box);
@@ -655,23 +759,32 @@ function createUI(){
     const handle = document.getElementById('drag-handle');
     if(handle){
         let isDragging = false, offsetX, offsetY;
-        handle.onmousedown = (e)=>{ isDragging = true; offsetX = e.clientX - box.offsetLeft; offsetY = e.clientY - box.offsetTop; };
+        handle.onmousedown = (e)=>{ isDragging = true; offsetX = e.clientX - box.offsetLeft; offsetY = e.clientY - box.offsetTop; box.style.opacity = '0.8'; };
         document.onmousemove = (e)=>{ if(isDragging){ box.style.left = (e.clientX - offsetX) + 'px'; box.style.top = (e.clientY - offsetY) + 'px'; box.style.right = 'auto'; } };
-        document.onmouseup = ()=>{ isDragging = false; };
+        document.onmouseup = ()=>{ isDragging = false; box.style.opacity = '1'; };
     }
 
     document.getElementById('run-bot').onclick = async ()=>{
-        const nik = document.getElementById('nik-bot').value;
-        if(!nik) return alert('Masukkan NIK');
+        const nik = document.getElementById('nik-bot').value.replace(/\D/g, '');
+        if(!nik || nik.length < 16) {
+            showToast("Masukkan 16 digit NIK yang valid!", "warning");
+            return;
+        }
 
         updateStatus('MENCARI NIK DI DATABASE LOKAL...');
         const data = await cariData(nik);
 
-        if(!data) return; 
+        if(!data) {
+            showToast(`Data NIK ${nik} tidak ditemukan!`, "error");
+            updateStatus('NIK TIDAK DITEMUKAN.\nPastikan data sudah diunduh.');
+            return; 
+        }
+        
         saveBOT(data);
         clearCompleted(); 
         syncUI();
         playSound('sukses');
+        showToast("Memulai Antrean Skrining...", "info");
     };
     
     const btnNextBot = document.getElementById('next-bot');
@@ -680,48 +793,60 @@ function createUI(){
             const data = loadBOT();
             if(!data) return;
             BOT_RUNNING = true; updateStatus('⚡ Memaksa eksekusi loop...');
+            showToast("Sistem dipaksa untuk melanjutkan form.", "warning");
         };
     }
 
-    // PERBAIKAN URUTAN EKSEKUSI PADA TOMBOL DEWASA
     document.getElementById('btn-to-input').onclick = () => {
         const nik = document.getElementById('nik-bot').value;
         if(!confirm('Anda yakin ingin pindah ke Modul INPUT DEWASA?')) return;
         
-        // BERSIHKAN DULU...
         clearBOT(); 
         clearCompleted(); 
         GM_deleteValue('LAST_USED_NIK'); 
         
-        // BARU SET MODE TERBARU LALU RELOAD
         try { 
-            GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' })); 
-            GM_setValue('CKG_MODE', 'input'); 
+            if (typeof GM_setValue !== "undefined") {
+                GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' })); 
+                GM_setValue('CKG_MODE', 'input'); 
+            } else {
+                localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' }));
+                localStorage.setItem('CKG_MODE', 'input');
+            }
         } catch(e) {}
         
-        updateStatus('Beralih ke Input Dewasa...'); setTimeout(() => location.reload(), 500); 
+        updateStatus('Beralih ke Input Dewasa...'); 
+        showToast("Beralih modul...", "success");
+        setTimeout(() => location.reload(), 500); 
     };
 
-    // PERBAIKAN URUTAN EKSEKUSI PADA TOMBOL ANAK
     document.getElementById('btn-to-anak').onclick = () => {
         const nik = document.getElementById('nik-bot').value;
         if(!confirm('Anda yakin ingin pindah ke Modul INPUT ANAK?')) return;
         
-        // BERSIHKAN DULU...
         clearBOT(); 
         clearCompleted(); 
         GM_deleteValue('LAST_USED_NIK'); 
         
-        // BARU SET MODE TERBARU LALU RELOAD
         try { 
-            GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' })); 
-            GM_setValue('CKG_MODE', 'input_anak'); 
+            if (typeof GM_setValue !== "undefined") {
+                GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' })); 
+                GM_setValue('CKG_MODE', 'input_anak');
+            } else {
+                localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' }));
+                localStorage.setItem('CKG_MODE', 'input_anak');
+            }
         } catch(e) {}
         
-        updateStatus('Beralih ke Input Anak...'); setTimeout(() => location.reload(), 500); 
+        updateStatus('Beralih ke Input Anak...'); 
+        showToast("Beralih modul...", "success");
+        setTimeout(() => location.reload(), 500); 
     };
 
-    document.getElementById('stop-bot').onclick = () => { stopBOT(); alert('Bot berhasil dibatalkan. Memori NIK dihapus.'); };
+    document.getElementById('stop-bot').onclick = () => { 
+        stopBOT(); 
+    };
+    
     syncUI();
 }
 
@@ -733,30 +858,33 @@ setInterval(createUI, 1000);
 let isDownloadingBackground = false;
 
 setInterval(async () => {
-    const isFormPage = location.hostname.includes('form.kemkes.go.id');
-    const isMainPage = location.hostname.includes('sehatindonesiaku');
-    const data = loadBOT();
+    try {
+        const isFormPage = location.hostname.includes('form.kemkes.go.id');
+        const isMainPage = location.hostname.includes('sehatindonesiaku');
+        const data = loadBOT();
 
-    if (data && !BOT_RUNNING) BOT_RUNNING = true;
+        if (data && !BOT_RUNNING) BOT_RUNNING = true;
 
-    if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
-        isDownloadingBackground = true;
-        cariData('000').then(() => { 
-            // Cek status, jangan ditimpa bila status sudah "SELESAI..."
-            const statusEl = document.getElementById('bot-status');
-            if (!BOT_RUNNING && statusEl && !statusEl.innerText.includes('SELESAI')) {
-                updateStatus('Database Siap !\nklik START'); 
-            }
-        }).catch(e => { isDownloadingBackground = false; });
-    }
-
-    if (BOT_RUNNING && data && !LOOP_ACTIVE) {
-        if (isFormPage) {
-            LOOP_ACTIVE = true; await autoContinueForm(); LOOP_ACTIVE = false; 
-        } 
-        else if (isMainPage) {
-            LOOP_ACTIVE = true; await mainLoop(data); LOOP_ACTIVE = false;
+        if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
+            isDownloadingBackground = true;
+            cariData('000').then(() => { 
+                const statusEl = document.getElementById('bot-status');
+                if (!BOT_RUNNING && statusEl && !statusEl.innerText.includes('SELESAI')) {
+                    updateStatus('Database Siap !\nSilakan masukkan NIK dan klik START'); 
+                }
+            }).catch(e => { isDownloadingBackground = false; });
         }
+
+        if (BOT_RUNNING && data && !LOOP_ACTIVE) {
+            if (isFormPage) {
+                LOOP_ACTIVE = true; await autoContinueForm(); LOOP_ACTIVE = false; 
+            } 
+            else if (isMainPage) {
+                LOOP_ACTIVE = true; await mainLoop(data); LOOP_ACTIVE = false;
+            }
+        }
+    } catch(e) {
+        sendBotErrorLog("Interval_Supervisor", e.message || e);
     }
 }, 2000);
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
