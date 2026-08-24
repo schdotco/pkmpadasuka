@@ -226,7 +226,7 @@ function parseCSV(text) {
    if (current || row.length) { row.push(current); rows.push(row); }
     return rows;
 }
-       
+        
 let cachedSheetData = null;
 
 async function cariData(nikInput) {
@@ -699,12 +699,23 @@ function syncUI() {
         inputNik.disabled = true;
     } else {
         btnStart.style.display = 'block'; 
+        
+        // [PERBAIKAN] Prioritaskan baca NIK estafet dari Modul Skrining
+        let estafetRaw = null;
+        try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
+        let estafetNik = '';
+        if (estafetRaw) {
+            try { estafetNik = JSON.parse(estafetRaw).nik; } catch(e){}
+        }
+
         let lastNik = null;
         try { lastNik = GM_getValue('LAST_USED_NIK'); } catch(e) { lastNik = localStorage.getItem('LAST_USED_NIK'); }
         
-        if (lastNik) {
+        let activeNik = estafetNik || lastNik;
+
+        if (activeNik) {
             estafetWrap.style.display = 'flex';
-            if (inputNik.value === '') inputNik.value = lastNik; 
+            if (inputNik.value === '') inputNik.value = activeNik; 
             inputNik.disabled = false;
         } else {
             estafetWrap.style.display = 'none'; 
@@ -823,25 +834,26 @@ function createUI(){
         };
     }
     
+    // [PERBAIKAN] Logika tombol DAFTAR disamakan dengan Bot Anak
     const btnDaftar = document.getElementById('btn-to-daftar');
     if (btnDaftar) {
         btnDaftar.onclick = () => {
             if(!confirm('Anda yakin ingin mereset memori dan kembali ke daftar awal?')) return;
             
             clearBOT(); clearCompleted(); 
-            try { GM_deleteValue('LAST_USED_NIK'); } catch(e) { localStorage.removeItem('LAST_USED_NIK'); }
-            
             try { 
                 if (typeof GM_setValue !== "undefined") {
-                    GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: '', kategori: 'daftar' })); 
-                    GM_setValue('CKG_MODE', 'daftar'); 
+                    GM_deleteValue('LAST_USED_NIK'); 
+                    GM_deleteValue('PASIEN_AKTIF'); 
+                    GM_setValue('CKG_MODE', 'daftar');
                 } else {
-                    localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: '', kategori: 'daftar' }));
+                    localStorage.removeItem('LAST_USED_NIK'); 
+                    localStorage.removeItem('PASIEN_AKTIF'); 
                     localStorage.setItem('CKG_MODE', 'daftar');
                 }
-            } catch(e) {}
+            } catch(e) { }
             
-            updateStatus('Beralih ke Daftar...'); 
+            updateStatus('Membersihkan data & memuat ulang...'); 
             showToast("Beralih ke Modul Pendaftaran...", "success");
             setTimeout(() => location.reload(), 500); 
         };
@@ -857,30 +869,42 @@ setInterval(createUI, 1000);
 
 setInterval(async () => {
     try {
-        const isFormPage = location.href.includes('form');
+        const currentUrl = window.location.href;
+        // [PERBAIKAN] Deteksi form & main page yang lebih akurat
+        const isFormPage = currentUrl.includes('form.kemkes.go.id') || document.querySelector('.sd-root-modern, .sv-root-modern, .sd-page'); 
+        const isMainPage = currentUrl.includes('sehatindonesiaku.kemkes.go.id'); 
+
+        if (BOT_RUNNING) return;
+
         if (isFormPage) {
-            if (!BOT_RUNNING) await autoContinueForm();
-        } else {
-            const data = loadBOT();
+            BOT_RUNNING = true;
+            await autoContinueForm();
+            BOT_RUNNING = false;
+        } else if (isMainPage) {
+            let data = loadBOT();
             let estafetRaw = null;
             try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
 
-            if (estafetRaw && !BOT_RUNNING && !data && cachedSheetData) {
+            // [PERBAIKAN] Otomatis menarik data tanpa perlu nunggu cachedSheetData terisi
+            if (estafetRaw && !data) {
                 const estafet = JSON.parse(estafetRaw);
                 if (estafet.kategori === 'dewasa') {
-                    const inpNik = document.getElementById('nik-bot');
-                    const btnRun = document.getElementById('run-bot');
-                    if (inpNik && btnRun) {
-                        inpNik.value = estafet.nik;
-                        btnRun.click();
+                    updateStatus('Estafet Dewasa Diterima. Mengunduh data...');
+                    data = await cariData(estafet.nik); 
+                    if (data) {
+                        saveBOT(data);
                         playSound('sukses');
+                    } else {
+                        try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
+                        updateStatus('Data estafet tidak ditemukan.');
                     }
                 }
             }
 
-            if (data && !BOT_RUNNING) {
+            if(data){
                 BOT_RUNNING = true;
-                await mainLoopCKG(data);
+                updateStatus('MELANJUTKAN OTOMATIS...\nMencari Form Berikutnya');
+                await mainLoopCKG(data); 
             }
         }
     } catch(e) {
