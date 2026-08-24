@@ -835,17 +835,21 @@ function createUI(){
         };
     }
     
-    const btnDaftar = document.getElementById('btn-to-daftar');
+const btnDaftar = document.getElementById('btn-to-daftar');
     if (btnDaftar) {
         btnDaftar.onclick = () => {
             if(!confirm('Anda yakin ingin mereset memori dan kembali ke daftar awal?')) return;
             
             clearBOT(); clearCompleted(); 
             try { 
-                if (typeof GM_deleteValue !== "undefined") {
-                    GM_deleteValue('LAST_USED_NIK'); GM_deleteValue('PASIEN_AKTIF'); GM_deleteValue('CKG_MODE');
+                if (typeof GM_setValue !== "undefined") {
+                    GM_deleteValue('LAST_USED_NIK'); 
+                    GM_deleteValue('PASIEN_AKTIF'); 
+                    GM_setValue('CKG_MODE', 'daftar'); // <--- INI PERBAIKANNYA
                 } else {
-                    localStorage.removeItem('LAST_USED_NIK'); localStorage.removeItem('PASIEN_AKTIF'); localStorage.removeItem('CKG_MODE');
+                    localStorage.removeItem('LAST_USED_NIK'); 
+                    localStorage.removeItem('PASIEN_AKTIF'); 
+                    localStorage.setItem('CKG_MODE', 'daftar'); // <--- INI PERBAIKANNYA
                 }
             } catch(e) { }
             
