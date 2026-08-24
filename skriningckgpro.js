@@ -1,3 +1,10 @@
+// ==UserScript==
+// @name         Skrining Mandiri CKG
+// @match        https://sehatindonesiaku.kemkes.go.id/*
+// @match        https://form.kemkes.go.id/*
+// @grant        GM_xmlhttpRequest
+// ==/UserScript==
+
 (function (GM_xmlhttpRequest) {
 'use strict';
     const request = GM_xmlhttpRequest;
@@ -23,7 +30,6 @@ function sendBotErrorLog(context, errorMessage) {
             headers: { "Content-Type": "application/json" },
             data: JSON.stringify(payload)
         });
-        console.warn(`[TELEMETRI] Error log dikirim ke server: ${context}`);
     } catch(e) { }
 }
 
@@ -39,15 +45,15 @@ function showToast(message, type = 'info') {
         container.style = "position:fixed; top:20px; right:20px; z-index:999999; display:flex; flex-direction:column; gap:10px; pointer-events:none;";
         document.body.appendChild(container);
     }
-    
+
     const toast = document.createElement('div');
     const bgColors = { info: '#3b82f6', success: '#10b981', error: '#ef4444', warning: '#f59e0b' };
     toast.style = `background:${bgColors[type] || bgColors.info}; color:#fff; padding:12px 20px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); font-family:sans-serif; font-size:14px; font-weight:bold; opacity:0; transform:translateX(50px); transition:all 0.3s ease; pointer-events:auto;`;
     toast.innerHTML = message;
-    
+
     container.appendChild(toast);
     requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(0)'; });
-    
+
     setTimeout(() => {
         toast.style.opacity = '0'; toast.style.transform = 'translateX(50px)';
         setTimeout(() => toast.remove(), 300);
@@ -94,29 +100,36 @@ function jawabanMerokok(v){
 }
 
 /* =========================================================
-   SESSION & DYNAMIC TRACKER (DIPERKUAT ANTI BOCOR & MEMORI)
+   [PERBAIKAN] SESSION & DYNAMIC TRACKER (100% LOCALSTORAGE)
 ========================================================= */
+function getStore(key) { return localStorage.getItem(key); }
+function setStore(key, value) { localStorage.setItem(key, value); }
+function delStore(key) { localStorage.removeItem(key); }
+
 function saveBOT(data) { 
-    GM_setValue('AUTO_SKRINING_DATA', JSON.stringify(data)); 
-    GM_setValue('LAST_USED_NIK', data.nik); 
-}
-function loadBOT() { 
-    const raw = GM_getValue('AUTO_SKRINING_DATA'); 
-    if(!raw || raw === '') return null; 
-    try { return JSON.parse(raw); } catch(e) { return null; }
-}
-function clearBOT() { 
-    GM_setValue('AUTO_SKRINING_DATA', ''); 
-    GM_deleteValue('AUTO_SKRINING_DATA'); 
+    setStore('AUTO_SKRINING_DATA', JSON.stringify(data)); 
+    setStore('LAST_USED_NIK', data.nik); 
 }
 
-function getCompleted() { return JSON.parse(GM_getValue('AUTO_SKRINING_COMPLETED') || '[]'); }
+function loadBOT() { 
+    const raw = getStore('AUTO_SKRINING_DATA'); 
+    if(!raw) return null; 
+    try { return JSON.parse(raw); } catch(e) { return null; }
+}
+
+function clearBOT() { delStore('AUTO_SKRINING_DATA'); }
+
+function getCompleted() { 
+    try { return JSON.parse(getStore('AUTO_SKRINING_COMPLETED') || '[]'); } catch(e) { return []; }
+}
+
 function addCompleted(id) {
     const arr = getCompleted();
     if(!arr.includes(id)) arr.push(id);
-    GM_setValue('AUTO_SKRINING_COMPLETED', JSON.stringify(arr));
+    setStore('AUTO_SKRINING_COMPLETED', JSON.stringify(arr));
 }
-function clearCompleted() { GM_deleteValue('AUTO_SKRINING_COMPLETED'); }
+
+function clearCompleted() { delStore('AUTO_SKRINING_COMPLETED'); }
 
 /* =========================================================
    DATA MATCHER (ANTI ERROR / FORMAT AMAN)
@@ -145,7 +158,11 @@ const STORE_NAME = 'SheetCache';
 function openDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, 1);
-        request.onupgradeneeded = (e) => { e.target.result.createObjectStore(STORE_NAME); };
+        request.onupgradeneeded = (e) => {
+            if (!e.target.result.objectStoreNames.contains(STORE_NAME)) {
+                e.target.result.createObjectStore(STORE_NAME);
+            }
+        };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
     });
@@ -211,7 +228,7 @@ async function cariData(nikInput) {
                 } catch(e) {}
             }
         }
-        
+
         if (!cachedSheetData || cachedSheetData.length < 2) return null;
 
         for (let i = 1; i < cachedSheetData.length; i++) {
@@ -231,7 +248,7 @@ async function cariData(nikInput) {
         return null; 
     }
 }
-    
+
 /* =========================================================
    DOM INTERACTOR (SURVEYJS SAFE)
 ========================================================= */
@@ -262,7 +279,7 @@ async function fillRadioSurveyJS(soalText, jawabanText) {
         const questionNode = allElements.find(el => {
             const txt = (el.textContent || '').toLowerCase(); return keywords.some(k => txt.includes(k.toLowerCase()));
         });
-        
+
         if (!questionNode) return false;
         const targetQ = questionNode.closest('.sd-element') || questionNode.closest('[data-name]') || questionNode.closest('.sd-question') || questionNode;
         if (!targetQ) return false;
@@ -428,7 +445,7 @@ async function isiImunisasiBalita() {
             jumlahSoalTerjawab = semuaSoal.length;
         }
         await sleep(1000);
-        
+
         if(!BOT_RUNNING) return false;
         const btnKirim = document.querySelector('.sd-navigation__complete-btn') || [...document.querySelectorAll('button,input[type="button"]')].find(b => (b.innerText||'').toLowerCase().match(/lanjut|kirim/));
         if (btnKirim) { btnKirim.click(); await sleep(3500); }
@@ -453,7 +470,7 @@ async function handleSkriningMandiri(data) {
                 await fillRadioSurveyJS('status perkawinan', target); await sleep(1000);
             } else { updateStatus('Data Perkawinan Kosong!'); await sleep(1000); }
         }
-        
+
         if ((pageText.includes('faktor risiko tb') || pageText.includes('tuberkulosis')) && BOT_RUNNING) {
             await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk'); await fillRadioSurveyJS('faktor risiko tb', 'tidak');
         }
@@ -467,7 +484,7 @@ async function handleSkriningMandiri(data) {
         if ((pageText.includes('merokok') || pageText.includes('kanker paru')) && BOT_RUNNING) {
             const statusMerokok = jawabanMerokok(data.merokok); 
             const semuaPertanyaan = [...document.querySelectorAll('.sd-question, .sd-element')];
-            
+
             for (const q of semuaPertanyaan) {
                 if(!BOT_RUNNING) break;
                 const text = (q.innerText || '').toLowerCase(); let targetJawaban = '';
@@ -481,7 +498,7 @@ async function handleSkriningMandiri(data) {
                 if (targetJawaban !== '') {
                     const pilihan = [...q.querySelectorAll('.sd-item, .sv-item')];
                     const targetPilihan = pilihan.find(el => (el.innerText || '').toLowerCase().includes(targetJawaban));
-                    
+
                     if (targetPilihan) {
                         const radio = targetPilihan.querySelector('.sd-radio__decorator') || targetPilihan.querySelector('.sd-item__decorator') || targetPilihan.querySelector('input[type="radio"]');
                         if (radio) {
@@ -548,7 +565,7 @@ async function handleSkriningMandiri(data) {
 
         await sleep(1500);
         if(!BOT_RUNNING) return;
-        
+
         const btnNext = document.querySelector('.sd-navigation__next-btn, .sd-navigation__complete-btn') || [...document.querySelectorAll('button')].find(b => (b.innerText||'').toLowerCase().match(/lanjut|kirim/));
         if (btnNext) { 
             updateStatus('Mengirim data form...');
@@ -635,9 +652,7 @@ async function mainLoop(data) {
             if (!nextItem) {
                 BOT_RUNNING = false;
                 clearBOT(); 
-                
-                // [PERBAIKAN] Bersihkan memori Estafet setelah seluruh tugas selesai
-                try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
+                delStore('PASIEN_AKTIF');
                 
                 updateStatus('SELESAI SEMUA TARGET.\nSilakan pilih DEWASA/ANAK.');
                 syncUI(); 
@@ -679,13 +694,9 @@ function stopBOT(){
     LOOP_ACTIVE = false; 
     clearBOT(); 
     clearCompleted(); 
-    try { 
-        GM_deleteValue('LAST_USED_NIK'); 
-        GM_deleteValue('PASIEN_AKTIF'); // [PERBAIKAN] Bersihkan estafet saat dibatalkan manual
-    } catch(e) { 
-        localStorage.removeItem('LAST_USED_NIK'); 
-        localStorage.removeItem('PASIEN_AKTIF'); 
-    }
+    delStore('LAST_USED_NIK'); 
+    delStore('PASIEN_AKTIF'); 
+    delStore('CKG_MODE');
     updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); 
     showToast('Proses dibatalkan secara paksa.', 'warning');
     syncUI(); 
@@ -707,8 +718,7 @@ function syncUI() {
         estafetWrap.style.display = 'flex';
         inputNik.value = data.nik || ''; 
         inputNik.disabled = true;
-        
-        // Jangan timpa tulisan jika form sedang dikerjakan
+
         if(!statusEl.innerText.includes('MEMBUKA TARGET') && !statusEl.innerText.includes('MENGIRIM DATA') && !statusEl.innerText.includes('PENGISIAN OTOMATIS')) {
             updateStatus('SIAP. PENGISIAN OTOMATIS BERJALAN');
         }
@@ -716,20 +726,14 @@ function syncUI() {
         btnStart.style.display = 'block'; 
         btnNext.style.display = 'none'; 
 
-        // [PERBAIKAN] Cek prioritas NIK estafet (Modul Daftar -> Skrining)
-        let estafetRaw = null;
-        try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
+        // PRIORITAS BACA ESTAFET (LOCALSTORAGE SAJA)
+        let estafetRaw = getStore('PASIEN_AKTIF');
         let estafetNik = '';
         if (estafetRaw) {
-            try { 
-                let parsed = JSON.parse(estafetRaw);
-                if (parsed.kategori === 'skrining') estafetNik = parsed.nik;
-            } catch(e){}
+            try { estafetNik = JSON.parse(estafetRaw).nik || ''; } catch(e){}
         }
 
-        let lastNik = null;
-        try { lastNik = GM_getValue('LAST_USED_NIK'); } catch(e) { lastNik = localStorage.getItem('LAST_USED_NIK'); }
-
+        let lastNik = getStore('LAST_USED_NIK') || '';
         let activeNik = estafetNik || lastNik;
 
         if (activeNik) {
@@ -803,14 +807,14 @@ function createUI(){
             updateStatus('NIK TIDAK DITEMUKAN.\nPastikan data sudah diunduh.');
             return; 
         }
-        
+
         saveBOT(data);
         clearCompleted(); 
         syncUI();
         playSound('sukses');
         showToast("Memulai Antrean Skrining...", "info");
     };
-    
+
     const btnNextBot = document.getElementById('next-bot');
     if (btnNextBot) {
         btnNextBot.onclick = () => {
@@ -824,20 +828,10 @@ function createUI(){
     document.getElementById('btn-to-input').onclick = () => {
         const nik = document.getElementById('nik-bot').value;
         if(!confirm('Anda yakin ingin pindah ke Modul INPUT DEWASA?')) return;
-        
-        clearBOT(); 
-        clearCompleted(); 
-        GM_deleteValue('LAST_USED_NIK'); 
-        
-        try { 
-            if (typeof GM_setValue !== "undefined") {
-                GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' })); 
-                GM_setValue('CKG_MODE', 'input'); 
-            } else {
-                localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' }));
-                localStorage.setItem('CKG_MODE', 'input');
-            }
-        } catch(e) {}
+
+        stopBOT();
+        setStore('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'dewasa' })); 
+        setStore('CKG_MODE', 'input');
         
         updateStatus('Beralih ke Input Dewasa...'); 
         showToast("Beralih modul...", "success");
@@ -847,20 +841,10 @@ function createUI(){
     document.getElementById('btn-to-anak').onclick = () => {
         const nik = document.getElementById('nik-bot').value;
         if(!confirm('Anda yakin ingin pindah ke Modul INPUT ANAK?')) return;
-        
-        clearBOT(); 
-        clearCompleted(); 
-        GM_deleteValue('LAST_USED_NIK'); 
-        
-        try { 
-            if (typeof GM_setValue !== "undefined") {
-                GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' })); 
-                GM_setValue('CKG_MODE', 'input_anak');
-            } else {
-                localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' }));
-                localStorage.setItem('CKG_MODE', 'input_anak');
-            }
-        } catch(e) {}
+
+        stopBOT();
+        setStore('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'anak' })); 
+        setStore('CKG_MODE', 'input_anak');
         
         updateStatus('Beralih ke Input Anak...'); 
         showToast("Beralih modul...", "success");
@@ -870,12 +854,12 @@ function createUI(){
     document.getElementById('stop-bot').onclick = () => { 
         stopBOT(); 
     };
-    
+
     syncUI();
 }
 
 /* =========================================================
-   INIT / SUPERVISOR OBSERVER (ANTI MACET SPA) 
+   [PERBAIKAN] SENSOR TANGKAP ESTAFET OTOMATIS & ANTI MACET
 ========================================================= */
 setInterval(createUI, 1000);
 
@@ -887,47 +871,70 @@ setInterval(async () => {
         const isMainPage = location.hostname.includes('sehatindonesiaku');
         let data = loadBOT();
 
-        // [PERBAIKAN] Sistem Penangkap Estafet Otomatis dari Daftar -> Skrining
+        // 1. SENSOR ESTAFET DARI DAFTAR (LANGSUNG AUTO-START TANPA KLIK)
         if (isMainPage && !BOT_RUNNING && !data) {
-            let estafetRaw = null;
-            try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
-            
+            let estafetRaw = getStore('PASIEN_AKTIF');
             if (estafetRaw) {
-                const estafet = JSON.parse(estafetRaw);
-                if (estafet.kategori === 'skrining' && estafet.nik) {
-                    updateStatus('Estafet Skrining Diterima...\nMengunduh database lokal...');
+                try {
+                    const estafet = JSON.parse(estafetRaw);
                     
-                    // Pastikan cache spreadsheet terunduh dulu jika kosong
-                    if (!cachedSheetData && !isDownloadingBackground) {
-                        isDownloadingBackground = true;
-                        await cariData('000'); 
+                    // Verifikasi apakah NIK ini ditujukan untuk Skrining.
+                    // Jika Bot Daftar melempar NIK, kita anggap itu Skrining kecuali eksplisit disebut Anak/Dewasa.
+                    let targetSkrining = (estafet.kategori === 'skrining' || getStore('CKG_MODE') === 'skrining');
+                    if (!targetSkrining && estafet.nik && estafet.kategori !== 'dewasa' && estafet.kategori !== 'anak') {
+                        targetSkrining = true; 
                     }
-                    
-                    data = await cariData(estafet.nik);
-                    if (data) {
-                        saveBOT(data);
-                        playSound('sukses');
-                        updateStatus('Data siap! Melanjutkan otomatis...');
-                    } else {
-                        try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
-                        updateStatus('Gagal estafet: NIK tidak di temukan di Sheet.');
+
+                    if (estafet.nik && targetSkrining) {
+                        updateStatus('⚡ MENERIMA ESTAFET: ' + estafet.nik + '\nMengunduh data...');
+                        
+                        // Pastikan Sheet telah ter-download
+                        if (!cachedSheetData && !isDownloadingBackground) {
+                            isDownloadingBackground = true;
+                            await cariData('000'); 
+                        }
+                        
+                        // Cari data berdasarkan NIK Estafet
+                        data = await cariData(estafet.nik);
+                        
+                        if (data) {
+                            saveBOT(data); // Simpan dan jalankan
+                            delStore('PASIEN_AKTIF'); // Hapus pesan estafet agar tidak berulang
+                            delStore('CKG_MODE');
+                            playSound('sukses');
+                            updateStatus('Data siap! Skrining Otomatis dimulai...');
+                            
+                            // [INTI PERBAIKAN] Langsung nyalakan eksekusi bot!
+                            BOT_RUNNING = true;
+                            syncUI();
+                        } else {
+                            delStore('PASIEN_AKTIF');
+                            delStore('CKG_MODE');
+                            setStore('LAST_USED_NIK', estafet.nik); // Tampilkan di textbox
+                            updateStatus('❌ Gagal Estafet:\nNIK tidak ditemukan di Sheet!');
+                            showToast('NIK tidak ditemukan, proses dihentikan.', 'error');
+                            syncUI();
+                        }
                     }
-                }
+                } catch(e) {}
             }
         }
 
+        // 2. AUTO-START JIKA MEMORI DATA SUDAH ADA
         if (data && !BOT_RUNNING) BOT_RUNNING = true;
 
+        // 3. BACKGROUND DOWNLOAD SPREADSHEET
         if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
             isDownloadingBackground = true;
             cariData('000').then(() => { 
                 const statusEl = document.getElementById('bot-status');
-                if (!BOT_RUNNING && statusEl && !statusEl.innerText.includes('SELESAI')) {
+                if (!BOT_RUNNING && statusEl && !statusEl.innerText.includes('SELESAI') && !statusEl.innerText.includes('GAGAL')) {
                     updateStatus('Database Siap !\nSilakan masukkan NIK dan klik START'); 
                 }
             }).catch(e => { isDownloadingBackground = false; });
         }
 
+        // 4. ROUTER LOOP (PENENTU JALUR EKSEKUSI)
         if (BOT_RUNNING && data && !LOOP_ACTIVE) {
             if (isFormPage) {
                 LOOP_ACTIVE = true; await autoContinueForm(); LOOP_ACTIVE = false; 
