@@ -865,8 +865,11 @@ setInterval(createUI, 1000);
 
 setInterval(async () => {
     try {
-        const isFormPage = document.querySelector('#tableLayanan') || document.querySelector('.table-pemeriksaan-mandiri'); 
-        const isMainPage = document.querySelector('body'); 
+        // [PERBAIKAN] Deteksi akurat menggunakan URL dan Class milik SurveyJS
+        const currentUrl = window.location.href;
+        const isFormPage = currentUrl.includes('form.kemkes.go.id') || document.querySelector('.sd-root-modern, .sv-root-modern, .sd-page'); 
+        const isMainPage = currentUrl.includes('sehatindonesiaku.kemkes.go.id'); 
+        
         if (BOT_RUNNING) return;
 
         if (isFormPage) {
@@ -888,7 +891,7 @@ setInterval(async () => {
                 }
             }
 
-             if(data){
+            if(data){
                 BOT_RUNNING = true;
                 updateStatus('MELANJUTKAN OTOMATIS...\nMencari Form Berikutnya');
                 await mainLoopCKG(data); 
