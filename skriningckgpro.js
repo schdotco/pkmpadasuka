@@ -635,6 +635,10 @@ async function mainLoop(data) {
             if (!nextItem) {
                 BOT_RUNNING = false;
                 clearBOT(); 
+                
+                // [PERBAIKAN] Bersihkan memori Estafet setelah seluruh tugas selesai
+                try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
+                
                 updateStatus('SELESAI SEMUA TARGET.\nSilakan pilih DEWASA/ANAK.');
                 syncUI(); 
                 playSound('selesai');
@@ -645,7 +649,7 @@ async function mainLoop(data) {
             updateStatus('MEMBUKA TARGET:\n' + nextItem.title.toUpperCase());
             addCompleted(nextItem.id); 
             nextItem.btn.click();
-            
+
             updateStatus('Mengalihkan halaman form...');
             for(let wait = 0; wait < 15; wait++) {
                 if(!BOT_RUNNING) break;
@@ -654,7 +658,7 @@ async function mainLoop(data) {
                     break; 
                 }
             }
-            
+
             break; 
         } catch(e) {
             sendBotErrorLog("mainLoop", e.message || e);
@@ -675,7 +679,13 @@ function stopBOT(){
     LOOP_ACTIVE = false; 
     clearBOT(); 
     clearCompleted(); 
-    GM_deleteValue('LAST_USED_NIK'); 
+    try { 
+        GM_deleteValue('LAST_USED_NIK'); 
+        GM_deleteValue('PASIEN_AKTIF'); // [PERBAIKAN] Bersihkan estafet saat dibatalkan manual
+    } catch(e) { 
+        localStorage.removeItem('LAST_USED_NIK'); 
+        localStorage.removeItem('PASIEN_AKTIF'); 
+    }
     updateStatus('BOT DIHENTIKAN & NIK DIHAPUS.'); 
     showToast('Proses dibatalkan secara paksa.', 'warning');
     syncUI(); 
@@ -705,18 +715,32 @@ function syncUI() {
     } else {
         btnStart.style.display = 'block'; 
         btnNext.style.display = 'none'; 
-        
-        const lastNik = GM_getValue('LAST_USED_NIK');
-        
-        if (lastNik) {
+
+        // [PERBAIKAN] Cek prioritas NIK estafet (Modul Daftar -> Skrining)
+        let estafetRaw = null;
+        try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
+        let estafetNik = '';
+        if (estafetRaw) {
+            try { 
+                let parsed = JSON.parse(estafetRaw);
+                if (parsed.kategori === 'skrining') estafetNik = parsed.nik;
+            } catch(e){}
+        }
+
+        let lastNik = null;
+        try { lastNik = GM_getValue('LAST_USED_NIK'); } catch(e) { lastNik = localStorage.getItem('LAST_USED_NIK'); }
+
+        let activeNik = estafetNik || lastNik;
+
+        if (activeNik) {
             estafetWrap.style.display = 'flex';
-            if (inputNik.value === '') inputNik.value = lastNik; 
+            if (inputNik.value === '') inputNik.value = activeNik; 
             inputNik.disabled = false;
         } else {
             estafetWrap.style.display = 'none'; 
             inputNik.value = ''; 
             inputNik.disabled = false; 
-            
+
             if(statusEl && !statusEl.innerText.includes('DIHENTIKAN') && !statusEl.innerText.includes('SELESAI')) {
                 updateStatus('INISIALISASI...');
             }
@@ -861,7 +885,36 @@ setInterval(async () => {
     try {
         const isFormPage = location.hostname.includes('form.kemkes.go.id');
         const isMainPage = location.hostname.includes('sehatindonesiaku');
-        const data = loadBOT();
+        let data = loadBOT();
+
+        // [PERBAIKAN] Sistem Penangkap Estafet Otomatis dari Daftar -> Skrining
+        if (isMainPage && !BOT_RUNNING && !data) {
+            let estafetRaw = null;
+            try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
+            
+            if (estafetRaw) {
+                const estafet = JSON.parse(estafetRaw);
+                if (estafet.kategori === 'skrining' && estafet.nik) {
+                    updateStatus('Estafet Skrining Diterima...\nMengunduh database lokal...');
+                    
+                    // Pastikan cache spreadsheet terunduh dulu jika kosong
+                    if (!cachedSheetData && !isDownloadingBackground) {
+                        isDownloadingBackground = true;
+                        await cariData('000'); 
+                    }
+                    
+                    data = await cariData(estafet.nik);
+                    if (data) {
+                        saveBOT(data);
+                        playSound('sukses');
+                        updateStatus('Data siap! Melanjutkan otomatis...');
+                    } else {
+                        try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
+                        updateStatus('Gagal estafet: NIK tidak di temukan di Sheet.');
+                    }
+                }
+            }
+        }
 
         if (data && !BOT_RUNNING) BOT_RUNNING = true;
 
