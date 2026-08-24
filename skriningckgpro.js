@@ -1,10 +1,3 @@
-// ==UserScript==
-// @name         Skrining Mandiri CKG
-// @match        https://sehatindonesiaku.kemkes.go.id/*
-// @match        https://form.kemkes.go.id/*
-// @grant        GM_xmlhttpRequest
-// ==/UserScript==
-
 (function (GM_xmlhttpRequest) {
 'use strict';
     const request = GM_xmlhttpRequest;
