@@ -650,9 +650,9 @@ async function autoPilotSikatHabis(data) {
         // --- TRIGGER ESTAFET & SMART PAUSE ---
         let kategori = getKategoriUmur(data.tgl);
         try { 
-            GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: data.nik, kategori: kategori })); 
+            GM_setValue('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: data.nik, kategori: kategori })); 
         } catch(e) { 
-            localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: data.nik, kategori: kategori })); 
+            localStorage.setItem('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: data.nik, kategori: kategori })); 
         }
             
         playSound('sukses');
