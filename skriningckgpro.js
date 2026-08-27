@@ -93,11 +93,21 @@ function jawabanMerokok(v){
 }
 
 /* =========================================================
-   SESSION & DYNAMIC TRACKER (100% LOCALSTORAGE)
+   [PERBAIKAN] SESSION TRACKER (CROSS-DOMAIN MEMORY)
 ========================================================= */
-function getStore(key) { return localStorage.getItem(key); }
-function setStore(key, value) { localStorage.setItem(key, value); }
-function delStore(key) { localStorage.removeItem(key); }
+// Memulihkan GM_getValue agar data NIK tidak amnesia saat pindah URL
+function getStore(key) {
+    try { return (typeof GM_getValue !== 'undefined') ? GM_getValue(key) : localStorage.getItem(key); }
+    catch(e) { return localStorage.getItem(key); }
+}
+function setStore(key, value) {
+    try { if (typeof GM_setValue !== 'undefined') GM_setValue(key, value); else localStorage.setItem(key, value); }
+    catch(e) { localStorage.setItem(key, value); }
+}
+function delStore(key) {
+    try { if (typeof GM_deleteValue !== 'undefined') GM_deleteValue(key); else localStorage.removeItem(key); }
+    catch(e) { localStorage.removeItem(key); }
+}
 
 function saveBOT(data) { 
     setStore('AUTO_SKRINING_DATA', JSON.stringify(data)); 
@@ -266,7 +276,8 @@ async function fillRadioSurveyJS(soalText, jawabanText) {
             'faktor risiko tb': ['faktor risiko tb','tuberkulosis','tb','batuk','kontak erat','kontak dengan penderita'],
             'kesehatan jiwa': ['depresi','cemas','merasa sedih','minat melakukan aktivitas'],
             'kanker leher rahim': ['kanker leher rahim','serviks','pap smear','iva'],
-            'gejala kanker paru': ['batuk dalam jangka waktu yang lama','batuk berdarah','sesak napas','nyeri dada','leher bengkak','benjolan pada leher','tidak sembuh-sembuh']
+            'gejala kanker paru': ['batuk dalam jangka waktu yang lama','batuk berdarah','sesak napas','nyeri dada','leher bengkak','benjolan pada leher','tidak sembuh-sembuh'],
+            'sedang hamil': ['sedang hamil']
         };
         const keywords = aliases[soalText] || [soalText];
         const questionNode = allElements.find(el => {
@@ -464,6 +475,11 @@ async function handleSkriningMandiri(data) {
             } else { updateStatus('Data Perkawinan Kosong!'); await sleep(1000); }
         }
 
+        // TAMBAHAN: Handle pertanyaan "Apakah Anda sedang hamil?" (Terlihat di screenshot Anda)
+        if (pageText.includes('sedang hamil') && BOT_RUNNING) { 
+            await fillRadioSurveyJS('sedang hamil', 'tidak'); 
+        }
+
         if ((pageText.includes('faktor risiko tb') || pageText.includes('tuberkulosis')) && BOT_RUNNING) {
             await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk'); await fillRadioSurveyJS('faktor risiko tb', 'tidak');
         }
@@ -571,7 +587,7 @@ async function handleSkriningMandiri(data) {
 }
 
 /* =========================================================
-   [PERBAIKAN] FORM LOOP ROUTER (Bebas dari trap loop)
+   FORM LOOP ROUTER 
 ========================================================= */
 let BOT_RUNNING = false;
 
@@ -582,7 +598,6 @@ async function autoContinueForm(){
     BOT_RUNNING = true;
     updateStatus('MEMULAI PENGISIAN...');
     
-    // Memberikan waktu agar render halaman form selesai
     for(let i = 0; i < 10; i++) {
         if(!BOT_RUNNING) return;
         if(document.querySelector('.sd-question, .sv-question, input')) break;
@@ -590,7 +605,6 @@ async function autoContinueForm(){
     }
     await sleep(1000);
 
-    // Mengecek URL form secara langsung tanpa asumsi elemen baru
     while (BOT_RUNNING && location.hostname.includes("form.kemkes.go.id")) {
         try {
             const pageText = document.body.innerText.toLowerCase();
@@ -674,13 +688,11 @@ async function mainLoop(data) {
             for(let wait = 0; wait < 15; wait++) {
                 if(!BOT_RUNNING) break;
                 await sleep(1500);
-                // Langsung break begitu sistem melempar ke form kemkes
                 if (location.hostname.includes('form.kemkes.go.id')) {
                     break; 
                 }
             }
-
-            break; // Keluar dari main loop untuk memberi jalan bagi autoContinueForm
+            break;
         } catch(e) {
             sendBotErrorLog("mainLoop", e.message || e);
             await sleep(2000);
@@ -879,7 +891,7 @@ function createUI(){
 }
 
 /* =========================================================
-   [PERBAIKAN] SENSOR TANGKAP ESTAFET OTOMATIS & ANTI MACET
+   SENSOR TANGKAP ESTAFET OTOMATIS & ANTI MACET
 ========================================================= */
 setInterval(createUI, 1000);
 
@@ -887,7 +899,6 @@ let isDownloadingBackground = false;
 
 setInterval(async () => {
     try {
-        // [KUNCI PERBAIKAN]: Memastikan pengecekan HANYA berdasarkan hostname murni
         const currentHost = window.location.hostname;
         const isFormPage = currentHost.includes('form.kemkes.go.id');
         const isMainPage = currentHost.includes('sehatindonesiaku');
