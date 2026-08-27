@@ -93,7 +93,7 @@ function jawabanMerokok(v){
 }
 
 /* =========================================================
-   [PERBAIKAN] SESSION & DYNAMIC TRACKER (100% LOCALSTORAGE)
+   SESSION & DYNAMIC TRACKER (100% LOCALSTORAGE)
 ========================================================= */
 function getStore(key) { return localStorage.getItem(key); }
 function setStore(key, value) { localStorage.setItem(key, value); }
@@ -571,7 +571,7 @@ async function handleSkriningMandiri(data) {
 }
 
 /* =========================================================
-   FORM LOOP ROUTER 
+   [PERBAIKAN] FORM LOOP ROUTER (Bebas dari trap loop)
 ========================================================= */
 let BOT_RUNNING = false;
 
@@ -581,17 +581,29 @@ async function autoContinueForm(){
 
     BOT_RUNNING = true;
     updateStatus('MEMULAI PENGISIAN...');
-    await sleep(3000);
+    
+    // Memberikan waktu agar render halaman form selesai
+    for(let i = 0; i < 10; i++) {
+        if(!BOT_RUNNING) return;
+        if(document.querySelector('.sd-question, .sv-question, input')) break;
+        await sleep(1000);
+    }
+    await sleep(1000);
 
-    while (BOT_RUNNING && location.host.includes("form.kemkes.go.id")) {
+    // Mengecek URL form secara langsung tanpa asumsi elemen baru
+    while (BOT_RUNNING && location.hostname.includes("form.kemkes.go.id")) {
         try {
-            const formReady = document.querySelector('.sd-question, .sv-question, .sd-element');
-            if (!formReady) { updateStatus('Menunggu form dimuat...'); await sleep(1500); continue; }
             const pageText = document.body.innerText.toLowerCase();
 
-            if (pageText.includes('riwayat imunisasi rutin balita')) { await isiImunisasiBalita(); } 
-            else if (pageText.includes('riwayat imunisasi tetanus')) { await isiTetanusCatin(); } 
-            else { await handleSkriningMandiri(data); }
+            if (pageText.includes('riwayat imunisasi rutin balita')) { 
+                await isiImunisasiBalita(); 
+            } 
+            else if (pageText.includes('riwayat imunisasi tetanus')) { 
+                await isiTetanusCatin(); 
+            } 
+            else { 
+                await handleSkriningMandiri(data); 
+            }
         } catch(e) { 
             sendBotErrorLog("autoContinueForm_Loop", e.message || e);
             updateStatus("Melewati error, mencoba ulang..."); 
@@ -662,12 +674,13 @@ async function mainLoop(data) {
             for(let wait = 0; wait < 15; wait++) {
                 if(!BOT_RUNNING) break;
                 await sleep(1500);
-                if (!location.hostname.includes('sehatindonesiaku')) {
+                // Langsung break begitu sistem melempar ke form kemkes
+                if (location.hostname.includes('form.kemkes.go.id')) {
                     break; 
                 }
             }
 
-            break; 
+            break; // Keluar dari main loop untuk memberi jalan bagi autoContinueForm
         } catch(e) {
             sendBotErrorLog("mainLoop", e.message || e);
             await sleep(2000);
@@ -719,7 +732,6 @@ function syncUI() {
         btnStart.style.display = 'block'; 
         btnNext.style.display = 'none'; 
 
-        // PRIORITAS BACA ESTAFET (LOCALSTORAGE SAJA)
         let estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
         let estafetNik = '';
         if (estafetRaw) {
@@ -793,12 +805,27 @@ function createUI(){
         }
 
         updateStatus('MENCARI NIK DI DATABASE LOKAL...');
-        const data = await cariData(nik);
+        let data = await cariData(nik);
 
         if(!data) {
-            showToast(`Data NIK ${nik} tidak ditemukan!`, "error");
-            updateStatus('NIK TIDAK DITEMUKAN.\nPastikan data sudah diunduh.');
-            return; 
+            const lanjutNormal = confirm(`Data NIK ${nik} tidak ditemukan di database!\n\nApakah Anda ingin melanjutkan pengisian dengan mode "SEMUA NORMAL"?\n(Jika Setuju bot akan langsung berjalan)`);
+            
+            if (lanjutNormal) {
+                data = {
+                    nik: nik,
+                    perkawinan: 'Belum Menikah',
+                    merokok: 'tidak',
+                    jiwa1: 'Tidak sama sekali',
+                    jiwa2: 'Tidak sama sekali',
+                    jiwa3: 'Tidak sama sekali',
+                    jiwa4: 'Tidak sama sekali'
+                };
+                showToast("Mode SEMUA NORMAL diaktifkan.", "warning");
+            } else {
+                showToast("Proses dibatalkan.", "error");
+                updateStatus('DIBATALKAN.\nData NIK tidak ditemukan.');
+                return; 
+            }
         }
 
         saveBOT(data);
@@ -860,19 +887,19 @@ let isDownloadingBackground = false;
 
 setInterval(async () => {
     try {
-        const isFormPage = location.hostname.includes('form.kemkes.go.id');
-        const isMainPage = location.hostname.includes('sehatindonesiaku');
+        // [KUNCI PERBAIKAN]: Memastikan pengecekan HANYA berdasarkan hostname murni
+        const currentHost = window.location.hostname;
+        const isFormPage = currentHost.includes('form.kemkes.go.id');
+        const isMainPage = currentHost.includes('sehatindonesiaku');
+        
         let data = loadBOT();
 
-        // 1. SENSOR ESTAFET DARI DAFTAR (LANGSUNG AUTO-START TANPA KLIK)
         if (isMainPage && !BOT_RUNNING && !data) {
             let estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
             if (estafetRaw) {
                 try {
                     const estafet = JSON.parse(estafetRaw);
                     
-                    // Verifikasi apakah NIK ini ditujukan untuk Skrining.
-                    // Jika Bot Daftar melempar NIK, kita anggap itu Skrining kecuali eksplisit disebut Anak/Dewasa.
                     let targetSkrining = (estafet.kategori === 'skrining' || getStore('CKG_MODE') === 'skrining');
                     if (!targetSkrining && estafet.nik && estafet.kategori !== 'dewasa' && estafet.kategori !== 'anak') {
                         targetSkrining = true; 
@@ -881,31 +908,43 @@ setInterval(async () => {
                     if (estafet.nik && targetSkrining) {
                         updateStatus('⚡ MENERIMA ESTAFET: ' + estafet.nik + '\nMengunduh data...');
                         
-                        // Pastikan Sheet telah ter-download
                         if (!cachedSheetData && !isDownloadingBackground) {
                             isDownloadingBackground = true;
                             await cariData('000'); 
                         }
                         
-                        // Cari data berdasarkan NIK Estafet
                         data = await cariData(estafet.nik);
                         
+                        if (!data) {
+                            const lanjutNormal = confirm(`[Jalur Estafet]\nData NIK ${estafet.nik} tidak ditemukan!\n\nApakah Anda ingin melanjutkan pengisian dengan mode "SEMUA NORMAL"?`);
+                            if(lanjutNormal) {
+                                data = {
+                                    nik: estafet.nik,
+                                    perkawinan: 'Belum Menikah',
+                                    merokok: 'tidak',
+                                    jiwa1: 'Tidak sama sekali',
+                                    jiwa2: 'Tidak sama sekali',
+                                    jiwa3: 'Tidak sama sekali',
+                                    jiwa4: 'Tidak sama sekali'
+                                };
+                            }
+                        }
+                        
                         if (data) {
-                            saveBOT(data); // Simpan dan jalankan
-                            delStore('PASIEN_AKTIF_PADASUKA'); // Hapus pesan estafet agar tidak berulang
+                            saveBOT(data); 
+                            delStore('PASIEN_AKTIF_PADASUKA'); 
                             delStore('CKG_MODE');
                             playSound('sukses');
                             updateStatus('Data siap! Skrining Otomatis dimulai...');
                             
-                            // [INTI PERBAIKAN] Langsung nyalakan eksekusi bot!
                             BOT_RUNNING = true;
                             syncUI();
                         } else {
                             delStore('PASIEN_AKTIF_PADASUKA');
                             delStore('CKG_MODE');
-                            setStore('LAST_USED_NIK', estafet.nik); // Tampilkan di textbox
+                            setStore('LAST_USED_NIK', estafet.nik); 
                             updateStatus('❌ Gagal Estafet:\nNIK tidak ditemukan di Sheet!');
-                            showToast('NIK tidak ditemukan, proses dihentikan.', 'error');
+                            showToast('Proses dibatalkan pengguna.', 'error');
                             syncUI();
                         }
                     }
@@ -913,10 +952,8 @@ setInterval(async () => {
             }
         }
 
-        // 2. AUTO-START JIKA MEMORI DATA SUDAH ADA
         if (data && !BOT_RUNNING) BOT_RUNNING = true;
 
-        // 3. BACKGROUND DOWNLOAD SPREADSHEET
         if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
             isDownloadingBackground = true;
             cariData('000').then(() => { 
@@ -927,7 +964,6 @@ setInterval(async () => {
             }).catch(e => { isDownloadingBackground = false; });
         }
 
-        // 4. ROUTER LOOP (PENENTU JALUR EKSEKUSI)
         if (BOT_RUNNING && data && !LOOP_ACTIVE) {
             if (isFormPage) {
                 LOOP_ACTIVE = true; await autoContinueForm(); LOOP_ACTIVE = false; 
