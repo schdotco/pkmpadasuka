@@ -13,60 +13,61 @@
     --primary: #1976d2;
     --accent: #bbdefb;
     --text: #2c3e50;
-    --bg-light: #000000; /* Dibuat gelap agar nuansa seperti bioskop / TV */
+    --bg-dark: #0f172a; 
+  }
 
-    --scale-header: 1.45;
-    --scale-body: 1.35;
-    --scale-small: 1.25;
+  /* Reset dan Fullscreen Setup */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
   }
 
   body {
     font-family: "Inter", sans-serif;
-    margin: 0;
-    background: #0f172a; /* Warna latar belakang gelap kebiruan elegan */
+    background: var(--bg-dark);
     color: white;
-    overflow: hidden;
+    overflow: hidden; /* Mencegah munculnya scrollbar di layar TV */
     display: flex;
     flex-direction: column;
-    align-items: center;
-    height: 100vh;
-    line-height: 1.7;
+    height: 100vh; /* Memaksimalkan tinggi layar */
+    width: 100vw;
   }
 
   header {
     background: linear-gradient(90deg, #0d47a1, #1976d2, #2196f3);
     color: white;
     text-align: center;
-    padding: 24px 0 16px 0;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    padding: 1.5vh 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     font-family: "Poppins", sans-serif;
-    font-size: calc(28px * var(--scale-header));
+    font-size: 2.2vw; /* Menggunakan VW agar responsif di ukuran TV apapun */
     font-weight: 700;
-    width: 100%;
     z-index: 10;
   }
 
   #clock {
-    font-size: calc(18px * var(--scale-small));
-    margin-top: 8px;
+    font-size: 1.2vw;
+    margin-top: 4px;
     color: #e3f2fd;
     font-weight: 500;
   }
 
   .ticker {
-    background: linear-gradient(90deg, #000000, #111111, #000000);
+    background: #000;
     color: #4fc3f7;
-    font-size: calc(20px * var(--scale-body));
+    font-size: 1.5vw;
     white-space: nowrap;
     width: 100%;
-    padding: 12px 0;
-    border-bottom: 2px solid #1976d2;
+    padding: 10px 0;
+    border-bottom: 3px solid #1976d2;
+    overflow: hidden; /* Penting agar teks tidak memperlebar layar */
   }
 
   .ticker span {
     display: inline-block;
     padding-left: 100%;
-    animation: ticker 25s linear infinite;
+    animation: ticker 30s linear infinite; /* Kecepatan running text */
     font-weight: 600;
     letter-spacing: 1px;
   }
@@ -76,34 +77,31 @@
     to { transform: translateX(-100%); }
   }
 
+  /* Area Konten Utama (Video) */
   .container {
     display: flex;
-    flex-direction: column;
-    width: 100%;
-    flex-grow: 1;
-    padding: 20px;
-    box-sizing: border-box;
+    flex-grow: 1; /* Mengambil sisa tinggi layar */
+    padding: 15px;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
   }
 
   .video-section {
     width: 100%;
+    height: 100%;
     background: #000;
-    border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     overflow: hidden;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    border: 3px solid #1976d2;
+    position: relative;
+    border: 4px solid #1976d2;
   }
 
   .video-container {
     position: relative;
     width: 100%;
     height: 100%;
-    background: #000;
-    display: block;
-    overflow: hidden;
   }
 
   .video-container iframe {
@@ -111,37 +109,44 @@
     top: 0; left: 0;
     width: 100%; height: 100%;
     border: none;
+    pointer-events: none; /* Mencegah pasien mengklik/pause video secara tidak sengaja di layar sentuh (opsional) */
   }
 
   /* Tombol unmute */
   #unmuteBtn {
     position: absolute;
     z-index: 10;
-    top: 30px;
-    right: 30px;
-    padding: 16px 28px;
-    font-size: 24px;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    font-size: 1.2vw;
     font-weight: bold;
     border: none;
-    background: rgba(25, 118, 210, 0.85);
+    background: rgba(25, 118, 210, 0.9);
     color: white;
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     transition: all 0.3s ease;
+    animation: pulse 2s infinite;
   }
 
   #unmuteBtn:hover {
     background: rgba(33, 150, 243, 1);
-    transform: scale(1.05);
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
   }
 
   .footer {
     background: #0d47a1;
     color: white;
     text-align: center;
-    padding: 14px;
-    font-size: calc(16px * var(--scale-small));
+    padding: 1vh;
+    font-size: 1.1vw;
     width: 100%;
     font-weight: 500;
     letter-spacing: 1px;
@@ -163,8 +168,7 @@
     <section class="video-section">
       <div class="video-container">
         <!-- Tombol UNMUTE -->
-        <button id="unmuteBtn">🔊 Aktifkan Suara</button>
-
+        <button id="unmuteBtn">🔊 Klik Untuk Mengaktifkan Suara</button>
         <!-- Player YouTube API -->
         <div id="videoPlayer"></div>
       </div>
@@ -173,13 +177,9 @@
 
   <div class="footer">Media Edukasi & Informasi Kesehatan | UPTD Puskesmas Padasuka</div>
 
-<!-- =====================================================
-      SCRIPT JAM & TANGGAL
-===================================================== -->
 <script>
+  // Script Jam Digital
   const clock = document.getElementById("clock");
-
-  // Update Jam dan Tanggal setiap detik
   setInterval(() => {
     const now = new Date();
     clock.textContent = now.toLocaleString("id-ID", {
@@ -189,59 +189,54 @@
   }, 1000);
 </script>
 
-<!-- =====================================================
-      SISTEM VIDEO YOUTUBE API (PLAYLIST + UNMUTE + AUTOPLAY)
-===================================================== -->
-<!-- Load YouTube API -->
+<!-- API YouTube -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
-let player;
-let vidIndex = 0;
+  let player;
+  let vidIndex = 0;
 
-// ID video edukasi (Silakan disesuaikan)
-const playlist = [
-  "w8q6KWrduA0",
-  "pQ1lGFzfIW0",
-  "dMpP4Q-IinU",
-  "XwBX-VHX2Y8"
-];
+  // Daftar ID Video YouTube
+  const playlist = [
+    "w8q6KWrduA0",
+    "pQ1lGFzfIW0",
+    "dMpP4Q-IinU",
+    "XwBX-VHX2Y8"
+  ];
 
-// Inisialisasi YouTube Player
-function onYouTubeIframeAPIReady() {
-  player = new YT.Player("videoPlayer", {
-    height: "100%",
-    width: "100%",
-    videoId: playlist[vidIndex],
-    playerVars: {
-      autoplay: 1,
-      controls: 0,
-      mute: 1,
-      modestbranding: 1,
-      rel: 0,
-      iv_load_policy: 3
-    },
-    events: {
-      onReady: (e) => e.target.playVideo(),
-      onStateChange: onPlayerStateChange
-    }
-  });
-}
-
-// Pindah ke video berikutnya otomatis jika sudah selesai (ENDED)
-function onPlayerStateChange(event) {
-  if (event.data === YT.PlayerState.ENDED) {
-    vidIndex = (vidIndex + 1) % playlist.length;
-    player.loadVideoById(playlist[vidIndex]);
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player("videoPlayer", {
+      height: "100%",
+      width: "100%",
+      videoId: playlist[vidIndex],
+      playerVars: {
+        autoplay: 1,
+        controls: 0, /* Menyembunyikan kontrol video agar terlihat seperti siaran TV */
+        mute: 1, /* Wajib mute awal agar bisa autoplay di browser */
+        modestbranding: 1,
+        rel: 0,
+        disablekb: 1 /* Menonaktifkan keyboard shortcuts */
+      },
+      events: {
+        onReady: (e) => e.target.playVideo(),
+        onStateChange: onPlayerStateChange
+      }
+    });
   }
-}
 
-// UNMUTE setelah klik tombol
-document.getElementById("unmuteBtn").addEventListener("click", () => {
-  player.unMute();
-  player.setVolume(100);
-  document.getElementById("unmuteBtn").style.display = "none";
-});
+  function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.ENDED) {
+      vidIndex = (vidIndex + 1) % playlist.length;
+      player.loadVideoById(playlist[vidIndex]);
+    }
+  }
+
+  document.getElementById("unmuteBtn").addEventListener("click", () => {
+    player.unMute();
+    player.setVolume(100);
+    // Menyembunyikan tombol setelah diklik
+    document.getElementById("unmuteBtn").style.display = "none";
+  });
 </script>
 
 </body>
