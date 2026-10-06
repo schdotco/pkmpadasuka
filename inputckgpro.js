@@ -12,7 +12,7 @@ function sendBotErrorLog(context, errorMessage) {
             fields: {
                 timestamp: { stringValue: new Date().toISOString() },
                 device: { stringValue: deviceId },
-                module: { stringValue: "INPUT_DEWASA_BOT" },
+                module: { stringValue: "INPUT_DEWASA_BOT_SMART" },
                 context: { stringValue: context },
                 message: { stringValue: String(errorMessage) }
             }
@@ -82,19 +82,11 @@ function playSound(type) {
     } catch(e) {}
 }
 
-function getKategoriUmur(tglLahir) {
-    if (!tglLahir) return 'dewasa';
-    let p = tglLahir.split(/[-/]/);
-    let y = p[0].length === 4 ? p[0] : (p[2] || new Date().getFullYear());
-    return (new Date().getFullYear() - parseInt(y)) < 18 ? 'anak' : 'dewasa';
-}
-
 /* =========================================================
    CONFIG
 ========================================================= */
 const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
 const GIDS = ['1783755807', '1121908280'];
-
 let BOT_RUNNING = false;
 
 const TARGETS = [
@@ -314,43 +306,82 @@ function forceInject(element, value) {
 }
 
 /* =========================================================
-   SURVEYJS DROPDOWN & RADIO ENGINE
+   SURVEYJS DROPDOWN & RADIO & SMART SEARCH ENGINE
 ========================================================= */
-async function selectDropdownSurveyJS(optionText) {
-    if(!BOT_RUNNING) return false;
-    let success = false;
-    const dropdownTrigger = document.querySelector('.sd-dropdown, .sv-dropdown');
-    if (dropdownTrigger) {
-        triggerClick(dropdownTrigger); await sleep(1000);
-        const searchInput = document.querySelector('input[type="text"][role="combobox"], input[aria-expanded="true"]');
-        if (searchInput) { forceInject(searchInput, 't'); await sleep(500); }
-        const targetOpt = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')].find(el =>
-            el.innerText.toLowerCase().includes(optionText.toLowerCase())
-        );
-        if (targetOpt) { triggerClick(targetOpt); await sleep(500); success = true; } 
-        else triggerClick(dropdownTrigger); 
+
+// FUNGSI BARU: Mencari input secara PINTAR berdasarkan konteks labelnya (Aman dari urutan acak)
+async function isiInputBySoal(keywords, value) {
+    if(!BOT_RUNNING || !value) return false;
+    
+    const keywordArr = Array.isArray(keywords) ? keywords : [keywords];
+    const questions = [...document.querySelectorAll('.sd-question, .sv-question, .ant-form-item, .form-group')];
+    const inputs = [...document.querySelectorAll('input:not([type="radio"]):not([type="checkbox"])')];
+
+    for (let kw of keywordArr) {
+        const lowerKw = kw.toLowerCase();
+
+        // 1. Cari via container question (Paling Presisi)
+        let targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(lowerKw));
+        if (targetQ) {
+            const input = targetQ.querySelector('input');
+            if (input) { forceInject(input, value); await sleep(500); return true; }
+        }
+
+        // 2. Cari via placeholder
+        let targetInput = inputs.find(i => (i.placeholder || '').toLowerCase().includes(lowerKw));
+        if (targetInput) { forceInject(targetInput, value); await sleep(500); return true; }
+
+        // 3. Cari via teks di sekitarnya
+        for (let input of inputs) {
+            const parentText = (input.parentElement.innerText || '').toLowerCase();
+            if (parentText.includes(lowerKw)) {
+                forceInject(input, value); await sleep(500); return true;
+            }
+        }
     }
-    return success;
+    return false;
 }
 
+// FUNGSI DIPERBARUI: Dropdown Smart Search.
 async function selectDropdownContext(soalText, optionText) {
     if(!BOT_RUNNING) return false;
-    const questions = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')];
-    const targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(soalText.toLowerCase()));
-    if (!targetQ) return false;
-    const dropdown = targetQ.querySelector('.sd-dropdown');
+
+    let targetQ = null;
+    if (soalText) {
+        const questions = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')];
+        targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(soalText.toLowerCase()));
+    }
+
+    // Jika soal tidak ditemukan/kosong, ambil dropdown apa saja yang ada (aman untuk popup spesifik seperti Frambusia)
+    if (!targetQ) {
+        const allDropdowns = document.querySelectorAll('.sd-dropdown, .sv-dropdown');
+        if (allDropdowns.length > 0) {
+            targetQ = allDropdowns[0].closest('.sd-question, .sv-question, .sd-element') || allDropdowns[0].parentElement;
+        } else {
+            return false;
+        }
+    }
+
+    const dropdown = targetQ.querySelector('.sd-dropdown, .sv-dropdown');
     if (!dropdown) return false;
 
-    dropdown.click(); await sleep(1000);
-    const listId = dropdown.getAttribute('aria-controls');
-    const listElement = document.getElementById(listId);
-    
-    if (!listElement) { dropdown.click(); return false; }
-    const options = [...listElement.querySelectorAll('.sv-list__item-body')];
-    const targetOpt = options.find(el => (el.innerText || '').trim().toLowerCase() === optionText.toLowerCase());
+    triggerClick(dropdown); await sleep(1000);
 
-    if (targetOpt) { targetOpt.click(); await sleep(500); return true; } 
-    else { dropdown.click(); return false; }
+    const listId = dropdown.getAttribute('aria-controls');
+    let listElement = listId ? document.getElementById(listId) : null;
+    if (!listElement) listElement = document.querySelector('.sv-popup--show, .sd-popup--show, .sv-list, .sd-list');
+    
+    if (!listElement) { triggerClick(dropdown); return false; }
+    
+    // Pencarian input combo box (surveyjs modern)
+    const searchInput = document.querySelector('input[type="text"][role="combobox"], input[aria-expanded="true"]');
+    if (searchInput) { forceInject(searchInput, optionText.charAt(0)); await sleep(500); }
+
+    const options = [...listElement.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
+    const targetOpt = options.find(el => (el.innerText || '').trim().toLowerCase().includes(optionText.toLowerCase()));
+
+    if (targetOpt) { triggerClick(targetOpt); await sleep(500); return true; } 
+    else { triggerClick(dropdown); return false; } // Tutup jika gagal
 }
 
 async function pilihSemuaRadioLimit(text, limit = 99, exact = false) {
@@ -409,7 +440,7 @@ async function handleTelingaMata(data) {
     try {
         updateStatus('MENGISI: TELINGA & MATA...');
         await isiRadioSurveyJS('serumen impaksi', 'tidak ada serumen impaksi'); await sleep(500);
-        await selectDropdownSurveyJS('tidak ada infeksi'); await sleep(500);
+        await selectDropdownContext('infeksi', 'tidak ada infeksi'); await sleep(500);
         await isiRadioSurveyJS('tajam pendengaran', 'normal'); await sleep(500);
 
         if ((data.mata || '').toLowerCase() === 'ya') {
@@ -496,7 +527,7 @@ async function klikKirim() {
 }
 
 /* =========================================================
-   FORM FILLER LOGIC (DIPERKUAT DENGAN TRY-CATCH)
+   FORM FILLER LOGIC (DIPERKUAT DENGAN SMART SEARCH)
 ========================================================= */
 async function autoContinueForm() {
     try {
@@ -515,45 +546,35 @@ async function autoContinueForm() {
         if(!BOT_RUNNING) return;
 
         const title = document.body.innerText.toLowerCase();
-        const realInputs = [...document.querySelectorAll('input')].filter(el =>
-            (!el.type || el.type === 'text' || el.type === 'number') && !el.closest('.ant-select') && !el.closest('.sd-dropdown')
-        );
-
         let currentId = null;
 
         // TAHAP 1: GIZI
         if(title.includes('gizi (bb') || title.includes('lingkar perut')){
             currentId = 'gizi'; updateStatus('MENGISI TAHAP: GIZI');
-            const inputBB = document.querySelector('input[placeholder*="satuan kg" i]') || document.querySelector('input[placeholder*="Berat Badan" i]') || realInputs[0];
-            const inputTB = document.querySelector('input[placeholder*="tinggi badan" i]') || realInputs[1];
-            const inputLP = realInputs.find(el => (el.placeholder || '').toLowerCase().includes('hasil pengukuran') && !(el.placeholder || '').toLowerCase().includes('tinggi badan')) || realInputs[2];
-            
-            if(inputBB) forceInject(inputBB, data.bb); await sleep(800);
-            if(inputTB) forceInject(inputTB, data.tb); await sleep(800);
-            if(inputLP) forceInject(inputLP, data.lp); await sleep(1000);
+            await isiInputBySoal(['berat badan', 'satuan kg'], data.bb);
+            await isiInputBySoal(['tinggi badan', 'satuan cm'], data.tb);
+            await isiInputBySoal(['lingkar perut', 'hasil pengukuran'], data.lp);
         }
         // TAHAP 2: GULA
         else if(title.includes('gula darah')){
             currentId = 'gula'; updateStatus('MENGISI TAHAP: GULA DARAH');
             await pilihSemuaRadioLimit('tidak', 99, true); await sleep(800);
-            if(realInputs[0]) forceInject(realInputs[0], data.gula); await sleep(1000);
+            await isiInputBySoal(['sewaktu', 'gula darah', 'mg/dl'], data.gula);
         }
         // TAHAP 3: TENSI
         else if(title.includes('tekanan darah')){
             currentId = 'tensi'; updateStatus('MENGISI TAHAP: TEKANAN DARAH');
             await pilihSemuaRadioLimit('tidak', 99, true); await sleep(800);
-            const inSistol = document.querySelector('input[placeholder*="Sistolik" i]') || realInputs[0];
-            const inDiastol = document.querySelector('input[placeholder*="Diastolik" i]') || realInputs[1];
-            if(inSistol) forceInject(inSistol, data.sistole); await sleep(800);
-            if(inDiastol) forceInject(inDiastol, data.diastole); await sleep(1000);
+            await isiInputBySoal(['sistol', 'sistolik'], data.sistole);
+            await isiInputBySoal(['diastol', 'diastolik'], data.diastole);
         }
         // TAHAP 4: PTM LAINNYA
-        else if(title.includes('frambusia')){ currentId = 'frambusia'; updateStatus('MENGISI TAHAP: FRAMBUSIA'); await pilihSemuaRadioLimit('tidak ada', 99, false); await selectDropdownSurveyJS('tidak ada'); }
-        else if(title.includes('kusta')){ currentId = 'kusta'; updateStatus('MENGISI TAHAP: KUSTA'); await selectDropdownSurveyJS('tidak ada'); }
-        else if(title.includes('skabies')){ currentId = 'skabies'; updateStatus('MENGISI TAHAP: SKABIES'); await selectDropdownSurveyJS('tidak ada'); }
+        else if(title.includes('frambusia')){ currentId = 'frambusia'; updateStatus('MENGISI TAHAP: FRAMBUSIA'); await pilihSemuaRadioLimit('tidak ada', 99, false); await selectDropdownContext('', 'tidak ada'); }
+        else if(title.includes('kusta')){ currentId = 'kusta'; updateStatus('MENGISI TAHAP: KUSTA'); await selectDropdownContext('', 'tidak ada'); }
+        else if(title.includes('skabies')){ currentId = 'skabies'; updateStatus('MENGISI TAHAP: SKABIES'); await selectDropdownContext('', 'tidak ada'); }
         else if(title.includes('telinga dan mata')){ currentId = 'telinga_mata'; await handleTelingaMata(data); }
-        else if(title.includes('karies')){ currentId = 'karies'; updateStatus('MENGISI TAHAP: KARIES'); await pilihSemuaRadioLimit('tidak', 1, true); await selectDropdownSurveyJS('tidak', 1); }
-        else if(title.includes('periodontal')){ currentId = 'periodontal'; updateStatus('MENGISI TAHAP: PERIODONTAL'); await pilihSemuaRadioLimit('tidak', 2, true); await selectDropdownSurveyJS('tidak', 2); }
+        else if(title.includes('karies')){ currentId = 'karies'; updateStatus('MENGISI TAHAP: KARIES'); await pilihSemuaRadioLimit('tidak', 1, true); await selectDropdownContext('', 'tidak'); }
+        else if(title.includes('periodontal')){ currentId = 'periodontal'; updateStatus('MENGISI TAHAP: PERIODONTAL'); await pilihSemuaRadioLimit('tidak', 2, true); await selectDropdownContext('', 'tidak'); }
         
         // TAHAP 5: KANKER PARU
         else if(title.includes('skrining kanker paru') && (title.includes('riwayat merokok') || title.includes('skrining kanker paru'))) {
@@ -700,7 +721,6 @@ function syncUI() {
     } else {
         btnStart.style.display = 'block'; 
         
-        // [PERBAIKAN] Prioritaskan baca NIK estafet dari Modul Skrining
         let estafetRaw = null;
         try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
         let estafetNik = '';
@@ -834,7 +854,6 @@ function createUI(){
         };
     }
     
-    // [PERBAIKAN] Logika tombol DAFTAR disamakan dengan Bot Anak
     const btnDaftar = document.getElementById('btn-to-daftar');
     if (btnDaftar) {
         btnDaftar.onclick = () => {
@@ -870,7 +889,6 @@ setInterval(createUI, 1000);
 setInterval(async () => {
     try {
         const currentUrl = window.location.href;
-        // [PERBAIKAN] Deteksi form & main page yang lebih akurat
         const isFormPage = currentUrl.includes('form.kemkes.go.id') || document.querySelector('.sd-root-modern, .sv-root-modern, .sd-page'); 
         const isMainPage = currentUrl.includes('sehatindonesiaku.kemkes.go.id'); 
 
@@ -885,7 +903,6 @@ setInterval(async () => {
             let estafetRaw = null;
             try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
 
-            // [PERBAIKAN] Otomatis menarik data tanpa perlu nunggu cachedSheetData terisi
             if (estafetRaw && !data) {
                 const estafet = JSON.parse(estafetRaw);
                 if (estafet.kategori === 'dewasa') {
