@@ -112,23 +112,18 @@ const TARGETS = [
 const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
+// PERBAIKAN: Hitung umur hanya selisih tahun & mendeteksi angka tahun dengan pintar
 function hitungUmur(tglLahirStr) {
     if (!tglLahirStr) return 0;
     try {
-        let parts = tglLahirStr.split(/[-/]/);
-        let year, month, day;
-        if (parts[0].length === 4) {
-            year = parseInt(parts[0]); month = parseInt(parts[1]) - 1; day = parseInt(parts[2]);
-        } else {
-            day = parseInt(parts[0]); month = parseInt(parts[1]) - 1; year = parseInt(parts[2]);
+        // Cari 4 digit angka berturut-turut yang masuk akal sebagai tahun lahir (misal 19xx atau 20xx)
+        let match = String(tglLahirStr).match(/(19\d{2}|20\d{2})/);
+        if (match && match[1]) {
+            let tahunLahir = parseInt(match[1]);
+            let tahunSekarang = new Date().getFullYear(); // Mendapatkan tahun hari ini
+            return tahunSekarang - tahunLahir;
         }
-        
-        let today = new Date();
-        let birthDate = new Date(year, month, day);
-        let age = today.getFullYear() - birthDate.getFullYear();
-        let m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { age--; }
-        return age;
+        return 0; // Kembalikan 0 jika gagal mendeteksi tahun
     } catch(e) {
         return 0;
     }
@@ -248,7 +243,7 @@ async function cariData(nikInput) {
         const target = normalizeNIK(nikInput);
         if (!cachedSheetData || cachedSheetData.length === 0) {
             let savedCache = null; let cacheTime = 0;
-            const EXPIRATION_TIME = 2 * 60 * 1000; // Cache 2 Menit
+            const EXPIRATION_TIME = 2 * 60 * 1000; 
             const now = Date.now();
 
             try { savedCache = await getCacheDB('CKG_SHEET_DATA'); cacheTime = await getCacheDB('CKG_SHEET_TIME') || 0; } catch(e) { }
@@ -290,11 +285,22 @@ async function cariData(nikInput) {
             if (!row || row.length < 5) continue; 
             const cells = row.map(col => String(col || '').trim());
             const rawNik = (cells.length > 2) ? (cells[0] || cells[1] || cells[2]) : '';
+            
             if (normalizeNIK(rawNik) === target || cells.some(col => normalizeNIK(col) === target)) {
+                
+                // PERBAIKAN: Cari string tanggal lahir di sekitar kolom F, G, H, I agar lebih robust
+                let extractedTglLahir = '';
+                for (let colIdx = 4; colIdx <= 9; colIdx++) {
+                    if (cells[colIdx] && /(19\d{2}|20\d{2})/.test(cells[colIdx])) {
+                        extractedTglLahir = cells[colIdx];
+                        break;
+                    }
+                }
+
                 return {
                     nik: target, 
                     nama: cells[7] || '', 
-                    tglLahir: cells[6] || '', // Ambil Tgl Lahir (Asumsi Kolom G)
+                    tglLahir: extractedTglLahir, // Hasil ekstrak tanggal lahir
                     sistole: cells[37] || '120', diastole: cells[38] || '80',
                     bb: cells[40] || '60', tb: cells[41] || '165', lp: cells[43] || '80', gula: cells[58] || '110',
                     mata: cells[70] || 'Tidak', merokok: cells[71] || '', skilasKog1: (cells[78] || 'Ya').trim(),
@@ -575,7 +581,6 @@ async function autoContinueForm() {
         BOT_RUNNING = true;
         updateStatus('MENUNGGU FORM DIMUAT...');
         
-        // --- FIX: Perpanjang Loading Timeout ke 25 iterasi (~20 detik) ---
         for(let i = 0; i < 25; i++) {
             if(!BOT_RUNNING) return;
             if(document.querySelector('.sd-question, .sv-question, input')) break;
@@ -632,18 +637,32 @@ async function autoContinueForm() {
         else if(title.includes('puma') || title.includes('ppok')){
             currentId = 'puma'; updateStatus('MENGISI TAHAP: PPOK (PUMA)');
             
-            // Logika Umur PUMA
+            // PERBAIKAN UMUR: Hanya selisih Tahun Sekarang dikurangi Tahun Lahir (dari regex)
             let umur = hitungUmur(data.tglLahir);
             let opsiUmur = '';
+            
             if (umur >= 40 && umur <= 49) {
                 opsiUmur = '40-49';
             } else if (umur >= 50 && umur <= 59) {
                 opsiUmur = '50-59';
             } else if (umur >= 60) {
-                opsiUmur = '=>60'; // Sesuai label di HTML =>60
+                opsiUmur = '=>60'; // Match teks Kemenkes persis
             }
+
             if (opsiUmur !== '') {
-                await isiRadioSurveyJS('usia - skor puma', opsiUmur); await sleep(400);
+                // Eksekusi klik otomatis untuk usia, dilengkapi fallback klik manual ke label
+                let success = await isiRadioSurveyJS('usia - skor puma', opsiUmur);
+                if (!success) {
+                    const labels = [...document.querySelectorAll('label')];
+                    const targetLabel = labels.find(l => (l.innerText || '').includes(opsiUmur));
+                    if (targetLabel) {
+                        const input = targetLabel.querySelector('input[type="radio"]');
+                        if (input && !input.checked) {
+                            input.click(); input.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                }
+                await sleep(500);
             }
 
             let isPerokok = (data.merokok || '').toLowerCase().includes('ya') || (data.merokok || '').toLowerCase().includes('rokok');
