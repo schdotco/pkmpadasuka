@@ -1,6 +1,6 @@
 (function (GM_xmlhttpRequest) {
 'use strict';
-    const request = GM_xmlhttpRequest;
+    const request = typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null;
 
 /* =========================================================
    [EXPERT FEATURE] 1. SISTEM TELEMETRI & ERROR LOGGING
@@ -83,14 +83,14 @@ function playSound(type) {
 }
 
 /* =========================================================
-   CONFIG
+   CONFIG - TARGETS DEWASA & LANSIA
 ========================================================= */
 const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
 const GIDS = ['1783755807', '1121908280'];
 let BOT_RUNNING = false;
 
 const TARGETS = [
-    { id: 'gizi', txt: 'gizi (bb' },
+    { id: 'gizi', txt: 'gizi' },
     { id: 'gula', txt: 'gula darah' },
     { id: 'tensi', txt: 'tekanan darah' },
     { id: 'frambusia', txt: 'frambusia' },
@@ -162,7 +162,7 @@ function clearCompleted() {
 /* =========================================================
    INDEXEDDB CACHE HELPER
 ========================================================= */
-const DB_NAME = 'CKG_CACHE_DB';
+const DB_NAME = 'CKG_CACHE_DB_DEWASA';
 const STORE_NAME = 'SheetDataStore';
 
 function openDB() {
@@ -200,7 +200,7 @@ async function setCacheDB(key, value) {
 }
 
 /* =========================================================
-   DATA MATCHER (OPTIMASI DENGAN CACHE)
+   DATA MATCHER (OPTIMASI DENGAN CACHE & ANTI-CORS)
 ========================================================= */
 function parseCSV(text) {
     if (!text) return [];
@@ -226,7 +226,7 @@ async function cariData(nikInput) {
         const target = normalizeNIK(nikInput);
         if (!cachedSheetData || cachedSheetData.length === 0) {
             let savedCache = null; let cacheTime = 0;
-            const EXPIRATION_TIME = 4 * 60 * 60 * 1000; 
+            const EXPIRATION_TIME = 2 * 60 * 1000; // Cache 2 Menit
             const now = Date.now();
 
             try { savedCache = await getCacheDB('CKG_SHEET_DATA'); cacheTime = await getCacheDB('CKG_SHEET_TIME') || 0; } catch(e) { }
@@ -237,18 +237,27 @@ async function cariData(nikInput) {
                 updateStatus("MENGUNDUH DATA SPREADSHEET...");
                 cachedSheetData = [];
                 for (const gid of GIDS) {
-                    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+                    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}&t=${Date.now()}`;
                     const res = await fetch(url);
                     if (!res.ok) continue;
                     const csvText = await res.text();
                     if (!csvText) continue;
+                    
+                    if (csvText.toLowerCase().includes('<!doctype html>') || csvText.toLowerCase().includes('<html')) {
+                        alert("🔴 ERROR AKSES GOOGLE SHEET!\n\nBot mendownload halaman HTML, bukan data.\nPastikan Google Sheet Anda di set 'Anyone with the link can view'.");
+                        return null;
+                    }
+
                     const rows = parseCSV(csvText);
                     if (rows && rows.length > 1) {
                         if (cachedSheetData.length === 0) cachedSheetData = rows;
                         else for (let i = 1; i < rows.length; i++) cachedSheetData.push(rows[i]);
                     }
                 }
-                try { await setCacheDB('CKG_SHEET_DATA', cachedSheetData); await setCacheDB('CKG_SHEET_TIME', now); } catch(e) {}
+                
+                if (cachedSheetData.length > 0) {
+                    try { await setCacheDB('CKG_SHEET_DATA', cachedSheetData); await setCacheDB('CKG_SHEET_TIME', now); } catch(e) {}
+                }
             }
         }
 
@@ -256,7 +265,7 @@ async function cariData(nikInput) {
         if (!rows || rows.length < 2) return null;
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if (!row || row.length < 10) continue; 
+            if (!row || row.length < 5) continue; 
             const cells = row.map(col => String(col || '').trim());
             const rawNik = (cells.length > 2) ? (cells[0] || cells[1] || cells[2]) : '';
             if (normalizeNIK(rawNik) === target || cells.some(col => normalizeNIK(col) === target)) {
@@ -271,6 +280,10 @@ async function cariData(nikInput) {
                 };
             }
         }
+        
+        await setCacheDB('CKG_SHEET_TIME', 0);
+        cachedSheetData = null;
+
         return null; 
     } catch (error) {
         sendBotErrorLog("cariData", error.message || error);
@@ -295,8 +308,16 @@ function triggerClick(el){
 function forceInject(element, value) {
     if (!element) return;
     try {
+        let finalValue = String(value || '');
+        if (element.type === 'number') {
+            finalValue = finalValue.replace(/,/g, '.');
+        } else {
+            finalValue = finalValue.replace(/\./g, ',');
+        }
+
         const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-        nativeSetter.call(element, value);
+        nativeSetter.call(element, finalValue);
+        
         if (element._valueTracker) { element._valueTracker.setValue(''); }
         element.dispatchEvent(new Event('input', { bubbles: true }));
         element.dispatchEvent(new Event('change', { bubbles: true }));
@@ -308,8 +329,6 @@ function forceInject(element, value) {
 /* =========================================================
    SURVEYJS DROPDOWN & RADIO & SMART SEARCH ENGINE
 ========================================================= */
-
-// FUNGSI BARU: Mencari input secara PINTAR berdasarkan konteks labelnya (Aman dari urutan acak)
 async function isiInputBySoal(keywords, value) {
     if(!BOT_RUNNING || !value) return false;
     
@@ -320,18 +339,15 @@ async function isiInputBySoal(keywords, value) {
     for (let kw of keywordArr) {
         const lowerKw = kw.toLowerCase();
 
-        // 1. Cari via container question (Paling Presisi)
         let targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(lowerKw));
         if (targetQ) {
             const input = targetQ.querySelector('input');
             if (input) { forceInject(input, value); await sleep(500); return true; }
         }
 
-        // 2. Cari via placeholder
         let targetInput = inputs.find(i => (i.placeholder || '').toLowerCase().includes(lowerKw));
         if (targetInput) { forceInject(targetInput, value); await sleep(500); return true; }
 
-        // 3. Cari via teks di sekitarnya
         for (let input of inputs) {
             const parentText = (input.parentElement.innerText || '').toLowerCase();
             if (parentText.includes(lowerKw)) {
@@ -342,7 +358,6 @@ async function isiInputBySoal(keywords, value) {
     return false;
 }
 
-// FUNGSI DIPERBARUI: Dropdown Smart Search.
 async function selectDropdownContext(soalText, optionText) {
     if(!BOT_RUNNING) return false;
 
@@ -352,7 +367,6 @@ async function selectDropdownContext(soalText, optionText) {
         targetQ = questions.find(q => (q.innerText || '').toLowerCase().includes(soalText.toLowerCase()));
     }
 
-    // Jika soal tidak ditemukan/kosong, ambil dropdown apa saja yang ada (aman untuk popup spesifik seperti Frambusia)
     if (!targetQ) {
         const allDropdowns = document.querySelectorAll('.sd-dropdown, .sv-dropdown');
         if (allDropdowns.length > 0) {
@@ -373,7 +387,6 @@ async function selectDropdownContext(soalText, optionText) {
     
     if (!listElement) { triggerClick(dropdown); return false; }
     
-    // Pencarian input combo box (surveyjs modern)
     const searchInput = document.querySelector('input[type="text"][role="combobox"], input[aria-expanded="true"]');
     if (searchInput) { forceInject(searchInput, optionText.charAt(0)); await sleep(500); }
 
@@ -381,7 +394,7 @@ async function selectDropdownContext(soalText, optionText) {
     const targetOpt = options.find(el => (el.innerText || '').trim().toLowerCase().includes(optionText.toLowerCase()));
 
     if (targetOpt) { triggerClick(targetOpt); await sleep(500); return true; } 
-    else { triggerClick(dropdown); return false; } // Tutup jika gagal
+    else { triggerClick(dropdown); return false; }
 }
 
 async function pilihSemuaRadioLimit(text, limit = 99, exact = false) {
@@ -527,7 +540,7 @@ async function klikKirim() {
 }
 
 /* =========================================================
-   FORM FILLER LOGIC (DIPERKUAT DENGAN SMART SEARCH)
+   FORM FILLER LOGIC
 ========================================================= */
 async function autoContinueForm() {
     try {
@@ -549,7 +562,7 @@ async function autoContinueForm() {
         let currentId = null;
 
         // TAHAP 1: GIZI
-        if(title.includes('gizi (bb') || title.includes('lingkar perut')){
+        if(title.includes('gizi (bb') || title.includes('gizi') || title.includes('lingkar perut')){
             currentId = 'gizi'; updateStatus('MENGISI TAHAP: GIZI');
             await isiInputBySoal(['berat badan', 'satuan kg'], data.bb);
             await isiInputBySoal(['tinggi badan', 'satuan cm'], data.tb);
@@ -635,25 +648,50 @@ async function autoContinueForm() {
 }
 
 /* =========================================================
-   TRACKER ROUTER & ESTAFET UI
+   TRACKER ROUTER & ESTAFET UI [SMART DOM TRAVERSAL DEWASA]
 ========================================================= */
-function getNextTarget(){
+function getNextTarget() {
     try {
         const completed = getCompleted();
-        const btns = [...document.querySelectorAll('button')].filter(btn => (btn.innerText || '').toLowerCase().includes('input data'));
-        for(let btn of btns){
-            let parent = btn.parentElement;
-            for(let i=0; i<10; i++){
-                if(!parent) break;
-                const txt = (parent.innerText || '').replace(/\s+/g,' ').trim().toLowerCase();
+        
+        // Cari container baris form (mengandung ID "rowfrm..." atau grid)
+        const formRows = [...document.querySelectorAll('div[id^="rowfrm"]')];
+        
+        for (let row of formRows) {
+            // Cari elemen apa saja yang memiliki text "Input Data" (Bisa button, div, span)
+            const allElements = [...row.querySelectorAll('*')];
+            let actionBtn = allElements.find(el => {
+                const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
+                return (txt === 'input data' || txt === 'ubah data') && el.children.length === 0;
+            });
+
+            if (!actionBtn) {
+                actionBtn = allElements.find(el => (el.innerText || '').trim().toLowerCase().includes('input data'));
+            }
+
+            if (!actionBtn) continue;
+
+            // Panjat hirarki menuju row utama grid (Kemenkes Layout Update)
+            let rowContainer = row.closest('.grid') || row.closest('.border-y-solid') || row.parentElement.parentElement;
+            
+            if (rowContainer) {
+                // Kolom Judul selalu ada di col-span-2 sebelah kiri tabel
+                const titleCol = rowContainer.querySelector('.col-span-2') || rowContainer;
+                const txt = (titleCol.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                
+                // Cek pencocokan dengan daftar TARGETS kita
                 const found = TARGETS.find(t => txt.includes(t.txt));
-                if(found && !completed.includes(found.id)){ return { btn: btn, id: found.id, title: found.txt }; } 
-                else if(found) break;
-                parent = parent.parentElement;
+                
+                if (found && !completed.includes(found.id)) {
+                    return { btn: actionBtn, id: found.id, title: found.txt };
+                }
             }
         }
         return null;
-    } catch(e) { return null; }
+    } catch (e) {
+        sendBotErrorLog("getNextTarget", e.message || e);
+        return null;
+    }
 }
 
 async function mainLoopCKG(data){
