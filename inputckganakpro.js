@@ -1,6 +1,6 @@
 (function (GM_xmlhttpRequest) {
 'use strict';
-    const request = GM_xmlhttpRequest;
+    const request = typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null;
 
 /* =========================================================
    [EXPERT FEATURE] 1. SISTEM TELEMETRI & ERROR LOGGING
@@ -12,7 +12,7 @@ function sendBotErrorLog(context, errorMessage) {
             fields: {
                 timestamp: { stringValue: new Date().toISOString() },
                 device: { stringValue: deviceId },
-                module: { stringValue: "INPUT_ANAK_BOT" },
+                module: { stringValue: "INPUT_ANAK_BOT_SMART" },
                 context: { stringValue: context },
                 message: { stringValue: String(errorMessage) }
             }
@@ -153,7 +153,7 @@ function clearCompleted() {
 /* =========================================================
    INDEXEDDB CACHE HELPER
 ========================================================= */
-const DB_NAME = 'CKG_CACHE_DB';
+const DB_NAME = 'CKG_CACHE_DB_ANAK';
 const STORE_NAME = 'SheetDataStore';
 
 function openDB() {
@@ -191,7 +191,7 @@ async function setCacheDB(key, value) {
 }
 
 /* =========================================================
-   DATA MATCHER
+   DATA MATCHER (OPTIMASI DENGAN CACHE & ANTI-CORS)
 ========================================================= */
 function parseCSV(text) {
     if (!text) return [];
@@ -218,7 +218,7 @@ async function cariData(nikInput) {
         
         if (!cachedSheetData || cachedSheetData.length === 0) {
             let savedCache = null; let cacheTime = 0;
-            const EXPIRATION_TIME = 4 * 60 * 60 * 1000; 
+            const EXPIRATION_TIME = 2 * 60 * 1000; // Cache 2 Menit
             const now = Date.now();
 
             try { savedCache = await getCacheDB('CKG_SHEET_DATA'); cacheTime = await getCacheDB('CKG_SHEET_TIME') || 0; } catch(e) {}
@@ -229,18 +229,27 @@ async function cariData(nikInput) {
                 updateStatus("MENGUNDUH DATA SPREADSHEET...");
                 cachedSheetData = [];
                 for (const gid of GIDS) {
-                    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+                    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}&t=${Date.now()}`;
                     const res = await fetch(url);
                     if (!res.ok) continue;
                     const csvText = await res.text();
                     if (!csvText) continue;
+                    
+                    if (csvText.toLowerCase().includes('<!doctype html>') || csvText.toLowerCase().includes('<html')) {
+                        alert("🔴 ERROR AKSES GOOGLE SHEET!\n\nBot mendownload halaman HTML, bukan data.\nPastikan Google Sheet Anda di set 'Anyone with the link can view'.");
+                        return null;
+                    }
+
                     const rows = parseCSV(csvText);
                     if (rows && rows.length > 1) {
                         if (cachedSheetData.length === 0) cachedSheetData = rows;
                         else for (let i = 1; i < rows.length; i++) cachedSheetData.push(rows[i]);
                     }
                 }
-                try { await setCacheDB('CKG_SHEET_DATA', cachedSheetData); await setCacheDB('CKG_SHEET_TIME', now); } catch(e) {}
+                
+                if (cachedSheetData.length > 0) {
+                    try { await setCacheDB('CKG_SHEET_DATA', cachedSheetData); await setCacheDB('CKG_SHEET_TIME', now); } catch(e) {}
+                }
             }
         }
 
@@ -249,7 +258,7 @@ async function cariData(nikInput) {
         
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if (!row || row.length < 10) continue; 
+            if (!row || row.length < 5) continue; 
             const cells = row.map(col => String(col || '').trim());
             const rawNik = (cells.length > 2) ? (cells[0] || cells[1] || cells[2]) : '';
             
@@ -261,6 +270,10 @@ async function cariData(nikInput) {
                 };
             }
         }
+        
+        await setCacheDB('CKG_SHEET_TIME', 0);
+        cachedSheetData = null;
+
         return null; 
     } catch (error) {
         sendBotErrorLog("cariData_Anak", error.message || error);
@@ -285,8 +298,16 @@ function triggerClick(el){
 function forceInject(element, value) {
     if (!element) return;
     try {
+        let finalValue = String(value || '');
+        if (element.type === 'number') {
+            finalValue = finalValue.replace(/,/g, '.');
+        } else {
+            finalValue = finalValue.replace(/\./g, ',');
+        }
+
         const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-        nativeSetter.call(element, value);
+        nativeSetter.call(element, finalValue);
+        
         if (element._valueTracker) { element._valueTracker.setValue(''); }
         element.dispatchEvent(new Event('input', { bubbles: true }));
         element.dispatchEvent(new Event('change', { bubbles: true }));
@@ -631,25 +652,50 @@ async function autoContinueForm() {
 }
 
 /* =========================================================
-   TRACKER ROUTER
+   TRACKER ROUTER [SMART DOM TRAVERSAL ANAK]
 ========================================================= */
-function getNextTarget(){
+function getNextTarget() {
     try {
         const completed = getCompleted();
-        const btns = [...document.querySelectorAll('button')].filter(btn => (btn.innerText || '').toLowerCase().includes('input data'));
-        for(let btn of btns){
-            let parent = btn.parentElement;
-            for(let i=0; i<6; i++){
-                if(!parent) break;
-                const txt = (parent.innerText || '').replace(/\s+/g,' ').trim().toLowerCase();
+        
+        // Cari container baris form (mengandung ID "rowfrm..." atau grid)
+        const formRows = [...document.querySelectorAll('div[id^="rowfrm"]')];
+        
+        for (let row of formRows) {
+            // Cari elemen apa saja yang memiliki text "Input Data" (Bisa button, div, span)
+            const allElements = [...row.querySelectorAll('*')];
+            let actionBtn = allElements.find(el => {
+                const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
+                return (txt === 'input data' || txt === 'ubah data') && el.children.length === 0;
+            });
+
+            if (!actionBtn) {
+                actionBtn = allElements.find(el => (el.innerText || '').trim().toLowerCase().includes('input data'));
+            }
+
+            if (!actionBtn) continue;
+
+            // Panjat hirarki menuju row utama grid (Kemenkes Layout Update)
+            let rowContainer = row.closest('.grid') || row.closest('.border-y-solid') || row.parentElement.parentElement;
+            
+            if (rowContainer) {
+                // Kolom Judul selalu ada di col-span-2 sebelah kiri tabel
+                const titleCol = rowContainer.querySelector('.col-span-2') || rowContainer;
+                const txt = (titleCol.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                
+                // Cek pencocokan dengan daftar TARGETS kita
                 const found = TARGETS.find(t => txt.includes(t.txt));
-                if(found && !completed.includes(found.id)){ return { btn: btn, id: found.id, title: found.txt }; } 
-                else if(found) break;
-                parent = parent.parentElement;
+                
+                if (found && !completed.includes(found.id)) {
+                    return { btn: actionBtn, id: found.id, title: found.txt };
+                }
             }
         }
         return null;
-    } catch(e) { return null; }
+    } catch (e) {
+        sendBotErrorLog("getNextTarget_Anak", e.message || e);
+        return null;
+    }
 }
 
 async function mainLoopCKG(data){
@@ -835,7 +881,7 @@ function createUI(){
         };
     }
     
-const btnDaftar = document.getElementById('btn-to-daftar');
+    const btnDaftar = document.getElementById('btn-to-daftar');
     if (btnDaftar) {
         btnDaftar.onclick = () => {
             if(!confirm('Anda yakin ingin mereset memori dan kembali ke daftar awal?')) return;
