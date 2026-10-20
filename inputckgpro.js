@@ -112,6 +112,28 @@ const TARGETS = [
 const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
+function hitungUmur(tglLahirStr) {
+    if (!tglLahirStr) return 0;
+    try {
+        let parts = tglLahirStr.split(/[-/]/);
+        let year, month, day;
+        if (parts[0].length === 4) {
+            year = parseInt(parts[0]); month = parseInt(parts[1]) - 1; day = parseInt(parts[2]);
+        } else {
+            day = parseInt(parts[0]); month = parseInt(parts[1]) - 1; year = parseInt(parts[2]);
+        }
+        
+        let today = new Date();
+        let birthDate = new Date(year, month, day);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        let m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { age--; }
+        return age;
+    } catch(e) {
+        return 0;
+    }
+}
+
 /* =========================================================
    SESSION & DYNAMIC TRACKER
 ========================================================= */
@@ -270,7 +292,10 @@ async function cariData(nikInput) {
             const rawNik = (cells.length > 2) ? (cells[0] || cells[1] || cells[2]) : '';
             if (normalizeNIK(rawNik) === target || cells.some(col => normalizeNIK(col) === target)) {
                 return {
-                    nik: target, nama: cells[7] || '', sistole: cells[37] || '120', diastole: cells[38] || '80',
+                    nik: target, 
+                    nama: cells[7] || '', 
+                    tglLahir: cells[6] || '', // Ambil Tgl Lahir (Asumsi Kolom G)
+                    sistole: cells[37] || '120', diastole: cells[38] || '80',
                     bb: cells[40] || '60', tb: cells[41] || '165', lp: cells[43] || '80', gula: cells[58] || '110',
                     mata: cells[70] || 'Tidak', merokok: cells[71] || '', skilasKog1: (cells[78] || 'Ya').trim(),
                     skilasKog2: (cells[79] || 'Benar semua').trim(), skilasKog3: (cells[80] || 'Ya').trim(),
@@ -550,10 +575,11 @@ async function autoContinueForm() {
         BOT_RUNNING = true;
         updateStatus('MENUNGGU FORM DIMUAT...');
         
-        for(let i = 0; i < 10; i++) {
+        // --- FIX: Perpanjang Loading Timeout ke 25 iterasi (~20 detik) ---
+        for(let i = 0; i < 25; i++) {
             if(!BOT_RUNNING) return;
             if(document.querySelector('.sd-question, .sv-question, input')) break;
-            await sleep(1000);
+            await sleep(800);
         }
         await sleep(1000); 
         if(!BOT_RUNNING) return;
@@ -605,6 +631,21 @@ async function autoContinueForm() {
         // TAHAP 6: PUMA
         else if(title.includes('puma') || title.includes('ppok')){
             currentId = 'puma'; updateStatus('MENGISI TAHAP: PPOK (PUMA)');
+            
+            // Logika Umur PUMA
+            let umur = hitungUmur(data.tglLahir);
+            let opsiUmur = '';
+            if (umur >= 40 && umur <= 49) {
+                opsiUmur = '40-49';
+            } else if (umur >= 50 && umur <= 59) {
+                opsiUmur = '50-59';
+            } else if (umur >= 60) {
+                opsiUmur = '=>60'; // Sesuai label di HTML =>60
+            }
+            if (opsiUmur !== '') {
+                await isiRadioSurveyJS('usia - skor puma', opsiUmur); await sleep(400);
+            }
+
             let isPerokok = (data.merokok || '').toLowerCase().includes('ya') || (data.merokok || '').toLowerCase().includes('rokok');
             await isiRadioSurveyJS('mempunyai riwayat merokok', isPerokok ? 'iya' : 'tidak'); await sleep(400);
             await isiRadioSurveyJS('napas pendek', 'tidak');
