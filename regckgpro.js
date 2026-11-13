@@ -232,7 +232,7 @@ async function prosesVerifikasi() {
 
     // --- TAMBAHAN BARU: DETEKSI TOMBOL TUTUP SEBAGAI TANDA SELESAI ---
     let attempt3 = 0;
-    while (!isCancelled && attempt3 < 20) { // Tunggu hingga 10 detik untuk modal sukses muncul
+    while (!isCancelled && attempt3 < 4) { // Tunggu hingga 10 detik untuk modal sukses muncul
         
         const teksTutup = Array.from(document.querySelectorAll('.tracking-wide, div')).find(el => (el.innerText || "").trim() === "Tutup");
         const btnTutup = teksTutup?.closest('button') || teksTutup?.closest('.cursor-pointer') || teksTutup;
