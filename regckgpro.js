@@ -52,7 +52,7 @@ function showToast(message, type = 'info') {
     setTimeout(() => {
         toast.style.opacity = '0'; toast.style.transform = 'translateX(50px)';
         setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    }, 1500);
 }
 
 /* ================= MODUL ESTAFET, AUDIO & DELAY ================= */
