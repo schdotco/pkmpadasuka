@@ -206,20 +206,46 @@ async function ultraClick(el){
 }
 
 async function prosesVerifikasi() {
-    while (!isCancelled) {
+    let attempt1 = 0;
+    while (!isCancelled && attempt1 < 15) {
         const pilihText = Array.from(document.querySelectorAll('.tracking-wide')).find(el => (el.innerText || "").trim() === "Pilih");
         const pilihBtn = pilihText?.closest('.flex.flex-row.justify-center.gap-2') || pilihText?.parentElement || pilihText;
         if (pilihBtn) { await ultraClick(pilihBtn); break; }
         await wait(500);
+        attempt1++;
     }
 
-    while (!isCancelled) {
-        const daftarBtn = document.querySelector('button.btn-fill-primary-v2');
-        if (daftarBtn && daftarBtn.innerText.includes("Daftarkan dengan NIK")) {
+    let attempt2 = 0;
+    while (!isCancelled && attempt2 < 15) {
+        const daftarBtn = Array.from(document.querySelectorAll('button')).find(btn => 
+            (btn.innerText || "").toLowerCase().includes("daftarkan dengan nik") || 
+            (btn.classList.contains('btn-fill-primary-v2') && (btn.innerText || "").toLowerCase().includes("daftarkan"))
+        );
+        
+        if (daftarBtn && daftarBtn.offsetParent !== null) {
             await ultraClick(daftarBtn);
             break;
         }
         await wait(500);
+        attempt2++;
+    }
+
+    // --- TAMBAHAN BARU: DETEKSI TOMBOL TUTUP SEBAGAI TANDA SELESAI ---
+    let attempt3 = 0;
+    while (!isCancelled && attempt3 < 20) { // Tunggu hingga 10 detik untuk modal sukses muncul
+        
+        const teksTutup = Array.from(document.querySelectorAll('.tracking-wide, div')).find(el => (el.innerText || "").trim() === "Tutup");
+        const btnTutup = teksTutup?.closest('button') || teksTutup?.closest('.cursor-pointer') || teksTutup;
+
+        const targetSelesai = btnX || btnTutup;
+
+        // Jika salah satu elemen di atas muncul, klik dan hentikan proses (selesai)
+        if (targetSelesai && targetSelesai.offsetParent !== null) {
+            await ultraClick(targetSelesai);
+            break; // Selesai sempurna!
+        }
+        await wait(500);
+        attempt3++;
     }
 }
 
