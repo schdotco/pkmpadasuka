@@ -464,12 +464,12 @@ async function eksekusiHalamanDua(data) {
 
         // --- 5. MENUNGGU NEXT ---
         if(!isCancelled) {
-            document.getElementById("infoAI").innerHTML += `<div id="status-wait-next" style="margin-top:8px; padding:6px; background:#222; border-radius:5px; color:#ffcc00;">⏳ Menunggu tombol Selanjutnya aktif...</div>`;
+            document.getElementById("infoAI").innerHTML += `<div id="status-wait-next" style="margin-top:8px; padding:6px; background:#222; border-radius:5px; color:#ffcc00;">⏳ Menunggu tombol Daftarkan aktif...</div>`;
             
             while(!isCancelled){
                 const btnNext2 = Array.from(document.querySelectorAll("button")).find(btn => {
                     const txt = (btn.innerText || "").trim();
-                    return (txt === "Selanjutnya" && !btn.disabled && btn.offsetParent !== null);
+                    return (txt === "Daftarkan" && !btn.disabled && btn.offsetParent !== null);
                 });
 
                 if(btnNext2){
