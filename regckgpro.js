@@ -207,7 +207,7 @@ async function ultraClick(el){
 
 async function prosesVerifikasi() {
     let attempt1 = 0;
-    while (!isCancelled && attempt1 < 15) {
+    while (!isCancelled && attempt1 < 3) {
         const pilihText = Array.from(document.querySelectorAll('.tracking-wide')).find(el => (el.innerText || "").trim() === "Pilih");
         const pilihBtn = pilihText?.closest('.flex.flex-row.justify-center.gap-2') || pilihText?.parentElement || pilihText;
         if (pilihBtn) { await ultraClick(pilihBtn); break; }
@@ -216,7 +216,7 @@ async function prosesVerifikasi() {
     }
 
     let attempt2 = 0;
-    while (!isCancelled && attempt2 < 15) {
+    while (!isCancelled && attempt2 < 3) {
         const daftarBtn = Array.from(document.querySelectorAll('button')).find(btn => 
             (btn.innerText || "").toLowerCase().includes("daftarkan dengan nik") || 
             (btn.classList.contains('btn-fill-primary-v2') && (btn.innerText || "").toLowerCase().includes("daftarkan"))
@@ -230,18 +230,15 @@ async function prosesVerifikasi() {
         attempt2++;
     }
 
-    // --- TAMBAHAN BARU: DETEKSI TOMBOL TUTUP SEBAGAI TANDA SELESAI ---
+    // --- DETEKSI HANYA TOMBOL TUTUP SEBAGAI TANDA SELESAI ---
     let attempt3 = 0;
-    while (!isCancelled && attempt3 < 4) { // Tunggu hingga 10 detik untuk modal sukses muncul
-        
+    while (!isCancelled && attempt3 < 3) { // 4 x 500ms = 2 detik batas tunggu
         const teksTutup = Array.from(document.querySelectorAll('.tracking-wide, div')).find(el => (el.innerText || "").trim() === "Tutup");
         const btnTutup = teksTutup?.closest('button') || teksTutup?.closest('.cursor-pointer') || teksTutup;
 
-        const targetSelesai = btnX || btnTutup;
-
-        // Jika salah satu elemen di atas muncul, klik dan hentikan proses (selesai)
-        if (targetSelesai && targetSelesai.offsetParent !== null) {
-            await ultraClick(targetSelesai);
+        // Jika tombol Tutup muncul, klik dan hentikan proses (selesai)
+        if (btnTutup && btnTutup.offsetParent !== null) {
+            await ultraClick(btnTutup);
             break; // Selesai sempurna!
         }
         await wait(500);
