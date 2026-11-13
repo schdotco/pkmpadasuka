@@ -469,7 +469,7 @@ async function eksekusiHalamanDua(data) {
         if(!isCancelled) {
             showLoading("⚡ MENCARI WILAYAH PADASUKA... ⚡");
             await setAlamatDomisiliVue();
-            await wait(2000);
+            await wait(1500);
         }
 
         // --- 4. DETAIL DOMISILI ---
@@ -694,7 +694,7 @@ async function autoPilotSikatHabis(data) {
         `;
 
         showLoading("✅ PENDAFTARAN SELESAI!<br><span style='font-size:15px;color:#fff;'>Data tersimpan di Estafet.<br>Siap eksekusi Skrining!</span>");
-        await wait(3000);
+        await wait(1000);
         hideLoading();
 
     } catch (err) {
