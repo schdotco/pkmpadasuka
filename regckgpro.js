@@ -376,7 +376,7 @@ async function eksekusiHalamanDua(data) {
     try {
         if(isCancelled) return;
         showLoading("⚡ MENGISI HALAMAN 2... ⚡");
-        await wait(2500);
+        await wait(1500);
 
         // --- 1. STATUS PERNIKAHAN ---
         let rawPernikahan = (data.Martial || "").trim().toUpperCase();
@@ -500,7 +500,7 @@ async function eksekusiHalamanDua(data) {
 
                 if(btnNext2){
                     await ultraClick(btnNext2);
-                    await wait(3000);
+                    await wait(1000);
                     await prosesVerifikasi();
                     break;
                 }
@@ -542,7 +542,7 @@ async function autoPilotSikatHabis(data) {
 
         if(isCancelled) { handlePembatalan(); return; }
         showLoading("⏳ Menunggu Dukcapil Mereset Form...");
-        await wait(5000);
+        await wait(1000);
         if(isCancelled) { handlePembatalan(); return; }
         showLoading("⚡ MENGISI DATA AWAL... ⚡");
 
