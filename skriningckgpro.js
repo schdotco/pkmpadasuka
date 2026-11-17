@@ -114,7 +114,7 @@
         const currentYear = today.getFullYear();
         const current2DigitYear = currentYear % 100;
 
-        let tahunLahir = (thn2 > current2DigitYear) ? (1900 + thn2) : (2000 + thn2);
+        let tahunLahir = (thn2 > current2DigitYear) ? (1900 + thn2) : (1500 + thn2);
         if (tahunLahir === currentYear) {
             const belumUltah = (today.getMonth() + 1 < bln) || ((today.getMonth() + 1 === bln) && today.getDate() < tgl);
             if (belumUltah) tahunLahir -= 100;
@@ -841,7 +841,7 @@
                 sendBotErrorLog("autoContinueForm_Loop", e.message || e);
                 updateStatus("Melewati error, mencoba ulang...");
             }
-            await sleep(2000);
+            await sleep(1500);
         }
     }
 
@@ -893,7 +893,7 @@
                     if (!BOT_RUNNING) break;
                     nextItem = getNextTarget();
                     if (nextItem) break;
-                    await sleep(2000);
+                    await sleep(1500);
                 }
 
                 if (!BOT_RUNNING) break;
@@ -927,7 +927,7 @@
                 break;
             } catch (e) {
                 sendBotErrorLog("mainLoop", e.message || e);
-                await sleep(2000);
+                await sleep(1500);
             }
         }
     }
@@ -1251,5 +1251,5 @@
     }
 
     setInterval(createUI, 1000);
-    setInterval(supervisorTick, 2000);
+    setInterval(supervisorTick, 1500);
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
