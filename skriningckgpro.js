@@ -1214,7 +1214,7 @@ async function isiTetanusCatin() {
                 data = loadBOT();
             }
 
-            if (isMainPage && !BOT_RUNNING && !data) {
+if (isMainPage && !BOT_RUNNING && !data) {
                 let estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
                 if (estafetRaw) {
                     try {
@@ -1226,47 +1226,21 @@ async function isiTetanusCatin() {
                         }
 
                         if (estafet.nik && targetSkrining) {
-                            updateStatus('⚡ MENERIMA ESTAFET: ' + estafet.nik + '\nMengunduh data...');
+                            const nikEstafet = normalizeNIK(estafet.nik);
 
-                            if (!cachedSheetData && !isDownloadingBackground) {
-                                isDownloadingBackground = true;
-                                await cariData('000');
-                            }
+                            // Hapus penanda estafet agar tidak diproses ulang
+                            delStore('PASIEN_AKTIF_PADASUKA');
+                            delStore('CKG_MODE');
 
-                            data = await cariData(estafet.nik);
+                            // Simpan NIK ke riwayat & tampilkan di kolom input tanpa menjalankan bot
+                            setStore('LAST_USED_NIK', nikEstafet);
+                            const inputNik = document.getElementById('nik-bot');
+                            if (inputNik) inputNik.value = nikEstafet;
 
-                            if (!data) {
-                                const lanjutNormal = confirm(`[Jalur Estafet]\nData NIK ${estafet.nik} tidak ditemukan!\n\nApakah Anda ingin melanjutkan pengisian dengan mode "SEMUA NORMAL"?`);
-                                if (lanjutNormal) {
-                                    data = {
-                                        nik: estafet.nik,
-                                        perkawinan: 'Belum Menikah',
-                                        merokok: 'tidak',
-                                        jiwa1: 'Tidak sama sekali',
-                                        jiwa2: 'Tidak sama sekali',
-                                        jiwa3: 'Tidak sama sekali',
-                                        jiwa4: 'Tidak sama sekali'
-                                    };
-                                }
-                            }
-
-                            if (data) {
-                                saveBOT(data);
-                                delStore('PASIEN_AKTIF_PADASUKA');
-                                delStore('CKG_MODE');
-                                playSound('sukses');
-                                updateStatus('Data siap! Skrining Otomatis dimulai...');
-
-                                BOT_RUNNING = false;
-                                syncUI();
-                            } else {
-                                delStore('PASIEN_AKTIF_PADASUKA');
-                                delStore('CKG_MODE');
-                                setStore('LAST_USED_NIK', estafet.nik);
-                                updateStatus('❌ Gagal Estafet:\nNIK tidak ditemukan di Sheet!');
-                                showToast('Proses dibatalkan pengguna.', 'error');
-                                syncUI();
-                            }
+                            BOT_RUNNING = false;
+                            syncUI();
+                            updateStatus('ESTAFET DITERIMA:\n' + nikEstafet + '\nKlik START SKRINING untuk mulai.');
+                            showToast('NIK dari Bot Input masuk. Klik START untuk menjalankan.', 'info');
                         }
                     } catch (e) { }
                 }
