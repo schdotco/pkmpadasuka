@@ -878,11 +878,11 @@
 
         while (BOT_RUNNING && location.hostname.includes('sehatindonesiaku')) {
             try {
-                // Cegah klik target baru jika tab form sebelumnya masih aktif (timeout 45 detik)
+                // Cegah klik target baru jika tab form sebelumnya masih aktif (timeout 3 detik)
                 const lockTime = parseInt(getStore('CKG_FORM_LOCK') || '0', 10);
-                if (lockTime && (Date.now() - lockTime < 45000)) {
+                if (lockTime && (Date.now() - lockTime < 3000)) {
                     updateStatus('MENUNGGU FORM SELESAI DIISI...');
-                    await sleep(2000);
+                    await sleep(1500);
                     continue;
                 } else if (lockTime) {
                     delStore('CKG_FORM_LOCK');
