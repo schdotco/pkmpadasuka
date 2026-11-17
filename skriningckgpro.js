@@ -85,17 +85,51 @@ const SHEET_ID = '1-We9wNftLhF2Ttd0ukfKpuK2IhM_YTg-mAeScMeDQNI';
 const GIDS = ['1783755807', '1121908280'];
 
 /* =========================================================
-   HELPER MAPPING JAWABAN MEROKOK
+   HELPER MAPPING JAWABAN MEROKOK & EKSTRAK NIK
 ========================================================= */
 function jawabanMerokok(v){
     const text = String(v || '').toLowerCase().trim();
     return (text.includes('ya') || text.includes('rokok') || text.includes('perokok')) ? 'ya' : 'tidak';
 }
 
+function parseInfoDariNIK(nik) {
+    const clean = normalizeNIK(nik);
+    if (clean.length !== 16) return null;
+
+    let tgl = parseInt(clean.substring(6, 8), 10);
+    const bln = parseInt(clean.substring(8, 10), 10);
+    const thn2 = parseInt(clean.substring(10, 12), 10);
+
+    if (isNaN(tgl) || isNaN(bln) || isNaN(thn2)) return null;
+
+    let jenisKelamin = 'Laki-Laki';
+    if (tgl > 40) {
+        jenisKelamin = 'Perempuan';
+        tgl -= 40;
+    }
+
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const current2DigitYear = currentYear % 100;
+
+    let tahunLahir = (thn2 > current2DigitYear) ? (1900 + thn2) : (2000 + thn2);
+    if (tahunLahir === currentYear) {
+        const belumUltah = (today.getMonth() + 1 < bln) || ((today.getMonth() + 1 === bln) && today.getDate() < tgl);
+        if (belumUltah) tahunLahir -= 100;
+    }
+
+    let usia = currentYear - tahunLahir;
+    const selisihBulan = (today.getMonth() + 1) - bln;
+    if (selisihBulan < 0 || (selisihBulan === 0 && today.getDate() < tgl)) {
+        usia--;
+    }
+
+    return { usia, jenisKelamin };
+}
+
 /* =========================================================
    [PERBAIKAN] SESSION TRACKER (CROSS-DOMAIN MEMORY)
 ========================================================= */
-// Memulihkan GM_getValue agar data NIK tidak amnesia saat pindah URL
 function getStore(key) {
     try { return (typeof GM_getValue !== 'undefined') ? GM_getValue(key) : localStorage.getItem(key); }
     catch(e) { return localStorage.getItem(key); }
@@ -266,6 +300,45 @@ function forceInject(element, value) {
         element.dispatchEvent(new Event('blur', { bubbles: true }));
         element.blur();
     } catch(e) { }
+}
+
+async function pilihRadioSpesifik(dataName, titleKeywords, optionValue, optionLabel) {
+    try {
+        let targetQ = dataName ? document.querySelector(`.sd-question[data-name="${dataName}"], .sd-element[data-name="${dataName}"]`) : null;
+        if (!targetQ) {
+            const questions = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')];
+            targetQ = questions.find(q => {
+                const header = q.querySelector('.sd-question__title, .sv-question__title, .sd-element__title');
+                const txt = ((header ? header.innerText : q.innerText) || '').toLowerCase();
+                return titleKeywords.some(k => txt.includes(k.toLowerCase()));
+            });
+        }
+        if (!targetQ) return false;
+
+        const items = [...targetQ.querySelectorAll('.sd-item, .sv-item')];
+        const targetItem = items.find(el => {
+            const input = el.querySelector('input[type="radio"]');
+            if (input && optionValue && input.value === optionValue) return true;
+            const txt = (el.innerText || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            return txt === optionLabel.toLowerCase().trim() || txt.includes(optionLabel.toLowerCase().trim());
+        });
+
+        if (targetItem) {
+            const input = targetItem.querySelector('input[type="radio"]');
+            if (input && input.checked) return true;
+            targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const radioDecorator = targetItem.querySelector('.sd-radio__decorator, .sd-item__decorator') || targetItem;
+            radioDecorator.click();
+            if (input) {
+                input.checked = true;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            await sleep(400);
+            return true;
+        }
+    } catch(e) {}
+    return false;
 }
 
 async function fillRadioSurveyJS(soalText, jawabanText) {
@@ -475,7 +548,6 @@ async function handleSkriningMandiri(data) {
             } else { updateStatus('Data Perkawinan Kosong!'); await sleep(1000); }
         }
 
-        // TAMBAHAN: Handle pertanyaan "Apakah Anda sedang hamil?" (Terlihat di screenshot Anda)
         if (pageText.includes('sedang hamil') && BOT_RUNNING) { 
             await fillRadioSurveyJS('sedang hamil', 'tidak'); 
         }
@@ -488,6 +560,32 @@ async function handleSkriningMandiri(data) {
         if (pageText.includes('kanker leher rahim') && BOT_RUNNING) {
             let p = (data.perkawinan || '').toLowerCase(); let isYes = p.includes('menikah') || p.includes('cerai') || (p.includes('kawin') && !p.includes('belum'));
             await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
+        }
+
+        // UPDATE: Pertanyaan Skor APCS (Usia & Jenis Kelamin berdasarkan NIK pasien)
+        if (pageText.includes('skor apcs') && BOT_RUNNING) {
+            const infoNIK = parseInfoDariNIK(data.nik);
+            if (infoNIK) {
+                if (pageText.includes('usia - skor apcs')) {
+                    let valUsia = 'PPV00000507';
+                    let labelUsia = '<50 tahun';
+                    if (infoNIK.usia >= 70) {
+                        valUsia = 'PPV00000509';
+                        labelUsia = '>= 70 tahun';
+                    } else if (infoNIK.usia >= 50) {
+                        valUsia = 'PPV00000508';
+                        labelUsia = '50 - 69 tahun';
+                    }
+                    await pilihRadioSpesifik('PPM00000254', ['usia - skor apcs'], valUsia, labelUsia);
+                }
+
+                if (pageText.includes('jenis kelamin - skor apcs')) {
+                    const isPerempuan = infoNIK.jenisKelamin === 'Perempuan';
+                    const valJK = isPerempuan ? 'PPV00000511' : 'PPV00000510';
+                    const labelJK = isPerempuan ? 'Perempuan' : 'Laki-Laki';
+                    await pilihRadioSpesifik('PPM00000255', ['jenis kelamin - skor apcs'], valJK, labelJK);
+                }
+            }
         }
 
         if ((pageText.includes('merokok') || pageText.includes('kanker paru')) && BOT_RUNNING) {
