@@ -2,7 +2,7 @@
     'use strict';
     const request = GM_xmlhttpRequest;
 
-    // Bersihkan instance lama jika launcher menyuntikkan ulang script ini pada tab yang sama
+    // Bersihkan instance lama jika script disuntikkan ulang pada tab yang sama
     if (typeof window.__CKG_SKRINING_CLEANUP__ === 'function') {
         try { window.__CKG_SKRINING_CLEANUP__(); } catch (e) { }
     }
@@ -275,58 +275,10 @@
     function clearCompleted() { delStore('AUTO_SKRINING_COMPLETED'); }
 
     /* =========================================================
-       KONTROL VISIBILITAS UI:
-       - Muncul & terkunci tampil saat Bot Skrining dibuka / berjalan
-       - Hilang otomatis saat pindah ke Bot Input / Reg / Anak
+       KONTROL VISIBILITAS UI (HANYA SEMBUNYI SAAT PINDAH KE BOT INPUT/REG/ANAK)
     ========================================================= */
-    const INPUT_MODES = new Set(['input', 'input_anak', 'dewasa', 'anak', 'reg', 'registrasi', 'pendaftaran']);
-
-    function detectOtherBotPanel() {
-        if (!document.body) return false;
-        const children = document.body.children;
-        for (const el of children) {
-            if (!el || el.id === 'auto-ckg-ui' || el.id === 'ckg-toast-container') continue;
-            const style = window.getComputedStyle(el);
-            if (style.position !== 'fixed' || style.display === 'none' || style.visibility === 'hidden') continue;
-
-            const rect = el.getBoundingClientRect();
-            // Panel bot mengambang memiliki lebar kotak 200-480px (bukan navbar penuh & bukan tombol kecil launcher)
-            if (rect.width >= 200 && rect.width <= 480 && rect.height >= 120) {
-                const hasInputOrAction = el.querySelector('input') || /START|MULAI|BATAL|PROSES|INPUT|REGISTRASI|ANAK|DEWASA/i.test(el.innerText || '');
-                if (hasInputOrAction) return true;
-            }
-        }
-        return false;
-    }
-
-    function shouldHideSkriningUI() {
-        // Di form.kemkes.go.id, Bot Skrining selalu tampil
-        if (location.hostname.includes('form.kemkes.go.id')) return false;
-
-        // Jika baru saja klik tombol pindah DEWASA/ANAK dan halaman reload
-        try {
-            if (sessionStorage.getItem('CKG_SKRINING_HIDDEN') === '1') return true;
-        } catch (e) { }
-
-        // Jika mode penyimpanan sudah diarahkan ke Input / Anak / Reg
-        const mode = (localStorage.getItem('CKG_MODE') || '').toLowerCase().trim();
-        if (INPUT_MODES.has(mode)) return true;
-
-        // Jika estafet aktif ditujukan untuk dewasa / anak / reg
-        try {
-            const estafetRaw = localStorage.getItem('PASIEN_AKTIF_PADASUKA');
-            if (estafetRaw) {
-                const estafet = JSON.parse(estafetRaw);
-                const kat = (estafet.kategori || '').toLowerCase().trim();
-                if (INPUT_MODES.has(kat)) return true;
-            }
-        } catch (e) { }
-
-        // Jika panel Bot Input / Reg / Anak muncul di layar pada tab yang sama
-        if (detectOtherBotPanel()) return true;
-
-        return false;
-    }
+    const OTHER_BOT_MODES = new Set(['input', 'input_anak', 'dewasa', 'anak', 'reg', 'registrasi', 'pendaftaran']);
+    let SKRINING_DISMISSED = false;
 
     function destroyUI() {
         const box = document.getElementById('auto-ckg-ui');
@@ -334,6 +286,75 @@
         const style = document.getElementById('auto-ckg-style');
         if (style) style.remove();
     }
+
+    function dismissSkriningForOtherBot() {
+        SKRINING_DISMISSED = true;
+        BOT_RUNNING = false;
+        LOOP_ACTIVE = false;
+        destroyUI();
+    }
+
+    // Pantau jika ada bot lain (Input Dewasa / Anak / Reg) yang dipanggil di tab yang sama
+    const bodyChildObserver = new MutationObserver((mutations) => {
+        if (location.hostname.includes('form.kemkes.go.id')) return;
+
+        for (const m of mutations) {
+            for (const node of m.addedNodes) {
+                if (!node || node.nodeType !== 1) continue;
+                if (node.id === 'auto-ckg-ui' || node.id === 'ckg-toast-container') continue;
+
+                const txt = (node.innerText || '').toUpperCase();
+                if (
+                    txt.includes('INPUT DEWASA') ||
+                    txt.includes('INPUT ANAK') ||
+                    txt.includes('BOT INPUT') ||
+                    txt.includes('BOT ANAK') ||
+                    txt.includes('BOT REG') ||
+                    txt.includes('REGISTRASI CKG') ||
+                    txt.includes('PENDAFTARAN CKG')
+                ) {
+                    dismissSkriningForOtherBot();
+                    return;
+                }
+            }
+        }
+    });
+
+    if (document.body) {
+        bodyChildObserver.observe(document.body, { childList: true });
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.body) bodyChildObserver.observe(document.body, { childList: true });
+        });
+    }
+
+    // Pantau perubahan localStorage jika Bot Input/Reg/Anak menulis mode baru di tab ini
+    try {
+        const origSetItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+            origSetItem.apply(this, arguments);
+            try {
+                if (this === window.localStorage && !location.hostname.includes('form.kemkes.go.id')) {
+                    if (key === 'CKG_MODE') {
+                        const modeVal = String(value || '').toLowerCase().trim();
+                        if (OTHER_BOT_MODES.has(modeVal)) {
+                            dismissSkriningForOtherBot();
+                        } else if (modeVal === 'skrining') {
+                            SKRINING_DISMISSED = false;
+                        }
+                    } else if (key === 'PASIEN_AKTIF_PADASUKA' && value) {
+                        const obj = JSON.parse(value);
+                        const kat = String((obj && obj.kategori) || '').toLowerCase().trim();
+                        if (OTHER_BOT_MODES.has(kat)) {
+                            dismissSkriningForOtherBot();
+                        } else if (kat === 'skrining') {
+                            SKRINING_DISMISSED = false;
+                        }
+                    }
+                }
+            } catch (e) { }
+        };
+    } catch (e) { }
 
     /* =========================================================
        DATA MATCHER (ANTI ERROR / FORMAT AMAN)
@@ -1060,6 +1081,7 @@
         if (!data) return;
 
         BOT_RUNNING = true;
+        SKRINING_DISMISSED = false;
         setStore('CKG_FORM_LOCK', String(Date.now()));
         updateStatus('MEMULAI PENGISIAN FORM...');
 
@@ -1121,7 +1143,7 @@
     async function mainLoop(data) {
         updateStatus('MENCARI ANTRIAN...');
 
-        while (BOT_RUNNING && !shouldHideSkriningUI() && location.hostname.includes('sehatindonesiaku')) {
+        while (BOT_RUNNING && !SKRINING_DISMISSED && location.hostname.includes('sehatindonesiaku')) {
             try {
                 createUI();
                 const lockTime = parseInt(getStore('CKG_FORM_LOCK') || '0', 10);
@@ -1135,13 +1157,13 @@
 
                 let nextItem = null;
                 for (let i = 0; i < 3; i++) {
-                    if (!BOT_RUNNING || shouldHideSkriningUI()) break;
+                    if (!BOT_RUNNING || SKRINING_DISMISSED) break;
                     nextItem = getNextTarget();
                     if (nextItem) break;
                     await sleep(1500);
                 }
 
-                if (!BOT_RUNNING || shouldHideSkriningUI()) break;
+                if (!BOT_RUNNING || SKRINING_DISMISSED) break;
 
                 if (!nextItem) {
                     BOT_RUNNING = false;
@@ -1164,7 +1186,7 @@
 
                 updateStatus('Mengalihkan halaman form...');
                 for (let wait = 0; wait < 15; wait++) {
-                    if (!BOT_RUNNING || shouldHideSkriningUI()) break;
+                    if (!BOT_RUNNING || SKRINING_DISMISSED) break;
                     await sleep(1500);
                     if (location.hostname.includes('form.kemkes.go.id')) {
                         break;
@@ -1201,7 +1223,7 @@
     }
 
     function syncUI() {
-        if (shouldHideSkriningUI()) {
+        if (SKRINING_DISMISSED && !location.hostname.includes('form.kemkes.go.id')) {
             destroyUI();
             return;
         }
@@ -1255,31 +1277,12 @@
     }
 
     function createUI() {
-        if (shouldHideSkriningUI()) {
+        if (SKRINING_DISMISSED && !location.hostname.includes('form.kemkes.go.id')) {
             destroyUI();
             return;
         }
 
         if (!document.body || !document.head) return;
-
-        if (!document.getElementById('auto-ckg-style')) {
-            const style = document.createElement('style');
-            style.id = 'auto-ckg-style';
-            style.innerHTML = `
-                #auto-ckg-ui { position: fixed; top: 100px; right: 20px; width: 300px; background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(0, 200, 255, 0.5); border-radius: 16px; z-index: 2147483647; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-family: 'Segoe UI', sans-serif; color: white; cursor: default; }
-                #drag-handle { padding: 5px; text-align: center; font-weight: bold; color: #00c8ff; cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333; }
-                #bot-status { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; min-height: 50px; margin-bottom: 10px; color: #00ff88; font-size: 13px; text-align: center; white-space: pre-wrap; font-weight:bold; border: 1px solid #333; display:flex; align-items:center; justify-content:center;}
-                #nik-bot { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #00c8ff; border-radius: 8px; background: #000; color: #00ff88; margin-bottom: 10px; text-align:center; font-weight:bold; outline:none;}
-                #nik-bot:disabled { border-color: #555; color: #888; }
-                #btn-wrap { display: flex; gap: 8px; }
-                #run-bot, #stop-bot, #next-bot { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5); }
-                #run-bot { background: #00c8ff; color: #000; } #run-bot:hover { background: #009acc; }
-                #stop-bot { background: #ff4444; color: white; } #stop-bot:hover { background: #cc0000; }
-                #btn-to-input:hover { background: #059669; } #btn-to-anak:hover { background: #ca8a04; }
-            `;
-            document.head.appendChild(style);
-        }
-
         if (document.getElementById('auto-ckg-ui')) return;
 
         const box = document.createElement('div'); box.id = 'auto-ckg-ui';
@@ -1297,7 +1300,21 @@
                 <button id="btn-to-anak" style="flex:1; background:#eab308; color:#fff; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5);" title="Beralih ke Input Anak">ANAK ⏭️</button>
             </div>
         `;
-        document.body.appendChild(box);
+        const style = document.createElement('style');
+        style.id = 'auto-ckg-style';
+        style.innerHTML = `
+            #auto-ckg-ui { position: fixed; top: 100px; right: 20px; width: 300px; background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(0, 200, 255, 0.5); border-radius: 16px; z-index: 2147483647; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-family: 'Segoe UI', sans-serif; color: white; cursor: default; }
+            #drag-handle { padding: 5px; text-align: center; font-weight: bold; color: #00c8ff; cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333; }
+            #bot-status { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; min-height: 50px; margin-bottom: 10px; color: #00ff88; font-size: 13px; text-align: center; white-space: pre-wrap; font-weight:bold; border: 1px solid #333; display:flex; align-items:center; justify-content:center;}
+            #nik-bot { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #00c8ff; border-radius: 8px; background: #000; color: #00ff88; margin-bottom: 10px; text-align:center; font-weight:bold; outline:none;}
+            #nik-bot:disabled { border-color: #555; color: #888; }
+            #btn-wrap { display: flex; gap: 8px; }
+            #run-bot, #stop-bot, #next-bot { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5); }
+            #run-bot { background: #00c8ff; color: #000; } #run-bot:hover { background: #009acc; }
+            #stop-bot { background: #ff4444; color: white; } #stop-bot:hover { background: #cc0000; }
+            #btn-to-input:hover { background: #059669; } #btn-to-anak:hover { background: #ca8a04; }
+        `;
+        document.head.appendChild(style); document.body.appendChild(box);
 
         const handle = document.getElementById('drag-handle');
         if (handle) {
@@ -1338,7 +1355,7 @@
                 }
             }
 
-            try { sessionStorage.removeItem('CKG_SKRINING_HIDDEN'); } catch (e) { }
+            SKRINING_DISMISSED = false;
             saveBOT(data);
             clearCompleted();
             delStore('CKG_FORM_LOCK');
@@ -1355,6 +1372,7 @@
             btnNextBot.onclick = () => {
                 const data = loadBOT();
                 if (!data) return;
+                SKRINING_DISMISSED = false;
                 delStore('CKG_FORM_LOCK');
                 setStore('CKG_MODE', 'skrining');
                 setStore('CKG_ACTIVE_SESSION', '1');
@@ -1371,8 +1389,8 @@
             stopBOT();
             setStore('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: nik, kategori: 'dewasa' }));
             setStore('CKG_MODE', 'input');
-            try { sessionStorage.setItem('CKG_SKRINING_HIDDEN', '1'); } catch (e) { }
-            destroyUI();
+            try { sessionStorage.setItem('CKG_SWITCH_TO_INPUT_TS', String(Date.now())); } catch (e) { }
+            dismissSkriningForOtherBot();
 
             showToast("Beralih ke Input Dewasa...", "success");
             setTimeout(() => location.reload(), 400);
@@ -1385,8 +1403,8 @@
             stopBOT();
             setStore('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: nik, kategori: 'anak' }));
             setStore('CKG_MODE', 'input_anak');
-            try { sessionStorage.setItem('CKG_SKRINING_HIDDEN', '1'); } catch (e) { }
-            destroyUI();
+            try { sessionStorage.setItem('CKG_SWITCH_TO_INPUT_TS', String(Date.now())); } catch (e) { }
+            dismissSkriningForOtherBot();
 
             showToast("Beralih ke Input Anak...", "success");
             setTimeout(() => location.reload(), 400);
@@ -1412,16 +1430,21 @@
 
             // Terima estafet dari Bot Input -> aktifkan kembali Bot Skrining (standby, tanpa auto-start)
             if (isMainPage) {
-                let estafetRaw = localStorage.getItem('PASIEN_AKTIF_PADASUKA') || getStore('PASIEN_AKTIF_PADASUKA');
+                let estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
                 if (estafetRaw) {
                     try {
                         const estafet = JSON.parse(estafetRaw);
                         const kat = (estafet.kategori || '').toLowerCase().trim();
 
-                        if (estafet.nik && kat === 'skrining') {
+                        let targetSkrining = (kat === 'skrining' || getStore('CKG_MODE') === 'skrining');
+                        if (!targetSkrining && estafet.nik && !OTHER_BOT_MODES.has(kat)) {
+                            targetSkrining = true;
+                        }
+
+                        if (estafet.nik && targetSkrining) {
                             const nikEstafet = normalizeNIK(estafet.nik);
 
-                            try { sessionStorage.removeItem('CKG_SKRINING_HIDDEN'); } catch (e) { }
+                            SKRINING_DISMISSED = false;
                             BOT_RUNNING = false;
                             LOOP_ACTIVE = false;
                             clearBOT();
@@ -1429,9 +1452,9 @@
                             delStore('CKG_ACTIVE_SESSION');
                             delStore('CKG_FORM_LOCK');
                             delStore('PASIEN_AKTIF_PADASUKA');
-                            setStore('CKG_MODE', 'skrining');
-                            setStore('LAST_USED_NIK', nikEstafet);
+                            delStore('CKG_MODE');
 
+                            setStore('LAST_USED_NIK', nikEstafet);
                             createUI();
                             const inputNik = document.getElementById('nik-bot');
                             if (inputNik) inputNik.value = nikEstafet;
@@ -1445,10 +1468,7 @@
                 }
             }
 
-            // Jika sedang di Bot Input / Reg / Anak, tutup & sembunyikan Bot Skrining
-            if (shouldHideSkriningUI()) {
-                BOT_RUNNING = false;
-                LOOP_ACTIVE = false;
+            if (SKRINING_DISMISSED && !isFormPage) {
                 destroyUI();
                 return;
             }
@@ -1497,26 +1517,45 @@
         const isFormPage = currentHost.includes('form.kemkes.go.id');
         const existingData = loadBOT();
         const hasActiveSession = getStore('CKG_ACTIVE_SESSION') === '1';
+        const estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
 
-        // Jika script ini disuntikkan manual setelah halaman selesai dimuat (klik dari Launcher),
-        // bersihkan sisa mode/flag bot lain agar Bot Skrining langsung muncul
-        if (!isFormPage && document.readyState === 'complete') {
-            try { sessionStorage.removeItem('CKG_SKRINING_HIDDEN'); } catch (e) { }
-            const staleMode = (localStorage.getItem('CKG_MODE') || '').toLowerCase().trim();
-            if (INPUT_MODES.has(staleMode)) {
-                delStore('CKG_MODE');
-            }
+        // Cek apakah halaman baru saja di-reload akibat user mengklik tombol pindah DEWASA / ANAK
+        let isFreshSwitchReload = false;
+        if (!isFormPage) {
+            try {
+                const switchTs = parseInt(sessionStorage.getItem('CKG_SWITCH_TO_INPUT_TS') || '0', 10);
+                if (switchTs && (Date.now() - switchTs < 15000)) {
+                    isFreshSwitchReload = true;
+                }
+                sessionStorage.removeItem('CKG_SWITCH_TO_INPUT_TS');
+            } catch (e) { }
         }
 
-        if (shouldHideSkriningUI()) {
-            BOT_RUNNING = false;
-            destroyUI();
+        if (isFreshSwitchReload) {
+            dismissSkriningForOtherBot();
             return;
         }
 
+        // Jika di halaman utama dan sudah ada panel Bot Input/Anak/Reg di layar, sembunyikan Skrining
+        if (!isFormPage && document.body) {
+            const bodyTxt = document.body.innerText.toUpperCase();
+            if (
+                bodyTxt.includes('INPUT DEWASA') ||
+                bodyTxt.includes('INPUT ANAK') ||
+                bodyTxt.includes('BOT INPUT') ||
+                bodyTxt.includes('BOT ANAK') ||
+                bodyTxt.includes('BOT REG')
+            ) {
+                dismissSkriningForOtherBot();
+                return;
+            }
+        }
+
+        SKRINING_DISMISSED = false;
+
         if (isFormPage && existingData) {
             BOT_RUNNING = true;
-        } else if (!isFormPage && existingData && hasActiveSession) {
+        } else if (!isFormPage && existingData && hasActiveSession && !estafetRaw) {
             BOT_RUNNING = true;
         } else {
             BOT_RUNNING = false;
@@ -1536,7 +1575,11 @@
         bootBot();
     }
 
-    const uiIntervalId = setInterval(createUI, 1000);
+    const uiIntervalId = setInterval(() => {
+        if (!SKRINING_DISMISSED || location.hostname.includes('form.kemkes.go.id')) {
+            createUI();
+        }
+    }, 1000);
     const supervisorIntervalId = setInterval(supervisorTick, 1500);
 
     window.__CKG_SKRINING_CLEANUP__ = function () {
@@ -1544,6 +1587,7 @@
         LOOP_ACTIVE = false;
         clearInterval(uiIntervalId);
         clearInterval(supervisorIntervalId);
+        bodyChildObserver.disconnect();
         window.removeEventListener('message', onWindowMessage);
         destroyUI();
     };
