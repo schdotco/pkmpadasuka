@@ -1,6 +1,11 @@
-(function (GM_xmlhttpRequest, GM_getValue, GM_setValue, GM_deleteValue) {
+(function (GM_xmlhttpRequest) {
     'use strict';
     const request = GM_xmlhttpRequest;
+
+    // Bersihkan instance lama jika launcher menyuntikkan ulang script ini pada tab yang sama
+    if (typeof window.__CKG_SKRINING_CLEANUP__ === 'function') {
+        try { window.__CKG_SKRINING_CLEANUP__(); } catch (e) { }
+    }
 
     /* =========================================================
        [EXPERT FEATURE] 1. SISTEM TELEMETRI & ERROR LOGGING
@@ -131,9 +136,9 @@
 
     /* =========================================================
        CROSS-DOMAIN & CROSS-TAB MEMORY
+       Mendukung: GM_getValue -> window.name -> localStorage -> postMessage
     ========================================================= */
     const WIN_NAME_PREFIX = 'CKG_BRIDGE:';
-    const URL_HASH_KEY = 'ckg_payload=';
     const STORE_KEYS = [
         'AUTO_SKRINING_DATA',
         'AUTO_SKRINING_COMPLETED',
@@ -161,14 +166,8 @@
 
     function getStore(key) {
         try {
-            const localVal = localStorage.getItem(key);
-            if (localVal !== null && localVal !== undefined) return localVal;
-        } catch (e) { }
-
-        try {
-            const gmGet = typeof GM_getValue !== 'undefined' ? GM_getValue : window.GM_getValue;
-            if (typeof gmGet === 'function') {
-                const gmVal = gmGet(key, null);
+            if (typeof GM_getValue !== 'undefined') {
+                const gmVal = GM_getValue(key, null);
                 if (gmVal !== null && gmVal !== undefined) return gmVal;
             }
         } catch (e) { }
@@ -179,15 +178,16 @@
             return winObj[key];
         }
 
-        return null;
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            return null;
+        }
     }
 
     function setStore(key, value) {
-        try { localStorage.setItem(key, value); } catch (e) { }
-
         try {
-            const gmSet = typeof GM_setValue !== 'undefined' ? GM_setValue : window.GM_setValue;
-            if (typeof gmSet === 'function') gmSet(key, value);
+            if (typeof GM_setValue !== 'undefined') GM_setValue(key, value);
         } catch (e) { }
 
         const winObj = getWinStoreObj();
@@ -195,16 +195,13 @@
         saveWinStoreObj(winObj);
 
         try {
-            window.postMessage({ type: 'CKG_EXT_STORAGE_SET', key, value }, '*');
+            localStorage.setItem(key, value);
         } catch (e) { }
     }
 
     function delStore(key) {
-        try { localStorage.removeItem(key); } catch (e) { }
-
         try {
-            const gmDel = typeof GM_deleteValue !== 'undefined' ? GM_deleteValue : window.GM_deleteValue;
-            if (typeof gmDel === 'function') gmDel(key);
+            if (typeof GM_deleteValue !== 'undefined') GM_deleteValue(key);
         } catch (e) { }
 
         const winObj = getWinStoreObj();
@@ -212,121 +209,21 @@
         saveWinStoreObj(winObj);
 
         try {
-            window.postMessage({ type: 'CKG_EXT_STORAGE_DEL', key }, '*');
+            localStorage.removeItem(key);
         } catch (e) { }
     }
 
-    function buildStateBundle() {
-        const bundle = {};
-        STORE_KEYS.forEach(k => {
-            const v = getStore(k);
-            if (v !== null && v !== undefined) bundle[k] = v;
-        });
-        return bundle;
-    }
-
-    function encodeBundleToBase64(bundle) {
-        try {
-            const jsonStr = JSON.stringify(bundle);
-            return btoa(unescape(encodeURIComponent(jsonStr)));
-        } catch (e) {
-            return '';
-        }
-    }
-
-    function decodeBundleFromBase64(b64) {
-        try {
-            const jsonStr = decodeURIComponent(escape(atob(b64)));
-            return JSON.parse(jsonStr);
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function appendPayloadToUrl(rawUrl) {
-        try {
-            if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
-            const bundle = buildStateBundle();
-            if (!bundle.AUTO_SKRINING_DATA && bundle.CKG_ACTIVE_SESSION !== '1') return rawUrl;
-
-            const encoded = encodeBundleToBase64(bundle);
-            if (!encoded) return rawUrl;
-
-            const urlObj = new URL(rawUrl, window.location.origin);
-            if (!urlObj.hostname.includes('kemkes.go.id')) return rawUrl;
-
-            const cleanHash = (urlObj.hash || '').replace(/^#/, '');
-            const filteredParts = cleanHash
-                .split('&')
-                .filter(part => part && !part.startsWith(URL_HASH_KEY));
-            filteredParts.push(URL_HASH_KEY + encoded);
-            urlObj.hash = '#' + filteredParts.join('&');
-            return urlObj.toString();
-        } catch (e) {
-            return rawUrl;
-        }
-    }
-
-    function consumeUrlPayload() {
-        try {
-            const rawHash = (window.location.hash || '').replace(/^#/, '');
-            if (!rawHash.includes(URL_HASH_KEY)) return false;
-
-            const parts = rawHash.split('&');
-            let encodedPayload = '';
-            const remainingParts = [];
-
-            for (const part of parts) {
-                if (part.startsWith(URL_HASH_KEY)) {
-                    encodedPayload = part.slice(URL_HASH_KEY.length);
-                } else if (part) {
-                    remainingParts.push(part);
-                }
-            }
-
-            if (encodedPayload) {
-                const bundle = decodeBundleFromBase64(encodedPayload);
-                if (bundle && typeof bundle === 'object') {
-                    Object.entries(bundle).forEach(([k, v]) => setStore(k, v));
-                }
-                const newHash = remainingParts.length > 0 ? '#' + remainingParts.join('&') : '';
-                const cleanUrl = window.location.pathname + window.location.search + newHash;
-                window.history.replaceState(null, '', cleanUrl);
-                return true;
-            }
-        } catch (e) { }
-        return false;
-    }
-
-    consumeUrlPayload();
-
-    try {
-        const origWindowOpen = window.open;
-        window.open = function (url, target, features) {
-            try {
-                if (typeof url === 'string' && url.includes('kemkes.go.id')) {
-                    url = appendPayloadToUrl(url);
-                }
-            } catch (e) { }
-            return origWindowOpen.call(this, url, target, features);
-        };
-
-        document.addEventListener('click', (e) => {
-            try {
-                const anchor = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-                if (anchor && anchor.href && anchor.href.includes('form.kemkes.go.id')) {
-                    anchor.href = appendPayloadToUrl(anchor.href);
-                }
-            } catch (err) { }
-        }, true);
-    } catch (e) { }
-
-    window.addEventListener('message', (event) => {
+    // Jembatan komunikasi jika form.kemkes.go.id terbuka di TAB BARU (window.opener)
+    function onWindowMessage(event) {
         try {
             if (!event.data || typeof event.data !== 'object') return;
 
             if (event.data.type === 'CKG_REQUEST_STATE') {
-                const bundle = buildStateBundle();
+                const bundle = {};
+                STORE_KEYS.forEach(k => {
+                    const v = getStore(k);
+                    if (v !== null && v !== undefined) bundle[k] = v;
+                });
                 if (event.source) {
                     event.source.postMessage({ type: 'CKG_SYNC_STATE', bundle }, '*');
                 }
@@ -334,31 +231,21 @@
                 Object.entries(event.data.bundle).forEach(([k, v]) => setStore(k, v));
                 const data = loadBOT();
                 const isSessionActive = getStore('CKG_ACTIVE_SESSION') === '1';
-                if (data && (isSessionActive || location.hostname.includes('form.kemkes.go.id'))) {
+                if (data && isSessionActive) {
                     BOT_RUNNING = true;
-                    SKRINING_OWNED = true;
                 }
-                if (!isOtherBotActive()) {
-                    createUI();
-                    syncUI();
-                }
+                createUI();
+                syncUI();
             }
         } catch (e) { }
-    });
+    }
+    window.addEventListener('message', onWindowMessage);
 
     function requestStateFromOpener() {
         try {
             if (window.opener && !window.opener.closed) {
                 window.opener.postMessage({ type: 'CKG_REQUEST_STATE' }, '*');
             }
-        } catch (e) { }
-        try {
-            if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ type: 'CKG_REQUEST_STATE' }, '*');
-            }
-        } catch (e) { }
-        try {
-            window.postMessage({ type: 'CKG_EXT_STORAGE_PULL' }, '*');
         } catch (e) { }
     }
 
@@ -388,97 +275,55 @@
     function clearCompleted() { delStore('AUTO_SKRINING_COMPLETED'); }
 
     /* =========================================================
-       DETEKSI MODUL BOT LAIN (INPUT DEWASA / INPUT ANAK / REG)
-       Jika bot lain terbuka/aktif, Bot Skrining wajib hilang
+       KONTROL VISIBILITAS UI:
+       - Muncul & terkunci tampil saat Bot Skrining dibuka / berjalan
+       - Hilang otomatis saat pindah ke Bot Input / Reg / Anak
     ========================================================= */
-    let SKRINING_OWNED = false;
+    const INPUT_MODES = new Set(['input', 'input_anak', 'dewasa', 'anak', 'reg', 'registrasi', 'pendaftaran']);
 
-    function hasOtherBotPanelInDOM() {
+    function detectOtherBotPanel() {
         if (!document.body) return false;
-        const ignoredIds = new Set(['auto-ckg-ui', 'auto-ckg-style', 'ckg-toast-container']);
-
-        // 1. Cek elemen dengan ID bot lain
-        const byId = document.querySelectorAll('[id*="ckg"], [id*="bot-"], [id*="-bot"], [id*="padasuka"]');
-        for (const el of byId) {
-            if (ignoredIds.has(el.id)) continue;
-            if (el.closest('#auto-ckg-ui') || el.closest('#ckg-toast-container')) continue;
-            const tag = el.tagName.toLowerCase();
-            if (tag === 'style' || tag === 'script') continue;
+        const children = document.body.children;
+        for (const el of children) {
+            if (!el || el.id === 'auto-ckg-ui' || el.id === 'ckg-toast-container') continue;
             const style = window.getComputedStyle(el);
-            if (style.position === 'fixed' && style.display !== 'none' && el.offsetHeight > 40) {
-                return true;
-            }
-        }
+            if (style.position !== 'fixed' || style.display === 'none' || style.visibility === 'hidden') continue;
 
-        // 2. Cek panel fixed floating lain milik ekstensi/bot
-        const allDivs = document.body.children;
-        for (const el of allDivs) {
-            if (ignoredIds.has(el.id)) continue;
-            const style = window.getComputedStyle(el);
-            if (style.position === 'fixed' && style.display !== 'none' && el.offsetHeight > 60) {
-                const txt = (el.innerText || '').toUpperCase();
-                if (
-                    txt.includes('INPUT DEWASA') ||
-                    txt.includes('INPUT ANAK') ||
-                    txt.includes('BOT INPUT') ||
-                    txt.includes('BOT ANAK') ||
-                    txt.includes('BOT REG') ||
-                    txt.includes('REGISTRASI') ||
-                    txt.includes('PENDAFTARAN') ||
-                    (txt.includes('PADASUKA') && !txt.includes('SKRINING PADASUKA'))
-                ) {
-                    return true;
-                }
+            const rect = el.getBoundingClientRect();
+            // Panel bot mengambang memiliki lebar kotak 200-480px (bukan navbar penuh & bukan tombol kecil launcher)
+            if (rect.width >= 200 && rect.width <= 480 && rect.height >= 120) {
+                const hasInputOrAction = el.querySelector('input') || /START|MULAI|BATAL|PROSES|INPUT|REGISTRASI|ANAK|DEWASA/i.test(el.innerText || '');
+                if (hasInputOrAction) return true;
             }
         }
         return false;
     }
 
-    function isOtherBotActive() {
-        // Di halaman form.kemkes.go.id, Bot Skrining selalu boleh tampil
+    function shouldHideSkriningUI() {
+        // Di form.kemkes.go.id, Bot Skrining selalu tampil
         if (location.hostname.includes('form.kemkes.go.id')) return false;
 
-        // Cek mode penyimpanan (input, input_anak, dewasa, anak, reg, registrasi)
-        const mode = (getStore('CKG_MODE') || '').toLowerCase().trim();
-        if (
-            mode === 'input' ||
-            mode === 'input_anak' ||
-            mode === 'dewasa' ||
-            mode === 'anak' ||
-            mode === 'reg' ||
-            mode === 'registrasi' ||
-            mode === 'pendaftaran'
-        ) {
-            SKRINING_OWNED = false;
-            return true;
-        }
+        // Jika baru saja klik tombol pindah DEWASA/ANAK dan halaman reload
+        try {
+            if (sessionStorage.getItem('CKG_SKRINING_HIDDEN') === '1') return true;
+        } catch (e) { }
 
-        // Cek payload estafet pasien aktif
-        const estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
-        if (estafetRaw) {
-            try {
+        // Jika mode penyimpanan sudah diarahkan ke Input / Anak / Reg
+        const mode = (localStorage.getItem('CKG_MODE') || '').toLowerCase().trim();
+        if (INPUT_MODES.has(mode)) return true;
+
+        // Jika estafet aktif ditujukan untuk dewasa / anak / reg
+        try {
+            const estafetRaw = localStorage.getItem('PASIEN_AKTIF_PADASUKA');
+            if (estafetRaw) {
                 const estafet = JSON.parse(estafetRaw);
                 const kat = (estafet.kategori || '').toLowerCase().trim();
-                if (
-                    kat === 'dewasa' ||
-                    kat === 'anak' ||
-                    kat === 'input' ||
-                    kat === 'input_anak' ||
-                    kat === 'reg' ||
-                    kat === 'registrasi' ||
-                    kat === 'pendaftaran'
-                ) {
-                    SKRINING_OWNED = false;
-                    return true;
-                }
-            } catch (e) { }
-        }
+                if (INPUT_MODES.has(kat)) return true;
+            }
+        } catch (e) { }
 
-        // Cek jika Bot Input / Reg / Anak sudah merender panel UI di layar
-        if (hasOtherBotPanelInDOM()) {
-            SKRINING_OWNED = false;
-            return true;
-        }
+        // Jika panel Bot Input / Reg / Anak muncul di layar pada tab yang sama
+        if (detectOtherBotPanel()) return true;
 
         return false;
     }
@@ -942,7 +787,6 @@
                 return;
             }
 
-            // 1. STATUS PERKAWINAN
             if (pageText.includes('status perkawinan') && BOT_RUNNING) {
                 updateStatus('Status di Sheet: ' + data.perkawinan);
                 if (data.perkawinan && data.perkawinan !== 'Data Kosong') {
@@ -956,36 +800,31 @@
                 }
             }
 
-            // 2. KEHAMILAN
             if (pageText.includes('sedang hamil') && BOT_RUNNING) {
                 await fillRadioSurveyJS('sedang hamil', 'tidak', true);
             }
 
-            // 3. FAKTOR RISIKO TB
             if ((pageText.includes('faktor risiko tb') || pageText.includes('tuberkulosis') || pageText.includes('batuk')) && BOT_RUNNING) {
                 await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk', true);
                 await fillRadioSurveyJS('faktor risiko tb', 'tidak', true);
             }
 
-            // 4. DISABILITAS
             if (pageText.includes('disabilitas') && BOT_RUNNING) {
                 await fillRadioSurveyJS('disabilitas', 'non disabilitas', true);
                 await fillRadioSurveyJS('disabilitas', 'tidak', true);
             }
 
-            // 5. KESEHATAN JIWA
             if ((pageText.includes('2 minggu terakhir') || pageText.includes('kesehatan jiwa') || pageText.includes('bersemangat') || pageText.includes('murung')) && BOT_RUNNING) {
                 await isiKesehatanJiwa(data);
             }
 
-            // 6. KANKER LEHER RAHIM & PAYUDARA
             if ((pageText.includes('kanker leher rahim') || pageText.includes('serviks') || pageText.includes('payudara')) && BOT_RUNNING) {
                 let p = (data.perkawinan || '').toLowerCase();
                 let isYes = p.includes('menikah') || p.includes('cerai') || (p.includes('kawin') && !p.includes('belum'));
                 await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak', false);
             }
 
-            // 7. SKOR APCS (KANKER KOLOREKTAL)
+            // Pertanyaan Skor APCS (Usia & Jenis Kelamin berdasarkan NIK pasien)
             if (pageText.includes('skor apcs') && BOT_RUNNING) {
                 const infoNIK = parseInfoDariNIK(data.nik);
                 if (infoNIK) {
@@ -1011,7 +850,6 @@
                 }
             }
 
-            // 8. MEROKOK & KANKER PARU
             if ((pageText.includes('merokok') || pageText.includes('rokok') || pageText.includes('kanker paru')) && BOT_RUNNING) {
                 const statusMerokok = jawabanMerokok(data.merokok);
                 const semuaPertanyaan = getAllQuestionBlocks();
@@ -1065,7 +903,6 @@
                 }
             }
 
-            // 9. AKTIVITAS FISIK
             if ((pageText.includes('aktivitas fisik') || pageText.includes('olahraga') || pageText.includes('aktif secara fisik')) && BOT_RUNNING) {
                 updateStatus('Mengisi Aktivitas Fisik...');
                 const semuaPertanyaan = getAllQuestionBlocks();
@@ -1133,7 +970,7 @@
                 }
             }
 
-            // 10. SAPU BERSIH PERTANYAAN RADIO LAIN YANG BELUM TERJAWAB
+            // Sapu bersih semua pertanyaan radio lain yang belum terjawab
             const negativePriorities = [
                 'tidak batuk',
                 'non disabilitas',
@@ -1176,7 +1013,7 @@
                 }
             }
 
-            // 11. CHECKBOX PERSETUJUAN
+            // Centang checkbox persetujuan jika ada sebelum tombol Kirim/Lanjut
             const checkboxes = [...document.querySelectorAll('input[type="checkbox"]')].filter(cb => cb.offsetParent !== null && !cb.checked);
             for (const cb of checkboxes) {
                 const container = cb.closest('.sd-item, .sv-item, label') || cb.parentElement;
@@ -1223,7 +1060,6 @@
         if (!data) return;
 
         BOT_RUNNING = true;
-        SKRINING_OWNED = true;
         setStore('CKG_FORM_LOCK', String(Date.now()));
         updateStatus('MEMULAI PENGISIAN FORM...');
 
@@ -1285,7 +1121,7 @@
     async function mainLoop(data) {
         updateStatus('MENCARI ANTRIAN...');
 
-        while (BOT_RUNNING && !isOtherBotActive() && location.hostname.includes('sehatindonesiaku')) {
+        while (BOT_RUNNING && !shouldHideSkriningUI() && location.hostname.includes('sehatindonesiaku')) {
             try {
                 createUI();
                 const lockTime = parseInt(getStore('CKG_FORM_LOCK') || '0', 10);
@@ -1299,13 +1135,13 @@
 
                 let nextItem = null;
                 for (let i = 0; i < 3; i++) {
-                    if (!BOT_RUNNING || isOtherBotActive()) break;
+                    if (!BOT_RUNNING || shouldHideSkriningUI()) break;
                     nextItem = getNextTarget();
                     if (nextItem) break;
                     await sleep(1500);
                 }
 
-                if (!BOT_RUNNING || isOtherBotActive()) break;
+                if (!BOT_RUNNING || shouldHideSkriningUI()) break;
 
                 if (!nextItem) {
                     BOT_RUNNING = false;
@@ -1328,7 +1164,7 @@
 
                 updateStatus('Mengalihkan halaman form...');
                 for (let wait = 0; wait < 15; wait++) {
-                    if (!BOT_RUNNING || isOtherBotActive()) break;
+                    if (!BOT_RUNNING || shouldHideSkriningUI()) break;
                     await sleep(1500);
                     if (location.hostname.includes('form.kemkes.go.id')) {
                         break;
@@ -1365,7 +1201,7 @@
     }
 
     function syncUI() {
-        if (isOtherBotActive()) {
+        if (shouldHideSkriningUI()) {
             destroyUI();
             return;
         }
@@ -1419,7 +1255,7 @@
     }
 
     function createUI() {
-        if (isOtherBotActive()) {
+        if (shouldHideSkriningUI()) {
             destroyUI();
             return;
         }
@@ -1446,7 +1282,6 @@
 
         if (document.getElementById('auto-ckg-ui')) return;
 
-        SKRINING_OWNED = true;
         const box = document.createElement('div'); box.id = 'auto-ckg-ui';
         box.innerHTML = `
             <div id="drag-handle" title="Klik dan tahan untuk memindahkan kotak">SKRINING PADASUKA</div>
@@ -1503,13 +1338,13 @@
                 }
             }
 
+            try { sessionStorage.removeItem('CKG_SKRINING_HIDDEN'); } catch (e) { }
             saveBOT(data);
             clearCompleted();
             delStore('CKG_FORM_LOCK');
             setStore('CKG_MODE', 'skrining');
             setStore('CKG_ACTIVE_SESSION', '1');
             BOT_RUNNING = true;
-            SKRINING_OWNED = true;
             syncUI();
             playSound('sukses');
             showToast("Memulai Antrean Skrining...", "info");
@@ -1524,7 +1359,6 @@
                 setStore('CKG_MODE', 'skrining');
                 setStore('CKG_ACTIVE_SESSION', '1');
                 BOT_RUNNING = true;
-                SKRINING_OWNED = true;
                 updateStatus('⚡ Memaksa eksekusi loop...');
                 showToast("Sistem dipaksa untuk melanjutkan form.", "warning");
             };
@@ -1535,9 +1369,9 @@
             if (!confirm('Anda yakin ingin pindah ke Modul INPUT DEWASA?')) return;
 
             stopBOT();
-            SKRINING_OWNED = false;
             setStore('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: nik, kategori: 'dewasa' }));
             setStore('CKG_MODE', 'input');
+            try { sessionStorage.setItem('CKG_SKRINING_HIDDEN', '1'); } catch (e) { }
             destroyUI();
 
             showToast("Beralih ke Input Dewasa...", "success");
@@ -1549,9 +1383,9 @@
             if (!confirm('Anda yakin ingin pindah ke Modul INPUT ANAK?')) return;
 
             stopBOT();
-            SKRINING_OWNED = false;
             setStore('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: nik, kategori: 'anak' }));
             setStore('CKG_MODE', 'input_anak');
+            try { sessionStorage.setItem('CKG_SKRINING_HIDDEN', '1'); } catch (e) { }
             destroyUI();
 
             showToast("Beralih ke Input Anak...", "success");
@@ -1565,100 +1399,31 @@
         syncUI();
     }
 
-    // Jaga UI tetap tampil HANYA saat Bot Skrining yang sedang dimiliki/aktif; langsung hapus jika bot lain terbuka
-    const uiGuardObserver = new MutationObserver(() => {
-        if (isOtherBotActive()) {
-            BOT_RUNNING = false;
-            destroyUI();
-        } else if (SKRINING_OWNED && document.body && !document.getElementById('auto-ckg-ui')) {
-            createUI();
-        }
-    });
-    if (document.documentElement) {
-        uiGuardObserver.observe(document.documentElement, { childList: true, subtree: true });
-    }
-
     /* =========================================================
-       INISIALISASI & SUPERVISOR LOOP
+       INISIALISASI STANDBY & PENERIMA ESTAFET TANPA AUTO-START
     ========================================================= */
     let isDownloadingBackground = false;
 
-    const currentHost = window.location.hostname;
-    const isInitialFormPage = currentHost.includes('form.kemkes.go.id');
-    const existingData = loadBOT();
-    const hasActiveSession = getStore('CKG_ACTIVE_SESSION') === '1';
-
-    if (isOtherBotActive()) {
-        BOT_RUNNING = false;
-        SKRINING_OWNED = false;
-        destroyUI();
-    } else if (isInitialFormPage && existingData) {
-        BOT_RUNNING = true;
-        SKRINING_OWNED = true;
-        createUI();
-    } else if (!isInitialFormPage && existingData && hasActiveSession) {
-        BOT_RUNNING = true;
-        SKRINING_OWNED = true;
-        createUI();
-    } else {
-        BOT_RUNNING = false;
-        if (!isInitialFormPage && !hasActiveSession && existingData) {
-            clearBOT();
-        }
-        // Tunda sesaat agar jika user membuka Bot Input/Reg/Anak bersamaan, panel bot lain terdeteksi lebih dulu
-        setTimeout(() => {
-            if (!isOtherBotActive()) {
-                createUI();
-            } else {
-                destroyUI();
-            }
-        }, 350);
-    }
-
-    setInterval(async () => {
+    async function supervisorTick() {
         try {
-            const host = window.location.hostname;
-            const isFormPage = host.includes('form.kemkes.go.id');
-            const isMainPage = host.includes('sehatindonesiaku');
+            const currentHost = window.location.hostname;
+            const isFormPage = currentHost.includes('form.kemkes.go.id');
+            const isMainPage = currentHost.includes('sehatindonesiaku');
 
-            if (isOtherBotActive()) {
-                BOT_RUNNING = false;
-                LOOP_ACTIVE = false;
-                SKRINING_OWNED = false;
-                destroyUI();
-                return;
-            }
-
-            consumeUrlPayload();
-            if (SKRINING_OWNED) createUI();
-
-            let data = loadBOT();
-
-            if (isFormPage && !data) {
-                requestStateFromOpener();
-                await sleep(300);
-                data = loadBOT();
-                if (data) {
-                    BOT_RUNNING = true;
-                    SKRINING_OWNED = true;
-                    createUI();
-                    syncUI();
-                }
-            }
-
-            // Terima estafet dari Bot Input -> masukkan NIK saja, standby tunggu klik START
+            // Terima estafet dari Bot Input -> aktifkan kembali Bot Skrining (standby, tanpa auto-start)
             if (isMainPage) {
-                let estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
+                let estafetRaw = localStorage.getItem('PASIEN_AKTIF_PADASUKA') || getStore('PASIEN_AKTIF_PADASUKA');
                 if (estafetRaw) {
                     try {
                         const estafet = JSON.parse(estafetRaw);
                         const kat = (estafet.kategori || '').toLowerCase().trim();
+
                         if (estafet.nik && kat === 'skrining') {
                             const nikEstafet = normalizeNIK(estafet.nik);
 
+                            try { sessionStorage.removeItem('CKG_SKRINING_HIDDEN'); } catch (e) { }
                             BOT_RUNNING = false;
                             LOOP_ACTIVE = false;
-                            SKRINING_OWNED = true;
                             clearBOT();
                             clearCompleted();
                             delStore('CKG_ACTIVE_SESSION');
@@ -1674,13 +1439,32 @@
                             syncUI();
                             updateStatus('ESTAFET DITERIMA:\n' + nikEstafet + '\nKlik START SKRINING untuk mulai.');
                             showToast('NIK dari Bot Input masuk. Klik START untuk menjalankan.', 'info');
-                            data = null;
+                            return;
                         }
                     } catch (e) { }
                 }
             }
 
-            if (isMainPage && SKRINING_OWNED && !data && !cachedSheetData && !isDownloadingBackground) {
+            // Jika sedang di Bot Input / Reg / Anak, tutup & sembunyikan Bot Skrining
+            if (shouldHideSkriningUI()) {
+                BOT_RUNNING = false;
+                LOOP_ACTIVE = false;
+                destroyUI();
+                return;
+            }
+
+            createUI();
+
+            let data = loadBOT();
+
+            // Jika di halaman form tapi data kosong (tab baru), minta dari tab induk
+            if (isFormPage && !data) {
+                requestStateFromOpener();
+                await sleep(300);
+                data = loadBOT();
+            }
+
+            if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
                 isDownloadingBackground = true;
                 cariData('000').then(() => {
                     const statusEl = document.getElementById('bot-status');
@@ -1706,10 +1490,61 @@
         } catch (e) {
             sendBotErrorLog("Interval_Supervisor", e.message || e);
         }
-    }, 1500);
-})(
-    typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null,
-    typeof GM_getValue !== "undefined" ? GM_getValue : undefined,
-    typeof GM_setValue !== "undefined" ? GM_setValue : undefined,
-    typeof GM_deleteValue !== "undefined" ? GM_deleteValue : undefined
-);
+    }
+
+    function bootBot() {
+        const currentHost = window.location.hostname;
+        const isFormPage = currentHost.includes('form.kemkes.go.id');
+        const existingData = loadBOT();
+        const hasActiveSession = getStore('CKG_ACTIVE_SESSION') === '1';
+
+        // Jika script ini disuntikkan manual setelah halaman selesai dimuat (klik dari Launcher),
+        // bersihkan sisa mode/flag bot lain agar Bot Skrining langsung muncul
+        if (!isFormPage && document.readyState === 'complete') {
+            try { sessionStorage.removeItem('CKG_SKRINING_HIDDEN'); } catch (e) { }
+            const staleMode = (localStorage.getItem('CKG_MODE') || '').toLowerCase().trim();
+            if (INPUT_MODES.has(staleMode)) {
+                delStore('CKG_MODE');
+            }
+        }
+
+        if (shouldHideSkriningUI()) {
+            BOT_RUNNING = false;
+            destroyUI();
+            return;
+        }
+
+        if (isFormPage && existingData) {
+            BOT_RUNNING = true;
+        } else if (!isFormPage && existingData && hasActiveSession) {
+            BOT_RUNNING = true;
+        } else {
+            BOT_RUNNING = false;
+            if (!hasActiveSession && existingData) {
+                clearBOT();
+            }
+        }
+
+        createUI();
+        syncUI();
+        supervisorTick();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootBot);
+    } else {
+        bootBot();
+    }
+
+    const uiIntervalId = setInterval(createUI, 1000);
+    const supervisorIntervalId = setInterval(supervisorTick, 1500);
+
+    window.__CKG_SKRINING_CLEANUP__ = function () {
+        BOT_RUNNING = false;
+        LOOP_ACTIVE = false;
+        clearInterval(uiIntervalId);
+        clearInterval(supervisorIntervalId);
+        window.removeEventListener('message', onWindowMessage);
+        destroyUI();
+    };
+})(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
