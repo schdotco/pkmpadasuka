@@ -555,25 +555,88 @@
         } catch (e) { }
     }
 
-    async function isiTetanusCatin() {
-        try {
-            const judul = document.body.innerText.toLowerCase();
-            if (!judul.includes('riwayat imunisasi tetanus')) return false;
+async function isiTetanusCatin() {
+    try {
+        const judul = document.body.innerText.toLowerCase();
+        if (!judul.includes('riwayat imunisasi tetanus')) return false;
 
-            updateStatus('Mengisi Imunisasi Tetanus Catin...');
-            await selectDropdownContext('pernah mendapatkan imunisasi tetanus', 'pernah imunisasi tetanus tetapi tidak ingat berapa kali');
-            await sleep(1500);
+        updateStatus('Mengisi Imunisasi Tetanus Catin...');
 
-            if (!BOT_RUNNING) return false;
-            const btnKirim = document.querySelector('.sd-navigation__complete-btn') || [...document.querySelectorAll('button,input[type="button"]')].find(el => (el.value || el.innerText || '').toLowerCase().includes('kirim'));
-            if (btnKirim) {
-                delStore('CKG_FORM_LOCK');
-                btnKirim.click();
-                await sleep(3000);
+        const targetKeywords = [
+            'pernah imunisasi tetanus tetapi tidak ingat berapa kali',
+            'tidak ingat berapa kali'
+        ];
+
+        // 1. Cari item pilihan radio (.sd-item / .sv-item)
+        const items = [...document.querySelectorAll('.sd-item, .sv-item')];
+        const targetItem = items.find(el => {
+            const txt = (el.innerText || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            return targetKeywords.some(k => txt.includes(k));
+        });
+
+        let berhasilPilih = false;
+
+        if (targetItem) {
+            targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            await sleep(300);
+
+            const decorator = targetItem.querySelector('.sd-item__decorator.sd-radio__decorator, .sd-radio__decorator, .sd-item__decorator');
+            const label = targetItem.querySelector('label');
+            const input = targetItem.querySelector('input[type="radio"]');
+
+            // Klik decorator / label radio
+            if (decorator) {
+                decorator.click();
+            } else if (label) {
+                label.click();
+            } else {
+                targetItem.click();
             }
-            return true;
-        } catch (e) { return false; }
+
+            await sleep(250);
+
+            // Paksa sinkronisasi state SurveyJS jika input belum tercentang
+            if (input && !input.checked) {
+                input.click();
+                input.checked = true;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            berhasilPilih = input ? input.checked : true;
+        } else {
+            // Fallback jika di halaman tertentu bentuknya masih dropdown
+            berhasilPilih = await selectDropdownContext(
+                'pernah mendapatkan imunisasi tetanus',
+                'pernah imunisasi tetanus tetapi tidak ingat berapa kali'
+            );
+        }
+
+        // Jangan klik Kirim jika jawaban belum berhasil terpilih
+        if (!berhasilPilih) {
+            updateStatus('Menunggu opsi Tetanus Catin muncul...');
+            return false;
+        }
+
+        await sleep(1000);
+
+        if (!BOT_RUNNING) return false;
+        const btnKirim = document.querySelector('.sd-navigation__complete-btn') ||
+            [...document.querySelectorAll('button, input[type="button"]')].find(el =>
+                (el.value || el.innerText || '').toLowerCase().match(/kirim|lanjut/)
+            );
+
+        if (btnKirim) {
+            delStore('CKG_FORM_LOCK');
+            btnKirim.click();
+            await sleep(3000);
+        }
+        return true;
+    } catch (e) {
+        sendBotErrorLog("isiTetanusCatin", e.message || e);
+        return false;
     }
+}
 
     async function isiImunisasiBalita() {
         try {
