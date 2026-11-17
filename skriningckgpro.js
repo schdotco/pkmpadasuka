@@ -1257,7 +1257,7 @@ async function isiTetanusCatin() {
                                 playSound('sukses');
                                 updateStatus('Data siap! Skrining Otomatis dimulai...');
 
-                                BOT_RUNNING = true;
+                                BOT_RUNNING = false;
                                 syncUI();
                             } else {
                                 delStore('PASIEN_AKTIF_PADASUKA');
