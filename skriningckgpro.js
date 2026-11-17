@@ -562,7 +562,7 @@
 
             updateStatus('Mengisi Imunisasi Tetanus Catin...');
             await selectDropdownContext('pernah mendapatkan imunisasi tetanus', 'pernah imunisasi tetanus tetapi tidak ingat berapa kali');
-            await sleep(1000);
+            await sleep(1500);
 
             if (!BOT_RUNNING) return false;
             const btnKirim = document.querySelector('.sd-navigation__complete-btn') || [...document.querySelectorAll('button,input[type="button"]')].find(el => (el.value || el.innerText || '').toLowerCase().includes('kirim'));
