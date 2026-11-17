@@ -32,6 +32,7 @@ function sendBotErrorLog(context, errorMessage) {
    [EXPERT FEATURE] 2. TOAST NOTIFICATION (NON-BLOCKING UI)
 ========================================================= */
 function showToast(message, type = 'info') {
+    if (!document.body) return;
     const toastId = 'ckg-toast-container';
     let container = document.getElementById(toastId);
     if (!container) {
@@ -112,18 +113,17 @@ const TARGETS = [
 const sleep = ms => new Promise(r => setTimeout(r,ms));
 function normalizeNIK(v) { return String(v || '').replace(/\D/g,''); }
 
-// PERBAIKAN: Hitung umur hanya selisih tahun & mendeteksi angka tahun dengan pintar
+// Hitung umur hanya selisih tahun & mendeteksi angka tahun dengan pintar
 function hitungUmur(tglLahirStr) {
     if (!tglLahirStr) return 0;
     try {
-        // Cari 4 digit angka berturut-turut yang masuk akal sebagai tahun lahir (misal 19xx atau 20xx)
         let match = String(tglLahirStr).match(/(19\d{2}|20\d{2})/);
         if (match && match[1]) {
             let tahunLahir = parseInt(match[1]);
-            let tahunSekarang = new Date().getFullYear(); // Mendapatkan tahun hari ini
+            let tahunSekarang = new Date().getFullYear();
             return tahunSekarang - tahunLahir;
         }
-        return 0; // Kembalikan 0 jika gagal mendeteksi tahun
+        return 0;
     } catch(e) {
         return 0;
     }
@@ -232,7 +232,7 @@ function parseCSV(text) {
             if (current || row.length) { row.push(current); rows.push(row); row = []; current = ""; }
         } else { current += char; }
     }
-   if (current || row.length) { row.push(current); rows.push(row); }
+    if (current || row.length) { row.push(current); rows.push(row); }
     return rows;
 }
         
@@ -288,7 +288,6 @@ async function cariData(nikInput) {
             
             if (normalizeNIK(rawNik) === target || cells.some(col => normalizeNIK(col) === target)) {
                 
-                // PERBAIKAN: Cari string tanggal lahir di sekitar kolom F, G, H, I agar lebih robust
                 let extractedTglLahir = '';
                 for (let colIdx = 4; colIdx <= 9; colIdx++) {
                     if (cells[colIdx] && /(19\d{2}|20\d{2})/.test(cells[colIdx])) {
@@ -300,7 +299,7 @@ async function cariData(nikInput) {
                 return {
                     nik: target, 
                     nama: cells[7] || '', 
-                    tglLahir: extractedTglLahir, // Hasil ekstrak tanggal lahir
+                    tglLahir: extractedTglLahir,
                     sistole: cells[37] || '120', diastole: cells[38] || '80',
                     bb: cells[40] || '60', tb: cells[41] || '165', lp: cells[43] || '80', gula: cells[58] || '110',
                     mata: cells[70] || 'Tidak', merokok: cells[71] || '', skilasKog1: (cells[78] || 'Ya').trim(),
@@ -637,7 +636,6 @@ async function autoContinueForm() {
         else if(title.includes('puma') || title.includes('ppok')){
             currentId = 'puma'; updateStatus('MENGISI TAHAP: PPOK (PUMA)');
             
-            // PERBAIKAN UMUR: Hanya selisih Tahun Sekarang dikurangi Tahun Lahir (dari regex)
             let umur = hitungUmur(data.tglLahir);
             let opsiUmur = '';
             
@@ -646,11 +644,10 @@ async function autoContinueForm() {
             } else if (umur >= 50 && umur <= 59) {
                 opsiUmur = '50-59';
             } else if (umur >= 60) {
-                opsiUmur = '=>60'; // Match teks Kemenkes persis
+                opsiUmur = '=>60';
             }
 
             if (opsiUmur !== '') {
-                // Eksekusi klik otomatis untuk usia, dilengkapi fallback klik manual ke label
                 let success = await isiRadioSurveyJS('usia - skor puma', opsiUmur);
                 if (!success) {
                     const labels = [...document.querySelectorAll('label')];
@@ -713,12 +710,9 @@ async function autoContinueForm() {
 function getNextTarget() {
     try {
         const completed = getCompleted();
-        
-        // Cari container baris form (mengandung ID "rowfrm..." atau grid)
         const formRows = [...document.querySelectorAll('div[id^="rowfrm"]')];
         
         for (let row of formRows) {
-            // Cari elemen apa saja yang memiliki text "Input Data" (Bisa button, div, span)
             const allElements = [...row.querySelectorAll('*')];
             let actionBtn = allElements.find(el => {
                 const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
@@ -731,15 +725,11 @@ function getNextTarget() {
 
             if (!actionBtn) continue;
 
-            // Panjat hirarki menuju row utama grid (Kemenkes Layout Update)
             let rowContainer = row.closest('.grid') || row.closest('.border-y-solid') || row.parentElement.parentElement;
             
             if (rowContainer) {
-                // Kolom Judul selalu ada di col-span-2 sebelah kiri tabel
                 const titleCol = rowContainer.querySelector('.col-span-2') || rowContainer;
                 const txt = (titleCol.innerText || '').replace(/\s+/g, ' ').trim().toLowerCase();
-                
-                // Cek pencocokan dengan daftar TARGETS kita
                 const found = TARGETS.find(t => txt.includes(t.txt));
                 
                 if (found && !completed.includes(found.id)) {
@@ -847,8 +837,11 @@ function syncUI() {
 }
 
 function createUI(){
-    if(document.getElementById('auto-ckg-ui')) return;
-    const box = document.createElement('div'); box.id = 'auto-ckg-ui';
+    if (!document.body || !document.head) return;
+    if (document.getElementById('auto-ckg-ui')) return;
+
+    const box = document.createElement('div'); 
+    box.id = 'auto-ckg-ui';
     box.innerHTML = `
         <div id="drag-handle">INPUT CKG PADASUKA</div>
         <div id="bot-status">Menyiapkan Database, Klik Start !...</div>
@@ -861,48 +854,68 @@ function createUI(){
             <button id="btn-to-daftar" style="flex:1; background:#6b7280; color:#fff; border:none; padding:8px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5);">🔙 DAFTAR</button>
         </div>
     `;
-    const style = document.createElement('style');
-    style.innerHTML = `
-        #auto-ckg-ui {
-            position: fixed; top: 100px; right: 20px; width: 300px;
-            background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px);
-            border: 1px solid rgba(0, 255, 136, 0.5); border-radius: 16px;
-            z-index: 2147483647; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-            font-family: 'Segoe UI', sans-serif; color: white; cursor: default;
-        }
-        #drag-handle {
-            padding: 5px; text-align: center; font-weight: bold; color: #00ff88;
-            cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333;
-        }
-        #bot-status {
-            background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px;
-            min-height: 50px; margin-bottom: 10px; color: #00ff88; font-weight:bold;
-            font-size: 13px; text-align: center; white-space: pre-wrap; display:flex; align-items:center; justify-content:center;
-        }
-        #nik-bot {
-            width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #00ff88; font-weight:bold; text-align:center; outline:none;
-            border-radius: 8px; background: #000; color: #00ff88; margin-bottom: 10px;
-        }
-        #btn-wrap { display: flex; gap: 8px; }
-        #run-bot, #stop-bot {
-            flex: 1; border: none; padding: 10px; border-radius: 8px;
-            font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5);
-        }
-        #run-bot { background: #00ff88; color: #000; }
-        #run-bot:hover { background: #00cc6a; }
-        #stop-bot { background: #ff4444; color: white; }
-        #stop-bot:hover { background: #cc0000; }
-        #btn-to-skrining:hover { background: #2563eb; }
-        #btn-to-daftar:hover { background: #4b5563; }
-    `;
-    document.head.appendChild(style); document.body.appendChild(box);
+
+    if (!document.getElementById('auto-ckg-style')) {
+        const style = document.createElement('style');
+        style.id = 'auto-ckg-style';
+        style.innerHTML = `
+            #auto-ckg-ui {
+                position: fixed; top: 100px; right: 20px; width: 300px;
+                background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px);
+                border: 1px solid rgba(0, 255, 136, 0.5); border-radius: 16px;
+                z-index: 2147483647; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                font-family: 'Segoe UI', sans-serif; color: white; cursor: default;
+            }
+            #drag-handle {
+                padding: 5px; text-align: center; font-weight: bold; color: #00ff88;
+                cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333;
+            }
+            #bot-status {
+                background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px;
+                min-height: 50px; margin-bottom: 10px; color: #00ff88; font-weight:bold;
+                font-size: 13px; text-align: center; white-space: pre-wrap; display:flex; align-items:center; justify-content:center;
+            }
+            #nik-bot {
+                width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #00ff88; font-weight:bold; text-align:center; outline:none;
+                border-radius: 8px; background: #000; color: #00ff88; margin-bottom: 10px;
+            }
+            #btn-wrap { display: flex; gap: 8px; }
+            #run-bot, #stop-bot {
+                flex: 1; border: none; padding: 10px; border-radius: 8px;
+                font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5);
+            }
+            #run-bot { background: #00ff88; color: #000; }
+            #run-bot:hover { background: #00cc6a; }
+            #stop-bot { background: #ff4444; color: white; }
+            #stop-bot:hover { background: #cc0000; }
+            #btn-to-skrining:hover { background: #2563eb; }
+            #btn-to-daftar:hover { background: #4b5563; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(box);
 
     const handle = document.getElementById('drag-handle');
-    if(handle){
+    if (handle) {
         let isDragging = false, offsetX, offsetY;
-        handle.onmousedown = (e)=>{ isDragging = true; offsetX = e.clientX - box.offsetLeft; offsetY = e.clientY - box.offsetTop; box.style.opacity="0.8"; };
-        document.onmousemove = (e)=>{ if(isDragging){ box.style.left = (e.clientX - offsetX) + 'px'; box.style.top = (e.clientY - offsetY) + 'px'; box.style.right = 'auto'; } };
-        document.onmouseup = ()=>{ isDragging = false; box.style.opacity="1"; };
+        handle.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - box.offsetLeft;
+            offsetY = e.clientY - box.offsetTop;
+            box.style.opacity = "0.8";
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                box.style.left = (e.clientX - offsetX) + 'px';
+                box.style.top = (e.clientY - offsetY) + 'px';
+                box.style.right = 'auto';
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            box.style.opacity = "1";
+        });
     }
 
     document.getElementById('run-bot').onclick = async ()=>{
@@ -941,8 +954,8 @@ function createUI(){
                     GM_setValue('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'skrining' })); 
                     GM_setValue('CKG_MODE', 'skrining'); 
                 } else {
-                    localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'skrining' }));
-                    localStorage.setItem('CKG_MODE', 'skrining');
+                    localStorage.setItem('PASIEN_AKTIF', JSON.stringify({ nik: nik, kategori: 'skrining' })); 
+                    localStorage.setItem('CKG_MODE', 'skrining'); 
                 }
             } catch(e) {}
             
@@ -980,50 +993,61 @@ function createUI(){
 }
 
 /* =========================================================
-   INIT / AUTO RESUME OBSERVER
+   INIT / AUTO RESUME OBSERVER (SAFE HYDRATION)
 ========================================================= */
-setInterval(createUI, 1000);
+function startBotEngine() {
+    setTimeout(() => {
+        createUI();
+        setInterval(createUI, 1500);
 
-setInterval(async () => {
-    try {
-        const currentUrl = window.location.href;
-        const isFormPage = currentUrl.includes('form.kemkes.go.id') || document.querySelector('.sd-root-modern, .sv-root-modern, .sd-page'); 
-        const isMainPage = currentUrl.includes('sehatindonesiaku.kemkes.go.id'); 
+        setInterval(async () => {
+            try {
+                const currentUrl = window.location.href;
+                const isFormPage = currentUrl.includes('form.kemkes.go.id') || document.querySelector('.sd-root-modern, .sv-root-modern, .sd-page'); 
+                const isMainPage = currentUrl.includes('sehatindonesiaku.kemkes.go.id'); 
 
-        if (BOT_RUNNING) return;
+                if (BOT_RUNNING) return;
 
-        if (isFormPage) {
-            BOT_RUNNING = true;
-            await autoContinueForm();
-            BOT_RUNNING = false;
-        } else if (isMainPage) {
-            let data = loadBOT();
-            let estafetRaw = null;
-            try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
+                if (isFormPage) {
+                    BOT_RUNNING = true;
+                    await autoContinueForm();
+                    BOT_RUNNING = false;
+                } else if (isMainPage) {
+                    let data = loadBOT();
+                    let estafetRaw = null;
+                    try { estafetRaw = GM_getValue('PASIEN_AKTIF'); } catch(e) { estafetRaw = localStorage.getItem('PASIEN_AKTIF'); }
 
-            if (estafetRaw && !data) {
-                const estafet = JSON.parse(estafetRaw);
-                if (estafet.kategori === 'dewasa') {
-                    updateStatus('Estafet Dewasa Diterima. Mengunduh data...');
-                    data = await cariData(estafet.nik); 
-                    if (data) {
-                        saveBOT(data);
-                        playSound('sukses');
-                    } else {
-                        try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
-                        updateStatus('Data estafet tidak ditemukan.');
+                    if (estafetRaw && !data) {
+                        const estafet = JSON.parse(estafetRaw);
+                        if (estafet.kategori === 'dewasa') {
+                            updateStatus('Estafet Dewasa Diterima. Mengunduh data...');
+                            data = await cariData(estafet.nik); 
+                            if (data) {
+                                saveBOT(data);
+                                playSound('sukses');
+                            } else {
+                                try { GM_deleteValue('PASIEN_AKTIF'); } catch(e) { localStorage.removeItem('PASIEN_AKTIF'); }
+                                updateStatus('Data estafet tidak ditemukan.');
+                            }
+                        }
+                    }
+
+                    if(data){
+                        BOT_RUNNING = true;
+                        updateStatus('MELANJUTKAN OTOMATIS...\nMencari Form Berikutnya');
+                        await mainLoopCKG(data); 
                     }
                 }
+            } catch(e) {
+                sendBotErrorLog("Interval_Supervisor", e.message || e);
             }
+        }, 2000);
+    }, 1500); // Tunggu 1.5 detik setelah window.load agar sidebar SATUSEHAT selesai render
+}
 
-            if(data){
-                BOT_RUNNING = true;
-                updateStatus('MELANJUTKAN OTOMATIS...\nMencari Form Berikutnya');
-                await mainLoopCKG(data); 
-            }
-        }
-    } catch(e) {
-        sendBotErrorLog("Interval_Supervisor", e.message || e);
-    }
-}, 2000);
+if (document.readyState === 'complete') {
+    startBotEngine();
+} else {
+    window.addEventListener('load', startBotEngine);
+}
 })(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
