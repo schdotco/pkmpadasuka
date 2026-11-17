@@ -131,7 +131,6 @@
 
     /* =========================================================
        CROSS-DOMAIN & CROSS-TAB MEMORY
-       Prioritas: localStorage (same-origin) -> GM_getValue -> window.name -> URL Hash
     ========================================================= */
     const WIN_NAME_PREFIX = 'CKG_BRIDGE:';
     const URL_HASH_KEY = 'ckg_payload=';
@@ -161,13 +160,11 @@
     }
 
     function getStore(key) {
-        // 1. Cek localStorage terlebih dahulu agar perubahan dari Bot Input / tombol pindah langsung terbaca
         try {
             const localVal = localStorage.getItem(key);
             if (localVal !== null && localVal !== undefined) return localVal;
         } catch (e) { }
 
-        // 2. Fallback GM_getValue (lintas domain)
         try {
             const gmGet = typeof GM_getValue !== 'undefined' ? GM_getValue : window.GM_getValue;
             if (typeof gmGet === 'function') {
@@ -176,7 +173,6 @@
             }
         } catch (e) { }
 
-        // 3. Fallback window.name (lintas domain di tab yang sama)
         const winObj = getWinStoreObj();
         if (winObj[key] !== undefined && winObj[key] !== null) {
             try { localStorage.setItem(key, winObj[key]); } catch (e) { }
@@ -340,8 +336,9 @@
                 const isSessionActive = getStore('CKG_ACTIVE_SESSION') === '1';
                 if (data && (isSessionActive || location.hostname.includes('form.kemkes.go.id'))) {
                     BOT_RUNNING = true;
+                    SKRINING_OWNED = true;
                 }
-                if (!isSwitchedToInput()) {
+                if (!isOtherBotActive()) {
                     createUI();
                     syncUI();
                 }
@@ -391,23 +388,98 @@
     function clearCompleted() { delStore('AUTO_SKRINING_COMPLETED'); }
 
     /* =========================================================
-       DETEKSI MODUL INPUT AKTIF (DEWASA / ANAK)
-       Jika sedang di Bot Input, Bot Skrining wajib hilang total
+       DETEKSI MODUL BOT LAIN (INPUT DEWASA / INPUT ANAK / REG)
+       Jika bot lain terbuka/aktif, Bot Skrining wajib hilang
     ========================================================= */
-    function isSwitchedToInput() {
+    let SKRINING_OWNED = false;
+
+    function hasOtherBotPanelInDOM() {
+        if (!document.body) return false;
+        const ignoredIds = new Set(['auto-ckg-ui', 'auto-ckg-style', 'ckg-toast-container']);
+
+        // 1. Cek elemen dengan ID bot lain
+        const byId = document.querySelectorAll('[id*="ckg"], [id*="bot-"], [id*="-bot"], [id*="padasuka"]');
+        for (const el of byId) {
+            if (ignoredIds.has(el.id)) continue;
+            if (el.closest('#auto-ckg-ui') || el.closest('#ckg-toast-container')) continue;
+            const tag = el.tagName.toLowerCase();
+            if (tag === 'style' || tag === 'script') continue;
+            const style = window.getComputedStyle(el);
+            if (style.position === 'fixed' && style.display !== 'none' && el.offsetHeight > 40) {
+                return true;
+            }
+        }
+
+        // 2. Cek panel fixed floating lain milik ekstensi/bot
+        const allDivs = document.body.children;
+        for (const el of allDivs) {
+            if (ignoredIds.has(el.id)) continue;
+            const style = window.getComputedStyle(el);
+            if (style.position === 'fixed' && style.display !== 'none' && el.offsetHeight > 60) {
+                const txt = (el.innerText || '').toUpperCase();
+                if (
+                    txt.includes('INPUT DEWASA') ||
+                    txt.includes('INPUT ANAK') ||
+                    txt.includes('BOT INPUT') ||
+                    txt.includes('BOT ANAK') ||
+                    txt.includes('BOT REG') ||
+                    txt.includes('REGISTRASI') ||
+                    txt.includes('PENDAFTARAN') ||
+                    (txt.includes('PADASUKA') && !txt.includes('SKRINING PADASUKA'))
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function isOtherBotActive() {
+        // Di halaman form.kemkes.go.id, Bot Skrining selalu boleh tampil
         if (location.hostname.includes('form.kemkes.go.id')) return false;
 
+        // Cek mode penyimpanan (input, input_anak, dewasa, anak, reg, registrasi)
         const mode = (getStore('CKG_MODE') || '').toLowerCase().trim();
-        if (mode === 'input' || mode === 'input_anak') return true;
+        if (
+            mode === 'input' ||
+            mode === 'input_anak' ||
+            mode === 'dewasa' ||
+            mode === 'anak' ||
+            mode === 'reg' ||
+            mode === 'registrasi' ||
+            mode === 'pendaftaran'
+        ) {
+            SKRINING_OWNED = false;
+            return true;
+        }
 
+        // Cek payload estafet pasien aktif
         const estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
         if (estafetRaw) {
             try {
                 const estafet = JSON.parse(estafetRaw);
                 const kat = (estafet.kategori || '').toLowerCase().trim();
-                if (kat === 'dewasa' || kat === 'anak') return true;
+                if (
+                    kat === 'dewasa' ||
+                    kat === 'anak' ||
+                    kat === 'input' ||
+                    kat === 'input_anak' ||
+                    kat === 'reg' ||
+                    kat === 'registrasi' ||
+                    kat === 'pendaftaran'
+                ) {
+                    SKRINING_OWNED = false;
+                    return true;
+                }
             } catch (e) { }
         }
+
+        // Cek jika Bot Input / Reg / Anak sudah merender panel UI di layar
+        if (hasOtherBotPanelInDOM()) {
+            SKRINING_OWNED = false;
+            return true;
+        }
+
         return false;
     }
 
@@ -1151,6 +1223,7 @@
         if (!data) return;
 
         BOT_RUNNING = true;
+        SKRINING_OWNED = true;
         setStore('CKG_FORM_LOCK', String(Date.now()));
         updateStatus('MEMULAI PENGISIAN FORM...');
 
@@ -1163,7 +1236,7 @@
 
         while (BOT_RUNNING && location.hostname.includes("form.kemkes.go.id")) {
             try {
-                createUI(); // Pastikan UI tetap muncul selama pengisian form berlangsung
+                createUI();
                 const pageText = document.body.innerText.toLowerCase();
 
                 if (pageText.includes('riwayat imunisasi rutin balita')) {
@@ -1212,7 +1285,7 @@
     async function mainLoop(data) {
         updateStatus('MENCARI ANTRIAN...');
 
-        while (BOT_RUNNING && !isSwitchedToInput() && location.hostname.includes('sehatindonesiaku')) {
+        while (BOT_RUNNING && !isOtherBotActive() && location.hostname.includes('sehatindonesiaku')) {
             try {
                 createUI();
                 const lockTime = parseInt(getStore('CKG_FORM_LOCK') || '0', 10);
@@ -1226,13 +1299,13 @@
 
                 let nextItem = null;
                 for (let i = 0; i < 3; i++) {
-                    if (!BOT_RUNNING || isSwitchedToInput()) break;
+                    if (!BOT_RUNNING || isOtherBotActive()) break;
                     nextItem = getNextTarget();
                     if (nextItem) break;
                     await sleep(1500);
                 }
 
-                if (!BOT_RUNNING || isSwitchedToInput()) break;
+                if (!BOT_RUNNING || isOtherBotActive()) break;
 
                 if (!nextItem) {
                     BOT_RUNNING = false;
@@ -1255,7 +1328,7 @@
 
                 updateStatus('Mengalihkan halaman form...');
                 for (let wait = 0; wait < 15; wait++) {
-                    if (!BOT_RUNNING || isSwitchedToInput()) break;
+                    if (!BOT_RUNNING || isOtherBotActive()) break;
                     await sleep(1500);
                     if (location.hostname.includes('form.kemkes.go.id')) {
                         break;
@@ -1292,7 +1365,7 @@
     }
 
     function syncUI() {
-        if (isSwitchedToInput()) {
+        if (isOtherBotActive()) {
             destroyUI();
             return;
         }
@@ -1346,8 +1419,7 @@
     }
 
     function createUI() {
-        // Jika sudah beralih ke Bot Input (Dewasa/Anak), Bot Skrining wajib hilang
-        if (isSwitchedToInput()) {
+        if (isOtherBotActive()) {
             destroyUI();
             return;
         }
@@ -1374,6 +1446,7 @@
 
         if (document.getElementById('auto-ckg-ui')) return;
 
+        SKRINING_OWNED = true;
         const box = document.createElement('div'); box.id = 'auto-ckg-ui';
         box.innerHTML = `
             <div id="drag-handle" title="Klik dan tahan untuk memindahkan kotak">SKRINING PADASUKA</div>
@@ -1436,6 +1509,7 @@
             setStore('CKG_MODE', 'skrining');
             setStore('CKG_ACTIVE_SESSION', '1');
             BOT_RUNNING = true;
+            SKRINING_OWNED = true;
             syncUI();
             playSound('sukses');
             showToast("Memulai Antrean Skrining...", "info");
@@ -1450,6 +1524,7 @@
                 setStore('CKG_MODE', 'skrining');
                 setStore('CKG_ACTIVE_SESSION', '1');
                 BOT_RUNNING = true;
+                SKRINING_OWNED = true;
                 updateStatus('⚡ Memaksa eksekusi loop...');
                 showToast("Sistem dipaksa untuk melanjutkan form.", "warning");
             };
@@ -1460,6 +1535,7 @@
             if (!confirm('Anda yakin ingin pindah ke Modul INPUT DEWASA?')) return;
 
             stopBOT();
+            SKRINING_OWNED = false;
             setStore('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: nik, kategori: 'dewasa' }));
             setStore('CKG_MODE', 'input');
             destroyUI();
@@ -1473,6 +1549,7 @@
             if (!confirm('Anda yakin ingin pindah ke Modul INPUT ANAK?')) return;
 
             stopBOT();
+            SKRINING_OWNED = false;
             setStore('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: nik, kategori: 'anak' }));
             setStore('CKG_MODE', 'input_anak');
             destroyUI();
@@ -1488,11 +1565,12 @@
         syncUI();
     }
 
-    // Jaga UI tetap ada saat React/SurveyJS re-render di form.kemkes.go.id, tapi langsung hapus jika pindah ke Bot Input
+    // Jaga UI tetap tampil HANYA saat Bot Skrining yang sedang dimiliki/aktif; langsung hapus jika bot lain terbuka
     const uiGuardObserver = new MutationObserver(() => {
-        if (isSwitchedToInput()) {
+        if (isOtherBotActive()) {
+            BOT_RUNNING = false;
             destroyUI();
-        } else if (document.body && !document.getElementById('auto-ckg-ui')) {
+        } else if (SKRINING_OWNED && document.body && !document.getElementById('auto-ckg-ui')) {
             createUI();
         }
     });
@@ -1510,21 +1588,31 @@
     const existingData = loadBOT();
     const hasActiveSession = getStore('CKG_ACTIVE_SESSION') === '1';
 
-    if (isSwitchedToInput()) {
+    if (isOtherBotActive()) {
         BOT_RUNNING = false;
+        SKRINING_OWNED = false;
         destroyUI();
     } else if (isInitialFormPage && existingData) {
         BOT_RUNNING = true;
+        SKRINING_OWNED = true;
         createUI();
     } else if (!isInitialFormPage && existingData && hasActiveSession) {
         BOT_RUNNING = true;
+        SKRINING_OWNED = true;
         createUI();
     } else {
         BOT_RUNNING = false;
         if (!isInitialFormPage && !hasActiveSession && existingData) {
             clearBOT();
         }
-        createUI();
+        // Tunda sesaat agar jika user membuka Bot Input/Reg/Anak bersamaan, panel bot lain terdeteksi lebih dulu
+        setTimeout(() => {
+            if (!isOtherBotActive()) {
+                createUI();
+            } else {
+                destroyUI();
+            }
+        }, 350);
     }
 
     setInterval(async () => {
@@ -1533,16 +1621,16 @@
             const isFormPage = host.includes('form.kemkes.go.id');
             const isMainPage = host.includes('sehatindonesiaku');
 
-            // Jika sedang di Bot Input (Dewasa/Anak), matikan dan sembunyikan Bot Skrining
-            if (isSwitchedToInput()) {
+            if (isOtherBotActive()) {
                 BOT_RUNNING = false;
                 LOOP_ACTIVE = false;
+                SKRINING_OWNED = false;
                 destroyUI();
                 return;
             }
 
             consumeUrlPayload();
-            createUI();
+            if (SKRINING_OWNED) createUI();
 
             let data = loadBOT();
 
@@ -1552,6 +1640,8 @@
                 data = loadBOT();
                 if (data) {
                     BOT_RUNNING = true;
+                    SKRINING_OWNED = true;
+                    createUI();
                     syncUI();
                 }
             }
@@ -1568,6 +1658,7 @@
 
                             BOT_RUNNING = false;
                             LOOP_ACTIVE = false;
+                            SKRINING_OWNED = true;
                             clearBOT();
                             clearCompleted();
                             delStore('CKG_ACTIVE_SESSION');
@@ -1589,7 +1680,7 @@
                 }
             }
 
-            if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
+            if (isMainPage && SKRINING_OWNED && !data && !cachedSheetData && !isDownloadingBackground) {
                 isDownloadingBackground = true;
                 cariData('000').then(() => {
                     const statusEl = document.getElementById('bot-status');
