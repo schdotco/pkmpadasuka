@@ -114,7 +114,7 @@
         const currentYear = today.getFullYear();
         const current2DigitYear = currentYear % 100;
 
-        let tahunLahir = (thn2 > current2DigitYear) ? (1900 + thn2) : (1500 + thn2);
+        let tahunLahir = (thn2 > current2DigitYear) ? (1900 + thn2) : (2000 + thn2);
         if (tahunLahir === currentYear) {
             const belumUltah = (today.getMonth() + 1 < bln) || ((today.getMonth() + 1 === bln) && today.getDate() < tgl);
             if (belumUltah) tahunLahir -= 100;
@@ -130,7 +130,7 @@
     }
 
     /* =========================================================
-       [PERBAIKAN UTAMA] CROSS-DOMAIN & CROSS-TAB MEMORY
+       CROSS-DOMAIN & CROSS-TAB MEMORY
        Mendukung: GM_getValue -> window.name -> localStorage -> postMessage
     ========================================================= */
     const WIN_NAME_PREFIX = 'CKG_BRIDGE:';
@@ -140,7 +140,8 @@
         'LAST_USED_NIK',
         'PASIEN_AKTIF_PADASUKA',
         'CKG_MODE',
-        'CKG_FORM_LOCK'
+        'CKG_FORM_LOCK',
+        'CKG_ACTIVE_SESSION'
     ];
 
     function getWinStoreObj() {
@@ -168,7 +169,6 @@
 
         const winObj = getWinStoreObj();
         if (winObj[key] !== undefined && winObj[key] !== null) {
-            // Sinkronkan juga ke localStorage domain aktif
             try { localStorage.setItem(key, winObj[key]); } catch (e) { }
             return winObj[key];
         }
@@ -225,11 +225,12 @@
             } else if (event.data.type === 'CKG_SYNC_STATE' && event.data.bundle) {
                 Object.entries(event.data.bundle).forEach(([k, v]) => setStore(k, v));
                 const data = loadBOT();
-                if (data) {
+                const isSessionActive = getStore('CKG_ACTIVE_SESSION') === '1';
+                if (data && isSessionActive) {
                     BOT_RUNNING = true;
-                    createUI();
-                    syncUI();
                 }
+                createUI();
+                syncUI();
             }
         } catch (e) { }
     });
@@ -555,88 +556,83 @@
         } catch (e) { }
     }
 
-async function isiTetanusCatin() {
-    try {
-        const judul = document.body.innerText.toLowerCase();
-        if (!judul.includes('riwayat imunisasi tetanus')) return false;
+    async function isiTetanusCatin() {
+        try {
+            const judul = document.body.innerText.toLowerCase();
+            if (!judul.includes('riwayat imunisasi tetanus')) return false;
 
-        updateStatus('Mengisi Imunisasi Tetanus Catin...');
+            updateStatus('Mengisi Imunisasi Tetanus Catin...');
 
-        const targetKeywords = [
-            'pernah imunisasi tetanus tetapi tidak ingat berapa kali',
-            'tidak ingat berapa kali'
-        ];
+            const targetKeywords = [
+                'pernah imunisasi tetanus tetapi tidak ingat berapa kali',
+                'tidak ingat berapa kali'
+            ];
 
-        // 1. Cari item pilihan radio (.sd-item / .sv-item)
-        const items = [...document.querySelectorAll('.sd-item, .sv-item')];
-        const targetItem = items.find(el => {
-            const txt = (el.innerText || '').toLowerCase().replace(/\s+/g, ' ').trim();
-            return targetKeywords.some(k => txt.includes(k));
-        });
+            const items = [...document.querySelectorAll('.sd-item, .sv-item')];
+            const targetItem = items.find(el => {
+                const txt = (el.innerText || '').toLowerCase().replace(/\s+/g, ' ').trim();
+                return targetKeywords.some(k => txt.includes(k));
+            });
 
-        let berhasilPilih = false;
+            let berhasilPilih = false;
 
-        if (targetItem) {
-            targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            await sleep(300);
+            if (targetItem) {
+                targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                await sleep(300);
 
-            const decorator = targetItem.querySelector('.sd-item__decorator.sd-radio__decorator, .sd-radio__decorator, .sd-item__decorator');
-            const label = targetItem.querySelector('label');
-            const input = targetItem.querySelector('input[type="radio"]');
+                const decorator = targetItem.querySelector('.sd-item__decorator.sd-radio__decorator, .sd-radio__decorator, .sd-item__decorator');
+                const label = targetItem.querySelector('label');
+                const input = targetItem.querySelector('input[type="radio"]');
 
-            // Klik decorator / label radio
-            if (decorator) {
-                decorator.click();
-            } else if (label) {
-                label.click();
+                if (decorator) {
+                    decorator.click();
+                } else if (label) {
+                    label.click();
+                } else {
+                    targetItem.click();
+                }
+
+                await sleep(250);
+
+                if (input && !input.checked) {
+                    input.click();
+                    input.checked = true;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                berhasilPilih = input ? input.checked : true;
             } else {
-                targetItem.click();
+                berhasilPilih = await selectDropdownContext(
+                    'pernah mendapatkan imunisasi tetanus',
+                    'pernah imunisasi tetanus tetapi tidak ingat berapa kali'
+                );
             }
 
-            await sleep(250);
-
-            // Paksa sinkronisasi state SurveyJS jika input belum tercentang
-            if (input && !input.checked) {
-                input.click();
-                input.checked = true;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
+            if (!berhasilPilih) {
+                updateStatus('Menunggu opsi Tetanus Catin muncul...');
+                return false;
             }
 
-            berhasilPilih = input ? input.checked : true;
-        } else {
-            // Fallback jika di halaman tertentu bentuknya masih dropdown
-            berhasilPilih = await selectDropdownContext(
-                'pernah mendapatkan imunisasi tetanus',
-                'pernah imunisasi tetanus tetapi tidak ingat berapa kali'
-            );
-        }
+            await sleep(1000);
 
-        // Jangan klik Kirim jika jawaban belum berhasil terpilih
-        if (!berhasilPilih) {
-            updateStatus('Menunggu opsi Tetanus Catin muncul...');
+            if (!BOT_RUNNING) return false;
+            const btnKirim = document.querySelector('.sd-navigation__complete-btn') ||
+                [...document.querySelectorAll('button, input[type="button"]')].find(el =>
+                    (el.value || el.innerText || '').toLowerCase().match(/kirim|lanjut/)
+                );
+
+            if (btnKirim) {
+                delStore('CKG_FORM_LOCK');
+                btnKirim.click();
+                await sleep(3000);
+            }
+            return true;
+        } catch (e) {
+            sendBotErrorLog("isiTetanusCatin", e.message || e);
             return false;
         }
-
-        await sleep(1000);
-
-        if (!BOT_RUNNING) return false;
-        const btnKirim = document.querySelector('.sd-navigation__complete-btn') ||
-            [...document.querySelectorAll('button, input[type="button"]')].find(el =>
-                (el.value || el.innerText || '').toLowerCase().match(/kirim|lanjut/)
-            );
-
-        if (btnKirim) {
-            delStore('CKG_FORM_LOCK');
-            btnKirim.click();
-            await sleep(3000);
-        }
-        return true;
-    } catch (e) {
-        sendBotErrorLog("isiTetanusCatin", e.message || e);
-        return false;
     }
-}
 
     async function isiImunisasiBalita() {
         try {
@@ -706,7 +702,6 @@ async function isiTetanusCatin() {
         try {
             const pageText = document.body.innerText.toLowerCase();
 
-            // Jika form sudah selesai/terkirim, buka kunci antrian
             if (pageText.includes('terima kasih telah mengisi') || pageText.includes('skrining berhasil')) {
                 delStore('CKG_FORM_LOCK');
                 updateStatus('Form Selesai! Kembali ke daftar...');
@@ -867,7 +862,6 @@ async function isiTetanusCatin() {
     ========================================================= */
     let BOT_RUNNING = false;
 
-    // Lepas kunci antrian jika tab form ditutup manual
     window.addEventListener('beforeunload', () => {
         if (location.hostname.includes('form.kemkes.go.id')) {
             delStore('CKG_FORM_LOCK');
@@ -941,7 +935,6 @@ async function isiTetanusCatin() {
 
         while (BOT_RUNNING && location.hostname.includes('sehatindonesiaku')) {
             try {
-                // Cegah klik target baru jika tab form sebelumnya masih aktif (timeout 5 detik)
                 const lockTime = parseInt(getStore('CKG_FORM_LOCK') || '0', 10);
                 if (lockTime && (Date.now() - lockTime < 5000)) {
                     updateStatus('MENUNGGU FORM SELESAI DIISI...');
@@ -964,6 +957,7 @@ async function isiTetanusCatin() {
                 if (!nextItem) {
                     BOT_RUNNING = false;
                     clearBOT();
+                    delStore('CKG_ACTIVE_SESSION');
                     delStore('PASIEN_AKTIF_PADASUKA');
                     delStore('CKG_FORM_LOCK');
 
@@ -1007,6 +1001,7 @@ async function isiTetanusCatin() {
         LOOP_ACTIVE = false;
         clearBOT();
         clearCompleted();
+        delStore('CKG_ACTIVE_SESSION');
         delStore('LAST_USED_NIK');
         delStore('PASIEN_AKTIF_PADASUKA');
         delStore('CKG_MODE');
@@ -1026,7 +1021,7 @@ async function isiTetanusCatin() {
 
         if (!btnStart || !btnNext || !inputNik || !estafetWrap) return;
 
-        if (data) {
+        if (data && BOT_RUNNING) {
             btnStart.style.display = 'none';
             btnNext.style.display = 'block';
             estafetWrap.style.display = 'flex';
@@ -1047,7 +1042,7 @@ async function isiTetanusCatin() {
             }
 
             let lastNik = getStore('LAST_USED_NIK') || '';
-            let activeNik = estafetNik || lastNik;
+            let activeNik = estafetNik || (data && data.nik) || lastNik;
 
             if (activeNik) {
                 estafetWrap.style.display = 'flex';
@@ -1058,7 +1053,7 @@ async function isiTetanusCatin() {
                 inputNik.value = '';
                 inputNik.disabled = false;
 
-                if (statusEl && !statusEl.innerText.includes('DIHENTIKAN') && !statusEl.innerText.includes('SELESAI')) {
+                if (statusEl && !statusEl.innerText.includes('DIHENTIKAN') && !statusEl.innerText.includes('SELESAI') && !statusEl.innerText.includes('ESTAFET')) {
                     updateStatus('INISIALISASI...');
                 }
             }
@@ -1141,6 +1136,7 @@ async function isiTetanusCatin() {
             saveBOT(data);
             clearCompleted();
             delStore('CKG_FORM_LOCK');
+            setStore('CKG_ACTIVE_SESSION', '1');
             BOT_RUNNING = true;
             syncUI();
             playSound('sukses');
@@ -1153,6 +1149,7 @@ async function isiTetanusCatin() {
                 const data = loadBOT();
                 if (!data) return;
                 delStore('CKG_FORM_LOCK');
+                setStore('CKG_ACTIVE_SESSION', '1');
                 BOT_RUNNING = true;
                 updateStatus('⚡ Memaksa eksekusi loop...');
                 showToast("Sistem dipaksa untuk melanjutkan form.", "warning");
@@ -1193,7 +1190,7 @@ async function isiTetanusCatin() {
     }
 
     /* =========================================================
-       INISIALISASI INSTAN & SENSOR ESTAFET OTOMATIS
+       INISIALISASI STANDBY & PENERIMA ESTAFET TANPA AUTO-START
     ========================================================= */
     let isDownloadingBackground = false;
 
@@ -1207,14 +1204,15 @@ async function isiTetanusCatin() {
 
             let data = loadBOT();
 
-            // Jika di halaman form tapi data kosong (misal baru buka tab baru), minta dari tab induk
+            // Jika di halaman form tapi data kosong (tab baru), minta dari tab induk
             if (isFormPage && !data) {
                 requestStateFromOpener();
                 await sleep(300);
                 data = loadBOT();
             }
 
-if (isMainPage && !BOT_RUNNING && !data) {
+            // Terima estafet dari Bot Input meskipun ada sisa data lama -> HANYA isi kolom NIK, JANGAN auto-start
+            if (isMainPage) {
                 let estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
                 if (estafetRaw) {
                     try {
@@ -1228,34 +1226,40 @@ if (isMainPage && !BOT_RUNNING && !data) {
                         if (estafet.nik && targetSkrining) {
                             const nikEstafet = normalizeNIK(estafet.nik);
 
-                            // Hapus penanda estafet agar tidak diproses ulang
+                            // Bersihkan sesi lama & sinyal estafet agar tidak otomatis berjalan
+                            BOT_RUNNING = false;
+                            LOOP_ACTIVE = false;
+                            clearBOT();
+                            clearCompleted();
+                            delStore('CKG_ACTIVE_SESSION');
+                            delStore('CKG_FORM_LOCK');
                             delStore('PASIEN_AKTIF_PADASUKA');
                             delStore('CKG_MODE');
 
-                            // Simpan NIK ke riwayat & tampilkan di kolom input tanpa menjalankan bot
                             setStore('LAST_USED_NIK', nikEstafet);
                             const inputNik = document.getElementById('nik-bot');
                             if (inputNik) inputNik.value = nikEstafet;
 
-                            BOT_RUNNING = false;
                             syncUI();
                             updateStatus('ESTAFET DITERIMA:\n' + nikEstafet + '\nKlik START SKRINING untuk mulai.');
                             showToast('NIK dari Bot Input masuk. Klik START untuk menjalankan.', 'info');
+                            data = null;
                         }
                     } catch (e) { }
                 }
-            }
-
-            if (data && !BOT_RUNNING) {
-                BOT_RUNNING = true;
-                syncUI();
             }
 
             if (isMainPage && !data && !cachedSheetData && !isDownloadingBackground) {
                 isDownloadingBackground = true;
                 cariData('000').then(() => {
                     const statusEl = document.getElementById('bot-status');
-                    if (!BOT_RUNNING && statusEl && !statusEl.innerText.includes('SELESAI') && !statusEl.innerText.includes('GAGAL')) {
+                    if (
+                        !BOT_RUNNING &&
+                        statusEl &&
+                        !statusEl.innerText.includes('SELESAI') &&
+                        !statusEl.innerText.includes('GAGAL') &&
+                        !statusEl.innerText.includes('ESTAFET')
+                    ) {
                         updateStatus('Database Siap !\nSilakan masukkan NIK dan klik START');
                     }
                 }).catch(() => { isDownloadingBackground = false; });
@@ -1273,11 +1277,29 @@ if (isMainPage && !BOT_RUNNING && !data) {
         }
     }
 
-    // Jalankan langsung saat halaman selesai dimuat tanpa menunggu interval
     function bootBot() {
+        const currentHost = window.location.hostname;
+        const isFormPage = currentHost.includes('form.kemkes.go.id');
         const existingData = loadBOT();
-        if (existingData) BOT_RUNNING = true;
+        const hasActiveSession = getStore('CKG_ACTIVE_SESSION') === '1';
+        const hasEstafet = !!getStore('PASIEN_AKTIF_PADASUKA');
+
+        if (isFormPage && existingData) {
+            // Di tab form Kemkes, lanjutkan pengisian setelah user klik START
+            BOT_RUNNING = true;
+        } else if (!isFormPage && existingData && hasActiveSession && !hasEstafet) {
+            // Di halaman utama, hanya lanjutkan jika sesi START SKRINING memang sedang aktif
+            BOT_RUNNING = true;
+        } else {
+            // Selain itu (baru buka atau balik dari bot lain), wajib standby
+            BOT_RUNNING = false;
+            if (!hasActiveSession && existingData) {
+                clearBOT();
+            }
+        }
+
         createUI();
+        syncUI();
         supervisorTick();
     }
 
