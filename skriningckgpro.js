@@ -1,6 +1,17 @@
-(function (GM_xmlhttpRequest) {
+(function (GM_xmlhttpRequest, GM_getValue, GM_setValue, GM_deleteValue) {
     'use strict';
     const request = GM_xmlhttpRequest;
+
+    // Cegah double-execution jika launcher menyuntikkan ulang pada tab yang sama
+    if (window.__CKG_SKRINING_BOT_LOADED__) {
+        try {
+            if (typeof window.__CKG_SKRINING_BOOT__ === 'function') {
+                window.__CKG_SKRINING_BOOT__();
+            }
+        } catch (e) { }
+        return;
+    }
+    window.__CKG_SKRINING_BOT_LOADED__ = true;
 
     /* =========================================================
        [EXPERT FEATURE] 1. SISTEM TELEMETRI & ERROR LOGGING
@@ -131,9 +142,10 @@
 
     /* =========================================================
        CROSS-DOMAIN & CROSS-TAB MEMORY
-       Mendukung: GM_getValue -> window.name -> localStorage -> postMessage
+       Mendukung: GM_getValue -> URL Hash Bridge -> window.name -> localStorage -> postMessage (opener/parent/extension)
     ========================================================= */
     const WIN_NAME_PREFIX = 'CKG_BRIDGE:';
+    const URL_HASH_KEY = 'ckg_payload=';
     const STORE_KEYS = [
         'AUTO_SKRINING_DATA',
         'AUTO_SKRINING_COMPLETED',
@@ -161,8 +173,9 @@
 
     function getStore(key) {
         try {
-            if (typeof GM_getValue !== 'undefined') {
-                const gmVal = GM_getValue(key, null);
+            const gmGet = typeof GM_getValue !== 'undefined' ? GM_getValue : window.GM_getValue;
+            if (typeof gmGet === 'function') {
+                const gmVal = gmGet(key, null);
                 if (gmVal !== null && gmVal !== undefined) return gmVal;
             }
         } catch (e) { }
@@ -182,7 +195,8 @@
 
     function setStore(key, value) {
         try {
-            if (typeof GM_setValue !== 'undefined') GM_setValue(key, value);
+            const gmSet = typeof GM_setValue !== 'undefined' ? GM_setValue : window.GM_setValue;
+            if (typeof gmSet === 'function') gmSet(key, value);
         } catch (e) { }
 
         const winObj = getWinStoreObj();
@@ -192,11 +206,17 @@
         try {
             localStorage.setItem(key, value);
         } catch (e) { }
+
+        // Sinkronisasi ke content script ekstensi (jika ada bridge chrome.storage.local)
+        try {
+            window.postMessage({ type: 'CKG_EXT_STORAGE_SET', key, value }, '*');
+        } catch (e) { }
     }
 
     function delStore(key) {
         try {
-            if (typeof GM_deleteValue !== 'undefined') GM_deleteValue(key);
+            const gmDel = typeof GM_deleteValue !== 'undefined' ? GM_deleteValue : window.GM_deleteValue;
+            if (typeof gmDel === 'function') gmDel(key);
         } catch (e) { }
 
         const winObj = getWinStoreObj();
@@ -206,19 +226,126 @@
         try {
             localStorage.removeItem(key);
         } catch (e) { }
+
+        try {
+            window.postMessage({ type: 'CKG_EXT_STORAGE_DEL', key }, '*');
+        } catch (e) { }
     }
 
-    // Jembatan komunikasi jika form.kemkes.go.id terbuka di TAB BARU (window.opener)
+    function buildStateBundle() {
+        const bundle = {};
+        STORE_KEYS.forEach(k => {
+            const v = getStore(k);
+            if (v !== null && v !== undefined) bundle[k] = v;
+        });
+        return bundle;
+    }
+
+    function encodeBundleToBase64(bundle) {
+        try {
+            const jsonStr = JSON.stringify(bundle);
+            return btoa(unescape(encodeURIComponent(jsonStr)));
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function decodeBundleFromBase64(b64) {
+        try {
+            const jsonStr = decodeURIComponent(escape(atob(b64)));
+            return JSON.parse(jsonStr);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function appendPayloadToUrl(rawUrl) {
+        try {
+            if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+            const bundle = buildStateBundle();
+            if (!bundle.AUTO_SKRINING_DATA && bundle.CKG_ACTIVE_SESSION !== '1') return rawUrl;
+
+            const encoded = encodeBundleToBase64(bundle);
+            if (!encoded) return rawUrl;
+
+            const urlObj = new URL(rawUrl, window.location.origin);
+            if (!urlObj.hostname.includes('kemkes.go.id')) return rawUrl;
+
+            const cleanHash = (urlObj.hash || '').replace(/^#/, '');
+            const filteredParts = cleanHash
+                .split('&')
+                .filter(part => part && !part.startsWith(URL_HASH_KEY));
+            filteredParts.push(URL_HASH_KEY + encoded);
+            urlObj.hash = '#' + filteredParts.join('&');
+            return urlObj.toString();
+        } catch (e) {
+            return rawUrl;
+        }
+    }
+
+    function consumeUrlPayload() {
+        try {
+            const rawHash = (window.location.hash || '').replace(/^#/, '');
+            if (!rawHash.includes(URL_HASH_KEY)) return false;
+
+            const parts = rawHash.split('&');
+            let encodedPayload = '';
+            const remainingParts = [];
+
+            for (const part of parts) {
+                if (part.startsWith(URL_HASH_KEY)) {
+                    encodedPayload = part.slice(URL_HASH_KEY.length);
+                } else if (part) {
+                    remainingParts.push(part);
+                }
+            }
+
+            if (encodedPayload) {
+                const bundle = decodeBundleFromBase64(encodedPayload);
+                if (bundle && typeof bundle === 'object') {
+                    Object.entries(bundle).forEach(([k, v]) => setStore(k, v));
+                }
+                const newHash = remainingParts.length > 0 ? '#' + remainingParts.join('&') : '';
+                const cleanUrl = window.location.pathname + window.location.search + newHash;
+                window.history.replaceState(null, '', cleanUrl);
+                return true;
+            }
+        } catch (e) { }
+        return false;
+    }
+
+    // Ekstrak payload dari URL segera saat script dimuat
+    consumeUrlPayload();
+
+    // Intercept window.open & klik link menuju form.kemkes.go.id agar state ikut terbawa lintas tab
+    try {
+        const origWindowOpen = window.open;
+        window.open = function (url, target, features) {
+            try {
+                if (typeof url === 'string' && url.includes('kemkes.go.id')) {
+                    url = appendPayloadToUrl(url);
+                }
+            } catch (e) { }
+            return origWindowOpen.call(this, url, target, features);
+        };
+
+        document.addEventListener('click', (e) => {
+            try {
+                const anchor = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+                if (anchor && anchor.href && anchor.href.includes('form.kemkes.go.id')) {
+                    anchor.href = appendPayloadToUrl(anchor.href);
+                }
+            } catch (err) { }
+        }, true);
+    } catch (e) { }
+
+    // Jembatan komunikasi jika form.kemkes.go.id terbuka di TAB BARU (window.opener) atau IFRAME (window.parent)
     window.addEventListener('message', (event) => {
         try {
             if (!event.data || typeof event.data !== 'object') return;
 
             if (event.data.type === 'CKG_REQUEST_STATE') {
-                const bundle = {};
-                STORE_KEYS.forEach(k => {
-                    const v = getStore(k);
-                    if (v !== null && v !== undefined) bundle[k] = v;
-                });
+                const bundle = buildStateBundle();
                 if (event.source) {
                     event.source.postMessage({ type: 'CKG_SYNC_STATE', bundle }, '*');
                 }
@@ -226,7 +353,7 @@
                 Object.entries(event.data.bundle).forEach(([k, v]) => setStore(k, v));
                 const data = loadBOT();
                 const isSessionActive = getStore('CKG_ACTIVE_SESSION') === '1';
-                if (data && isSessionActive) {
+                if (data && (isSessionActive || location.hostname.includes('form.kemkes.go.id'))) {
                     BOT_RUNNING = true;
                 }
                 createUI();
@@ -240,6 +367,14 @@
             if (window.opener && !window.opener.closed) {
                 window.opener.postMessage({ type: 'CKG_REQUEST_STATE' }, '*');
             }
+        } catch (e) { }
+        try {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'CKG_REQUEST_STATE' }, '*');
+            }
+        } catch (e) { }
+        try {
+            window.postMessage({ type: 'CKG_EXT_STORAGE_PULL' }, '*');
         } catch (e) { }
     }
 
@@ -1062,6 +1197,25 @@
 
     function createUI() {
         if (!document.body || !document.head) return;
+
+        if (!document.getElementById('auto-ckg-style')) {
+            const style = document.createElement('style');
+            style.id = 'auto-ckg-style';
+            style.innerHTML = `
+                #auto-ckg-ui { position: fixed; top: 100px; right: 20px; width: 300px; background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(0, 200, 255, 0.5); border-radius: 16px; z-index: 2147483647; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-family: 'Segoe UI', sans-serif; color: white; cursor: default; }
+                #drag-handle { padding: 5px; text-align: center; font-weight: bold; color: #00c8ff; cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333; }
+                #bot-status { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; min-height: 50px; margin-bottom: 10px; color: #00ff88; font-size: 13px; text-align: center; white-space: pre-wrap; font-weight:bold; border: 1px solid #333; display:flex; align-items:center; justify-content:center;}
+                #nik-bot { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #00c8ff; border-radius: 8px; background: #000; color: #00ff88; margin-bottom: 10px; text-align:center; font-weight:bold; outline:none;}
+                #nik-bot:disabled { border-color: #555; color: #888; }
+                #btn-wrap { display: flex; gap: 8px; }
+                #run-bot, #stop-bot, #next-bot { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5); }
+                #run-bot { background: #00c8ff; color: #000; } #run-bot:hover { background: #009acc; }
+                #stop-bot { background: #ff4444; color: white; } #stop-bot:hover { background: #cc0000; }
+                #btn-to-input:hover { background: #059669; } #btn-to-anak:hover { background: #ca8a04; }
+            `;
+            document.head.appendChild(style);
+        }
+
         if (document.getElementById('auto-ckg-ui')) return;
 
         const box = document.createElement('div'); box.id = 'auto-ckg-ui';
@@ -1079,20 +1233,7 @@
                 <button id="btn-to-anak" style="flex:1; background:#eab308; color:#fff; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; transition:0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5);" title="Beralih ke Input Anak">ANAK ⏭️</button>
             </div>
         `;
-        const style = document.createElement('style');
-        style.innerHTML = `
-            #auto-ckg-ui { position: fixed; top: 100px; right: 20px; width: 300px; background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(0, 200, 255, 0.5); border-radius: 16px; z-index: 2147483647; padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-family: 'Segoe UI', sans-serif; color: white; cursor: default; }
-            #drag-handle { padding: 5px; text-align: center; font-weight: bold; color: #00c8ff; cursor: move; margin-bottom: 10px; border-bottom: 1px solid #333; }
-            #bot-status { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; min-height: 50px; margin-bottom: 10px; color: #00ff88; font-size: 13px; text-align: center; white-space: pre-wrap; font-weight:bold; border: 1px solid #333; display:flex; align-items:center; justify-content:center;}
-            #nik-bot { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #00c8ff; border-radius: 8px; background: #000; color: #00ff88; margin-bottom: 10px; text-align:center; font-weight:bold; outline:none;}
-            #nik-bot:disabled { border-color: #555; color: #888; }
-            #btn-wrap { display: flex; gap: 8px; }
-            #run-bot, #stop-bot, #next-bot { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow:0 2px 5px rgba(0,0,0,0.5); }
-            #run-bot { background: #00c8ff; color: #000; } #run-bot:hover { background: #009acc; }
-            #stop-bot { background: #ff4444; color: white; } #stop-bot:hover { background: #cc0000; }
-            #btn-to-input:hover { background: #059669; } #btn-to-anak:hover { background: #ca8a04; }
-        `;
-        document.head.appendChild(style); document.body.appendChild(box);
+        document.body.appendChild(box);
 
         const handle = document.getElementById('drag-handle');
         if (handle) {
@@ -1189,6 +1330,19 @@
         syncUI();
     }
 
+    // MutationObserver menjaga agar UI & style tidak terhapus saat hydration React/SurveyJS di form.kemkes.go.id
+    let uiObserverStarted = false;
+    function startUIObserver() {
+        if (uiObserverStarted || !document.documentElement) return;
+        uiObserverStarted = true;
+        const observer = new MutationObserver(() => {
+            if (document.body && (!document.getElementById('auto-ckg-ui') || !document.getElementById('auto-ckg-style'))) {
+                createUI();
+            }
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
     /* =========================================================
        INISIALISASI STANDBY & PENERIMA ESTAFET TANPA AUTO-START
     ========================================================= */
@@ -1200,15 +1354,21 @@
             const isFormPage = currentHost.includes('form.kemkes.go.id');
             const isMainPage = currentHost.includes('sehatindonesiaku');
 
+            consumeUrlPayload();
+            startUIObserver();
             createUI();
 
             let data = loadBOT();
 
-            // Jika di halaman form tapi data kosong (tab baru), minta dari tab induk
+            // Jika di halaman form tapi data kosong (tab baru / iframe), minta dari tab induk / bridge
             if (isFormPage && !data) {
                 requestStateFromOpener();
                 await sleep(300);
                 data = loadBOT();
+                if (data) {
+                    BOT_RUNNING = true;
+                    syncUI();
+                }
             }
 
             // Terima estafet dari Bot Input meskipun ada sisa data lama -> HANYA isi kolom NIK, JANGAN auto-start
@@ -1278,6 +1438,9 @@
     }
 
     function bootBot() {
+        consumeUrlPayload();
+        startUIObserver();
+
         const currentHost = window.location.hostname;
         const isFormPage = currentHost.includes('form.kemkes.go.id');
         const existingData = loadBOT();
@@ -1290,7 +1453,7 @@
         } else if (!isFormPage && existingData && hasActiveSession && !hasEstafet) {
             // Di halaman utama, hanya lanjutkan jika sesi START SKRINING memang sedang aktif
             BOT_RUNNING = true;
-        } else {
+        } else if (!isFormPage) {
             // Selain itu (baru buka atau balik dari bot lain), wajib standby
             BOT_RUNNING = false;
             if (!hasActiveSession && existingData) {
@@ -1303,6 +1466,8 @@
         supervisorTick();
     }
 
+    window.__CKG_SKRINING_BOOT__ = bootBot;
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', bootBot);
     } else {
@@ -1311,4 +1476,9 @@
 
     setInterval(createUI, 1000);
     setInterval(supervisorTick, 1500);
-})(typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null);
+})(
+    typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null,
+    typeof GM_getValue !== "undefined" ? GM_getValue : undefined,
+    typeof GM_setValue !== "undefined" ? GM_setValue : undefined,
+    typeof GM_deleteValue !== "undefined" ? GM_deleteValue : undefined
+);
