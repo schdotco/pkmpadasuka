@@ -2,17 +2,6 @@
     'use strict';
     const request = GM_xmlhttpRequest;
 
-    // Cegah double-execution jika launcher menyuntikkan ulang pada tab yang sama
-    if (window.__CKG_SKRINING_BOT_LOADED__) {
-        try {
-            if (typeof window.__CKG_SKRINING_BOOT__ === 'function') {
-                window.__CKG_SKRINING_BOOT__();
-            }
-        } catch (e) { }
-        return;
-    }
-    window.__CKG_SKRINING_BOT_LOADED__ = true;
-
     /* =========================================================
        [EXPERT FEATURE] 1. SISTEM TELEMETRI & ERROR LOGGING
     ========================================================= */
@@ -142,7 +131,7 @@
 
     /* =========================================================
        CROSS-DOMAIN & CROSS-TAB MEMORY
-       Mendukung: GM_getValue -> URL Hash Bridge -> window.name -> localStorage -> postMessage (opener/parent/extension)
+       Prioritas: localStorage (same-origin) -> GM_getValue -> window.name -> URL Hash
     ========================================================= */
     const WIN_NAME_PREFIX = 'CKG_BRIDGE:';
     const URL_HASH_KEY = 'ckg_payload=';
@@ -172,6 +161,13 @@
     }
 
     function getStore(key) {
+        // 1. Cek localStorage terlebih dahulu agar perubahan dari Bot Input / tombol pindah langsung terbaca
+        try {
+            const localVal = localStorage.getItem(key);
+            if (localVal !== null && localVal !== undefined) return localVal;
+        } catch (e) { }
+
+        // 2. Fallback GM_getValue (lintas domain)
         try {
             const gmGet = typeof GM_getValue !== 'undefined' ? GM_getValue : window.GM_getValue;
             if (typeof gmGet === 'function') {
@@ -180,20 +176,19 @@
             }
         } catch (e) { }
 
+        // 3. Fallback window.name (lintas domain di tab yang sama)
         const winObj = getWinStoreObj();
         if (winObj[key] !== undefined && winObj[key] !== null) {
             try { localStorage.setItem(key, winObj[key]); } catch (e) { }
             return winObj[key];
         }
 
-        try {
-            return localStorage.getItem(key);
-        } catch (e) {
-            return null;
-        }
+        return null;
     }
 
     function setStore(key, value) {
+        try { localStorage.setItem(key, value); } catch (e) { }
+
         try {
             const gmSet = typeof GM_setValue !== 'undefined' ? GM_setValue : window.GM_setValue;
             if (typeof gmSet === 'function') gmSet(key, value);
@@ -204,16 +199,13 @@
         saveWinStoreObj(winObj);
 
         try {
-            localStorage.setItem(key, value);
-        } catch (e) { }
-
-        // Sinkronisasi ke content script ekstensi (jika ada bridge chrome.storage.local)
-        try {
             window.postMessage({ type: 'CKG_EXT_STORAGE_SET', key, value }, '*');
         } catch (e) { }
     }
 
     function delStore(key) {
+        try { localStorage.removeItem(key); } catch (e) { }
+
         try {
             const gmDel = typeof GM_deleteValue !== 'undefined' ? GM_deleteValue : window.GM_deleteValue;
             if (typeof gmDel === 'function') gmDel(key);
@@ -222,10 +214,6 @@
         const winObj = getWinStoreObj();
         delete winObj[key];
         saveWinStoreObj(winObj);
-
-        try {
-            localStorage.removeItem(key);
-        } catch (e) { }
 
         try {
             window.postMessage({ type: 'CKG_EXT_STORAGE_DEL', key }, '*');
@@ -314,10 +302,8 @@
         return false;
     }
 
-    // Ekstrak payload dari URL segera saat script dimuat
     consumeUrlPayload();
 
-    // Intercept window.open & klik link menuju form.kemkes.go.id agar state ikut terbawa lintas tab
     try {
         const origWindowOpen = window.open;
         window.open = function (url, target, features) {
@@ -339,7 +325,6 @@
         }, true);
     } catch (e) { }
 
-    // Jembatan komunikasi jika form.kemkes.go.id terbuka di TAB BARU (window.opener) atau IFRAME (window.parent)
     window.addEventListener('message', (event) => {
         try {
             if (!event.data || typeof event.data !== 'object') return;
@@ -356,8 +341,10 @@
                 if (data && (isSessionActive || location.hostname.includes('form.kemkes.go.id'))) {
                     BOT_RUNNING = true;
                 }
-                createUI();
-                syncUI();
+                if (!isSwitchedToInput()) {
+                    createUI();
+                    syncUI();
+                }
             }
         } catch (e) { }
     });
@@ -402,6 +389,34 @@
     }
 
     function clearCompleted() { delStore('AUTO_SKRINING_COMPLETED'); }
+
+    /* =========================================================
+       DETEKSI MODUL INPUT AKTIF (DEWASA / ANAK)
+       Jika sedang di Bot Input, Bot Skrining wajib hilang total
+    ========================================================= */
+    function isSwitchedToInput() {
+        if (location.hostname.includes('form.kemkes.go.id')) return false;
+
+        const mode = (getStore('CKG_MODE') || '').toLowerCase().trim();
+        if (mode === 'input' || mode === 'input_anak') return true;
+
+        const estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
+        if (estafetRaw) {
+            try {
+                const estafet = JSON.parse(estafetRaw);
+                const kat = (estafet.kategori || '').toLowerCase().trim();
+                if (kat === 'dewasa' || kat === 'anak') return true;
+            } catch (e) { }
+        }
+        return false;
+    }
+
+    function destroyUI() {
+        const box = document.getElementById('auto-ckg-ui');
+        if (box) box.remove();
+        const style = document.getElementById('auto-ckg-style');
+        if (style) style.remove();
+    }
 
     /* =========================================================
        DATA MATCHER (ANTI ERROR / FORMAT AMAN)
@@ -522,7 +537,7 @@
     }
 
     /* =========================================================
-       DOM INTERACTOR (SURVEYJS SAFE)
+       DOM INTERACTOR (SURVEYJS SAFE & ROBUST)
     ========================================================= */
     function forceInject(element, value) {
         if (!element) return;
@@ -537,14 +552,49 @@
         } catch (e) { }
     }
 
+    function clickSurveyRadioItem(itemEl) {
+        if (!itemEl) return false;
+        try {
+            const input = itemEl.querySelector('input[type="radio"]');
+            if (input && input.checked) return true;
+
+            itemEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const decorator = itemEl.querySelector('.sd-radio__decorator, .sd-item__decorator, .sv-item__decorator');
+            const label = itemEl.querySelector('label, .sd-item__control-label, .sv-item__control-label');
+
+            if (decorator) decorator.click();
+            else if (label) label.click();
+            else itemEl.click();
+
+            if (input && !input.checked) {
+                input.click();
+                input.checked = true;
+                input.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function getAllQuestionBlocks() {
+        return [...document.querySelectorAll('.sd-question, .sv-question, .sd-element[data-name]')].filter(q => q.offsetParent !== null);
+    }
+
+    function getQuestionTitleText(q) {
+        const header = q.querySelector('.sd-question__title, .sv-question__title, .sd-element__title, h5, h4, h3');
+        return ((header ? header.innerText : q.innerText) || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+
     async function pilihRadioSpesifik(dataName, titleKeywords, optionValue, optionLabel) {
         try {
             let targetQ = dataName ? document.querySelector(`.sd-question[data-name="${dataName}"], .sd-element[data-name="${dataName}"]`) : null;
             if (!targetQ) {
-                const questions = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element')];
+                const questions = getAllQuestionBlocks();
                 targetQ = questions.find(q => {
-                    const header = q.querySelector('.sd-question__title, .sv-question__title, .sd-element__title');
-                    const txt = ((header ? header.innerText : q.innerText) || '').toLowerCase();
+                    const txt = getQuestionTitleText(q);
                     return titleKeywords.some(k => txt.includes(k.toLowerCase()));
                 });
             }
@@ -559,89 +609,98 @@
             });
 
             if (targetItem) {
-                const input = targetItem.querySelector('input[type="radio"]');
-                if (input && input.checked) return true;
-                targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const radioDecorator = targetItem.querySelector('.sd-radio__decorator, .sd-item__decorator') || targetItem;
-                radioDecorator.click();
-                if (input) {
-                    input.checked = true;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-                await sleep(400);
-                return true;
+                const ok = clickSurveyRadioItem(targetItem);
+                await sleep(350);
+                return ok;
             }
         } catch (e) { }
         return false;
     }
 
-    async function fillRadioSurveyJS(soalText, jawabanText) {
+    async function fillRadioSurveyJS(soalText, jawabanText, fillAllMatching = false) {
         try {
-            const allElements = [...document.querySelectorAll('*')];
             const aliases = {
-                'faktor risiko tb': ['faktor risiko tb', 'tuberkulosis', 'tb', 'batuk', 'kontak erat', 'kontak dengan penderita'],
+                'status perkawinan': ['status perkawinan', 'perkawinan', 'status nikah'],
+                'faktor risiko tb': ['faktor risiko tb', 'tuberkulosis', 'tb', 'batuk', 'demam', 'berkeringat malam', 'berat badan turun', 'kontak erat', 'kontak dengan penderita', 'kontak serumah'],
                 'kesehatan jiwa': ['depresi', 'cemas', 'merasa sedih', 'minat melakukan aktivitas'],
-                'kanker leher rahim': ['kanker leher rahim', 'serviks', 'pap smear', 'iva'],
+                'kanker leher rahim': ['kanker leher rahim', 'serviks', 'pap smear', 'iva', 'hubungan seksual', 'sudah menikah'],
                 'gejala kanker paru': ['batuk dalam jangka waktu yang lama', 'batuk berdarah', 'sesak napas', 'nyeri dada', 'leher bengkak', 'benjolan pada leher', 'tidak sembuh-sembuh'],
-                'sedang hamil': ['sedang hamil']
+                'sedang hamil': ['sedang hamil', 'hamil saat ini'],
+                'disabilitas': ['disabilitas', 'penyandang disabilitas']
             };
-            const keywords = aliases[soalText] || [soalText];
-            const questionNode = allElements.find(el => {
-                const txt = (el.textContent || '').toLowerCase(); return keywords.some(k => txt.includes(k.toLowerCase()));
-            });
+            const keywords = aliases[soalText.toLowerCase()] || [soalText];
+            const questions = getAllQuestionBlocks();
+            let filledCount = 0;
 
-            if (!questionNode) return false;
-            const targetQ = questionNode.closest('.sd-element') || questionNode.closest('[data-name]') || questionNode.closest('.sd-question') || questionNode;
-            if (!targetQ) return false;
+            for (const targetQ of questions) {
+                const qTitle = getQuestionTitleText(targetQ);
+                const qFull = (targetQ.innerText || '').toLowerCase();
+                const isMatch = keywords.some(k => qTitle.includes(k.toLowerCase()) || qFull.includes(k.toLowerCase()));
+                if (!isMatch) continue;
 
-            const items = [...targetQ.querySelectorAll('.sd-item, .sv-item')];
-            const targetItem = items.find(el => {
-                const txt = (el.innerText || '').toLowerCase().trim(); const target = jawabanText.toLowerCase().trim();
-                if (target === 'menikah' && txt === 'belum menikah') return false;
-                return txt === target || txt.includes(target);
-            });
+                const items = [...targetQ.querySelectorAll('.sd-item, .sv-item')];
+                if (items.length === 0) continue;
 
-            if (targetItem) {
-                const input = targetItem.querySelector('input[type="radio"]');
-                targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const radioDecorator = targetItem.querySelector('.sd-radio__decorator, .sd-item__decorator');
-                if (radioDecorator) radioDecorator.click();
-                if (input) {
-                    input.checked = true;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                const alreadyChecked = items.some(el => {
+                    const inp = el.querySelector('input[type="radio"]');
+                    return inp && inp.checked;
+                });
+                if (alreadyChecked && fillAllMatching) continue;
+
+                const targetNorm = jawabanText.toLowerCase().trim();
+                const targetItem = items.find(el => {
+                    const txt = (el.innerText || '').toLowerCase().replace(/\s+/g, ' ').trim();
+                    if (targetNorm === 'menikah' && txt.includes('belum menikah')) return false;
+                    if (targetNorm === 'ya' && txt.startsWith('tidak')) return false;
+                    return txt === targetNorm || txt.includes(targetNorm);
+                });
+
+                if (targetItem) {
+                    if (clickSurveyRadioItem(targetItem)) {
+                        filledCount++;
+                        await sleep(350);
+                        if (!fillAllMatching) return true;
+                    }
                 }
-                await sleep(500); return true;
             }
+            return filledCount > 0;
         } catch (e) { }
         return false;
     }
 
     async function selectDropdownContext(soalText, optionText, typeChar = 't') {
         try {
-            const questions = [...document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]')];
+            const questions = getAllQuestionBlocks();
             const targetQ = questions.find(q => {
-                const qText = (q.innerText || '').toLowerCase(); return qText.includes(soalText.toLowerCase()) || soalText.toLowerCase().includes(qText);
+                const qText = (q.innerText || '').toLowerCase();
+                return qText.includes(soalText.toLowerCase()) || soalText.toLowerCase().includes(qText);
             });
 
             if (!targetQ) return false;
             const dropdown = targetQ.querySelector('.sd-dropdown, .sv-dropdown');
             if (!dropdown) return false;
 
-            dropdown.scrollIntoView({ behavior: 'smooth', block: 'center' }); dropdown.click(); await sleep(1000);
+            dropdown.scrollIntoView({ behavior: 'smooth', block: 'center' }); dropdown.click(); await sleep(800);
 
             const search = document.querySelector('input[type="text"][role="combobox"], input[aria-expanded="true"]');
             if (search && typeChar) {
                 search.focus(); search.value = typeChar;
                 search.dispatchEvent(new Event('input', { bubbles: true })); search.dispatchEvent(new Event('change', { bubbles: true }));
-                await sleep(1000);
+                await sleep(800);
             }
 
-            const opts = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body')];
+            const opts = [...document.querySelectorAll('.sv-list__item-body, .sd-list__item-body, .sv-list__item, .sd-list__item')].filter(el => {
+                const rect = el.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0;
+            });
             const targetOpt = opts.find(el => (el.innerText || '').toLowerCase().includes(optionText.toLowerCase()));
 
-            if (targetOpt) { targetOpt.click(); await sleep(500); if (document.activeElement) document.activeElement.blur(); return true; }
+            if (targetOpt) {
+                targetOpt.click();
+                await sleep(400);
+                if (document.activeElement) document.activeElement.blur();
+                return true;
+            }
             dropdown.click();
         } catch (e) { }
         return false;
@@ -650,16 +709,16 @@
     async function isiKesehatanJiwa(data) {
         try {
             const j1 = data.jiwa1 || ''; const j2 = data.jiwa2 || ''; const j3 = data.jiwa3 || ''; const j4 = data.jiwa4 || '';
-            const semuaPertanyaan = [...document.querySelectorAll('.sd-question, .sd-element')];
+            const semuaPertanyaan = getAllQuestionBlocks();
 
             for (const q of semuaPertanyaan) {
                 if (!BOT_RUNNING) break;
                 const text = (q.innerText || '').toLowerCase(); let jawabanSheet = '';
 
-                if (text.includes('bersemangat')) jawabanSheet = j1;
-                else if (text.includes('murung') || text.includes('putus asa')) jawabanSheet = j2;
-                else if (text.includes('gugup') || text.includes('cemas')) jawabanSheet = j3;
-                else if (text.includes('khawatir') || text.includes('mengendalikan')) jawabanSheet = j4;
+                if (text.includes('bersemangat') || text.includes('minat atau kesenangan')) jawabanSheet = j1 || 'tidak';
+                else if (text.includes('murung') || text.includes('putus asa') || text.includes('tertekan')) jawabanSheet = j2 || 'tidak';
+                else if (text.includes('gugup') || text.includes('cemas') || text.includes('tegang')) jawabanSheet = j3 || 'tidak';
+                else if (text.includes('khawatir') || text.includes('mengendalikan')) jawabanSheet = j4 || 'tidak';
 
                 if (jawabanSheet.trim() !== '') {
                     let kataKunci = ''; const teksJawaban = jawabanSheet.toLowerCase();
@@ -669,21 +728,12 @@
                     else if (teksJawaban.includes('hampir')) kataKunci = 'hampir';
 
                     if (kataKunci !== '') {
-                        const pilihan = [...q.querySelectorAll('.sd-item, .sv-item, label')];
+                        const pilihan = [...q.querySelectorAll('.sd-item, .sv-item')];
                         const targetPilihan = pilihan.find(el => (el.innerText || '').toLowerCase().includes(kataKunci));
 
                         if (targetPilihan) {
-                            targetPilihan.scrollIntoView({ behavior: 'smooth', block: 'center' }); await sleep(300);
-                            const decorator = targetPilihan.querySelector('.sd-radio__decorator, .sd-item__decorator, .sv-item__decorator');
-                            if (decorator) { decorator.click(); } else { targetPilihan.click(); }
-                            const inputAsli = targetPilihan.querySelector('input[type="radio"]');
-                            if (inputAsli) {
-                                inputAsli.click(); inputAsli.checked = true;
-                                inputAsli.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                                inputAsli.dispatchEvent(new Event('input', { bubbles: true }));
-                                inputAsli.dispatchEvent(new Event('change', { bubbles: true }));
-                            }
-                            await sleep(600);
+                            clickSurveyRadioItem(targetPilihan);
+                            await sleep(400);
                         }
                     }
                 }
@@ -712,31 +762,8 @@
             let berhasilPilih = false;
 
             if (targetItem) {
-                targetItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                await sleep(300);
-
-                const decorator = targetItem.querySelector('.sd-item__decorator.sd-radio__decorator, .sd-radio__decorator, .sd-item__decorator');
-                const label = targetItem.querySelector('label');
-                const input = targetItem.querySelector('input[type="radio"]');
-
-                if (decorator) {
-                    decorator.click();
-                } else if (label) {
-                    label.click();
-                } else {
-                    targetItem.click();
-                }
-
+                berhasilPilih = clickSurveyRadioItem(targetItem);
                 await sleep(250);
-
-                if (input && !input.checked) {
-                    input.click();
-                    input.checked = true;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-
-                berhasilPilih = input ? input.checked : true;
             } else {
                 berhasilPilih = await selectDropdownContext(
                     'pernah mendapatkan imunisasi tetanus',
@@ -749,7 +776,7 @@
                 return false;
             }
 
-            await sleep(1000);
+            await sleep(800);
 
             if (!BOT_RUNNING) return false;
             const btnKirim = document.querySelector('.sd-navigation__complete-btn') ||
@@ -808,16 +835,16 @@
                         for (const item of radioItems) {
                             const txt = (item.innerText || '').toLowerCase().trim();
                             if (txt === 'ya' || txt === 'sudah') {
-                                const decorator = item.querySelector('.sd-radio__decorator, .sd-item__decorator') || item;
-                                decorator.click(); break;
+                                clickSurveyRadioItem(item);
+                                break;
                             }
                         }
                     }
-                    await sleep(1000);
+                    await sleep(900);
                 }
                 jumlahSoalTerjawab = semuaSoal.length;
             }
-            await sleep(1000);
+            await sleep(800);
 
             if (!BOT_RUNNING) return false;
             const btnKirim = document.querySelector('.sd-navigation__complete-btn') || [...document.querySelectorAll('button,input[type="button"]')].find(b => (b.innerText || '').toLowerCase().match(/lanjut|kirim/));
@@ -843,32 +870,50 @@
                 return;
             }
 
+            // 1. STATUS PERKAWINAN
             if (pageText.includes('status perkawinan') && BOT_RUNNING) {
-                updateStatus('Status di Sheet: ' + data.perkawinan); await sleep(1000);
+                updateStatus('Status di Sheet: ' + data.perkawinan);
                 if (data.perkawinan && data.perkawinan !== 'Data Kosong') {
                     let p = data.perkawinan.toLowerCase(); let target = 'Menikah';
                     if (p.includes('belum')) target = 'Belum Menikah';
                     else if (p.includes('janda') || p.includes('duda') || p.includes('cerai')) target = 'Cerai Hidup';
                     updateStatus('Mengisi: ' + target);
-                    await fillRadioSurveyJS('status perkawinan', target); await sleep(1000);
-                } else { updateStatus('Data Perkawinan Kosong!'); await sleep(1000); }
+                    await fillRadioSurveyJS('status perkawinan', target, false);
+                } else {
+                    await fillRadioSurveyJS('status perkawinan', 'Belum Menikah', false);
+                }
             }
 
+            // 2. KEHAMILAN
             if (pageText.includes('sedang hamil') && BOT_RUNNING) {
-                await fillRadioSurveyJS('sedang hamil', 'tidak');
+                await fillRadioSurveyJS('sedang hamil', 'tidak', true);
             }
 
-            if ((pageText.includes('faktor risiko tb') || pageText.includes('tuberkulosis')) && BOT_RUNNING) {
-                await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk'); await fillRadioSurveyJS('faktor risiko tb', 'tidak');
-            }
-            if (pageText.includes('disabilitas') && BOT_RUNNING) { await fillRadioSurveyJS('disabilitas', 'non disabilitas'); }
-            if ((pageText.includes('2 minggu terakhir') || pageText.includes('kesehatan jiwa')) && BOT_RUNNING) { await isiKesehatanJiwa(data); }
-            if (pageText.includes('kanker leher rahim') && BOT_RUNNING) {
-                let p = (data.perkawinan || '').toLowerCase(); let isYes = p.includes('menikah') || p.includes('cerai') || (p.includes('kawin') && !p.includes('belum'));
-                await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak');
+            // 3. FAKTOR RISIKO TB
+            if ((pageText.includes('faktor risiko tb') || pageText.includes('tuberkulosis') || pageText.includes('batuk')) && BOT_RUNNING) {
+                await fillRadioSurveyJS('faktor risiko tb', 'tidak batuk', true);
+                await fillRadioSurveyJS('faktor risiko tb', 'tidak', true);
             }
 
-            // Pertanyaan Skor APCS (Usia & Jenis Kelamin berdasarkan NIK pasien)
+            // 4. DISABILITAS
+            if (pageText.includes('disabilitas') && BOT_RUNNING) {
+                await fillRadioSurveyJS('disabilitas', 'non disabilitas', true);
+                await fillRadioSurveyJS('disabilitas', 'tidak', true);
+            }
+
+            // 5. KESEHATAN JIWA
+            if ((pageText.includes('2 minggu terakhir') || pageText.includes('kesehatan jiwa') || pageText.includes('bersemangat') || pageText.includes('murung')) && BOT_RUNNING) {
+                await isiKesehatanJiwa(data);
+            }
+
+            // 6. KANKER LEHER RAHIM & PAYUDARA
+            if ((pageText.includes('kanker leher rahim') || pageText.includes('serviks') || pageText.includes('payudara')) && BOT_RUNNING) {
+                let p = (data.perkawinan || '').toLowerCase();
+                let isYes = p.includes('menikah') || p.includes('cerai') || (p.includes('kawin') && !p.includes('belum'));
+                await fillRadioSurveyJS('kanker leher rahim', isYes ? 'ya' : 'tidak', false);
+            }
+
+            // 7. SKOR APCS (KANKER KOLOREKTAL)
             if (pageText.includes('skor apcs') && BOT_RUNNING) {
                 const infoNIK = parseInfoDariNIK(data.nik);
                 if (infoNIK) {
@@ -894,89 +939,187 @@
                 }
             }
 
-            if ((pageText.includes('merokok') || pageText.includes('kanker paru')) && BOT_RUNNING) {
+            // 8. MEROKOK & KANKER PARU
+            if ((pageText.includes('merokok') || pageText.includes('rokok') || pageText.includes('kanker paru')) && BOT_RUNNING) {
                 const statusMerokok = jawabanMerokok(data.merokok);
-                const semuaPertanyaan = [...document.querySelectorAll('.sd-question, .sd-element')];
+                const semuaPertanyaan = getAllQuestionBlocks();
 
                 for (const q of semuaPertanyaan) {
                     if (!BOT_RUNNING) break;
-                    const text = (q.innerText || '').toLowerCase(); let targetJawaban = '';
+                    const text = getQuestionTitleText(q);
+                    let targetJawaban = '';
 
-                    if (text.includes('setahun terakhir')) targetJawaban = statusMerokok;
-                    else if (text.includes('15 tahun terakhir')) targetJawaban = statusMerokok;
-                    else if (text.includes('menghirup asap rokok') || text.includes('terpapar asap rokok')) targetJawaban = statusMerokok;
-                    else if (text.includes('jenis rokok apa yang dikonsumsi')) targetJawaban = 'konvensional';
-                    else if (text.includes('kanker paru pada keluarga') || text.includes('batuk dalam jangka waktu') || text.includes('tbc atau ppok')) targetJawaban = 'tidak';
+                    if (
+                        text.includes('setahun terakhir') ||
+                        text.includes('15 tahun terakhir') ||
+                        text.includes('apakah anda merokok') ||
+                        text.includes('status merokok') ||
+                        text.includes('pernah merokok') ||
+                        text.includes('menghirup asap rokok') ||
+                        text.includes('terpapar asap rokok') ||
+                        text.includes('perokok pasif')
+                    ) {
+                        targetJawaban = statusMerokok;
+                    } else if (text.includes('jenis rokok apa yang dikonsumsi') || text.includes('jenis rokok')) {
+                        targetJawaban = 'konvensional';
+                    } else if (
+                        text.includes('kanker paru pada keluarga') ||
+                        text.includes('batuk dalam jangka waktu') ||
+                        text.includes('tbc atau ppok') ||
+                        text.includes('riwayat kanker')
+                    ) {
+                        targetJawaban = 'tidak';
+                    }
 
                     if (targetJawaban !== '') {
                         const pilihan = [...q.querySelectorAll('.sd-item, .sv-item')];
-                        const targetPilihan = pilihan.find(el => (el.innerText || '').toLowerCase().includes(targetJawaban));
+                        const targetPilihan = pilihan.find(el => {
+                            const optTxt = (el.innerText || '').toLowerCase().trim();
+                            if (targetJawaban === 'ya' && optTxt.startsWith('tidak')) return false;
+                            return optTxt === targetJawaban || optTxt.includes(targetJawaban);
+                        });
 
                         if (targetPilihan) {
-                            const radio = targetPilihan.querySelector('.sd-radio__decorator') || targetPilihan.querySelector('.sd-item__decorator') || targetPilihan.querySelector('input[type="radio"]');
-                            if (radio) {
-                                radio.click();
-                                const inputAsli = targetPilihan.querySelector('input[type="radio"]');
-                                if (inputAsli) {
-                                    inputAsli.checked = true;
-                                    inputAsli.dispatchEvent(new Event('input', { bubbles: true }));
-                                    inputAsli.dispatchEvent(new Event('change', { bubbles: true }));
-                                }
-                                await sleep(300);
+                            clickSurveyRadioItem(targetPilihan);
+                            await sleep(300);
+                        }
+                    }
+
+                    const numInput = q.querySelector('input[type="number"]');
+                    if (numInput && !numInput.value) {
+                        forceInject(numInput, text.includes('batang') ? '6' : '2');
+                        await sleep(250);
+                    }
+                }
+            }
+
+            // 9. AKTIVITAS FISIK
+            if ((pageText.includes('aktivitas fisik') || pageText.includes('olahraga') || pageText.includes('aktif secara fisik')) && BOT_RUNNING) {
+                updateStatus('Mengisi Aktivitas Fisik...');
+                const semuaPertanyaan = getAllQuestionBlocks();
+
+                for (const q of semuaPertanyaan) {
+                    if (!BOT_RUNNING) break;
+                    const qTitle = getQuestionTitleText(q);
+                    if (!qTitle.includes('aktivitas') && !qTitle.includes('olahraga') && !qTitle.includes('fisik') && !qTitle.includes('jalan kaki') && !qTitle.includes('duduk') && !qTitle.includes('hari') && !qTitle.includes('menit')) {
+                        continue;
+                    }
+
+                    const radioItems = [...q.querySelectorAll('.sd-item, .sv-item')];
+                    if (radioItems.length > 0) {
+                        const alreadyChecked = radioItems.some(el => {
+                            const inp = el.querySelector('input[type="radio"]');
+                            return inp && inp.checked;
+                        });
+                        if (!alreadyChecked) {
+                            const optTidak = radioItems.find(el => {
+                                const t = (el.innerText || '').toLowerCase().trim();
+                                return t === 'tidak' || t.startsWith('tidak');
+                            });
+                            if (optTidak) {
+                                clickSurveyRadioItem(optTidak);
+                                await sleep(350);
                             }
                         }
                     }
-                }
-            }
 
-            const questions = document.querySelectorAll('.sd-question, .sv-question, .sd-element, [data-name]');
-            questions.forEach(q => {
-                if (!BOT_RUNNING) return;
-                let isAnswered = false; const radios = q.querySelectorAll('input[type="radio"]');
-                if (radios.length === 0) return;
-                radios.forEach(radio => { if (radio.checked) isAnswered = true; });
-                if (isAnswered) return;
+                    const dropdown = q.querySelector('.sd-dropdown, .sv-dropdown');
+                    if (dropdown) {
+                        const currVal = (dropdown.innerText || '').toLowerCase().trim();
+                        if (currVal !== 'tidak') {
+                            dropdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            dropdown.click();
+                            await sleep(900);
 
-                let qText = (q.innerText || '').toLowerCase();
-                if (qText.includes('berapa hari anda aktif secara fisik') || qText.includes('jumlah hari aktif')) return;
-
-                q.querySelectorAll('label').forEach(l => {
-                    let txt = (l.innerText || '').toLowerCase().trim();
-                    if (txt === 'tidak' || txt === 'normal' || txt === 'tidak ada') {
-                        let i = l.querySelector('input[type="radio"]');
-                        if (i && !i.checked) {
-                            const decorator = l.querySelector('.sd-radio__decorator, .sd-item__decorator') || l;
-                            decorator.click(); i.checked = true;
-                            i.dispatchEvent(new Event('input', { bubbles: true }));
-                            i.dispatchEvent(new Event('change', { bubbles: true }));
+                            const opsiTidak = [...document.querySelectorAll('li.sv-list__item, li.sd-list__item, .sv-list__item-body, .sd-list__item-body')].filter(li => {
+                                const rect = li.getBoundingClientRect();
+                                return rect.width > 0 && rect.height > 0 && li.innerText.trim().toLowerCase() === 'tidak';
+                            });
+                            if (opsiTidak[0]) {
+                                opsiTidak[0].click();
+                                opsiTidak[0].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                                await sleep(400);
+                            } else {
+                                dropdown.click();
+                            }
                         }
                     }
-                });
-            });
 
-            if (pageText.includes('aktivitas fisik') && BOT_RUNNING) {
-                updateStatus('Mengisi Aktivitas Fisik...');
-                const inputAngka = [...document.querySelectorAll('input[type="number"]')];
-                if (inputAngka.length > 0) {
-                    if (inputAngka[0]) forceInject(inputAngka[0], '3'); await sleep(500);
-                    if (inputAngka[1]) forceInject(inputAngka[1], '3'); await sleep(500);
-                }
+                    const numInputs = [...q.querySelectorAll('input[type="number"]')];
+                    for (const inp of numInputs) {
+                        if (inp.offsetParent === null) continue;
+                        let valToSet = '3';
+                        if (qTitle.includes('menit') || qTitle.includes('durasi') || qTitle.includes('lama waktu')) valToSet = '30';
+                        else if (qTitle.includes('jam')) valToSet = '1';
+                        else if (qTitle.includes('hari')) valToSet = '3';
 
-                const dropdowns = [...document.querySelectorAll('.sd-dropdown, .sv-dropdown')];
-                for (let i = 0; i < dropdowns.length; i++) {
-                    if (!BOT_RUNNING) break;
-                    const currentDropdown = dropdowns[i];
-                    if (!currentDropdown) continue;
-                    currentDropdown.scrollIntoView({ behavior: 'smooth', block: 'center' }); currentDropdown.click(); await sleep(1200);
-
-                    const opsiTidak = [...document.querySelectorAll('li.sv-list__item, li.sd-list__item')].filter(li => li.innerText.trim().toLowerCase() === 'tidak');
-                    if (opsiTidak[i]) {
-                        opsiTidak[i].click(); opsiTidak[i].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); await sleep(500);
-                    } else { break; }
+                        if (!inp.value || inp.value === '0') {
+                            forceInject(inp, valToSet);
+                            await sleep(300);
+                        }
+                    }
                 }
             }
 
-            await sleep(1500);
+            // 10. SAPU BERSIH PERTANYAAN RADIO LAIN YANG BELUM TERJAWAB
+            const negativePriorities = [
+                'tidak batuk',
+                'non disabilitas',
+                'tidak ada keluhan',
+                'tidak ada riwayat',
+                'tidak pernah',
+                'tidak ada',
+                'tidak',
+                'normal',
+                'tidak benar',
+                'tidak tahu'
+            ];
+
+            const allQuestions = getAllQuestionBlocks();
+            for (const q of allQuestions) {
+                if (!BOT_RUNNING) break;
+
+                const items = [...q.querySelectorAll('.sd-item, .sv-item')];
+                const radios = [...q.querySelectorAll('input[type="radio"]')];
+                if (radios.length === 0 && items.length === 0) continue;
+
+                const isAnswered = radios.some(r => r.checked);
+                if (isAnswered) continue;
+
+                const qText = getQuestionTitleText(q);
+                if (qText.includes('berapa hari anda aktif secara fisik') || qText.includes('jumlah hari aktif')) continue;
+
+                let matchedItem = null;
+                for (const candidate of negativePriorities) {
+                    matchedItem = items.find(el => {
+                        const txt = (el.innerText || '').toLowerCase().replace(/\s+/g, ' ').trim();
+                        return txt === candidate || txt.startsWith(candidate + ' ') || txt.startsWith(candidate + ',');
+                    });
+                    if (matchedItem) break;
+                }
+
+                if (matchedItem) {
+                    clickSurveyRadioItem(matchedItem);
+                    await sleep(250);
+                }
+            }
+
+            // 11. CHECKBOX PERSETUJUAN
+            const checkboxes = [...document.querySelectorAll('input[type="checkbox"]')].filter(cb => cb.offsetParent !== null && !cb.checked);
+            for (const cb of checkboxes) {
+                const container = cb.closest('.sd-item, .sv-item, label') || cb.parentElement;
+                const cbText = (container ? container.innerText : '').toLowerCase();
+                if (cbText.includes('setuju') || cbText.includes('benar') || cbText.includes('menyatakan') || cbText.includes('bersedia') || checkboxes.length === 1) {
+                    const dec = container ? container.querySelector('.sd-checkbox__decorator, .sd-item__decorator') : null;
+                    if (dec) dec.click();
+                    else cb.click();
+                    cb.checked = true;
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    await sleep(300);
+                }
+            }
+
+            await sleep(1200);
             if (!BOT_RUNNING) return;
 
             const btnNext = document.querySelector('.sd-navigation__next-btn, .sd-navigation__complete-btn') || [...document.querySelectorAll('button')].find(b => (b.innerText || '').toLowerCase().match(/lanjut|kirim/));
@@ -1020,6 +1163,7 @@
 
         while (BOT_RUNNING && location.hostname.includes("form.kemkes.go.id")) {
             try {
+                createUI(); // Pastikan UI tetap muncul selama pengisian form berlangsung
                 const pageText = document.body.innerText.toLowerCase();
 
                 if (pageText.includes('riwayat imunisasi rutin balita')) {
@@ -1068,8 +1212,9 @@
     async function mainLoop(data) {
         updateStatus('MENCARI ANTRIAN...');
 
-        while (BOT_RUNNING && location.hostname.includes('sehatindonesiaku')) {
+        while (BOT_RUNNING && !isSwitchedToInput() && location.hostname.includes('sehatindonesiaku')) {
             try {
+                createUI();
                 const lockTime = parseInt(getStore('CKG_FORM_LOCK') || '0', 10);
                 if (lockTime && (Date.now() - lockTime < 5000)) {
                     updateStatus('MENUNGGU FORM SELESAI DIISI...');
@@ -1081,13 +1226,13 @@
 
                 let nextItem = null;
                 for (let i = 0; i < 3; i++) {
-                    if (!BOT_RUNNING) break;
+                    if (!BOT_RUNNING || isSwitchedToInput()) break;
                     nextItem = getNextTarget();
                     if (nextItem) break;
                     await sleep(1500);
                 }
 
-                if (!BOT_RUNNING) break;
+                if (!BOT_RUNNING || isSwitchedToInput()) break;
 
                 if (!nextItem) {
                     BOT_RUNNING = false;
@@ -1110,7 +1255,7 @@
 
                 updateStatus('Mengalihkan halaman form...');
                 for (let wait = 0; wait < 15; wait++) {
-                    if (!BOT_RUNNING) break;
+                    if (!BOT_RUNNING || isSwitchedToInput()) break;
                     await sleep(1500);
                     if (location.hostname.includes('form.kemkes.go.id')) {
                         break;
@@ -1147,6 +1292,11 @@
     }
 
     function syncUI() {
+        if (isSwitchedToInput()) {
+            destroyUI();
+            return;
+        }
+
         const data = loadBOT();
         const btnStart = document.getElementById('run-bot');
         const btnNext = document.getElementById('next-bot');
@@ -1196,6 +1346,12 @@
     }
 
     function createUI() {
+        // Jika sudah beralih ke Bot Input (Dewasa/Anak), Bot Skrining wajib hilang
+        if (isSwitchedToInput()) {
+            destroyUI();
+            return;
+        }
+
         if (!document.body || !document.head) return;
 
         if (!document.getElementById('auto-ckg-style')) {
@@ -1277,6 +1433,7 @@
             saveBOT(data);
             clearCompleted();
             delStore('CKG_FORM_LOCK');
+            setStore('CKG_MODE', 'skrining');
             setStore('CKG_ACTIVE_SESSION', '1');
             BOT_RUNNING = true;
             syncUI();
@@ -1290,6 +1447,7 @@
                 const data = loadBOT();
                 if (!data) return;
                 delStore('CKG_FORM_LOCK');
+                setStore('CKG_MODE', 'skrining');
                 setStore('CKG_ACTIVE_SESSION', '1');
                 BOT_RUNNING = true;
                 updateStatus('⚡ Memaksa eksekusi loop...');
@@ -1304,10 +1462,10 @@
             stopBOT();
             setStore('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: nik, kategori: 'dewasa' }));
             setStore('CKG_MODE', 'input');
+            destroyUI();
 
-            updateStatus('Beralih ke Input Dewasa...');
-            showToast("Beralih modul...", "success");
-            setTimeout(() => location.reload(), 500);
+            showToast("Beralih ke Input Dewasa...", "success");
+            setTimeout(() => location.reload(), 400);
         };
 
         document.getElementById('btn-to-anak').onclick = () => {
@@ -1317,10 +1475,10 @@
             stopBOT();
             setStore('PASIEN_AKTIF_PADASUKA', JSON.stringify({ nik: nik, kategori: 'anak' }));
             setStore('CKG_MODE', 'input_anak');
+            destroyUI();
 
-            updateStatus('Beralih ke Input Anak...');
-            showToast("Beralih modul...", "success");
-            setTimeout(() => location.reload(), 500);
+            showToast("Beralih ke Input Anak...", "success");
+            setTimeout(() => location.reload(), 400);
         };
 
         document.getElementById('stop-bot').onclick = () => {
@@ -1330,37 +1488,64 @@
         syncUI();
     }
 
-    // MutationObserver menjaga agar UI & style tidak terhapus saat hydration React/SurveyJS di form.kemkes.go.id
-    let uiObserverStarted = false;
-    function startUIObserver() {
-        if (uiObserverStarted || !document.documentElement) return;
-        uiObserverStarted = true;
-        const observer = new MutationObserver(() => {
-            if (document.body && (!document.getElementById('auto-ckg-ui') || !document.getElementById('auto-ckg-style'))) {
-                createUI();
-            }
-        });
-        observer.observe(document.documentElement, { childList: true, subtree: true });
+    // Jaga UI tetap ada saat React/SurveyJS re-render di form.kemkes.go.id, tapi langsung hapus jika pindah ke Bot Input
+    const uiGuardObserver = new MutationObserver(() => {
+        if (isSwitchedToInput()) {
+            destroyUI();
+        } else if (document.body && !document.getElementById('auto-ckg-ui')) {
+            createUI();
+        }
+    });
+    if (document.documentElement) {
+        uiGuardObserver.observe(document.documentElement, { childList: true, subtree: true });
     }
 
     /* =========================================================
-       INISIALISASI STANDBY & PENERIMA ESTAFET TANPA AUTO-START
+       INISIALISASI & SUPERVISOR LOOP
     ========================================================= */
     let isDownloadingBackground = false;
 
-    async function supervisorTick() {
+    const currentHost = window.location.hostname;
+    const isInitialFormPage = currentHost.includes('form.kemkes.go.id');
+    const existingData = loadBOT();
+    const hasActiveSession = getStore('CKG_ACTIVE_SESSION') === '1';
+
+    if (isSwitchedToInput()) {
+        BOT_RUNNING = false;
+        destroyUI();
+    } else if (isInitialFormPage && existingData) {
+        BOT_RUNNING = true;
+        createUI();
+    } else if (!isInitialFormPage && existingData && hasActiveSession) {
+        BOT_RUNNING = true;
+        createUI();
+    } else {
+        BOT_RUNNING = false;
+        if (!isInitialFormPage && !hasActiveSession && existingData) {
+            clearBOT();
+        }
+        createUI();
+    }
+
+    setInterval(async () => {
         try {
-            const currentHost = window.location.hostname;
-            const isFormPage = currentHost.includes('form.kemkes.go.id');
-            const isMainPage = currentHost.includes('sehatindonesiaku');
+            const host = window.location.hostname;
+            const isFormPage = host.includes('form.kemkes.go.id');
+            const isMainPage = host.includes('sehatindonesiaku');
+
+            // Jika sedang di Bot Input (Dewasa/Anak), matikan dan sembunyikan Bot Skrining
+            if (isSwitchedToInput()) {
+                BOT_RUNNING = false;
+                LOOP_ACTIVE = false;
+                destroyUI();
+                return;
+            }
 
             consumeUrlPayload();
-            startUIObserver();
             createUI();
 
             let data = loadBOT();
 
-            // Jika di halaman form tapi data kosong (tab baru / iframe), minta dari tab induk / bridge
             if (isFormPage && !data) {
                 requestStateFromOpener();
                 await sleep(300);
@@ -1371,22 +1556,16 @@
                 }
             }
 
-            // Terima estafet dari Bot Input meskipun ada sisa data lama -> HANYA isi kolom NIK, JANGAN auto-start
+            // Terima estafet dari Bot Input -> masukkan NIK saja, standby tunggu klik START
             if (isMainPage) {
                 let estafetRaw = getStore('PASIEN_AKTIF_PADASUKA');
                 if (estafetRaw) {
                     try {
                         const estafet = JSON.parse(estafetRaw);
-
-                        let targetSkrining = (estafet.kategori === 'skrining' || getStore('CKG_MODE') === 'skrining');
-                        if (!targetSkrining && estafet.nik && estafet.kategori !== 'dewasa' && estafet.kategori !== 'anak') {
-                            targetSkrining = true;
-                        }
-
-                        if (estafet.nik && targetSkrining) {
+                        const kat = (estafet.kategori || '').toLowerCase().trim();
+                        if (estafet.nik && kat === 'skrining') {
                             const nikEstafet = normalizeNIK(estafet.nik);
 
-                            // Bersihkan sesi lama & sinyal estafet agar tidak otomatis berjalan
                             BOT_RUNNING = false;
                             LOOP_ACTIVE = false;
                             clearBOT();
@@ -1394,9 +1573,10 @@
                             delStore('CKG_ACTIVE_SESSION');
                             delStore('CKG_FORM_LOCK');
                             delStore('PASIEN_AKTIF_PADASUKA');
-                            delStore('CKG_MODE');
-
+                            setStore('CKG_MODE', 'skrining');
                             setStore('LAST_USED_NIK', nikEstafet);
+
+                            createUI();
                             const inputNik = document.getElementById('nik-bot');
                             if (inputNik) inputNik.value = nikEstafet;
 
@@ -1435,47 +1615,7 @@
         } catch (e) {
             sendBotErrorLog("Interval_Supervisor", e.message || e);
         }
-    }
-
-    function bootBot() {
-        consumeUrlPayload();
-        startUIObserver();
-
-        const currentHost = window.location.hostname;
-        const isFormPage = currentHost.includes('form.kemkes.go.id');
-        const existingData = loadBOT();
-        const hasActiveSession = getStore('CKG_ACTIVE_SESSION') === '1';
-        const hasEstafet = !!getStore('PASIEN_AKTIF_PADASUKA');
-
-        if (isFormPage && existingData) {
-            // Di tab form Kemkes, lanjutkan pengisian setelah user klik START
-            BOT_RUNNING = true;
-        } else if (!isFormPage && existingData && hasActiveSession && !hasEstafet) {
-            // Di halaman utama, hanya lanjutkan jika sesi START SKRINING memang sedang aktif
-            BOT_RUNNING = true;
-        } else if (!isFormPage) {
-            // Selain itu (baru buka atau balik dari bot lain), wajib standby
-            BOT_RUNNING = false;
-            if (!hasActiveSession && existingData) {
-                clearBOT();
-            }
-        }
-
-        createUI();
-        syncUI();
-        supervisorTick();
-    }
-
-    window.__CKG_SKRINING_BOOT__ = bootBot;
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bootBot);
-    } else {
-        bootBot();
-    }
-
-    setInterval(createUI, 1000);
-    setInterval(supervisorTick, 1500);
+    }, 1500);
 })(
     typeof GM_xmlhttpRequest !== "undefined" ? GM_xmlhttpRequest : null,
     typeof GM_getValue !== "undefined" ? GM_getValue : undefined,
